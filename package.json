@@ -1,0 +1,51 @@
+{
+  "name": "shaadi-mantra",
+  "version": "1.0.0",
+  "description": "Shaadi Mantra - Full Stack Matrimonial Application",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:mobile": "cd frontend && npm run build:static",
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start:frontend": "cd frontend && npm run start",
+    "start:backend": "cd backend && npm start",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "lint": "cd frontend && npm run lint && cd ../backend && npm run lint",
+    "clean": "rm -rf .next out frontend/.next frontend/out backend/node_modules frontend/node_modules node_modules",
+    "serve:mobile": "npx serve frontend/out -l 3000",
+    "send-invitations": "node scripts/send-invitations.js",
+    "capacitor:sync": "cd frontend && npx cap sync",
+    "capacitor:build": "npm run build:mobile && npm run capacitor:sync",
+    "android:dev": "cd frontend && npx cap run android",
+    "android:build": "npm run capacitor:build && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "mongodb": "^6.17.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "keywords": [
+    "matrimonial",
+    "fullstack",
+    "react",
+    "express",
+    "mobile-app"
+  ],
+  "author": "Shaadi Mantra Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="questionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f43f5e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="12" cy="12" r="9.5" fill="none" stroke="url(#questionGradient)" stroke-width="1.5"/>
+  <path d="M9.09 9C9.325 8.685 9.672 8.45 10.074 8.315C10.476 8.18 10.915 8.15 11.337 8.227C11.759 8.304 12.148 8.486 12.458 8.752C12.768 9.018 12.987 9.357 13.092 9.733C13.197 10.109 13.184 10.506 13.055 10.876C12.926 11.246 12.686 11.572 12.367 11.816C12.048 12.06 11.664 12.212 11.264 12.254C10.864 12.296 10.46 12.227 10.1 12.055" stroke="url(#questionGradient)" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="12" cy="16" r="1" fill="url(#questionGradient)"/>
+</svg>

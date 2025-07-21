@@ -1,0 +1,10 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="headsetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f43f5e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <path d="M12 3C7.582 3 4 6.582 4 11V14C4 15.105 4.895 16 6 16H7V12H6C5.448 12 5 11.552 5 11C5 7.134 8.134 4 12 4C15.866 4 19 7.134 19 11C19 11.552 18.552 12 18 12H17V16H18C19.105 16 20 15.105 20 14V11C20 6.582 16.418 3 12 3Z" fill="url(#headsetGradient)" stroke="url(#headsetGradient)" stroke-width="0.5"/>
+  <path d="M7 13V18C7 19.105 7.895 20 9 20H15C16.105 20 17 19.105 17 18V13H15V18H9V13H7Z" fill="url(#headsetGradient)" stroke="url(#headsetGradient)" stroke-width="0.5"/>
+</svg>

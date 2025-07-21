@@ -1,0 +1,236 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+
+interface FilterModalProps {
+  onClose: () => void;
+  onApply: (filters: FilterState) => void;
+  currentFilters: FilterState;
+}
+
+export interface FilterState {
+  ageRange: [number, number];
+  selectedProfessions: string[];
+  selectedCountry: string;
+  selectedState: string;
+}
+
+const countryStateData = {
+  'India': [
+    // States (28)
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 
+    'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 
+    'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 
+    'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+    // Union Territories (8)
+    'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 
+    'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+  ],
+  'USA': ['California', 'New York', 'Texas', 'Florida', 'Illinois', 'Pennsylvania', 'Ohio', 'Georgia', 'North Carolina', 'Michigan'],
+  'Canada': ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland', 'Prince Edward Island'],
+  'UK': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
+  'Australia': ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Northern Territory', 'Australian Capital Territory']
+};
+
+export default function FilterModal({ onClose, onApply, currentFilters }: FilterModalProps) {
+  const [ageRange, setAgeRange] = useState<[number, number]>(currentFilters.ageRange);
+  const [selectedProfessions, setSelectedProfessions] = useState<string[]>(currentFilters.selectedProfessions);
+  const [selectedCountry, setSelectedCountry] = useState<string>(currentFilters.selectedCountry);
+  const [selectedState, setSelectedState] = useState<string>(currentFilters.selectedState);
+  const [availableStates, setAvailableStates] = useState<string[]>([]);
+
+  const professions = [
+    'Software Engineer', 'Doctor', 'Teacher', 'Lawyer', 'Banker',
+    'Architect', 'Designer', 'Consultant', 'Entrepreneur', 'Other'
+  ];
+
+  const countries = Object.keys(countryStateData);
+
+  useEffect(() => {
+    if (selectedCountry && countryStateData[selectedCountry as keyof typeof countryStateData]) {
+      setAvailableStates(countryStateData[selectedCountry as keyof typeof countryStateData]);
+      // Reset state if it's not available in the new country
+      if (selectedState && !countryStateData[selectedCountry as keyof typeof countryStateData].includes(selectedState)) {
+        setSelectedState('');
+      }
+    } else {
+      setAvailableStates([]);
+      setSelectedState('');
+    }
+  }, [selectedCountry, selectedState]);
+
+  const toggleProfession = (profession: string) => {
+    setSelectedProfessions(prev =>
+      prev.includes(profession)
+        ? prev.filter(p => p !== profession)
+        : [...prev, profession]
+    );
+  };
+
+  const handleMinAgeChange = (value: number) => {
+    if (value <= ageRange[1]) {
+      setAgeRange([value, ageRange[1]]);
+    }
+  };
+
+  const handleMaxAgeChange = (value: number) => {
+    if (value >= ageRange[0]) {
+      setAgeRange([ageRange[0], value]);
+    }
+  };
+
+  const clearAll = () => {
+    setAgeRange([18, 40]);
+    setSelectedProfessions([]);
+    setSelectedCountry('');
+    setSelectedState('');
+  };
+
+  const applyFilters = () => {
+    const filters: FilterState = {
+      ageRange,
+      selectedProfessions,
+      selectedCountry,
+      selectedState
+    };
+    onApply(filters);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end animate-fadeIn">
+      <div className="bg-white w-full rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto animate-slideUp">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition-colors duration-200"
+          >
+            <i className="ri-close-line"></i>
+          </button>
+        </div>
+
+        {/* Age Range */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-gray-800 mb-4">Age Range</h3>
+          
+          <div className="space-y-4">
+            {/* Min Age Slider */}
+            <div>
+              <label className="text-sm text-gray-600 mb-2 block">Minimum Age: {ageRange[0]}</label>
+              <input
+                type="range"
+                min="18"
+                max="40"
+                value={ageRange[0]}
+                onChange={(e) => handleMinAgeChange(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200"
+                style={{
+                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[0] - 18) / 22) * 100}%, #e5e7eb ${((ageRange[0] - 18) / 22) * 100}%, #e5e7eb 100%)`
+                }}
+              />
+            </div>
+            
+            {/* Max Age Slider */}
+            <div>
+              <label className="text-sm text-gray-600 mb-2 block">Maximum Age: {ageRange[1]}</label>
+              <input
+                type="range"
+                min="18"
+                max="40"
+                value={ageRange[1]}
+                onChange={(e) => handleMaxAgeChange(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200"
+                style={{
+                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[1] - 18) / 22) * 100}%, #e5e7eb ${((ageRange[1] - 18) / 22) * 100}%, #e5e7eb 100%)`
+                }}
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-between text-sm text-gray-600 mt-2">
+            <span>{ageRange[0]} years</span>
+            <span>{ageRange[1]} years</span>
+          </div>
+        </div>
+
+        {/* Location Filters */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-gray-800 mb-4">Location</h3>
+          
+          {/* Country Dropdown */}
+          <div className="mb-4">
+            <label className="text-sm text-gray-600 mb-2 block">Country</label>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all duration-200"
+            >
+              <option value="">Select Country</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {/* State Dropdown */}
+          <div>
+            <label className="text-sm text-gray-600 mb-2 block">State/Province</label>
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              disabled={!selectedCountry}
+              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              <option value="">Select State/Province</option>
+              {availableStates.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Profession */}
+        <div className="mb-8">
+          <h3 className="font-semibold text-gray-800 mb-3">Profession</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {professions.map((profession) => (
+              <button
+                key={profession}
+                onClick={() => toggleProfession(profession)}
+                className={`px-3 py-2 rounded-lg text-sm border transition-all duration-200 transform hover:scale-105 ${
+                  selectedProfessions.includes(profession)
+                    ? 'bg-white text-rose-500 border-rose-500 border-2 shadow-md'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300'
+                }`}
+              >
+                {profession}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex space-x-3">
+          <button
+            onClick={clearAll}
+            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button hover:bg-gray-50 transition-all duration-200"
+          >
+            Clear All
+          </button>
+          <button
+            onClick={applyFilters}
+            className="flex-1 py-3 bg-white border-2 border-rose-500 text-rose-500 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
