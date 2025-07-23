@@ -7,22 +7,25 @@ class ProfileController {
   async getProfile(req, res) {
     try {
       const userId = req.user.userId;
+      const userUuid = req.user.userUuid;
       
       const user = await User.findById(userId);
       if (!user) {
+        console.warn(`❌ Profile not found for user: ${userUuid} (${req.user.email})`);
         return res.status(404).json({
           success: false,
           error: 'User not found'
         });
       }
 
+      console.log(`✅ Profile retrieved for user: ${userUuid} (${user.email})`);
       res.status(200).json({
         success: true,
         profile: user.toPublicJSON()
       });
 
     } catch (error) {
-      console.error('❌ Get profile error:', error);
+      console.error(`❌ Get profile error for user: ${req.user?.userUuid}:`, error);
       res.status(500).json({
         success: false,
         error: 'Failed to get profile'
@@ -81,13 +84,16 @@ class ProfileController {
       );
 
       if (!user) {
+        console.warn(`❌ User not found for profile update: ${req.user.userUuid} (${req.user.email})`);
         return res.status(404).json({
           success: false,
           error: 'User not found'
         });
       }
 
-      console.log(`✅ Profile updated for user: ${user.email}`);
+      console.log(`✅ Profile updated for user: ${req.user.userUuid} (${user.email})`, {
+        updatedFields: Object.keys(sanitizedUpdates)
+      });
 
       res.status(200).json({
         success: true,

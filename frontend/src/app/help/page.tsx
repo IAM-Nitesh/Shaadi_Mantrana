@@ -1,7 +1,9 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import CustomIcon from '../../components/CustomIcon';
+import { ContactService } from '../../services/contact-service';
 
 export default function Help() {
   const faqs = [
@@ -61,20 +63,20 @@ export default function Help() {
             <p className="text-gray-600 mb-6">Our admin team is here to help you with any questions or issues.</p>
             
             <div className="space-y-3">
-              <a
-                href="mailto:shaadimantra.help@gmail.com"
+              <button
+                onClick={() => ContactService.handleEmailContact()}
                 className="flex items-center justify-center space-x-3 w-full bg-white border-2 border-rose-500 text-rose-500 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 <CustomIcon name="ri-mail-line" />
                 <span>Email Support</span>
-              </a>
-              <a
-                href="tel:+917086875013"
+              </button>
+              <button
+                onClick={() => ContactService.handlePhoneContact()}
                 className="flex items-center justify-center space-x-3 w-full border border-rose-500 text-rose-500 py-3 rounded-xl font-medium !rounded-button hover:bg-rose-50 transition-all duration-200 transform hover:scale-105"
               >
                 <CustomIcon name="ri-phone-line" />
                 <span>Call Admin</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -113,12 +115,15 @@ export default function Help() {
               </p>
             </div>
             <div className="space-y-2">
-              <a
-                href="mailto:shaadimantra.help@gmail.com?subject=Data Deletion Request&body=I would like to request deletion of all my personal data from Shaadi Mantra app.%0A%0APlease confirm that you will:%0A1. Delete my profile and all personal information%0A2. Remove all my photos and documents%0A3. Delete all my messages and conversations%0A4. Remove my account from the matching system%0A5. Delete all activity logs and preferences%0A%0AEmail associated with account: [Please specify]%0APhone number: [Please specify]%0AReason for deletion: [Optional]"
+              <button
+                onClick={() => ContactService.handleEmailContact(
+                  'Data Deletion Request',
+                  'I would like to request deletion of all my personal data from Shaadi Mantra app.\n\nPlease confirm that you will:\n1. Delete my profile and all personal information\n2. Remove all my photos and documents\n3. Delete all my messages and conversations\n4. Remove my account from the matching system\n5. Delete all activity logs and preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]\nReason for deletion: [Optional]'
+                )}
                 className="inline-block bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200"
               >
                 Request Complete Data Deletion
-              </a>
+              </button>
               <p className="text-xs text-gray-500 mt-2">
                 We will process your request within 30 days as per GDPR/CCPA requirements
               </p>
@@ -133,12 +138,15 @@ export default function Help() {
             <p className="text-sm text-gray-600 mb-4">
               Request a copy of all your personal data stored in our systems.
             </p>
-            <a
-              href="mailto:shaadimantra.help@gmail.com?subject=Data Export Request&body=I would like to request an export of all my personal data from Shaadi Mantra app.%0A%0APlease provide:%0A1. My complete profile information%0A2. All my photos and documents%0A3. Message history and conversations%0A4. Matching preferences and activity%0A5. Account settings and privacy preferences%0A%0AEmail associated with account: [Please specify]%0APhone number: [Please specify]"
+            <button
+              onClick={() => ContactService.handleEmailContact(
+                'Data Export Request',
+                'I would like to request an export of all my personal data from Shaadi Mantra app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]'
+              )}
               className="inline-block bg-white border-2 border-rose-500 text-rose-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-50 transition-all duration-200 shadow-lg"
             >
               Request Data Export
-            </a>
+            </button>
           </div>
         </div>
 

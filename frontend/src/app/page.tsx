@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { approvedEmails } from '../../../shared/services/approvedEmails';
+import { approvedEmails } from '../services/approvedEmails';
 import { AuthService } from '../services/auth-service';
 import { gsap } from 'gsap';
 
@@ -400,7 +400,11 @@ export default function Home() {
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
     try {
       const data = await AuthService.verifyOTP(email, otpCode);
-      localStorage.setItem('authToken', data.token);
+      // Backend returns token in data.session.accessToken format
+      const token = data.session?.accessToken || data.token;
+      if (token) {
+        localStorage.setItem('authToken', token);
+      }
       return data;
     } catch (error: any) {
       throw new Error(error.message || 'Invalid OTP');

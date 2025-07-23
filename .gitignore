@@ -5,6 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .yarn/
+package-lock.json
 
 # Next.js build outputs
 .next/
@@ -27,17 +28,19 @@ capacitor-cordova-android-plugins/build/
 *.aab
 *.ipa
 
-# Environment variables
+# Environment variables (keep .env.template and .env.example)
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
-.env.production.local
 .env.production
+.env.production.local
 
 # Logs
 *.log
 logs/
+*.log.*
 
 # Runtime data
 pids/
@@ -90,10 +93,32 @@ coverage/
 *.sqlite
 *.sqlite3
 
+# Email service sensitive files
+**/email-config.json
+**/smtp-config.json
+
 # Uploads directory (except demo files)
 backend/uploads/*
 !backend/uploads/.gitkeep
 !backend/uploads/profiles/.gitkeep
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Security keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# Local configuration overrides
+config.local.js
+config.local.json
+local-settings.json
 
 # Local development
 .vscode/

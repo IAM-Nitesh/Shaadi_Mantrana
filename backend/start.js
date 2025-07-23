@@ -1,50 +1,69 @@
 #!/usr/bin/env node
 
-// Application Startup Script with MongoDB Integration
-// This script initializes the database and starts the server
+// Application Startup Script with Environment-Based Configuration
+// This script initializes the database and starts the server with proper environment handling
 
-require('dotenv').config();
+// Load environment-specific configuration
+const config = require('./src/config');
 
 const express = require('express');
 const databaseService = require('./src/services/databaseService');
-const { USE_MONGODB } = require('./src/config/controllers');
 
 async function startApplication() {
   console.log('🚀 Starting ShaadiMantra Backend...\n');
+  
+  // Display environment information
+  console.log('🔧 Environment Configuration:');
+  console.log(`   Environment: ${config.NODE_ENV}`);
+  console.log(`   Data Source: ${config.DATA_SOURCE.toUpperCase()}`);
+  console.log(`   Port: ${config.PORT}`);
+  console.log(`   Database: ${config.DATABASE.URI ? config.DATABASE.URI.replace(/:[^:@]*@/, ':***@') : 'Static/Mock Mode'}`);
+  console.log(`   Debug Mode: ${config.FEATURES.DEBUG_MODE}`);
+  console.log('');
 
   try {
-    // Initialize database if using MongoDB
-    if (USE_MONGODB) {
+    // Initialize database connection only if using MongoDB data source
+    if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
       console.log('📊 Initializing MongoDB connection...');
       await databaseService.connect();
-      console.log('✅ MongoDB connected successfully\n');
+      console.log('✅ MongoDB connected successfully');
+      console.log(`📦 Database: ${config.DATABASE.NAME}\n`);
     } else {
-      console.log('💾 Running in memory-only mode (no MongoDB)\n');
+      console.log('📊 Using Static/Mock Data - No database connection needed');
+      console.log('✅ Mock controllers loaded successfully\n');
     }
 
     // Start the Express server
     console.log('🌐 Starting Express server...');
     const app = require('./src/index');
     
-    const PORT = process.env.PORT || 5001;
-    const server = app.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
-      console.log(`📍 Health check: http://localhost:${PORT}/health`);
-      console.log(`📍 API base: http://localhost:${PORT}/api`);
-      
-      if (USE_MONGODB) {
-        console.log(`📍 Database status: http://localhost:${PORT}/health/database`);
-      }
+    const server = app.listen(config.PORT, () => {
+      console.log(`✅ Server running on port ${config.PORT}`);
+      console.log(`📍 Health check: http://localhost:${config.PORT}/health`);
+      console.log(`📍 API base: http://localhost:${config.PORT}/api`);
+      console.log(`📍 Database status: http://localhost:${config.PORT}/health/database`);
       
       console.log('\n🎉 Application started successfully!');
       console.log('\n📚 Available API endpoints:');
       console.log('   POST /api/auth/send-otp - Send OTP to email');
       console.log('   POST /api/auth/verify-otp - Verify OTP and login');
-      console.log('   GET  /api/profiles/me - Get user profile');
-      console.log('   PUT  /api/profiles/me - Update user profile');
-      console.log('   GET  /api/profiles - Get profiles for matching');
-      console.log('   POST /api/invitations - Create invitation');
+      console.log('   POST /api/auth/refresh-token - Refresh JWT token');
+      console.log('   POST /api/auth/logout - Logout user');
+      console.log('   GET  /api/auth/profile - Get user profile (auth required)');
+      console.log('   GET  /api/profiles/me - Get user profile (auth required)');
+      console.log('   PUT  /api/profiles/me - Update user profile (auth required)');
+      console.log('   GET  /api/profiles - Get profiles for matching (auth required)');
+      console.log('   POST /api/upload/single - Upload single file (auth required)');
+      console.log('   POST /api/upload/multiple - Upload multiple files (auth required)');
+      console.log('   POST /api/invitations - Create invitation (auth required)');
       console.log('   GET  /api/invitations/:code - Get invitation by code');
+      
+      if (config.FEATURES.DEBUG_MODE) {
+        console.log('\n🐛 Debug mode is enabled');
+        console.log('   - Detailed error messages');
+        console.log('   - Request/response logging');
+        console.log('   - Development OTP responses');
+      }
     });
 
     // Graceful shutdown handling
@@ -54,7 +73,7 @@ async function startApplication() {
       server.close(async () => {
         console.log('🛑 HTTP server closed');
         
-        if (USE_MONGODB) {
+        if (config.DATABASE.URI) {
           try {
             await databaseService.disconnect();
             console.log('📊 Database disconnected');
@@ -93,12 +112,12 @@ async function startApplication() {
     console.error('❌ Failed to start application:', error.message);
     console.error('Stack:', error.stack);
     
-    if (USE_MONGODB && error.message.includes('connect')) {
+    if (error.message.includes('connect')) {
       console.log('\n💡 MongoDB connection failed. Try:');
-      console.log('   1. Check if MONGODB_URI is set correctly in .env');
-      console.log('   2. Ensure MongoDB is running (local) or accessible (Atlas)');
+      console.log('   1. Check if MONGODB_URI is set correctly in environment');
+      console.log('   2. Ensure MongoDB cluster is accessible (Atlas)');
       console.log('   3. Verify database credentials and network access');
-      console.log('   4. Set USE_MONGODB=false to run without database');
+      console.log('   4. Check if IP is whitelisted in MongoDB Atlas');
     }
     
     process.exit(1);
