@@ -1,7 +1,10 @@
 // Profile Service for Frontend
-// This service handles fetching profiles and uses configService for API base URL
+// This service handles fetching profiles and uses the same API config as auth service
 
-import configService from './configService';
+// API configuration for different environments
+const API_CONFIG = {
+  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500',
+};
 
 export interface Profile {
   id: number;
@@ -28,7 +31,7 @@ export interface FilterCriteria {
 export class ProfileService {
   // Fetch profiles based on filters and user preferences
   static async getProfiles(filters: FilterCriteria, page: number = 1, limit: number = 10): Promise<Profile[]> {
-    const apiBaseUrl = configService.apiBaseUrl;
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
       console.warn('API_BASE_URL not configured. Using demo profiles for development.');
@@ -76,7 +79,7 @@ export class ProfileService {
 
   // Record user interaction (like/dislike)
   static async recordInteraction(profileId: number, action: 'like' | 'dislike'): Promise<boolean> {
-    const apiBaseUrl = configService.apiBaseUrl;
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
       console.log(`Demo mode: ${action} recorded for profile ${profileId}`);
@@ -104,17 +107,17 @@ export class ProfileService {
     }
   }
 
-  // Get user's matches
-  static async getMatches(): Promise<Profile[]> {
-    const apiBaseUrl = configService.apiBaseUrl;
+  // Get user's profile
+  static async getUserProfile(): Promise<Profile | null> {
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.warn('API_BASE_URL not configured. Using demo matches for development.');
-      return [];
+      console.warn('API_BASE_URL not configured. Using demo profile for development.');
+      return null;
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/matches`, {
+      const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -123,14 +126,14 @@ export class ProfileService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch matches: ${response.statusText}`);
+        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
       }
 
       const data = await response.json();
-      return data.matches || [];
+      return data.profile || null;
     } catch (error) {
-      console.error('Error fetching matches:', error);
-      return [];
+      console.error('Error fetching user profile:', error);
+      return null;
     }
   }
 

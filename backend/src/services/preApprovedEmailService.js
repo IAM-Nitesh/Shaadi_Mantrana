@@ -3,11 +3,20 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
-// Pre-approved emails list (in production, this would be in database)
+// Pre-approved emails list with UUIDs (in production, this would be in database)
 let approvedEmails = [
-'niteshkumar9591@gmail.com',
+  {
+    email: 'niteshkumar9591@gmail.com',
+    userUuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', // Your specific UUID
+    role: 'admin',
+    addedAt: '2025-07-22T12:52:00.000Z'
+  }
 ];
+
+// For backward compatibility - extract email strings
+const emailList = approvedEmails.map(item => typeof item === 'string' ? item : item.email);
 
 // Email domains that are automatically approved
 const approvedDomains = [
@@ -18,7 +27,14 @@ const approvedDomains = [
 
 class PreApprovedEmailService {
   constructor() {
-    this.approvedEmails = new Set(approvedEmails.map(email => email.toLowerCase()));
+    this.approvedEmails = new Set(emailList.map(email => email.toLowerCase()));
+    this.approvedEmailsWithUuid = new Map(
+      approvedEmails.map(item => {
+        const email = typeof item === 'string' ? item : item.email;
+        const uuid = typeof item === 'string' ? uuidv4() : item.userUuid;
+        return [email.toLowerCase(), { ...item, email: email.toLowerCase(), userUuid: uuid }];
+      })
+    );
     this.approvedDomains = new Set(approvedDomains.map(domain => domain.toLowerCase()));
     this.pendingApprovals = new Map(); // For tracking pending email approvals
     this.loadApprovedEmails();
@@ -233,9 +249,23 @@ class PreApprovedEmailService {
   getAllApprovedEmails() {
     return {
       emails: Array.from(this.approvedEmails),
+      emailsWithUuid: Array.from(this.approvedEmailsWithUuid.values()),
       domains: Array.from(this.approvedDomains),
       stats: this.getStats()
     };
+  }
+
+  // Get UUID for approved email
+  getEmailUuid(email) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const emailData = this.approvedEmailsWithUuid.get(normalizedEmail);
+    return emailData ? emailData.userUuid : null;
+  }
+
+  // Get email info including UUID
+  getEmailInfo(email) {
+    const normalizedEmail = email.toLowerCase().trim();
+    return this.approvedEmailsWithUuid.get(normalizedEmail) || null;
   }
 }
 

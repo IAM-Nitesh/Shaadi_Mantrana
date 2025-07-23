@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Use environment variable or detect if we're in static mode
   USE_STATIC_DEMO: process.env.NODE_ENV === 'production' && !process.env.API_BASE_URL,
-  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001',
+  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500',
   
   // Production API endpoints - Updated to match backend routes
   SEND_OTP_ENDPOINT: '/api/auth/send-otp',
@@ -103,7 +103,17 @@ export class AuthService {
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      
+      // Store authentication token if verification successful
+      if (result.success && result.session) {
+        localStorage.setItem('authToken', result.session.accessToken);
+        localStorage.setItem('refreshToken', result.session.refreshToken);
+        localStorage.setItem('sessionId', result.session.sessionId);
+        localStorage.setItem('userEmail', email);
+      }
+      
+      return result;
     } catch (error: any) {
       // In development, provide more specific error messages
       if (process.env.NODE_ENV === 'development') {

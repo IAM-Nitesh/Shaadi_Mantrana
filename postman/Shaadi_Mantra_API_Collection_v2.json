@@ -1,0 +1,202 @@
+{
+  "info": {
+    "name": "Shaadi Mantra API Collection",
+    "description": "Complete API collection for testing Shaadi Mantra backend endpoints in both Static and MongoDB modes",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url_static",
+      "value": "http://localhost:4500",
+      "description": "Base URL for Static/Demo mode"
+    },
+    {
+      "key": "base_url_mongodb", 
+      "value": "http://localhost:5500",
+      "description": "Base URL for MongoDB mode"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "description": "JWT token received after authentication"
+    },
+    {
+      "key": "test_email",
+      "value": "niteshkumar9591@gmail.com",
+      "description": "Test email for authentication"
+    },
+    {
+      "key": "demo_otp",
+      "value": "123456",
+      "description": "Demo OTP for static mode testing"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Status",
+      "item": [
+        {
+          "name": "Health Check (Static)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url_static}}/health",
+              "host": ["{{base_url_static}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Health Check (MongoDB)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url_mongodb}}/health",
+              "host": ["{{base_url_mongodb}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication",
+      "item": [
+        {
+          "name": "Send OTP (Static)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_static}}/api/auth/send-otp",
+              "host": ["{{base_url_static}}"],
+              "path": ["api", "auth", "send-otp"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP (Static)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"otp\": \"{{demo_otp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_static}}/api/auth/verify-otp",
+              "host": ["{{base_url_static}}"],
+              "path": ["api", "auth", "verify-otp"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store the auth token for subsequent requests",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.session && jsonData.session.accessToken) {",
+                  "    pm.collectionVariables.set('auth_token', jsonData.session.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Profiles (Auth Required)",
+      "item": [
+        {
+          "name": "Get All Profiles (Static)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_static}}/api/profiles?page=1&limit=10",
+              "host": ["{{base_url_static}}"],
+              "path": ["api", "profiles"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Profile (Static)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_static}}/api/profiles/me",
+              "host": ["{{base_url_static}}"],
+              "path": ["api", "profiles", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Endpoints",
+      "item": [
+        {
+          "name": "Check Email Approval (Static)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_static}}/api/admin/check-email",
+              "host": ["{{base_url_static}}"],
+              "path": ["api", "admin", "check-email"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
