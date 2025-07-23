@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const config = require('../config');
 const dataSourceService = require('../services/dataSourceService');
+const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
 const preApprovedEmailService = require('../services/preApprovedEmailService');
 const { User } = require('../models');
@@ -38,6 +39,16 @@ const SecurityUtils = {
   sanitizeInput: (input) => {
     if (!input || typeof input !== 'string') return '';
     return input.trim().toLowerCase().replace(/[<>\"'&]/g, '').substring(0, 255);
+  },
+
+  // Sanitize email for logging (show only first 3 chars and domain)
+  sanitizeEmailForLog: (email) => {
+    if (!email) return 'unknown';
+    const parts = email.split('@');
+    if (parts.length !== 2) return 'invalid';
+    const username = parts[0];
+    const domain = parts[1];
+    return `${username.slice(0, 3)}***@${domain}`;
   },
 
   // OTP format validation
@@ -362,6 +373,8 @@ const authController = {
               referer: req.headers['referer']
             });
             
+            console.log(`❌ Email approval request: ${SecurityUtils.sanitizeEmailForLog(sanitizedEmail)}`);
+            
             return res.status(403).json({
               success: false,
               error: 'Email not pre-approved',
@@ -389,7 +402,7 @@ const authController = {
         });
       }
 
-      console.log(`✅ Email approved: ${sanitizedEmail} (${emailStatus.type})`);
+      console.log(`✅ Email approved: ${SecurityUtils.sanitizeEmailForLog(sanitizedEmail)} (${emailStatus.type})`);
 
       // Generate and store OTP
       const clientInfo = {
@@ -406,14 +419,14 @@ const authController = {
           const demoOTP = '123456';
           SecurityUtils.storeOTP(sanitizedEmail, demoOTP, clientInfo);
           
-          console.log(`📧 Demo OTP generated for ${sanitizedEmail}: ${demoOTP}`);
+          console.log(`📧 Demo OTP generated for ${SecurityUtils.sanitizeEmailForLog(sanitizedEmail)}: ${demoOTP}`);
           
           const processingTime = Date.now() - startTime;
           return res.status(200).json({ 
             success: true, 
             message: 'Demo OTP sent! Use: 123456',
             demo: true,
-            email: sanitizedEmail,
+            email: SecurityUtils.sanitizeEmailForLog(sanitizedEmail),
             processingTime: `${processingTime}ms`
           });
         } catch (error) {
@@ -440,16 +453,41 @@ const authController = {
         const realOTP = SecurityUtils.generateSecureOTP();
         SecurityUtils.storeOTP(sanitizedEmail, realOTP, clientInfo);
 
-        // TODO: Implement real email sending
-        console.log(`📧 OTP sent to ${sanitizedEmail.replace(/(.{3}).*(@.*)/, '$1***$2')}`);
-        
-        const processingTime = Date.now() - startTime;
-        return res.status(200).json({ 
-          success: true, 
-          message: 'OTP sent successfully',
-          email: sanitizedEmail,
-          processingTime: `${processingTime}ms`
-        });
+        // Send actual email using email service
+        try {
+          const emailResult = await emailService.sendOTP(sanitizedEmail, realOTP, {
+            userName: sanitizedEmail.split('@')[0] // Use email prefix as name
+          });
+          
+          console.log(`📧 OTP email sent successfully to ${SecurityUtils.sanitizeEmailForLog(sanitizedEmail)}`);
+          
+          const processingTime = Date.now() - startTime;
+          return res.status(200).json({ 
+            success: true, 
+            message: 'OTP sent successfully to your email',
+            email: SecurityUtils.sanitizeEmailForLog(sanitizedEmail),
+            messageId: emailResult.messageId,
+            processingTime: `${processingTime}ms`
+          });
+          
+        } catch (emailError) {
+          console.error('❌ Email sending failed:', emailError.message);
+          
+          // Fallback: Return OTP in development mode
+          if (config.NODE_ENV === 'development') {
+            const processingTime = Date.now() - startTime;
+            return res.status(200).json({ 
+              success: true, 
+              message: `Email service failed. Development OTP: ${realOTP}`,
+              email: sanitizedEmail,
+              otp: realOTP, // Only in development
+              emailError: emailError.message,
+              processingTime: `${processingTime}ms`
+            });
+          }
+          
+          throw emailError;
+        }
         
       } catch (error) {
         console.error('❌ OTP sending failed:', error);

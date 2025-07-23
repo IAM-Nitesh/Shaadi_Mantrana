@@ -11,6 +11,9 @@ dotenv.config();
 // Import database service
 const databaseService = require('./services/databaseService');
 
+// Import request logging middleware
+const { requestLogger, errorLogger } = require('./middleware/requestLogger');
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -84,6 +87,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Request logging middleware (before routes)
+app.use(requestLogger);
+
 // Serve static files (uploaded images)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -147,6 +153,7 @@ app.get('/api/database/status', async (req, res) => {
 });
 
 // Error handling middleware
+app.use(errorLogger); // Log errors with UUID tracking
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
