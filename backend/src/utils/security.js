@@ -101,10 +101,22 @@ const SecurityUtils = {
         SecurityUtils.rateLimitStore.delete(key);
       }
     }
+  },
+
+  // Sanitize user input to prevent XSS and other attacks
+  sanitizeInput: (input) => {
+    if (!input || typeof input !== 'string') return '';
+    
+    return input
+      .trim()
+      .replace(/[<>]/g, '') // Remove potential HTML tags
+      .replace(/[&]/g, '&amp;') // Escape ampersands
+      .replace(/['"]/g, '') // Remove quotes
+      .slice(0, 1000); // Limit length
   }
 };
 
 // Clean up rate limiting data every 5 minutes
 setInterval(SecurityUtils.cleanupRateLimit, 5 * 60 * 1000);
 
-module.exports = { SecurityUtils };
+module.exports = { SecurityUtils, sanitizeInput: SecurityUtils.sanitizeInput };

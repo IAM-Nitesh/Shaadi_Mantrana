@@ -3,14 +3,53 @@
 // Application Startup Script with MongoDB Integration
 // This script initializes the database and starts the server
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const express = require('express');
 const databaseService = require('./src/services/databaseService');
 const { USE_MONGODB } = require('./src/config/controllers');
 
+// MongoDB Configuration Verification Function
+function verifyMongoDBConfiguration() {
+  console.log('🔧 MongoDB Configuration Verification\n');
+
+  // Check current environment variables
+  console.log('📋 Current Environment Variables:');
+  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+  console.log(`DATA_SOURCE: ${process.env.DATA_SOURCE || 'not set'}`);
+  console.log(`USE_MONGODB: ${process.env.USE_MONGODB || 'not set'}`);
+  console.log(`MONGODB_URI: ${process.env.MONGODB_URI ? 'SET (hidden)' : 'not set'}`);
+
+  // Import and show controller configuration
+  console.log(`\n🎛️  Controller Configuration:`);
+  console.log(`USE_MONGODB flag: ${USE_MONGODB}`);
+
+  // Verify MongoDB setup
+  if (USE_MONGODB) {
+    console.log('\n✅ MongoDB Configuration Status: ENABLED');
+    console.log('   - Controllers will use MongoDB implementations');
+    console.log('   - Database service will attempt MongoDB connection');
+    
+    if (process.env.MONGODB_URI) {
+      console.log('   - MongoDB connection string is configured');
+    } else {
+      console.log('   - ⚠️  Warning: No MONGODB_URI found');
+    }
+  } else {
+    console.log('\n❌ MongoDB Configuration Status: DISABLED');
+    console.log('   - Controllers will use memory-based implementations');
+    console.log('   - No database connection will be attempted');
+  }
+
+  console.log('\n' + '='.repeat(50) + '\n');
+}
+
 async function startApplication() {
   console.log('🚀 Starting ShaadiMantra Backend...\n');
+
+  // Verify MongoDB configuration before starting
+  verifyMongoDBConfiguration();
 
   try {
     // Initialize database if using MongoDB
@@ -24,7 +63,7 @@ async function startApplication() {
 
     // Start the Express server
     console.log('🌐 Starting Express server...');
-    const app = require('./src/index');
+    const { app } = require('./src/index');
     
     const PORT = process.env.PORT || 5001;
     const server = app.listen(PORT, () => {

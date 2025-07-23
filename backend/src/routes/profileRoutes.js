@@ -9,6 +9,9 @@ router.get('/', authenticateToken, profileController.getProfiles);
 // Get current user profile (requires authentication)  
 router.get('/me', authenticateToken, profileController.getProfile);
 
+// Get specific user profile by UUID (requires authentication)
+router.get('/user/:userUuid', authenticateToken, profileController.getUserProfile);
+
 // Update user profile (requires authentication)
 router.put('/me', authenticateToken, profileController.updateProfile);
 

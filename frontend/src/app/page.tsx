@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { approvedEmails } from '../../../shared/services/approvedEmails';
 import { AuthService } from '../services/auth-service';
+import { AnimatedMessage } from '../components/AnimatedMessage';
 import { gsap } from 'gsap';
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
   const [showOtp, setShowOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
   const [isRouterReady, setIsRouterReady] = useState(false);
@@ -196,12 +198,26 @@ export default function Home() {
     try {
       return await AuthService.sendOTP(email);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to send OTP');
+      // Provide user-friendly error messages
+      let userMessage = 'Unable to send verification code. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('Network error') || error.message.includes('fetch')) {
+          userMessage = 'Connection issue. Please check your internet connection and try again.';
+        } else if (error.message.includes('unavailable')) {
+          userMessage = 'Authentication service is temporarily unavailable. Please try again later.';
+        } else {
+          userMessage = error.message;
+        }
+      }
+      
+      throw new Error(userMessage);
     }
   };
 
   const handleSendOtp = async () => {
     setError('');
+    setSuccess('');
     const cleanEmail = email.trim().toLowerCase();
     if (!validateEmail(cleanEmail)) {
       setError('Please enter a valid email address');
@@ -227,6 +243,9 @@ export default function Home() {
     
     try {
       await sendOtpToBackend(cleanEmail);
+      
+      // Show success message - concise and to the point
+      setSuccess('Code sent successfully');
       
       // First update the state
       setShowOtp(true);
@@ -384,10 +403,12 @@ export default function Home() {
   const handleResendOtp = async () => {
     if (!canResend) return;
     setError('');
+    setSuccess('');
     setIsLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
       await sendOtpToBackend(cleanEmail);
+      setSuccess('New code sent successfully');
       setCountdown(60);
       setCanResend(false);
     } catch (error: any) {
@@ -403,12 +424,32 @@ export default function Home() {
       localStorage.setItem('authToken', data.token);
       return data;
     } catch (error: any) {
-      throw new Error(error.message || 'Invalid OTP');
+      // Provide specific user-friendly error messages based on the server response
+      let userMessage = 'Invalid verification code. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('OTP not found') || error.message.includes('expired')) {
+          userMessage = 'Your verification code has expired. Please request a new one.';
+        } else if (error.message.includes('Invalid OTP') || error.message.includes('Invalid verification code')) {
+          userMessage = 'Incorrect verification code. Please check and try again.';
+        } else if (error.message.includes('Too many')) {
+          userMessage = 'Too many attempts. Please request a new verification code.';
+        } else if (error.message.includes('Network error') || error.message.includes('fetch')) {
+          userMessage = 'Connection issue. Please check your internet and try again.';
+        } else if (error.message.includes('unavailable')) {
+          userMessage = 'Service temporarily unavailable. Please try again in a moment.';
+        } else if (error.message.includes('Failed to verify')) {
+          userMessage = 'Verification failed. Please request a new code and try again.';
+        }
+      }
+      
+      throw new Error(userMessage);
     }
   };
 
   const handleVerifyOtp = async () => {
     setError('');
+    setSuccess('');
     if (otp.length < 6) {
       setError('Please enter complete 6-digit OTP');
       return;
@@ -584,16 +625,29 @@ export default function Home() {
                 </p>
               </div>
 
+              {/* Animated Messages */}
+              {success && (
+                <div className="mb-4">
+                  <AnimatedMessage
+                    type="success"
+                    message={success}
+                    isVisible={!!success}
+                    onClose={() => setSuccess('')}
+                    autoHide={true}
+                    duration={4000}
+                  />
+                </div>
+              )}
+
               {error && (
-                <div className="mb-4 bg-red-50 border-2 border-red-200 rounded-xl p-3">
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0 animate-pulse">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <p className="text-red-700 text-sm font-medium">{error}</p>
-                  </div>
+                <div className="mb-4">
+                  <AnimatedMessage
+                    type="error"
+                    message={error}
+                    isVisible={!!error}
+                    onClose={() => setError('')}
+                    autoHide={false}
+                  />
                 </div>
               )}
 
@@ -835,17 +889,29 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Error Display */}
+                  {/* Animated Messages */}
+                  {success && (
+                    <div className="mb-4">
+                      <AnimatedMessage
+                        type="success"
+                        message={success}
+                        isVisible={!!success}
+                        onClose={() => setSuccess('')}
+                        autoHide={true}
+                        duration={4000}
+                      />
+                    </div>
+                  )}
+
                   {error && (
-                    <div className="error-message bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <p className="text-red-700 text-sm font-medium">{error}</p>
-                      </div>
+                    <div className="mb-4">
+                      <AnimatedMessage
+                        type="error"
+                        message={error}
+                        isVisible={!!error}
+                        onClose={() => setError('')}
+                        autoHide={false}
+                      />
                     </div>
                   )}
 

@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Use environment variable or detect if we're in static mode
   USE_STATIC_DEMO: process.env.NODE_ENV === 'production' && !process.env.API_BASE_URL,
-  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001',
+  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500',
   
   // Production API endpoints - Updated to match backend routes
   SEND_OTP_ENDPOINT: '/api/auth/send-otp',
@@ -47,7 +47,21 @@ export class AuthService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        
+        // Convert technical errors to user-friendly messages
+        let userMessage = 'Code verification failed. Try again.';
+        
+        if (response.status === 429) {
+          userMessage = 'Too many attempts. Wait a moment.';
+        } else if (response.status === 403) {
+          userMessage = 'Email not approved. Contact support.';
+        } else if (response.status >= 500) {
+          userMessage = 'Server issue. Try again shortly.';
+        } else if (errorData.error && !errorData.error.includes('HTTP')) {
+          userMessage = errorData.error;
+        }
+        
+        throw new Error(userMessage);
       }
       
       return await response.json();
@@ -100,7 +114,29 @@ export class AuthService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        
+        // Convert technical errors to user-friendly messages
+        let userMessage = 'Invalid code. Please check and try again.';
+        
+        if (response.status === 400) {
+          userMessage = 'Code expired or invalid. Request new one.';
+        } else if (response.status === 429) {
+          userMessage = 'Too many attempts. Request new code.';
+        } else if (response.status === 500) {
+          userMessage = 'Login service unavailable. Try again.';
+        } else if (errorData.error) {
+          if (errorData.error.includes('expired')) {
+            userMessage = 'Code expired. Request new one.';
+          } else if (errorData.error.includes('not found')) {
+            userMessage = 'Invalid code. Check and try again.';
+          } else if (errorData.error.includes('Failed to verify')) {
+            userMessage = 'Verification failed. Try again.';
+          } else if (!errorData.error.includes('HTTP')) {
+            userMessage = errorData.error;
+          }
+        }
+        
+        throw new Error(userMessage);
       }
       
       return await response.json();

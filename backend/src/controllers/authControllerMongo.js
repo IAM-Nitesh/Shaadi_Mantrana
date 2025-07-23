@@ -120,8 +120,15 @@ class AuthController {
         clientIP
       });
 
-      // In production, send actual email via your email service
-      console.log(`📧 OTP for ${sanitizedEmail}: ${otp}`);
+      // Send OTP via email service
+      try {
+        const emailService = require('../services/emailService');
+        await emailService.sendOTP(sanitizedEmail, otp);
+        console.log(`✅ OTP sent to ${sanitizedEmail}: ${otp}`);
+      } catch (emailError) {
+        console.error('❌ Email service error:', emailError);
+        console.log(`📧 OTP for ${sanitizedEmail}: ${otp} (email fallback)`);
+      }
 
       res.status(200).json({
         success: true,
@@ -204,7 +211,7 @@ class AuthController {
       let user = await User.findOne({ email: sanitizedEmail });
       
       if (!user) {
-        // Create new user
+        // Create new user with explicit field structure
         user = new User({
           email: sanitizedEmail,
           verification: {
@@ -212,10 +219,36 @@ class AuthController {
             verifiedAt: new Date(),
             approvalType: 'direct'
           },
-          status: 'active'
+          status: 'active',
+          // Explicitly define education as empty object to avoid conflicts
+          education: {},
+          // Initialize other potentially conflicting fields
+          preferences: {
+            educationPreferences: {
+              minimumDegree: '',
+              preferredInstitutions: []
+            }
+          }
         });
-        await user.save();
-        console.log(`✅ New user created: ${sanitizedEmail}`);
+        
+        try {
+          await user.save();
+          console.log(`✅ New user created: ${sanitizedEmail}`);
+        } catch (saveError) {
+          console.error('❌ User creation error:', saveError);
+          // Try to create user with minimal fields
+          user = new User({
+            email: sanitizedEmail,
+            verification: {
+              isVerified: true,
+              verifiedAt: new Date(),
+              approvalType: 'direct'
+            },
+            status: 'active'
+          });
+          await user.save();
+          console.log(`✅ New user created with minimal fields: ${sanitizedEmail}`);
+        }
       } else {
         // Update existing user
         user.verification.isVerified = true;
@@ -234,8 +267,22 @@ class AuthController {
           user.loginHistory = user.loginHistory.slice(-10);
         }
         
-        await user.save();
-        console.log(`✅ User login: ${sanitizedEmail}`);
+        try {
+          await user.save();
+          console.log(`✅ User login: ${sanitizedEmail}`);
+        } catch (updateError) {
+          console.error('❌ User update error:', updateError);
+          // If update fails, just update verification fields
+          await User.updateOne(
+            { email: sanitizedEmail },
+            { 
+              'verification.isVerified': true,
+              'verification.verifiedAt': new Date(),
+              lastActive: new Date()
+            }
+          );
+          console.log(`✅ User verification updated: ${sanitizedEmail}`);
+        }
       }
 
       // Generate JWT session
@@ -246,8 +293,8 @@ class AuthController {
         sessionId
       };
 
-      const accessToken = jwt.sign(payload, config.jwtSecret, { expiresIn: '24h' });
-      const refreshToken = jwt.sign({ sessionId }, config.jwtSecret, { expiresIn: '7d' });
+      const accessToken = jwt.sign(payload, config.JWT.SECRET, { expiresIn: '24h' });
+      const refreshToken = jwt.sign({ sessionId }, config.JWT.SECRET, { expiresIn: '7d' });
 
       // Store session
       sessions.set(sessionId, {

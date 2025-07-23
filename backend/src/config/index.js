@@ -17,11 +17,15 @@ module.exports = {
   
   // Email configuration
   EMAIL: {
+    ENABLED: process.env.ENABLE_EMAIL === 'true',
+    SERVICE: process.env.EMAIL_SERVICE || 'gmail',
     SMTP_HOST: process.env.SMTP_HOST,
     SMTP_PORT: process.env.SMTP_PORT || 587,
+    SMTP_SECURE: process.env.SMTP_SECURE === 'true',
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
-    FROM_EMAIL: process.env.FROM_EMAIL || 'noreply@shaadimantra.com'
+    EMAIL_FROM: process.env.EMAIL_FROM || process.env.SMTP_USER,
+    EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shaadi Mantra'
   },
   
   // JWT configuration (for future use)
@@ -39,7 +43,7 @@ module.exports = {
   // Feature flags
   FEATURES: {
     USE_STATIC_DEMO: process.env.USE_STATIC_DEMO === 'true' || !process.env.DATABASE_URL,
-    ENABLE_EMAIL: process.env.ENABLE_EMAIL === 'true' && process.env.SMTP_HOST,
+    ENABLE_EMAIL: process.env.ENABLE_EMAIL === 'true',
     ENABLE_RATE_LIMITING: process.env.ENABLE_RATE_LIMITING !== 'false'
   }
 };

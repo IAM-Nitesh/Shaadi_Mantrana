@@ -5,9 +5,14 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node start.js",
+    "start:dev": "NODE_ENV=development USE_MONGODB=true node start.js",
+    "start:prod": "NODE_ENV=production USE_MONGODB=true node start.js",
     "start:legacy": "node src/index.js",
     "dev": "nodemon start.js",
+    "dev:mongo": "NODE_ENV=development USE_MONGODB=true nodemon start.js",
     "dev:legacy": "nodemon src/index.js",
+    "ports:check": "node port-config.js check",
+    "ports:kill": "node port-config.js kill",
     "test": "jest",
     "test:models": "node test-models.js",
     "lint": "eslint src/",
@@ -24,7 +29,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
     "multer": "^2.0.2",
-    "nodemailer": "^7.0.5"
+    "nodemailer": "^7.0.5",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "eslint": "^8.50.0",

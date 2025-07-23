@@ -1,7 +1,7 @@
 // Controller Configuration - Switch between memory-based and MongoDB-based controllers
-// Set USE_MONGODB=true to use MongoDB controllers, false for memory-based controllers
+// Set USE_MONGODB=true or DATA_SOURCE=mongodb to use MongoDB controllers
 
-const USE_MONGODB = process.env.USE_MONGODB === 'true' || false;
+const USE_MONGODB = process.env.USE_MONGODB === 'true' || process.env.DATA_SOURCE === 'mongodb' || false;
 
 // Controller imports
 const authController = USE_MONGODB 

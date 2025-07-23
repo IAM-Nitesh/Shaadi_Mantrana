@@ -1,9 +1,10 @@
-// MongoDB-integrated Profile Controller
+// MongoDB-integrated Profile Controller with Comprehensive CRUD Operations
 const { User } = require('../models');
 const { sanitizeInput } = require('../utils/security');
+const mongoose = require('mongoose');
 
 class ProfileController {
-  // Get user profile
+  // Get user's own profile (detailed view)
   async getProfile(req, res) {
     try {
       const userId = req.user.userId;
@@ -18,7 +19,7 @@ class ProfileController {
 
       res.status(200).json({
         success: true,
-        profile: user.toPublicJSON()
+        profile: user.toDetailedJSON()
       });
 
     } catch (error) {
@@ -30,32 +31,89 @@ class ProfileController {
     }
   }
 
-  // Update user profile
+  // Get other user's profile (public view)
+  async getUserProfile(req, res) {
+    try {
+      const { userUuid } = req.params;
+      const currentUserId = req.user.userId;
+      
+      const user = await User.findOne({ userUuid, status: 'active' });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      // Check if current user has permission to view this profile
+      const currentUser = await User.findById(currentUserId);
+      const canView = this.canViewProfile(currentUser, user);
+
+      if (!canView) {
+        return res.status(403).json({
+          success: false,
+          error: 'Profile not accessible'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        profile: user.toPublicJSON()
+      });
+
+    } catch (error) {
+      console.error('❌ Get user profile error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get user profile'
+      });
+    }
+  }
+
+  // Update user profile with comprehensive validation
   async updateProfile(req, res) {
     try {
       const userId = req.user.userId;
       const updates = req.body;
 
-      // Validate and sanitize inputs
-      const allowedFields = ['name', 'age', 'profession', 'location', 'education', 'about', 'interests'];
+      // Validate and sanitize updates
       const sanitizedUpdates = {};
-
-      for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
-          if (field === 'age') {
-            const age = parseInt(updates[field]);
-            if (age >= 18 && age <= 80) {
-              sanitizedUpdates[`profile.${field}`] = age;
+      
+      for (const [field, value] of Object.entries(updates)) {
+        if (this.isValidField(field) && value !== undefined && value !== null) {
+          // Handle nested objects
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            // For nested objects like location, education
+            if (field === 'location') {
+              sanitizedUpdates[`profile.${field}`] = {
+                city: sanitizeInput(value.city),
+                state: sanitizeInput(value.state),
+                country: sanitizeInput(value.country)
+              };
+            } else if (field === 'education') {
+              sanitizedUpdates[`profile.${field}`] = {
+                degree: sanitizeInput(value.degree),
+                institution: sanitizeInput(value.institution),
+                year: value.year ? parseInt(value.year) : undefined
+              };
             }
-          } else if (field === 'interests') {
-            if (Array.isArray(updates[field])) {
-              sanitizedUpdates[`profile.${field}`] = updates[field]
+          }
+          // Handle arrays (like interests, photos)
+          else if (Array.isArray(value)) {
+            if (field === 'interests') {
+              sanitizedUpdates[`profile.${field}`] = value
                 .slice(0, 10) // Max 10 interests
                 .map(interest => sanitizeInput(interest))
                 .filter(interest => interest.length > 0);
+            } else if (field === 'images') {
+              sanitizedUpdates[`profile.${field}`] = value
+                .slice(0, 6) // Max 6 photos
+                .filter(photo => photo && photo.url);
             }
-          } else {
-            const sanitized = sanitizeInput(updates[field]);
+          }
+          // Handle simple fields
+          else {
+            const sanitized = sanitizeInput(value.toString());
             if (sanitized) {
               sanitizedUpdates[`profile.${field}`] = sanitized;
             }
@@ -222,6 +280,36 @@ class ProfileController {
         error: 'Failed to get profiles'
       });
     }
+  }
+
+  // Helper method to check if user can view profile
+  canViewProfile(currentUser, targetUser) {
+    // Basic visibility rules
+    if (!targetUser || targetUser.status !== 'active') {
+      return false;
+    }
+
+    // Check privacy settings
+    if (targetUser.privacy?.profileVisibility === 'private') {
+      return false;
+    }
+
+    if (targetUser.privacy?.profileVisibility === 'verified' && 
+        !currentUser.verification?.isVerified) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Helper method to validate updateable fields
+  isValidField(field) {
+    const allowedFields = [
+      'name', 'age', 'location', 'profession', 'company', 'education',
+      'about', 'interests', 'images', 'height', 'religion', 'caste',
+      'motherTongue', 'gender', 'maritalStatus', 'hobbies'
+    ];
+    return allowedFields.includes(field);
   }
 }
 
