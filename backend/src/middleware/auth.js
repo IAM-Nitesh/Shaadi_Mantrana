@@ -35,6 +35,7 @@ class JWTSessionManager {
   static createSession(user) {
     const payload = {
       userId: user.id || user.email,
+      userUuid: user.userUuid, // Include UUID for monitoring
       email: user.email,
       verified: user.verified || true,
       sessionId: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
@@ -176,14 +177,18 @@ const authenticateToken = (req, res, next) => {
       });
     }
 
-    // Add user info to request
+    // Add user info to request with UUID for monitoring
     req.user = {
       userId: decoded.userId,
+      userUuid: decoded.userUuid, // Include UUID for monitoring
       email: decoded.email,
       verified: decoded.verified,
       sessionId: decoded.sessionId
     };
 
+    // Add UUID to response headers for better tracking
+    res.set('X-User-UUID', decoded.userUuid);
+    
     next();
   } catch (error) {
     console.error('Token verification error:', error);

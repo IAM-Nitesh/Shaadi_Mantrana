@@ -6,13 +6,15 @@ const jwt = require('jsonwebtoken');
 const { validateEmail, sanitizeInput, hashPassword, verifyPassword, generateSessionToken } = require('../utils/security');
 const config = require('../config');
 const preApprovedEmailService = require('../services/preApprovedEmailService');
+const emailService = require('../services/emailService');
+const { JWTSessionManager } = require('../middleware/auth');
 const { User } = require('../models');
-
-// OTP store with expiration (use Redis in production)
-const otpStore = new Map();
 
 // Session management
 const sessions = new Map();
+
+// OTP store with expiration (use Redis in production)
+const otpStore = new Map();
 
 // Simple rate limiting (use Redis in production)
 const rateLimitStore = new Map();
@@ -62,11 +64,49 @@ const SecurityUtils = {
     recentAttempts.push(now);
     rateLimitStore.set(key, recentAttempts);
     return { allowed: true, remaining: limit - recentAttempts.length };
+  },
+
+  // Store OTP with expiration
+  storeOTP: (email, otp, clientInfo = {}) => {
+    const expirationTime = Date.now() + (10 * 60 * 1000); // 10 minutes
+    otpStore.set(email, {
+      otp,
+      expiresAt: expirationTime,
+      attempts: 0,
+      clientInfo,
+      createdAt: Date.now()
+    });
+  },
+
+  // Verify OTP
+  verifyOTP: (email, otp) => {
+    const stored = otpStore.get(email);
+    if (!stored) {
+      return { valid: false, reason: 'OTP not found or expired' };
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      otpStore.delete(email);
+      return { valid: false, reason: 'OTP expired' };
+    }
+
+    if (stored.attempts >= 3) {
+      otpStore.delete(email);
+      return { valid: false, reason: 'Too many attempts' };
+    }
+
+    if (stored.otp !== otp) {
+      stored.attempts++;
+      return { valid: false, reason: 'Invalid OTP' };
+    }
+
+    otpStore.delete(email);
+    return { valid: true };
   }
 };
 
 class AuthController {
-  // Send OTP for email verification
+  // Send OTP for email verification (No storage - for external service integration)
   async sendOTP(req, res) {
     try {
       const { email } = req.body;
@@ -87,15 +127,34 @@ class AuthController {
         });
       }
 
-      // Rate limiting
+      // Rate limiting with increased daily limits
       const clientIP = SecurityUtils.getClientIP(req);
-      const rateLimit = SecurityUtils.checkRateLimit(`${clientIP}-otp`, 5, 15 * 60 * 1000);
       
-      if (!rateLimit.allowed) {
+      // Daily rate limit (24 hours) - more generous for legitimate use
+      const dailyLimit = config.API.RATE_LIMIT.OTP_DAILY_LIMIT;
+      const dailyWindow = 24 * 60 * 60 * 1000; // 24 hours
+      const dailyRateLimit = SecurityUtils.checkRateLimit(`${clientIP}-daily-otp`, dailyLimit, dailyWindow);
+      
+      if (!dailyRateLimit.allowed) {
+        return res.status(429).json({
+          success: false,
+          error: 'Daily OTP limit exceeded',
+          message: `You have exceeded the daily limit of ${dailyLimit} OTP requests. Please try again tomorrow.`,
+          retryAfter: dailyRateLimit.retryAfter
+        });
+      }
+      
+      // Short-term rate limit to prevent spam (15 minutes) - increased from 5 to 10+
+      const shortTermLimit = config.API.RATE_LIMIT.OTP_SHORT_TERM_LIMIT;
+      const shortTermWindow = 15 * 60 * 1000; // 15 minutes
+      const shortTermRateLimit = SecurityUtils.checkRateLimit(`${clientIP}-otp`, shortTermLimit, shortTermWindow);
+      
+      if (!shortTermRateLimit.allowed) {
         return res.status(429).json({
           success: false,
           error: 'Too many OTP requests',
-          retryAfter: rateLimit.retryAfter
+          message: `Please wait ${Math.ceil(shortTermRateLimit.retryAfter / 60)} minutes before requesting another OTP.`,
+          retryAfter: shortTermRateLimit.retryAfter
         });
       }
 
@@ -108,26 +167,49 @@ class AuthController {
         });
       }
 
-      // Generate and store OTP
+      // Generate OTP and store it
       const otp = SecurityUtils.generateSecureOTP();
-      const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
-
-      otpStore.set(sanitizedEmail, {
-        otp,
-        expiresAt,
-        attempts: 0,
-        createdAt: Date.now(),
-        clientIP
+      
+      // Store OTP for verification
+      SecurityUtils.storeOTP(sanitizedEmail, otp, {
+        clientIP,
+        userAgent: req.headers['user-agent']
       });
 
-      // In production, send actual email via your email service
-      console.log(`📧 OTP for ${sanitizedEmail}: ${otp}`);
-
-      res.status(200).json({
-        success: true,
-        message: 'OTP sent successfully',
-        expiresIn: 600 // 10 minutes in seconds
-      });
+      // Send OTP via email service
+      try {
+        const emailResult = await emailService.sendOTP(sanitizedEmail, otp, {
+          userName: sanitizedEmail.split('@')[0]
+        });
+        
+        console.log(`✅ OTP sent to ${sanitizedEmail}: ${emailResult.messageId || 'console'}`);
+        
+        res.status(200).json({
+          success: true,
+          message: 'OTP sent successfully to your email',
+          email: sanitizedEmail,
+          method: emailResult.method,
+          // Note: In production, don't include OTP in response
+          ...(config.NODE_ENV === 'development' && { otp })
+        });
+        
+      } catch (emailError) {
+        console.error('❌ Email sending failed:', emailError.message);
+        
+        // Fallback for development
+        if (config.NODE_ENV === 'development') {
+          console.log(`📧 Development fallback - OTP for ${sanitizedEmail}: ${otp}`);
+          return res.status(200).json({
+            success: true,
+            message: `Email service failed. Development OTP: ${otp}`,
+            email: sanitizedEmail,
+            otp: otp,
+            emailError: emailError.message
+          });
+        }
+        
+        throw emailError;
+      }
 
     } catch (error) {
       console.error('❌ Send OTP error:', error);
@@ -138,7 +220,7 @@ class AuthController {
     }
   }
 
-  // Verify OTP and create/login user
+  // Verify OTP and create/login user (OTP verified externally)
   async verifyOTP(req, res) {
     try {
       const { email, otp } = req.body;
@@ -153,9 +235,13 @@ class AuthController {
       const sanitizedEmail = SecurityUtils.sanitizeInput(email);
       const sanitizedOTP = otp.toString().trim();
 
-      // Rate limiting for verification
+      // Rate limiting for verification - increased limits
       const clientIP = SecurityUtils.getClientIP(req);
-      const rateLimit = SecurityUtils.checkRateLimit(`${clientIP}-verify`, 5, 15 * 60 * 1000);
+      
+      // More generous verification limits since users might make typos
+      const verifyLimit = config.API.RATE_LIMIT.OTP_VERIFY_LIMIT;
+      const verifyWindow = 15 * 60 * 1000; // 15 minutes
+      const rateLimit = SecurityUtils.checkRateLimit(`${clientIP}-verify`, verifyLimit, verifyWindow);
       
       if (!rateLimit.allowed) {
         return res.status(429).json({
@@ -165,57 +251,31 @@ class AuthController {
         });
       }
 
-      // Check OTP
-      const otpData = otpStore.get(sanitizedEmail);
-      if (!otpData) {
+      // Verify OTP
+      const otpResult = SecurityUtils.verifyOTP(sanitizedEmail, sanitizedOTP);
+      if (!otpResult.valid) {
         return res.status(400).json({
           success: false,
-          error: 'OTP not found or expired'
+          error: otpResult.reason
         });
       }
-
-      if (Date.now() > otpData.expiresAt) {
-        otpStore.delete(sanitizedEmail);
-        return res.status(400).json({
-          success: false,
-          error: 'OTP has expired'
-        });
-      }
-
-      if (otpData.otp !== sanitizedOTP) {
-        otpData.attempts += 1;
-        if (otpData.attempts >= 3) {
-          otpStore.delete(sanitizedEmail);
-          return res.status(400).json({
-            success: false,
-            error: 'Too many invalid attempts'
-          });
-        }
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid OTP'
-        });
-      }
-
-      // OTP is valid, remove it
-      otpStore.delete(sanitizedEmail);
 
       // Find or create user in MongoDB
       let user = await User.findOne({ email: sanitizedEmail });
       
       if (!user) {
-        // Create new user
+        // Create new user with UUID
         user = new User({
           email: sanitizedEmail,
           verification: {
             isVerified: true,
             verifiedAt: new Date(),
-            approvalType: 'direct'
+            approvalType: 'otp'
           },
           status: 'active'
         });
         await user.save();
-        console.log(`✅ New user created: ${sanitizedEmail}`);
+        console.log(`✅ New user created: ${sanitizedEmail} (UUID: ${user.userUuid})`);
       } else {
         // Update existing user
         user.verification.isVerified = true;
@@ -235,39 +295,31 @@ class AuthController {
         }
         
         await user.save();
-        console.log(`✅ User login: ${sanitizedEmail}`);
+        console.log(`✅ User login: ${sanitizedEmail} (UUID: ${user.userUuid})`);
       }
 
-      // Generate JWT session
-      const sessionId = crypto.randomUUID();
-      const payload = {
+      // Create JWT session using the same system as the main auth controller
+      const sessionData = {
         userId: user._id,
+        userUuid: user.userUuid,
         email: user.email,
-        sessionId
-      };
-
-      const accessToken = jwt.sign(payload, config.jwtSecret, { expiresIn: '24h' });
-      const refreshToken = jwt.sign({ sessionId }, config.jwtSecret, { expiresIn: '7d' });
-
-      // Store session
-      sessions.set(sessionId, {
-        userId: user._id,
-        email: user.email,
-        createdAt: Date.now(),
-        lastAccess: Date.now(),
+        verified: true,
+        loginTime: new Date().toISOString(),
         clientIP,
         userAgent: req.headers['user-agent']
-      });
+      };
+
+      const session = JWTSessionManager.createSession(sessionData);
 
       res.status(200).json({
         success: true,
         message: 'Authentication successful',
         user: user.toPublicJSON(),
         session: {
-          accessToken,
-          refreshToken,
-          expiresIn: 86400, // 24 hours
-          sessionId
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          expiresIn: session.expiresIn,
+          sessionId: session.sessionId
         }
       });
 
@@ -340,7 +392,11 @@ class AuthController {
         sessionId: decoded.sessionId
       };
 
-      const newAccessToken = jwt.sign(payload, config.jwtSecret, { expiresIn: '24h' });
+      const newAccessToken = jwt.sign(payload, config.jwtSecret, { 
+        expiresIn: '24h',
+        issuer: 'shaadi-mantra-api',
+        audience: 'shaadi-mantra-app'
+      });
 
       res.status(200).json({
         success: true,

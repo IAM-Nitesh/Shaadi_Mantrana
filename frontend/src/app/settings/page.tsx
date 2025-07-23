@@ -485,16 +485,14 @@ export default function Settings() {
               <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 bg-clip-text text-transparent mb-3">
                 Ready to log out?
               </h3>
-              <p className="text-slate-600 text-base leading-relaxed font-medium">
-                We'll miss you! You can always come back<br />
-                by signing in again.
+              <p className="text-slate-600 text-base leading-relaxed font-medium text-center">
+                We'll miss you! You can always come back by signing in again.
               </p>
             </div>
 
-            {/* Decorative Elements */}
+            {/* Decorative Elements - Removed pink circles */}
             <div className="relative mb-8">
-              <div className="absolute left-1/2 transform -translate-x-1/2 w-24 h-px bg-gradient-to-r from-transparent via-rose-200 to-transparent"></div>
-              <div className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1 w-2 h-2 bg-rose-300 rounded-full"></div>
+              <div className="absolute left-1/2 transform -translate-x-1/2 w-24 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
             </div>
 
             {/* Action Buttons */}
