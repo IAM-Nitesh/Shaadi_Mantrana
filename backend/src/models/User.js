@@ -1,7 +1,16 @@
 // User Model - MongoDB Schema
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 
 const userSchema = new mongoose.Schema({
+  // Unique User Identifier
+  userUuid: {
+    type: String,
+    required: true,
+    unique: true,
+    default: uuidv4
+  },
+  
   // Basic Information
   email: {
     type: String,
@@ -166,6 +175,8 @@ userSchema.methods.toPublicJSON = function() {
   
   return {
     id: user._id,
+    userUuid: user.userUuid,
+    email: user.email,
     profile: user.profile,
     verification: {
       isVerified: user.verification.isVerified

@@ -14,57 +14,26 @@ class DatabaseService {
     this.mongoClient = null; // Native MongoDB client
   }
 
-  // Get MongoDB connection string based on environment
+  // Get MongoDB connection string based on environment (using new config)
   getConnectionString() {
-    const env = config.NODE_ENV;
-    
-    // Check for explicit MONGODB_URI first (Atlas connection)
-    if (process.env.MONGODB_URI) {
-      return process.env.MONGODB_URI;
-    }
-    
-    // Production environment - use DATABASE_URL or MongoDB Atlas
-    if (env === 'production') {
-      if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('mongodb')) {
-        return process.env.DATABASE_URL;
-      }
-      throw new Error('Production MongoDB connection string not found. Set MONGODB_URI or DATABASE_URL');
-    }
-    
-    // Development environment
-    if (env === 'development') {
-      // Check for local MongoDB Atlas connection for dev
-      if (process.env.MONGODB_DEV_URI) {
-        return process.env.MONGODB_DEV_URI;
-      }
-      
-      // Default to local MongoDB
-      const { HOST, PORT, NAME } = config.DATABASE;
-      return `mongodb://${HOST}:${PORT}/${NAME}`;
-    }
-    
-    // Test environment
-    if (env === 'test') {
-      return process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/shaadimantra_test';
-    }
-    
-    // Fallback
-    return config.DATABASE.URL;
+    // Use the environment-based URI from config
+    return config.DATABASE.URI;
   }
 
   // Get connection options based on environment
   getConnectionOptions() {
     const connectionString = this.getConnectionString();
+    
+    // Return empty options if no connection string (static/mock mode)
+    if (!connectionString) {
+      return {};
+    }
+    
     const isAtlas = connectionString.includes('mongodb+srv://');
     
+    // Use options from config with Atlas detection
     const baseOptions = {
-      // Connection options
-      maxPoolSize: 10, // Maintain up to 10 socket connections
-      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      family: 4, // Use IPv4, skip trying IPv6
-      
-      // Buffering options
+      ...config.DATABASE.OPTIONS,
       bufferCommands: false, // Disable mongoose buffering
     };
 
@@ -112,6 +81,14 @@ class DatabaseService {
       }
 
       const connectionString = this.getConnectionString();
+      
+      // Skip connection if no connection string (static/mock mode)
+      if (!connectionString) {
+        console.log('📊 No database connection needed (static/mock mode)');
+        this.isConnected = true; // Mark as "connected" for static mode
+        return;
+      }
+      
       const options = this.getConnectionOptions();
       const isAtlas = connectionString.includes('mongodb+srv://');
 
