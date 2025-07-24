@@ -52,6 +52,8 @@ export default function CustomIcon({ name, className = '', size = 24 }: CustomIc
     return <i className={`${name} ${className}`}></i>;
   }
 
+  // If iconPath is a static import, use next/image. Otherwise, use <img> with eslint-disable.
+  // eslint-disable-next-line @next/next/no-img-element
   return (
     <img 
       src={iconPath} 

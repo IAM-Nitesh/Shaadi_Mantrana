@@ -46,10 +46,10 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Auth-specific rate limiting (stricter)
+// Auth-specific rate limiting (moderate)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: 30, // limit each IP to 15 auth requests per windowMs (moderate)
   message: {
     error: 'Too many authentication attempts',
     message: 'Please try again in 15 minutes'
@@ -216,8 +216,5 @@ process.on('SIGINT', async () => {
   await databaseService.disconnect();
   process.exit(0);
 });
-
-// Start the application
-startServer();
 
 module.exports = app;

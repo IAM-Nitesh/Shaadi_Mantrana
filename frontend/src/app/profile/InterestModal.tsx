@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { interests } from '../../utils/interests';
 
 import CustomIcon from '../../components/CustomIcon';
 

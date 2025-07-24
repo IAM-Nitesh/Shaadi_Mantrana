@@ -3,10 +3,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/navigation';
 import { Profile } from '../../services/profile-service';
+import Image from 'next/image';
 
 interface SwipeCardProps {
   profile: Profile;
@@ -147,10 +145,12 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
         {/* Main Image */}
         <div className="relative h-96">
           {!imageError ? (
-            <img
+            <Image
               src={profile.image}
               alt={profile.name}
-              className="w-full h-full object-cover object-top"
+              layout="fill"
+              objectFit="cover"
+              objectPosition="top"
               onError={handleImageError}
               onLoad={handleImageLoad}
             />

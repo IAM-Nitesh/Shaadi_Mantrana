@@ -32,7 +32,6 @@ export default function Dashboard() {
   const headerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
-  const navigationRef = useRef<HTMLDivElement>(null);
 
   // Check authentication on component mount and load profiles
   useEffect(() => {
@@ -263,9 +262,11 @@ export default function Dashboard() {
       const fetchedProfiles = await ProfileService.getProfiles(filterCriteria);
       setProfiles(fetchedProfiles);
       setCurrentIndex(0);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load profiles');
-      console.error('Error loading profiles:', err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to load profiles');
+        console.error('Error loading profiles:', err);
+      }
     } finally {
       setLoading(false);
     }
