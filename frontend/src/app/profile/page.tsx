@@ -90,27 +90,20 @@ export default function Profile() {
     localStorage.setItem('userProfile', JSON.stringify(profile));
   }, [profile]);
 
-  // GSAP animations on component mount
+  // GSAP premium entrance animation
   useEffect(() => {
     if (typeof window !== 'undefined' && isAuthenticated) {
-      // Simple entrance animation without console logs
       const elements = [headerRef.current, profileInfoRef.current, profileDetailsRef.current].filter(Boolean);
-      
       if (elements.length > 0) {
-        // Set initial state quietly
-        gsap.set(elements, { 
-          opacity: 0.3, 
-          y: 20 
-        });
-        
-        // Simple entrance animation
+        gsap.set(elements, { opacity: 0, y: 40, filter: 'blur(8px)' });
         gsap.to(elements, {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          stagger: 0.1,
-          delay: 0.2
+          filter: 'blur(0px)',
+          duration: 0.9,
+          ease: 'power3.out',
+          stagger: 0.13,
+          delay: 0.18
         });
       }
     }
@@ -234,8 +227,8 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-rose-100/20 to-pink-100/20"></div>
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.1),transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-rose-100/30 to-pink-100/30 backdrop-blur-[2.5px]"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.13),transparent_50%)]"></div>
       
       {/* Header */}
       <div ref={headerRef} className="fixed top-0 w-full backdrop-blur-sm bg-white/80 border-b border-white/20 shadow-lg z-40 px-4 py-3">
@@ -258,7 +251,7 @@ export default function Profile() {
             <img
               src={profile.images[0]}
               alt="Profile"
-              className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300"
+              className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
             />
             {isEditing && (
               <button 
@@ -855,7 +848,7 @@ export default function Profile() {
               {profile.interests.map((interest, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm"
+                  className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
                 >
                   {interest}
                   {isEditing && (

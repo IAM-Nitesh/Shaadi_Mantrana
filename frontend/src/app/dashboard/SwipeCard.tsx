@@ -1,7 +1,8 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { gsap } from 'gsap';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -13,6 +14,26 @@ interface SwipeCardProps {
 }
 
 export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const likeRef = useRef<HTMLDivElement>(null);
+  const passRef = useRef<HTMLDivElement>(null);
+  // GSAP entrance animation
+  useEffect(() => {
+    if (cardRef.current) {
+      gsap.fromTo(
+        cardRef.current,
+        { y: 60, opacity: 0, scale: 0.96, filter: 'blur(6px)' },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          filter: 'blur(0px)',
+          duration: 0.7,
+          ease: 'power3.out',
+        }
+      );
+    }
+  }, [profile]);
   const [isDragging, setIsDragging] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -110,11 +131,15 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   return (
     <div className="relative">
       <div
-        className={`bg-white rounded-2xl shadow-xl overflow-hidden cursor-grab select-none transition-transform duration-200 ${
-          isDragging ? 'cursor-grabbing scale-105' : ''
+        ref={cardRef}
+        className={`bg-white/70 backdrop-blur-lg border border-white/40 shadow-2xl rounded-3xl overflow-hidden cursor-grab select-none transition-transform duration-200 ${
+          isDragging ? 'cursor-grabbing scale-105 shadow-rose-200' : 'hover:scale-[1.025] hover:shadow-2xl'
         }`}
         style={{
           transform: `translateX(${dragX}px) rotate(${dragX * 0.1}deg)`,
+          boxShadow: isDragging
+            ? '0 8px 32px 0 rgba(244,63,94,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10)'
+            : '0 8px 32px 0 rgba(30,41,59,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.06)',
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
@@ -140,10 +165,10 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           )}
           
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" style={{backdropFilter:'blur(2px)'}}></div>
           
           {/* Basic Info */}
-          <div className="absolute bottom-4 left-4 right-4 text-white">
+          <div className="absolute bottom-4 left-4 right-4 text-white drop-shadow-lg">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-2xl font-bold">{profile.name}</h3>
@@ -151,9 +176,10 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
               </div>
               <button
                 onClick={() => setShowDetails(!showDetails)}
-                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center !rounded-button"
+                className="w-10 h-10 bg-white/30 hover:bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
+                style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.10)' }}
               >
-                <i className={`ri-${showDetails ? 'arrow-up' : 'information'}-line`}></i>
+                <i className={`ri-${showDetails ? 'arrow-up' : 'information'}-line text-2xl text-rose-500`}></i>
               </button>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">
@@ -169,7 +195,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
 
         {/* Detailed Info */}
         {showDetails && (
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 animate-fadeIn">
             <div>
               <h4 className="font-semibold text-gray-800 mb-2">Education</h4>
               <p className="text-gray-600">{profile.education}</p>
@@ -186,7 +212,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
                 {profile.interests.map((interest, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm"
+                    className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
                   >
                     {interest}
                   </span>
@@ -198,24 +224,25 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       </div>
 
       {/* Swipe Indicators */}
-      {isDragging && (
-        <>
-          <div
-            className={`absolute top-20 left-4 px-4 py-2 rounded-xl font-bold text-2xl transition-opacity ${
-              dragX > 50 ? 'opacity-100 bg-green-500 text-white' : 'opacity-0'
-            }`}
-          >
-            LIKE
-          </div>
-          <div
-            className={`absolute top-20 right-4 px-4 py-2 rounded-xl font-bold text-2xl transition-opacity ${
-              dragX < -50 ? 'opacity-100 bg-red-500 text-white' : 'opacity-0'
-            }`}
-          >
-            PASS
-          </div>
-        </>
-      )}
+      {/* Animated Swipe Indicators */}
+      <div
+        ref={likeRef}
+        className={`pointer-events-none absolute top-20 left-4 px-4 py-2 rounded-xl font-bold text-2xl shadow-lg transition-all duration-200 scale-90 ${
+          isDragging && dragX > 50 ? 'opacity-100 scale-110 bg-green-500/90 text-white' : 'opacity-0'
+        }`}
+        style={{ filter: 'drop-shadow(0 2px 8px rgba(16,185,129,0.18))' }}
+      >
+        <span className="tracking-widest">LIKE</span>
+      </div>
+      <div
+        ref={passRef}
+        className={`pointer-events-none absolute top-20 right-4 px-4 py-2 rounded-xl font-bold text-2xl shadow-lg transition-all duration-200 scale-90 ${
+          isDragging && dragX < -50 ? 'opacity-100 scale-110 bg-red-500/90 text-white' : 'opacity-0'
+        }`}
+        style={{ filter: 'drop-shadow(0 2px 8px rgba(244,63,94,0.18))' }}
+      >
+        <span className="tracking-widest">PASS</span>
+      </div>
     </div>
   );
 }

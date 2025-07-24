@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { gsap } from 'gsap';
 import { interests } from '../../utils/interests';
 
 import CustomIcon from '../../components/CustomIcon';
@@ -19,6 +20,25 @@ const popularInterests = [
 ];
 
 export default function InterestModal({ onClose, onAdd, existingInterests }: InterestModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  // GSAP modal entrance
+  useEffect(() => {
+    if (backdropRef.current) {
+      gsap.fromTo(
+        backdropRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.32, ease: 'power2.out' }
+      );
+    }
+    if (modalRef.current) {
+      gsap.fromTo(
+        modalRef.current,
+        { y: 60, opacity: 0, scale: 0.98, filter: 'blur(8px)' },
+        { y: 0, opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.48, ease: 'power3.out', delay: 0.04 }
+      );
+    }
+  }, []);
   const [customInterest, setCustomInterest] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
@@ -49,14 +69,20 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-white w-full rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto">
+    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]">
+      <div
+        ref={modalRef}
+        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none"
+        style={{ boxShadow: '0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-800">Add Interests</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500"
+            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-100/70 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
+            style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.08)' }}
+            aria-label="Close interest modal"
           >
             <CustomIcon name="ri-close-line" />
           </button>
@@ -91,10 +117,10 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
               <button
                 key={interest}
                 onClick={() => toggleInterest(interest)}
-                className={`px-3 py-2 rounded-full text-sm border transition-colors ${
+                className={`px-3 py-2 rounded-full text-sm border transition-all duration-200 transform hover:scale-105 focus:ring-2 focus:ring-rose-400 shadow-sm ${
                   selectedInterests.includes(interest)
-                    ? 'bg-white text-rose-500 border-rose-500 border-2'
-                    : 'bg-white text-gray-600 border-gray-200'
+                    ? 'bg-white/90 text-rose-500 border-rose-500 border-2 shadow-md'
+                    : 'bg-white/80 text-gray-600 border-gray-200 hover:border-rose-300'
                 }`}
               >
                 {interest}
@@ -111,7 +137,7 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
               {selectedInterests.map((interest) => (
                 <span
                   key={interest}
-                  className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm flex items-center"
+                  className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm flex items-center shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
                 >
                   {interest}
                   <button
@@ -130,14 +156,14 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
         <div className="flex space-x-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button"
+            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button hover:bg-gray-50 transition-all duration-200 shadow-sm hover:scale-105"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={selectedInterests.length === 0}
-            className="flex-1 py-3 bg-white border-2 border-rose-500 text-rose-500 rounded-xl font-medium disabled:opacity-50 hover:bg-rose-50"
+            className="flex-1 py-3 bg-white/90 border-2 border-rose-500 text-rose-500 rounded-xl font-medium disabled:opacity-50 hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Add Selected
           </button>
