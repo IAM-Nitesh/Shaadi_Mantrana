@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SwipeCard from './SwipeCard';
@@ -33,6 +33,34 @@ export default function Dashboard() {
   const cardRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
 
+  // Move loadProfiles above useEffect hooks
+  const loadProfiles = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const filterCriteria = {
+        ageRange: filters.ageRange,
+        selectedProfessions: filters.selectedProfessions,
+        selectedLocations: filters.selectedCountry || filters.selectedState ? 
+          [filters.selectedCountry, filters.selectedState].filter(Boolean) : [],
+        selectedEducation: [],
+        selectedInterests: []
+      };
+
+      const fetchedProfiles = await ProfileService.getProfiles(filterCriteria);
+      setProfiles(fetchedProfiles);
+      setCurrentIndex(0);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to load profiles');
+        console.error('Error loading profiles:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
   // Check authentication on component mount and load profiles
   useEffect(() => {
     if (!AuthService.isAuthenticated()) {
@@ -41,14 +69,14 @@ export default function Dashboard() {
     }
     setIsAuthenticated(true);
     loadProfiles();
-  }, [router]);
+  }, [router, loadProfiles]);
 
   // Reload profiles when filters change
   useEffect(() => {
     if (profiles.length > 0) {
       loadProfiles();
     }
-  }, [filters]);
+  }, [filters, profiles.length, loadProfiles]);
 
   // GSAP animations on component mount and data load
   useEffect(() => {
@@ -244,33 +272,6 @@ export default function Dashboard() {
       });
     }
   }, [showFilter]);
-
-  const loadProfiles = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const filterCriteria = {
-        ageRange: filters.ageRange,
-        selectedProfessions: filters.selectedProfessions,
-        selectedLocations: filters.selectedCountry || filters.selectedState ? 
-          [filters.selectedCountry, filters.selectedState].filter(Boolean) : [],
-        selectedEducation: [],
-        selectedInterests: []
-      };
-
-      const fetchedProfiles = await ProfileService.getProfiles(filterCriteria);
-      setProfiles(fetchedProfiles);
-      setCurrentIndex(0);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to load profiles');
-        console.error('Error loading profiles:', err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (currentIndex >= profiles.length) return;
