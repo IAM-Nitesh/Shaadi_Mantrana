@@ -1,8 +1,13 @@
+'use client';
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Pacifico } from "next/font/google";
 import "./globals.css";
 import ErrorBoundary from "../components/ErrorBoundary";
 import ConsoleSuppressor from "../components/ConsoleSuppressor";
+import { usePathname } from 'next/navigation';
+import LenisProvider from "./LenisProvider";
+import { AnimatePresence, motion } from 'framer-motion';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -21,36 +26,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Shaadi Mantra - Find Your Perfect Match",
-  description: "Free matrimonial app for finding your perfect life partner. Secure, private, and authentic profiles.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Shaadi Mantra",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  openGraph: {
-    type: "website",
-    siteName: "Shaadi Mantra",
-    title: "Shaadi Mantra - Find Your Perfect Match",
-    description: "Free matrimonial app for finding your perfect life partner",
-  },
-  twitter: {
-    card: "summary",
-    title: "Shaadi Mantra - Find Your Perfect Match", 
-    description: "Free matrimonial app for finding your perfect life partner",
-  },
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <head>
@@ -70,8 +51,21 @@ export default function RootLayout({
       >
         <ConsoleSuppressor />
         <ErrorBoundary />
-        {children}
-      </body>
-    </html>
-  );
+        <LenisProvider>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -24 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="min-h-screen"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </LenisProvider>
+    </body>
+  </html>
+);
 }

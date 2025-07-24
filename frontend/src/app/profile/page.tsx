@@ -8,6 +8,7 @@ import { ImageUploadService, UploadResult } from '../../services/image-upload-se
 import { AuthService } from '../../services/auth-service';
 import CustomIcon from '../../components/CustomIcon';
 import { gsap } from 'gsap';
+import Image from 'next/image';
 
 const defaultProfileData = {
   name: 'Rahul Kumar Sharma',
@@ -248,9 +249,11 @@ export default function Profile() {
         {/* Profile Image */}
         <div className="px-4 py-6">
           <div className="relative w-32 h-32 mx-auto">
-            <img
+            <Image
               src={profile.images[0]}
               alt="Profile"
+              width={128}
+              height={128}
               className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
             />
             {isEditing && (
