@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { gsap } from 'gsap';
+import Image from 'next/image';
 
 interface Match {
   name: string;
@@ -144,10 +145,12 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           <Link href="/matches" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
             <i className="ri-arrow-left-line"></i>
           </Link>
-          <img
+          <Image
             src={match.image}
             alt={match.name}
-            className="w-10 h-10 rounded-full object-cover object-top"
+            width={40}
+            height={40}
+            className="rounded-full object-cover object-top"
           />
           <div className="flex-1">
             <h1 className="font-semibold text-gray-800">{match.name}</h1>

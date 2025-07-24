@@ -1,6 +1,8 @@
 // Email Invitation Service for Frontend
 // This service handles sending welcome emails to all approved users
 
+// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
 import configService from './configService';
 
 export interface InvitationResult {
@@ -63,8 +65,11 @@ export class EmailInvitationService {
         failed: data.summary.failed,
         results: data.results
       };
-    } catch (error: any) {
-      throw new Error(`Failed to send invitations: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to send invitations: ${error.message}`);
+      }
+      throw new Error(`Failed to send invitations: ${String(error)}`);
     }
   }
 
@@ -102,7 +107,11 @@ export class EmailInvitationService {
 
       const data = await response.json();
       return data.emails || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error fetching approved emails:', error);
+        throw error;
+      }
       console.error('Error fetching approved emails:', error);
       throw error;
     }
@@ -194,7 +203,11 @@ export class EmailInvitationService {
       });
 
       return response.ok;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Failed to add approved email:', error);
+        return false;
+      }
       console.error('Failed to add approved email:', error);
       return false;
     }
@@ -225,7 +238,11 @@ export class EmailInvitationService {
       });
 
       return response.ok;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Failed to remove approved email:', error);
+        return false;
+      }
       console.error('Failed to remove approved email:', error);
       return false;
     }

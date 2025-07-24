@@ -1,18 +1,11 @@
-// API configuration for different environments
+// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
 export const API_CONFIG = {
-  // Use environment variable or detect if we're in static mode
-  USE_STATIC_DEMO: process.env.NODE_ENV === 'production' && !process.env.API_BASE_URL,
-  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500',
-  
-  // Production API endpoints - Updated to match backend routes
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
   SEND_OTP_ENDPOINT: '/api/auth/send-otp',
   VERIFY_OTP_ENDPOINT: '/api/auth/verify-otp',
-  
-  // External API endpoints (for production deployment)
-  EXTERNAL_SEND_OTP: process.env.NEXT_PUBLIC_API_BASE_URL ? 
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/send-otp` : null,
-  EXTERNAL_VERIFY_OTP: process.env.NEXT_PUBLIC_API_BASE_URL ? 
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/verify-otp` : null,
+  EXTERNAL_SEND_OTP: process.env.NEXT_PUBLIC_API_BASE_URL ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/send-otp` : null,
+  EXTERNAL_VERIFY_OTP: process.env.NEXT_PUBLIC_API_BASE_URL ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/verify-otp` : null,
 };
 
 // Production-ready API service
@@ -51,13 +44,13 @@ export class AuthService {
       }
       
       return await response.json();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // In development, provide more specific error messages
       if (process.env.NODE_ENV === 'development') {
         console.error('AuthService.sendOTP error:', error);
         
         // If it's a network error, provide specific guidance
-        if (error.message.includes('fetch')) {
+        if (error instanceof Error && error.message.includes('fetch')) {
           throw new Error('Network error: Cannot connect to API. Make sure the development server is running.');
         }
         
@@ -114,13 +107,13 @@ export class AuthService {
       }
       
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // In development, provide more specific error messages
       if (process.env.NODE_ENV === 'development') {
         console.error('AuthService.verifyOTP error:', error);
         
         // If it's a network error, provide specific guidance
-        if (error.message.includes('fetch')) {
+        if (error instanceof Error && error.message.includes('fetch')) {
           throw new Error('Network error: Cannot connect to API. Make sure the development server is running.');
         }
         
@@ -152,7 +145,7 @@ export class AuthService {
       }
       
       return { success: true, message: 'Successfully logged out' };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Logout error:', error);
       return { success: false, message: 'Error during logout' };
     }

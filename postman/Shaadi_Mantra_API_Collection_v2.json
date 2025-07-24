@@ -8,13 +8,18 @@
   "variable": [
     {
       "key": "base_url_static",
-      "value": "http://localhost:4500",
+      "value": "http://localhost:3500",
       "description": "Base URL for Static/Demo mode"
     },
     {
-      "key": "base_url_mongodb", 
+      "key": "base_url_dev", 
+      "value": "http://localhost:4500",
+      "description": "Base URL for Dev mode"
+    },
+    {
+      "key": "base_url_prod", 
       "value": "http://localhost:5500",
-      "description": "Base URL for MongoDB mode"
+      "description": "Base URL for Prod mode"
     },
     {
       "key": "auth_token",
@@ -200,3 +205,4 @@
     }
   ]
 }
+

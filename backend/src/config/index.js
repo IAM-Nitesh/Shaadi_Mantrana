@@ -81,7 +81,7 @@ module.exports = {
   DATABASE_URL: getMongoDBURI(),
   
   // Frontend URL for CORS (support multiple environments)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3001',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || 'http://localhost:3000',
   
   // JWT configuration with strong defaults
@@ -119,9 +119,14 @@ module.exports = {
     MAX_FILES_PER_USER: 5
   },
   
+
+
+  
   // API configuration
   API: {
-    BASE_URL: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5001}`,
+    BASE_URL: getDataSource() === 'static'
+      ? 'http://localhost:4500'
+      : process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5550}`,
     VERSION: 'v1',
     RATE_LIMIT: {
       WINDOW_MS: 15 * 60 * 1000, // 15 minutes

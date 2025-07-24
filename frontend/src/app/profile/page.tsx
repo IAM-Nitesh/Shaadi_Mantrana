@@ -83,7 +83,7 @@ export default function Profile() {
         console.error('Error loading profile from localStorage:', error);
       }
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Save profile to localStorage whenever it changes
   useEffect(() => {
