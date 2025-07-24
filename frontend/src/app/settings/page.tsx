@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthService } from '../../services/auth-service';
 import { gsap } from 'gsap';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Settings() {
   const router = useRouter();
@@ -24,6 +25,9 @@ export default function Settings() {
     shareProfile: false,
     ageVisible: true
   });
+
+  // Add state to control logout animation overlay
+  const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -530,348 +534,262 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Enhanced Logout Overlay with Heart Animations */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-white/98 via-rose-50/95 to-pink-50/98 backdrop-blur-xl z-50 items-center justify-center hidden">
-        <div className="text-center max-w-sm mx-auto p-8 relative">
-          {/* Floating Hearts Animation */}
-          <div className="heart-container absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Heart 1 */}
-            <div className="floating-heart absolute text-rose-400 opacity-80" style={{ top: '10%', left: '15%' }}>
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            {/* Heart 2 */}
-            <div className="floating-heart absolute text-pink-400 opacity-60" style={{ top: '25%', right: '20%' }}>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            {/* Heart 3 */}
-            <div className="floating-heart absolute text-rose-300 opacity-70" style={{ bottom: '30%', left: '10%' }}>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            {/* Heart 4 */}
-            <div className="floating-heart absolute text-pink-300 opacity-50" style={{ bottom: '20%', right: '15%' }}>
-              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            {/* Heart 5 */}
-            <div className="floating-heart absolute text-rose-500 opacity-40" style={{ top: '50%', left: '5%' }}>
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            {/* Heart 6 */}
-            <div className="floating-heart absolute text-pink-500 opacity-60" style={{ top: '40%', right: '8%' }}>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            {/* Additional smaller hearts */}
-            <div className="floating-heart absolute text-rose-200 opacity-30" style={{ top: '70%', left: '25%' }}>
-              <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            
-            <div className="floating-heart absolute text-pink-200 opacity-40" style={{ top: '15%', left: '50%' }}>
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-          </div>
-
-          {/* Central Success Icon - Rose themed */}
-          <div className="logout-circle relative w-24 h-24 mx-auto mb-6">
-            {/* Outer ring with rose gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-rose-400 via-pink-500 to-rose-600 rounded-full opacity-20 animate-pulse"></div>
-            <div className="absolute inset-2 bg-gradient-to-r from-rose-500 via-pink-600 to-rose-700 rounded-full flex items-center justify-center shadow-xl">
-              {/* Central Heart Icon */}
-              <div className="logout-checkmark">
-                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-              </div>
-            </div>
-            {/* Floating particles with rose theme */}
-            <div className="absolute -top-2 -right-2 w-3 h-3 bg-rose-300 rounded-full opacity-80 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            <div className="absolute -bottom-1 -left-2 w-2 h-2 bg-pink-300 rounded-full opacity-60 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-            <div className="absolute top-2 -left-3 w-2 h-2 bg-rose-400 rounded-full opacity-70 animate-bounce" style={{ animationDelay: '0.6s' }}></div>
-            <div className="absolute top-1/2 right-2 w-1 h-1 bg-pink-400 rounded-full opacity-50 animate-ping" style={{ animationDelay: '0.8s' }}></div>
-            <div className="absolute bottom-3 right-1 w-1 h-1 bg-rose-500 rounded-full opacity-60 animate-ping" style={{ animationDelay: '1s' }}></div>
-          </div>
-
-          {/* Success Message */}
-          <div className="space-y-4">
-            <h3 className="logout-title text-2xl font-bold text-slate-800 mb-2">
-              Successfully Logged Out!
-            </h3>
-            <p className="logout-subtitle text-slate-600 text-sm leading-relaxed">
-              Your session has been securely ended.<br />
-              Taking you back to the login screen...
-            </p>
-            
-            {/* Loading Dots */}
-            <div className="logout-dots flex items-center justify-center space-x-2 mt-6">
-              <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
-              <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
-              <span className="w-2 h-2 bg-rose-600 rounded-full"></span>
-            </div>
-          </div>
-
-          {/* Decorative Elements with rose theme */}
-          <div className="absolute top-8 left-8 w-16 h-16 border border-rose-200 rounded-full opacity-30"></div>
-          <div className="absolute bottom-12 right-12 w-12 h-12 border border-pink-200 rounded-full opacity-20"></div>
-          <div className="absolute top-20 right-16 w-8 h-8 border border-rose-300 rounded-full opacity-25"></div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="settings-container">
-        {/* Header */}
-        <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200">
-                <CustomIcon name="ri-arrow-left-line" />
-              </Link>
-              <h1 className="text-xl font-bold text-gray-800">Settings</h1>
-            </div>
-          </div>
-        </div>
-
-      {/* Content */}
-      <div className="pt-16 pb-24 px-4 space-y-4">
-        {/* Account Settings */}
-        <div className="bg-white rounded-xl shadow-sm transform hover:scale-105 transition-all duration-200">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Account</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            <Link href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-user-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Edit Profile</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Notifications */}
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Notifications</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-heart-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">New Matches</span>
-              </div>
-              <button
-                onClick={() => updateNotificationSetting('newMatches', !notifications.newMatches)}
-                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
-                  notifications.newMatches ? 'bg-rose-500' : 'bg-gray-300'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
-                    notifications.newMatches ? 'translate-x-6' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-message-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Messages</span>
-              </div>
-              <button
-                onClick={() => updateNotificationSetting('messages', !notifications.messages)}
-                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
-                  notifications.messages ? 'bg-rose-500' : 'bg-gray-300'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
-                    notifications.messages ? 'translate-x-6' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Privacy */}
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Privacy</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-map-pin-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Show Distance</span>
-              </div>
-              <button
-                onClick={() => updatePrivacySetting('showDistance', !privacy.showDistance)}
-                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
-                  privacy.showDistance ? 'bg-rose-500' : 'bg-gray-300'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
-                    privacy.showDistance ? 'translate-x-6' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-calendar-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Show Age</span>
-              </div>
-              <button
-                onClick={() => updatePrivacySetting('ageVisible', !privacy.ageVisible)}
-                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
-                  privacy.ageVisible ? 'bg-rose-500' : 'bg-gray-300'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
-                    privacy.ageVisible ? 'translate-x-6' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Support */}
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Support</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            <Link href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-question-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Help & Support</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-            <Link href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-file-text-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Terms of Service</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-            <Link href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-shield-line" className="text-gray-600" />
-                </div>
-                <span className="text-gray-800">Privacy Policy</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Enhanced Logout Button */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <button
-            onClick={handleLogout}
-            className="logout-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white py-4 font-semibold hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group shadow-lg hover:shadow-xl"
-            onMouseEnter={() => {
-              gsap.to('.logout-button', {
-                scale: 1.02,
-                boxShadow: '0 10px 25px rgba(244, 63, 94, 0.3)',
-                duration: 0.3,
-                ease: "power2.out"
-              });
-              gsap.to('.logout-text', {
-                x: 3,
-                duration: 0.3,
-                ease: "power2.out"
-              });
-            }}
-            onMouseLeave={() => {
-              gsap.to('.logout-button', {
-                scale: 1,
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                duration: 0.3,
-                ease: "power2.out"
-              });
-              gsap.to('.logout-text', {
-                x: 0,
-                duration: 0.3,
-                ease: "power2.out"
-              });
-            }}
+      {/* Logout Animation Overlay (Framer Motion only) */}
+      <AnimatePresence>
+        {showLogoutAnimation && (
+          <motion.div
+            key="logout-logo"
+            className="fixed inset-0 flex flex-col items-center justify-center z-50"
+            style={{ background: 'rgba(255,255,255,0.95)', border: '4px solid red' }}
           >
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            
-            {/* Button content */}
-            <div className="flex items-center justify-center relative z-10">
-              <span className="logout-text font-semibold">Logout</span>
+            <h1 style={{ color: 'black', zIndex: 100 }}>LOGOUT OVERLAY TEST</h1>
+            <img src="/favicon.svg" alt="App Logo" className="w-28 h-28 mb-6 z-10" />
+            <div className="w-full text-center z-10">
+              <h3 className="text-2xl font-bold text-rose-600">Successfully Logged Out!</h3>
+              <p className="text-gray-500 mt-2">Redirecting to login...</p>
             </div>
-            
-            {/* Ripple effect background */}
-            <div className="absolute inset-0 bg-rose-400/20 scale-0 group-active:scale-100 rounded-xl transition-transform duration-200"></div>
-          </button>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 px-0 py-0 shadow-lg">
-        <div className="grid grid-cols-4 h-16">
-          <Link href="/dashboard" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
-            <CustomIcon name="ri-heart-line" className="text-lg" />
-            <span className="text-xs mt-1">Discover</span>
-          </Link>
-          <Link href="/matches" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
-            <CustomIcon name="ri-chat-3-line" className="text-lg" />
-            <span className="text-xs mt-1">Matches</span>
-          </Link>
-          <Link href="/profile" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
-            <CustomIcon name="ri-user-line" className="text-lg" />
-            <span className="text-xs mt-1">Profile</span>
-          </Link>
-          <Link href="/settings" className="flex flex-col items-center justify-center text-rose-500 transition-all duration-200 hover:bg-rose-50">
-            <CustomIcon name="ri-settings-line" className="text-lg" />
-            <span className="text-xs mt-1">Settings</span>
-          </Link>
+      {/* Main Content (hide when animation is active) */}
+      {!showLogoutAnimation && (
+        <div className="settings-container">
+          {/* Header */}
+          <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200">
+                  <CustomIcon name="ri-arrow-left-line" />
+                </Link>
+                <h1 className="text-xl font-bold text-gray-800">Settings</h1>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="pt-16 pb-24 px-4 space-y-4">
+            {/* Account Settings */}
+            <div className="bg-white rounded-xl shadow-sm transform hover:scale-105 transition-all duration-200">
+              <div className="p-4 border-b border-gray-100">
+                <h2 className="font-semibold text-gray-800">Account</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                <Link href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-user-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Edit Profile</span>
+                  </div>
+                  <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Notifications */}
+            <div className="bg-white rounded-xl shadow-sm">
+              <div className="p-4 border-b border-gray-100">
+                <h2 className="font-semibold text-gray-800">Notifications</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-heart-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">New Matches</span>
+                  </div>
+                  <button
+                    onClick={() => updateNotificationSetting('newMatches', !notifications.newMatches)}
+                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                      notifications.newMatches ? 'bg-rose-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                        notifications.newMatches ? 'translate-x-6' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-message-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Messages</span>
+                  </div>
+                  <button
+                    onClick={() => updateNotificationSetting('messages', !notifications.messages)}
+                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                      notifications.messages ? 'bg-rose-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                        notifications.messages ? 'translate-x-6' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy */}
+            <div className="bg-white rounded-xl shadow-sm">
+              <div className="p-4 border-b border-gray-100">
+                <h2 className="font-semibold text-gray-800">Privacy</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-map-pin-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Show Distance</span>
+                  </div>
+                  <button
+                    onClick={() => updatePrivacySetting('showDistance', !privacy.showDistance)}
+                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                      privacy.showDistance ? 'bg-rose-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                        privacy.showDistance ? 'translate-x-6' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-calendar-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Show Age</span>
+                  </div>
+                  <button
+                    onClick={() => updatePrivacySetting('ageVisible', !privacy.ageVisible)}
+                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                      privacy.ageVisible ? 'bg-rose-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                        privacy.ageVisible ? 'translate-x-6' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Support */}
+            <div className="bg-white rounded-xl shadow-sm">
+              <div className="p-4 border-b border-gray-100">
+                <h2 className="font-semibold text-gray-800">Support</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                <Link href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-question-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Help & Support</span>
+                  </div>
+                  <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+                </Link>
+                <Link href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-file-text-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Terms of Service</span>
+                  </div>
+                  <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+                </Link>
+                <Link href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <CustomIcon name="ri-shield-line" className="text-gray-600" />
+                    </div>
+                    <span className="text-gray-800">Privacy Policy</span>
+                  </div>
+                  <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Enhanced Logout Button */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <button
+                onClick={handleLogout}
+                className="logout-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white py-4 font-semibold hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group shadow-lg hover:shadow-xl"
+                onMouseEnter={() => {
+                  gsap.to('.logout-button', {
+                    scale: 1.02,
+                    boxShadow: '0 10px 25px rgba(244, 63, 94, 0.3)',
+                    duration: 0.3,
+                    ease: "power2.out"
+                  });
+                  gsap.to('.logout-text', {
+                    x: 3,
+                    duration: 0.3,
+                    ease: "power2.out"
+                  });
+                }}
+                onMouseLeave={() => {
+                  gsap.to('.logout-button', {
+                    scale: 1,
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    duration: 0.3,
+                    ease: "power2.out"
+                  });
+                  gsap.to('.logout-text', {
+                    x: 0,
+                    duration: 0.3,
+                    ease: "power2.out"
+                  });
+                }}
+              >
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                
+                {/* Button content */}
+                <div className="flex items-center justify-center relative z-10">
+                  <span className="logout-text font-semibold">Logout</span>
+                </div>
+                
+                {/* Ripple effect background */}
+                <div className="absolute inset-0 bg-rose-400/20 scale-0 group-active:scale-100 rounded-xl transition-transform duration-200"></div>
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom Navigation */}
+          <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 px-0 py-0 shadow-lg">
+            <div className="grid grid-cols-4 h-16">
+              <Link href="/dashboard" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
+                <CustomIcon name="ri-heart-line" className="text-lg" />
+                <span className="text-xs mt-1">Discover</span>
+              </Link>
+              <Link href="/matches" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
+                <CustomIcon name="ri-chat-3-line" className="text-lg" />
+                <span className="text-xs mt-1">Matches</span>
+              </Link>
+              <Link href="/profile" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
+                <CustomIcon name="ri-user-line" className="text-lg" />
+                <span className="text-xs mt-1">Profile</span>
+              </Link>
+              <Link href="/settings" className="flex flex-col items-center justify-center text-rose-500 transition-all duration-200 hover:bg-rose-50">
+                <CustomIcon name="ri-settings-line" className="text-lg" />
+                <span className="text-xs mt-1">Settings</span>
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
-      </div> {/* End settings-container */}
+      )}
     </div>
   );
 }
