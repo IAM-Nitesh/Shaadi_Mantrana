@@ -262,6 +262,13 @@ export default function Home() {
           ease: "back.out(1.4)"
         })
         
+        // Initialize success message (hidden initially)
+        .set('.success-message', {
+          opacity: 0,
+          scale: 0.8,
+          y: -10
+        })
+        
         // Phase 3: Animate back button
         .fromTo('.back-button', {
           x: -30,
@@ -296,6 +303,15 @@ export default function Home() {
           duration: 0.4,
           ease: "power2.out"
         }, "-=0.2")
+        
+        // Phase 5.5: Animate success message with smooth entrance
+        .to('.success-message', {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "back.out(1.5)"
+        }, "-=0.1")
         
         // Phase 6: Animate OTP input boxes with staggered entrance
         .fromTo('.otp-inputs input', {
@@ -750,8 +766,19 @@ export default function Home() {
                   {/* Title */}
                   <div className="text-center">
                     <h3 className="otp-title text-2xl font-bold text-slate-800 mb-3">Enter Verification Code</h3>
+                    
+                    {/* Success Message - Only show once with single checkmark */}
+                    <div className="success-message mb-4 p-3 bg-green-50 border border-green-200 rounded-xl opacity-0" style={{ pointerEvents: 'none' }}>
+                      <div className="flex items-center justify-center space-x-2">
+                        <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-green-700 text-sm font-medium">Code sent successfully</span>
+                      </div>
+                    </div>
+                    
                     <p className="otp-subtitle text-slate-600 text-sm">
-                      We've sent a 6-digit code to<br />
+                      Enter the 6-digit code sent to<br />
                       <span className="font-semibold text-slate-800">{email}</span>
                     </p>
                   </div>

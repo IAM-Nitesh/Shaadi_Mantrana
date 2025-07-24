@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
 
 interface FilterModalProps {
   onClose: () => void;
@@ -33,6 +34,25 @@ const countryStateData = {
 };
 
 export default function FilterModal({ onClose, onApply, currentFilters }: FilterModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  // GSAP modal entrance
+  useEffect(() => {
+    if (backdropRef.current) {
+      gsap.fromTo(
+        backdropRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.35, ease: 'power2.out' }
+      );
+    }
+    if (modalRef.current) {
+      gsap.fromTo(
+        modalRef.current,
+        { y: 80, opacity: 0, scale: 0.98, filter: 'blur(8px)' },
+        { y: 0, opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power3.out', delay: 0.05 }
+      );
+    }
+  }, []);
   const [ageRange, setAgeRange] = useState<[number, number]>(currentFilters.ageRange);
   const [selectedProfessions, setSelectedProfessions] = useState<string[]>(currentFilters.selectedProfessions);
   const [selectedCountry, setSelectedCountry] = useState<string>(currentFilters.selectedCountry);
@@ -98,16 +118,22 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end animate-fadeIn">
-      <div className="bg-white w-full rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto animate-slideUp">
+    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]">
+      <div
+        ref={modalRef}
+        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none"
+        style={{ boxShadow: '0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-100/70 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
+            style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.08)' }}
+            aria-label="Close filter modal"
           >
-            <i className="ri-close-line"></i>
+            <i className="ri-close-line text-2xl"></i>
           </button>
         </div>
 
@@ -125,7 +151,7 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
                 max="40"
                 value={ageRange[0]}
                 onChange={(e) => handleMinAgeChange(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-rose-400"
                 style={{
                   background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[0] - 18) / 22) * 100}%, #e5e7eb ${((ageRange[0] - 18) / 22) * 100}%, #e5e7eb 100%)`
                 }}
@@ -141,7 +167,7 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
                 max="40"
                 value={ageRange[1]}
                 onChange={(e) => handleMaxAgeChange(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-rose-400"
                 style={{
                   background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[1] - 18) / 22) * 100}%, #e5e7eb ${((ageRange[1] - 18) / 22) * 100}%, #e5e7eb 100%)`
                 }}
@@ -165,7 +191,7 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all duration-200"
+              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all duration-200 bg-white/70 backdrop-blur-md"
             >
               <option value="">Select Country</option>
               {countries.map((country) => (
@@ -183,7 +209,7 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
               value={selectedState}
               onChange={(e) => setSelectedState(e.target.value)}
               disabled={!selectedCountry}
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 bg-white/70 backdrop-blur-md"
             >
               <option value="">Select State/Province</option>
               {availableStates.map((state) => (
@@ -203,10 +229,10 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
               <button
                 key={profession}
                 onClick={() => toggleProfession(profession)}
-                className={`px-3 py-2 rounded-lg text-sm border transition-all duration-200 transform hover:scale-105 ${
+                className={`px-3 py-2 rounded-lg text-sm border transition-all duration-200 transform hover:scale-105 focus:ring-2 focus:ring-rose-400 shadow-sm ${
                   selectedProfessions.includes(profession)
-                    ? 'bg-white text-rose-500 border-rose-500 border-2 shadow-md'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300'
+                    ? 'bg-white/90 text-rose-500 border-rose-500 border-2 shadow-md'
+                    : 'bg-white/80 text-gray-600 border-gray-200 hover:border-rose-300'
                 }`}
               >
                 {profession}
@@ -219,13 +245,13 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
         <div className="flex space-x-3">
           <button
             onClick={clearAll}
-            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button hover:bg-gray-50 transition-all duration-200"
+            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button hover:bg-gray-50 transition-all duration-200 shadow-sm hover:scale-105"
           >
             Clear All
           </button>
           <button
             onClick={applyFilters}
-            className="flex-1 py-3 bg-white border-2 border-rose-500 text-rose-500 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="flex-1 py-3 bg-white/90 border-2 border-rose-500 text-rose-500 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Apply Filters
           </button>

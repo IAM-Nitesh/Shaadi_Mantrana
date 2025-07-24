@@ -1,4 +1,4 @@
-// File: /Users/niteshkumar/Downloads/ShaadiMantra/frontend/src/app/layout.tsx
+// File: /Users/niteshkumar/Downloads/Shaadi_Mantra/frontend/src/app/layout.tsx
 import * as entry from '../../../../../../../../frontend/src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
