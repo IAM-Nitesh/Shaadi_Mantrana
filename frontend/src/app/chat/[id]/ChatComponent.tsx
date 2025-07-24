@@ -135,9 +135,11 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col relative overflow-hidden">
+      {/* Glassy background pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-rose-100/30 to-pink-100/30 backdrop-blur-[2.5px] pointer-events-none z-0"></div>
       {/* Header */}
-      <div ref={headerRef} className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
+      <div ref={headerRef} className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-white/20 shadow-lg z-40 px-4 py-3">
         <div className="flex items-center space-x-3">
           <Link href="/matches" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
             <i className="ri-arrow-left-line"></i>
@@ -162,7 +164,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       </div>
 
       {/* Messages */}
-      <div ref={chatContainerRef} className="flex-1 pt-20 pb-20 px-4 overflow-y-auto">
+      <div ref={chatContainerRef} className="flex-1 pt-20 pb-20 px-4 overflow-y-auto z-10">
         <div className="space-y-4">
           {messages.map((msg) => (
             <div
@@ -170,11 +172,11 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               className={`chat-message flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-xs px-4 py-2 rounded-2xl ${
-                  msg.sender === 'me'
-                    ? 'bg-white border-2 border-rose-500 text-rose-500'
-                    : 'bg-white text-gray-800 shadow-sm border border-gray-200'
-                }`}
+              className={`max-w-xs px-4 py-2 rounded-2xl shadow-lg transition-all duration-200 ${
+                msg.sender === 'me'
+                  ? 'bg-white/90 border-2 border-rose-500 text-rose-500 backdrop-blur-md'
+                  : 'bg-white/80 text-gray-800 shadow-md border border-gray-200 backdrop-blur-md'
+              }`}
               >
                 <p className="text-sm">{msg.text}</p>
                 <div className="flex items-center justify-end mt-1 space-x-1">
@@ -200,9 +202,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       </div>
 
       {/* Message Input */}
-      <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 p-4">
+      <div className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 p-4 z-20 shadow-2xl">
         <div className="flex items-center space-x-3">
-          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2">
+          <div className="flex-1 flex items-center bg-gray-100/80 rounded-full px-4 py-2 shadow-sm">
             <input
               type="text"
               placeholder="Type a message..."
@@ -211,14 +213,14 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               className="flex-1 bg-transparent text-sm focus:outline-none"
             />
-            <button className="w-6 h-6 flex items-center justify-center text-gray-500 ml-2">
+            <button className="w-6 h-6 flex items-center justify-center text-gray-500 ml-2 hover:text-rose-500 transition-colors">
               <i className="ri-emotion-line"></i>
             </button>
           </div>
           <button
             onClick={sendMessage}
             disabled={!message.trim()}
-            className="send-button w-10 h-10 bg-white border-2 border-rose-500 rounded-full flex items-center justify-center text-rose-500 disabled:opacity-50 hover:bg-rose-50 transition-all duration-200"
+            className="send-button w-10 h-10 bg-white/90 border-2 border-rose-500 rounded-full flex items-center justify-center text-rose-500 disabled:opacity-50 hover:bg-rose-50 transition-all duration-200 shadow-lg"
           >
             <i className="ri-send-plane-line"></i>
           </button>

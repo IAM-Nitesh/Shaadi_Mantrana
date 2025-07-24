@@ -65,13 +65,14 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   };
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/50 shadow-2xl z-50 ${className}`}>
+    <div className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t border-white/40 shadow-2xl z-50 ${className}`} style={{boxShadow:'0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)'}}>
       {/* Active indicator background */}
       <div 
-        className="absolute top-0 h-1 bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500 ease-out rounded-full"
+        className="absolute top-0 h-1 bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500 ease-out rounded-full shadow-md"
         style={{
           width: `${100 / items.length}%`,
           left: `${(items.findIndex(item => item.href === pathname) * 100) / items.length}%`,
+          boxShadow: '0 2px 8px 0 rgba(244,63,94,0.10)'
         }}
       />
       
@@ -113,7 +114,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
               </span>
               
               {/* Hover effect */}
-              <div className="absolute inset-0 bg-gray-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+              <div className="absolute inset-0 bg-gray-100/60 opacity-0 group-hover:opacity-40 transition-opacity duration-200 rounded-xl" />
             </button>
           );
         })}
