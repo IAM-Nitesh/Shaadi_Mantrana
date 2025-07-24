@@ -23,7 +23,7 @@ export default function Privacy() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                This Privacy Policy explains how ShaadiMantra ("we," "our," or "us") collects, uses, processes, and protects your personal information when you use our matrimonial platform. We are committed to protecting your privacy and ensuring the security of your personal data.
+                This Privacy Policy explains how ShaadiMantra (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) collects, uses, processes, and protects your personal information when you use our matrimonial platform. We are committed to protecting your privacy and ensuring the security of your personal data.
               </p>
             </div>
 

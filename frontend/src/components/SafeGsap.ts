@@ -12,7 +12,7 @@ export const safeGsap = {
         if (elements.length === 0) return null;
       }
       return gsap.to(target, vars);
-    } catch (error) {
+    } catch {
       return null;
     }
   },
@@ -24,7 +24,7 @@ export const safeGsap = {
         if (elements.length === 0) return null;
       }
       return gsap.from(target, vars);
-    } catch (error) {
+    } catch {
       return null;
     }
   },
@@ -36,7 +36,7 @@ export const safeGsap = {
         if (elements.length === 0) return null;
       }
       return gsap.fromTo(target, fromVars, toVars);
-    } catch (error) {
+    } catch {
       return null;
     }
   },
@@ -48,7 +48,7 @@ export const safeGsap = {
         if (elements.length === 0) return null;
       }
       return gsap.set(target, vars);
-    } catch (error) {
+    } catch {
       return null;
     }
   },
@@ -56,7 +56,7 @@ export const safeGsap = {
   timeline: (vars?: gsap.TimelineVars) => {
     try {
       return gsap.timeline(vars);
-    } catch (error) {
+    } catch {
       return null;
     }
   }

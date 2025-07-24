@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import CustomIcon from './CustomIcon';
 
 interface NavItem {
@@ -20,17 +20,14 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleNavigation = (href: string, index: number) => {
-    setActiveIndex(index);
-    
+  const handleNavigation = (href: string) => {
     startTransition(() => {
       router.push(href);
     });
   };
 
-  const getNavItemClasses = (href: string, index: number) => {
+  const getNavItemClasses = (href: string) => {
     const isActive = pathname === href;
     const baseClasses = `
       flex flex-col items-center justify-center
@@ -78,14 +75,14 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
       
       {/* Navigation items */}
       <div className="grid grid-cols-4 h-16 relative">
-        {items.map((item, index) => {
+        {items.map((item) => {
           const isActive = pathname === item.href;
           
           return (
             <button
               key={item.href}
-              onClick={() => handleNavigation(item.href, index)}
-              className={getNavItemClasses(item.href, index)}
+              onClick={() => handleNavigation(item.href)}
+              className={getNavItemClasses(item.href)}
               disabled={isPending}
             >
               {/* Background highlight for active item */}

@@ -23,7 +23,7 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">1. Acceptance of Terms</h2>
               <p className="text-gray-600 leading-relaxed">
-                By accessing or using ShaadiMantra ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service. These Terms constitute a legally binding agreement between you and ShaadiMantra.
+                By accessing or using ShaadiMantra (&quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you disagree with any part of these terms, you may not access the Service. These Terms constitute a legally binding agreement between you and ShaadiMantra.
               </p>
             </div>
 
@@ -133,7 +133,7 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">10. Limitation of Liability</h2>
               <p className="text-gray-600 leading-relaxed">
-                ShaadiMantra provides the platform "as is" without warranties. We are not liable for user actions, meeting outcomes, or any indirect damages. Our maximum liability is limited to the amount you paid for the service (which is zero for our free platform).
+                ShaadiMantra provides the platform &quot;as is&quot; without warranties. We are not liable for user actions, meeting outcomes, or any indirect damages. Our maximum liability is limited to the amount you paid for the service (which is zero for our free platform).
               </p>
             </div>
 
@@ -161,7 +161,7 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">14. Contact Information</h2>
               <p className="text-gray-600 leading-relaxed">
-                For questions, concerns, or support regarding these Terms of Service, please contact us through the app's support section or customer service channels.
+                For questions, concerns, or support regarding these Terms of Service, please contact us through the app&apos;s support section or customer service channels.
               </p>
             </div>
 

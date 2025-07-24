@@ -1,10 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { AuthService } from '../../../services/auth-service';
+import React, { useState } from 'react';
 import { EmailInvitationService, InvitationSummary } from '../../../services/email-invitation-service';
-import { gsap } from 'gsap';
 
 export default function AdminEmailInvitations() {
   const [adminKey, setAdminKey] = useState('');
@@ -19,8 +16,8 @@ export default function AdminEmailInvitations() {
       const emails = await EmailInvitationService.getApprovedEmails();
       setApprovedEmails(emails);
       setShowEmails(true);
-    } catch (error: any) {
-      setError(`Failed to load emails: ${error.message}`);
+    } catch (error: unknown) {
+      setError(`Failed to load emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -39,8 +36,8 @@ export default function AdminEmailInvitations() {
       const summary = await EmailInvitationService.sendInvitations(adminKey);
       setResults(summary);
       setError('');
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -225,7 +222,7 @@ export default function AdminEmailInvitations() {
                   <div className="bg-white border border-green-200 rounded-lg p-3">
                     <p className="font-semibold text-gray-700 mb-2">📋 Detailed Results:</p>
                     <div className="max-h-60 overflow-y-auto space-y-1">
-                      {results.results.map((result: any, index: number) => (
+                      {results.results.map((result: { email: string; status: string; error?: string | null }, index: number) => (
                         <div key={index} className="flex items-center justify-between p-2 border-b border-gray-100 last:border-b-0">
                           <span className="font-mono text-sm text-gray-700">{result.email}</span>
                           <div className="flex items-center space-x-2">

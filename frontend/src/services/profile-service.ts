@@ -1,9 +1,10 @@
 // Profile Service for Frontend
 // This service handles fetching profiles and uses the same API config as auth service
 
-// API configuration for different environments
+// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
 const API_CONFIG = {
-  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500',
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
 };
 
 export interface Profile {
@@ -64,7 +65,7 @@ export class ProfileService {
 
       const data = await response.json();
       return data.profiles || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching profiles:', error);
       
       // Fallback to demo profiles in development
@@ -73,7 +74,7 @@ export class ProfileService {
         return this.getDemoProfiles();
       }
       
-      throw new Error(error?.message || 'Failed to fetch profiles');
+      throw new Error((error as Error)?.message || 'Failed to fetch profiles');
     }
   }
 
@@ -101,7 +102,7 @@ export class ProfileService {
       });
 
       return response.ok;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error recording interaction:', error);
       return false;
     }
@@ -131,7 +132,7 @@ export class ProfileService {
 
       const data = await response.json();
       return data.profile || null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching user profile:', error);
       return null;
     }

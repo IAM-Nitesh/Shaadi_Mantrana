@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthService } from '../../services/auth-service';
 import CustomIcon from '../../components/CustomIcon';
 import { gsap } from 'gsap';
+import Image from 'next/image';
 
 const matches = [
   {
@@ -38,7 +39,6 @@ export default function Matches() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // GSAP refs for animations
-  const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -242,14 +242,16 @@ export default function Matches() {
         {activeTab === 'matches' ? (
           matches.length > 0 ? (
             <div className="space-y-4">
-              {matches.map((match, index) => (
+              {matches.map((match) => (
                 <Link key={match.id} href={`/chat/${match.id}`}>
                   <div className="match-card p-6 bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
                     <div className="flex items-center space-x-4">
                       <div className="relative">
-                        <img
+                        <Image
                           src={match.image}
                           alt={match.name}
+                          width={64}
+                          height={64}
                           className="w-16 h-16 rounded-full object-cover object-top shadow-lg"
                         />
                         {match.unread && (

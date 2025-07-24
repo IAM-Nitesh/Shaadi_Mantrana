@@ -164,81 +164,179 @@ export default function Settings() {
       const result = AuthService.logout();
       
       if (result.success) {
+        // Hide confirmation modal first
         setShowLogoutConfirm(false);
-        // --- Premium GSAP Animation for Logout Overlay ---
+        
+        // Create an enhanced GSAP logout animation sequence with heart animations
         const tl = gsap.timeline();
-        // 1. Animate ripple circles: scale in, fade in, then pulse
-        tl.fromTo('.ripple-circle', {
-          scale: 0.7,
+        
+        // Phase 1: Fade out settings content with rotation
+        tl.to('.settings-container', {
+          opacity: 0,
+          scale: 0.95,
+          y: -20,
+          rotation: -1,
+          duration: 0.7,
+          ease: "power2.inOut"
+        })
+        
+        // Phase 2: Show logout overlay with entrance animation
+        .set('.logout-overlay', {
+          display: 'flex',
+          opacity: 0,
+          scale: 0.9
+        })
+        .to('.logout-overlay', {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "back.out(1.2)"
+        })
+        
+        // Phase 3: Animate central success circle with bounce
+        .fromTo('.logout-circle', {
+          scale: 0,
+          rotation: -180,
           opacity: 0
         }, {
-          scale: 1.1,
-          opacity: 1,
-          duration: 0.5,
-          ease: 'expo.out',
-          stagger: 0.08
-        })
-        // 2. Animate logo: scale in, rotate, fade in
-        .fromTo('.ripple-center img', {
-          scale: 0.7,
-          opacity: 0,
-          rotate: 0
-        }, {
-          scale: 1.1,
-          opacity: 1,
-          rotate: 10,
-          duration: 0.5,
-          ease: 'expo.out',
-        }, '-=0.3')
-        .to('.ripple-center img', {
-          rotate: 0,
           scale: 1,
-          duration: 0.3,
-          ease: 'sine.inOut',
-        }, '-=0.2')
-        // 3. Fade in the message at the end
-        .to('.animate-premium-message', {
+          rotation: 0,
+          opacity: 1,
+          duration: 1,
+          ease: "elastic.out(1, 0.6)"
+        }, "-=0.3")
+        
+        // Phase 4: Animate central heart icon
+        .fromTo('.logout-checkmark', {
+          scale: 0,
+          opacity: 0,
+          rotation: -90
+        }, {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 0.8,
+          ease: "back.out(2)"
+        }, "-=0.5")
+        
+        // Phase 5: Animate floating hearts with staggered entrance
+        .fromTo('.floating-heart', {
+          scale: 0,
+          opacity: 0,
+          y: 20,
+          rotation: -45
+        }, {
+          scale: 1,
           opacity: 1,
           y: 0,
-          duration: 0.4,
-          ease: 'power2.out',
-        }, '-=0.1')
-        // 4. Pulse effect for ripples and logo (subtle, premium)
-        .to('.ripple-circle', {
-          scale: 1.13,
-          duration: 0.7,
+          rotation: 0,
+          duration: 0.6,
+          ease: "back.out(1.5)",
+          stagger: {
+            amount: 0.8,
+            from: "random"
+          }
+        }, "-=0.6")
+        
+        // Phase 6: Add floating animation to hearts
+        .to('.floating-heart', {
+          y: "-=10",
+          rotation: "+=15",
+          duration: 2,
+          ease: "sine.inOut",
+          repeat: -1,
           yoyo: true,
-          repeat: 1,
-          ease: 'sine.inOut',
-          stagger: 0.08
-        }, '-=0.2')
-        .to('.ripple-center img', {
-          scale: 1.07,
+          stagger: {
+            amount: 1,
+            from: "random"
+          }
+        }, "-=0.3")
+        
+        // Phase 7: Animate text elements
+        .fromTo('.logout-title', {
+          y: 30,
+          opacity: 0,
+          scale: 0.9
+        }, {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "power2.out"
+        }, "-=1.5")
+        
+        .fromTo('.logout-subtitle', {
+          y: 20,
+          opacity: 0
+        }, {
+          y: 0,
+          opacity: 1,
           duration: 0.5,
+          ease: "power2.out"
+        }, "-=0.3")
+        
+        // Phase 8: Enhanced loading dots animation with pulsing effect
+        .fromTo('.logout-dots span', {
+          scale: 0.3,
+          opacity: 0.2
+        }, {
+          scale: 1.3,
+          opacity: 1,
+          duration: 0.4,
+          ease: "power2.inOut",
+          stagger: 0.15,
+          repeat: 4,
+          yoyo: true
+        }, "-=0.2")
+        
+        // Phase 9: Add continuous floating animation to decorative elements
+        .fromTo('.logout-overlay .absolute.border', {
+          scale: 0,
+          opacity: 0,
+          rotation: -180
+        }, {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 0.8,
+          ease: "elastic.out(1, 0.4)",
+          stagger: 0.2
+        }, "-=2")
+        
+        .to('.logout-overlay .absolute.border', {
+          rotation: "+=360",
+          duration: 8,
+          ease: "none",
+          repeat: -1
+        }, "-=0.5")
+        
+        // Phase 10: Add particle floating animations
+        .to('.logout-circle .absolute.animate-bounce', {
+          y: "-=8",
+          x: "+=3",
+          duration: 1.5,
+          ease: "sine.inOut",
+          repeat: -1,
           yoyo: true,
-          repeat: 1,
-          ease: 'sine.inOut',
-        }, '-=0.5')
-        // 5. Optional: Play a soft chime or whoosh audio cue
-        .call(() => {
-          // Uncomment and provide a valid audio file if desired
-          // const audio = new Audio('/audio/logout-chime.mp3');
-          // audio.volume = 0.2;
-          // audio.play();
-        })
-        // 6. Exit and redirect
+          stagger: 0.3
+        }, "-=3")
+        
+        // Phase 11: Final exit and redirect
         .to('.logout-overlay', {
           opacity: 0,
           scale: 1.05,
           y: -30,
           duration: 0.7,
-          delay: 0.7,
-          ease: 'power2.in',
+          delay: 1.5,
+          ease: "power2.in",
           onComplete: () => {
+            // Force redirect to home page
             window.location.href = '/';
           }
         });
+        
       } else {
+        // Enhanced error handling with GSAP animation
         setShowLogoutConfirm(false);
         gsap.to('.settings-container', {
           keyframes: {
@@ -256,8 +354,24 @@ export default function Settings() {
         });
       }
     } catch (error) {
+      console.error('Error during logout:', error);
+      
+      // Error shake animation
       setShowLogoutConfirm(false);
-      alert('Logout failed. Please try again.');
+      gsap.to('.settings-container', {
+        keyframes: {
+          "0%": { x: 0 },
+          "25%": { x: -10 },
+          "50%": { x: 10 },
+          "75%": { x: -5 },
+          "100%": { x: 0 }
+        },
+        duration: 0.5,
+        ease: "power2.out",
+        onComplete: () => {
+          alert('⚠️ There was an issue logging out. Please try again.');
+        }
+      });
     }
   };
 
@@ -416,48 +530,348 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Premium Circular Ripple Collapse Logout Overlay */}
-      <div className="logout-overlay fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-white/95 via-rose-50/90 to-pink-50/95 backdrop-blur-2xl">
-        <div className="relative flex flex-col items-center justify-center w-full h-full">
-          {/* Animated Ripple Circles */}
-          <div className="ripple-container absolute inset-0 flex items-center justify-center pointer-events-none">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className={`ripple-circle absolute rounded-full border-2 border-rose-300/40`}
-                style={{
-                  width: `${120 + i * 80}px`,
-                  height: `${120 + i * 80}px`,
-                  left: `calc(50% - ${(120 + i * 80) / 2}px)`,
-                  top: `calc(50% - ${(120 + i * 80) / 2}px)`
-                }}
-              />
-            ))}
+      {/* Enhanced Logout Overlay with Heart Animations */}
+      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-white/98 via-rose-50/95 to-pink-50/98 backdrop-blur-xl z-50 items-center justify-center hidden">
+        <div className="text-center max-w-sm mx-auto p-8 relative">
+          {/* Floating Hearts Animation */}
+          <div className="heart-container absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Heart 1 */}
+            <div className="floating-heart absolute text-rose-400 opacity-80" style={{ top: '10%', left: '15%' }}>
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            {/* Heart 2 */}
+            <div className="floating-heart absolute text-pink-400 opacity-60" style={{ top: '25%', right: '20%' }}>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            {/* Heart 3 */}
+            <div className="floating-heart absolute text-rose-300 opacity-70" style={{ bottom: '30%', left: '10%' }}>
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            {/* Heart 4 */}
+            <div className="floating-heart absolute text-pink-300 opacity-50" style={{ bottom: '20%', right: '15%' }}>
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            {/* Heart 5 */}
+            <div className="floating-heart absolute text-rose-500 opacity-40" style={{ top: '50%', left: '5%' }}>
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            {/* Heart 6 */}
+            <div className="floating-heart absolute text-pink-500 opacity-60" style={{ top: '40%', right: '8%' }}>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            {/* Additional smaller hearts */}
+            <div className="floating-heart absolute text-rose-200 opacity-30" style={{ top: '70%', left: '25%' }}>
+              <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            
+            <div className="floating-heart absolute text-pink-200 opacity-40" style={{ top: '15%', left: '50%' }}>
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
           </div>
-          {/* Central Logo with GSAP animation */}
-          <div className="ripple-center bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600 shadow-2xl rounded-full flex items-center justify-center" style={{ width: 120, height: 120 }}>
-            {/* Use the Shaadi Matra logo SVG */}
-            <img src="/icon.svg" alt="Shaadi Matra Logo" className="w-20 h-20 animate-premium-logo" />
+
+          {/* Central Success Icon - Rose themed */}
+          <div className="logout-circle relative w-24 h-24 mx-auto mb-6">
+            {/* Outer ring with rose gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-rose-400 via-pink-500 to-rose-600 rounded-full opacity-20 animate-pulse"></div>
+            <div className="absolute inset-2 bg-gradient-to-r from-rose-500 via-pink-600 to-rose-700 rounded-full flex items-center justify-center shadow-xl">
+              {/* Central Heart Icon */}
+              <div className="logout-checkmark">
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </div>
+            </div>
+            {/* Floating particles with rose theme */}
+            <div className="absolute -top-2 -right-2 w-3 h-3 bg-rose-300 rounded-full opacity-80 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="absolute -bottom-1 -left-2 w-2 h-2 bg-pink-300 rounded-full opacity-60 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+            <div className="absolute top-2 -left-3 w-2 h-2 bg-rose-400 rounded-full opacity-70 animate-bounce" style={{ animationDelay: '0.6s' }}></div>
+            <div className="absolute top-1/2 right-2 w-1 h-1 bg-pink-400 rounded-full opacity-50 animate-ping" style={{ animationDelay: '0.8s' }}></div>
+            <div className="absolute bottom-3 right-1 w-1 h-1 bg-rose-500 rounded-full opacity-60 animate-ping" style={{ animationDelay: '1s' }}></div>
           </div>
-          {/* Success Message (fades in at the end of animation) */}
-          <div className="absolute bottom-32 left-1/2 -translate-x-1/2 text-center opacity-0 animate-premium-message">
-            <h3 className="logout-title text-2xl font-bold text-slate-800 mb-2 drop-shadow-lg">
+
+          {/* Success Message */}
+          <div className="space-y-4">
+            <h3 className="logout-title text-2xl font-bold text-slate-800 mb-2">
               Successfully Logged Out!
             </h3>
             <p className="logout-subtitle text-slate-600 text-sm leading-relaxed">
               Your session has been securely ended.<br />
               Taking you back to the login screen...
             </p>
+            
+            {/* Loading Dots */}
             <div className="logout-dots flex items-center justify-center space-x-2 mt-6">
               <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
               <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
               <span className="w-2 h-2 bg-rose-600 rounded-full"></span>
             </div>
           </div>
-          {/* Optional: Play a soft chime or whoosh audio cue here for extra premiumness */}
+
+          {/* Decorative Elements with rose theme */}
+          <div className="absolute top-8 left-8 w-16 h-16 border border-rose-200 rounded-full opacity-30"></div>
+          <div className="absolute bottom-12 right-12 w-12 h-12 border border-pink-200 rounded-full opacity-20"></div>
+          <div className="absolute top-20 right-16 w-8 h-8 border border-rose-300 rounded-full opacity-25"></div>
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="settings-container">
+        {/* Header */}
+        <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200">
+                <CustomIcon name="ri-arrow-left-line" />
+              </Link>
+              <h1 className="text-xl font-bold text-gray-800">Settings</h1>
+            </div>
+          </div>
+        </div>
+
+      {/* Content */}
+      <div className="pt-16 pb-24 px-4 space-y-4">
+        {/* Account Settings */}
+        <div className="bg-white rounded-xl shadow-sm transform hover:scale-105 transition-all duration-200">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800">Account</h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            <Link href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-user-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Edit Profile</span>
+              </div>
+              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800">Notifications</h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-heart-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">New Matches</span>
+              </div>
+              <button
+                onClick={() => updateNotificationSetting('newMatches', !notifications.newMatches)}
+                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                  notifications.newMatches ? 'bg-rose-500' : 'bg-gray-300'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                    notifications.newMatches ? 'translate-x-6' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-message-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Messages</span>
+              </div>
+              <button
+                onClick={() => updateNotificationSetting('messages', !notifications.messages)}
+                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                  notifications.messages ? 'bg-rose-500' : 'bg-gray-300'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                    notifications.messages ? 'translate-x-6' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800">Privacy</h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-map-pin-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Show Distance</span>
+              </div>
+              <button
+                onClick={() => updatePrivacySetting('showDistance', !privacy.showDistance)}
+                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                  privacy.showDistance ? 'bg-rose-500' : 'bg-gray-300'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                    privacy.showDistance ? 'translate-x-6' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-calendar-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Show Age</span>
+              </div>
+              <button
+                onClick={() => updatePrivacySetting('ageVisible', !privacy.ageVisible)}
+                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
+                  privacy.ageVisible ? 'bg-rose-500' : 'bg-gray-300'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 shadow-md ${
+                    privacy.ageVisible ? 'translate-x-6' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Support */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800">Support</h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            <Link href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-question-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Help & Support</span>
+              </div>
+              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+            </Link>
+            <Link href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-file-text-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Terms of Service</span>
+              </div>
+              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+            </Link>
+            <Link href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <CustomIcon name="ri-shield-line" className="text-gray-600" />
+                </div>
+                <span className="text-gray-800">Privacy Policy</span>
+              </div>
+              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Enhanced Logout Button */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <button
+            onClick={handleLogout}
+            className="logout-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white py-4 font-semibold hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group shadow-lg hover:shadow-xl"
+            onMouseEnter={() => {
+              gsap.to('.logout-button', {
+                scale: 1.02,
+                boxShadow: '0 10px 25px rgba(244, 63, 94, 0.3)',
+                duration: 0.3,
+                ease: "power2.out"
+              });
+              gsap.to('.logout-text', {
+                x: 3,
+                duration: 0.3,
+                ease: "power2.out"
+              });
+            }}
+            onMouseLeave={() => {
+              gsap.to('.logout-button', {
+                scale: 1,
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                duration: 0.3,
+                ease: "power2.out"
+              });
+              gsap.to('.logout-text', {
+                x: 0,
+                duration: 0.3,
+                ease: "power2.out"
+              });
+            }}
+          >
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            
+            {/* Button content */}
+            <div className="flex items-center justify-center relative z-10">
+              <span className="logout-text font-semibold">Logout</span>
+            </div>
+            
+            {/* Ripple effect background */}
+            <div className="absolute inset-0 bg-rose-400/20 scale-0 group-active:scale-100 rounded-xl transition-transform duration-200"></div>
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 px-0 py-0 shadow-lg">
+        <div className="grid grid-cols-4 h-16">
+          <Link href="/dashboard" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
+            <CustomIcon name="ri-heart-line" className="text-lg" />
+            <span className="text-xs mt-1">Discover</span>
+          </Link>
+          <Link href="/matches" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
+            <CustomIcon name="ri-chat-3-line" className="text-lg" />
+            <span className="text-xs mt-1">Matches</span>
+          </Link>
+          <Link href="/profile" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
+            <CustomIcon name="ri-user-line" className="text-lg" />
+            <span className="text-xs mt-1">Profile</span>
+          </Link>
+          <Link href="/settings" className="flex flex-col items-center justify-center text-rose-500 transition-all duration-200 hover:bg-rose-50">
+            <CustomIcon name="ri-settings-line" className="text-lg" />
+            <span className="text-xs mt-1">Settings</span>
+          </Link>
+        </div>
+      </div>
+      </div> {/* End settings-container */}
     </div>
   );
 }
-

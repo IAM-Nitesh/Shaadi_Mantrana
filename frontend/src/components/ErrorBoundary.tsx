@@ -76,7 +76,7 @@ export default function ErrorBoundary() {
       console.error('Unhandled Error caught:', event.error);
       
       // Check for specific error types
-      if (event.target && (event.target as any).tagName === 'LINK') {
+      if (event.target && (event.target as HTMLLinkElement).tagName === 'LINK') {
         const linkElement = event.target as HTMLLinkElement;
         console.warn('CSS/Font loading error from external source:', linkElement.href);
         

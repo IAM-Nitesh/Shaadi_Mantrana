@@ -1,9 +1,10 @@
 // Image Upload Service for Frontend
 // This service handles image uploads and validates that images contain faces
 
-// API configuration for different environments
+// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
 const API_CONFIG = {
-  API_BASE_URL: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
 };
 
 export interface ImageValidationResult {
@@ -241,7 +242,7 @@ export class ImageUploadService {
         validation
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading image:', error);
       console.error('API Base URL:', apiBaseUrl);
       console.error('File details:', { 
@@ -251,7 +252,7 @@ export class ImageUploadService {
       });
       return {
         success: false,
-        error: error.message || 'Failed to upload image'
+        error: (error as Error).message || 'Failed to upload image'
       };
     }
   }
@@ -289,7 +290,7 @@ export class ImageUploadService {
       });
 
       return response.ok;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting image:', error);
       return false;
     }
@@ -322,7 +323,7 @@ export class ImageUploadService {
       const data = await response.json();
       return data.images || [];
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching profile images:', error);
       return [];
     }

@@ -23,11 +23,7 @@ export default function Home() {
   const logoRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const heartsRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
-  const highlightRef = useRef<HTMLDivElement>(null);
-  const heartRefs = useRef<HTMLDivElement[]>([]);
-  const termsRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
 
   const isApprovedEmail = (email: string) => {
@@ -195,8 +191,11 @@ export default function Home() {
   const sendOtpToBackend = async (email: string) => {
     try {
       return await AuthService.sendOTP(email);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to send OTP');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(error.message || 'Failed to send OTP');
+      }
+      throw new Error('Failed to send OTP');
     }
   };
 
@@ -370,8 +369,18 @@ export default function Home() {
         });
       }, 50);
       
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      let message = 'Failed to send OTP';
+      if (error instanceof Error) {
+        if (error.message.includes('429') || error.message.toLowerCase().includes('too many')) {
+          message = 'Too many OTP requests. Please try again later.';
+        } else if (error.message.toLowerCase().includes('network')) {
+          message = 'Network error. Please check your connection and try again.';
+        } else {
+          message = error.message;
+        }
+      }
+      setError(message);
       // Error shake animation
       if (cardRef.current) {
         gsap.to(cardRef.current, {
@@ -406,8 +415,18 @@ export default function Home() {
       await sendOtpToBackend(cleanEmail);
       setCountdown(60);
       setCanResend(false);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      let message = 'Failed to resend OTP';
+      if (error instanceof Error) {
+        if (error.message.includes('429') || error.message.toLowerCase().includes('too many')) {
+          message = 'Too many OTP requests. Please try again later.';
+        } else if (error.message.toLowerCase().includes('network')) {
+          message = 'Network error. Please check your connection and try again.';
+        } else {
+          message = error.message;
+        }
+      }
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -422,8 +441,11 @@ export default function Home() {
         localStorage.setItem('authToken', token);
       }
       return data;
-    } catch (error: any) {
-      throw new Error(error.message || 'Invalid OTP');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(error.message || 'Invalid OTP');
+      }
+      throw new Error('Invalid OTP');
     }
   };
 
@@ -475,8 +497,12 @@ export default function Home() {
       } else {
         window.location.href = '/dashboard';
       }
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Invalid OTP');
+      }
       // Error shake animation
       if (cardRef.current) {
         gsap.to(cardRef.current, {
