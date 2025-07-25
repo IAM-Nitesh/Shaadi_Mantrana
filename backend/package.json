@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node start.js",
     "start:legacy": "node src/index.js",
-    "dev": "NODE_ENV=development nodemon start.js",
+    "dev": "cross-env NODE_ENV=development DATA_SOURCE=mongodb PORT=4500 node start.js",
     "dev:static": "NODE_ENV=development DATA_SOURCE=static nodemon start.js",
     "dev:mongodb": "NODE_ENV=development DATA_SOURCE=mongodb nodemon start.js",
     "dev:legacy": "NODE_ENV=development nodemon src/index.js",
@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.3.0",
