@@ -36,6 +36,9 @@ capacitor-cordova-android-plugins/build/
 .env.*
 !.env.example
 !.env.template
+!.env.development
+!.env.production
+
 
 # Logs
 *.log

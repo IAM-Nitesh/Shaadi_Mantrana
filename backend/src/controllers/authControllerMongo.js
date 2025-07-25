@@ -267,6 +267,49 @@ class AuthController {
         // Create new user with UUID
         user = new User({
           email: sanitizedEmail,
+          profile: {
+            location: "India"
+          },
+          preferences: {
+            location: [
+              "Andhra Pradesh",
+              "Arunachal Pradesh",
+              "Assam",
+              "Bihar",
+              "Chhattisgarh",
+              "Goa",
+              "Gujarat",
+              "Haryana",
+              "Himachal Pradesh",
+              "Jharkhand",
+              "Karnataka",
+              "Kerala",
+              "Madhya Pradesh",
+              "Maharashtra",
+              "Manipur",
+              "Meghalaya",
+              "Mizoram",
+              "Nagaland",
+              "Odisha",
+              "Punjab",
+              "Rajasthan",
+              "Sikkim",
+              "Tamil Nadu",
+              "Telangana",
+              "Tripura",
+              "Uttar Pradesh",
+              "Uttarakhand",
+              "West Bengal",
+              "Andaman and Nicobar Islands",
+              "Chandigarh",
+              "Dadra and Nagar Haveli and Daman and Diu",
+              "Delhi",
+              "Jammu and Kashmir",
+              "Ladakh",
+              "Lakshadweep",
+              "Puducherry"
+            ]
+          },
           verification: {
             isVerified: true,
             verifiedAt: new Date(),
@@ -281,7 +324,48 @@ class AuthController {
         user.verification.isVerified = true;
         user.verification.verifiedAt = new Date();
         user.lastActive = new Date();
-        
+        // Fix legacy type issues
+        user.profile = user.profile || {};
+        user.profile.location = "India";
+        user.preferences = user.preferences || {};
+        user.preferences.location = [
+          "Andhra Pradesh",
+          "Arunachal Pradesh",
+          "Assam",
+          "Bihar",
+          "Chhattisgarh",
+          "Goa",
+          "Gujarat",
+          "Haryana",
+          "Himachal Pradesh",
+          "Jharkhand",
+          "Karnataka",
+          "Kerala",
+          "Madhya Pradesh",
+          "Maharashtra",
+          "Manipur",
+          "Meghalaya",
+          "Mizoram",
+          "Nagaland",
+          "Odisha",
+          "Punjab",
+          "Rajasthan",
+          "Sikkim",
+          "Tamil Nadu",
+          "Telangana",
+          "Tripura",
+          "Uttar Pradesh",
+          "Uttarakhand",
+          "West Bengal",
+          "Andaman and Nicobar Islands",
+          "Chandigarh",
+          "Dadra and Nagar Haveli and Daman and Diu",
+          "Delhi",
+          "Jammu and Kashmir",
+          "Ladakh",
+          "Lakshadweep",
+          "Puducherry"
+        ];
         // Add login history
         user.loginHistory.push({
           timestamp: new Date(),
@@ -300,8 +384,8 @@ class AuthController {
 
       // Create JWT session using the same system as the main auth controller
       const sessionData = {
-        userId: user._id,
-        userUuid: user.userUuid,
+        userId: user._id, // always use ObjectId
+        userUuid: user.userUuid, // use UUID for monitoring
         email: user.email,
         verified: true,
         loginTime: new Date().toISOString(),
