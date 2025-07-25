@@ -34,7 +34,7 @@ class JWTSessionManager {
   // Create session with both tokens
   static createSession(user) {
     const payload = {
-      userId: user.id || user.email,
+      userId: user._id, // always use ObjectId
       userUuid: user.userUuid, // Include UUID for monitoring
       email: user.email,
       verified: user.verified || true,
