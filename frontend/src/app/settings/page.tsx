@@ -7,6 +7,7 @@ import CustomIcon from '../../components/CustomIcon';
 import { AuthService } from '../../services/auth-service';
 import { gsap } from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
+import HeartbeatLoader from '../../components/HeartbeatLoader';
 
 export default function Settings() {
   const router = useRouter();
@@ -125,16 +126,6 @@ export default function Settings() {
       ease: "power2.out"
     }, "-=0.2")
     
-    .fromTo('.logout-confirm-modal .w-2.h-2.bg-rose-300', {
-      scale: 0,
-      opacity: 0
-    }, {
-      scale: 1,
-      opacity: 1,
-      duration: 0.3,
-      ease: "back.out(2)"
-    }, "-=0.3")
-    
     // Animate buttons with stagger
     .fromTo('.logout-confirm-modal button', {
       y: 40,
@@ -147,19 +138,7 @@ export default function Settings() {
       duration: 0.5,
       ease: "back.out(1.2)",
       stagger: 0.1
-    }, "-=0.3")
-    
-    // Animate bottom dots
-    .fromTo('.logout-confirm-modal .w-1\\.5.h-1\\.5, .logout-confirm-modal .w-1.h-1', {
-      scale: 0,
-      opacity: 0
-    }, {
-      scale: 1,
-      opacity: 1,
-      duration: 0.3,
-      ease: "elastic.out(1, 0.5)",
-      stagger: 0.1
-    }, "-=0.2");
+    }, "-=0.3");
   };
 
   const confirmLogout = () => {
@@ -384,29 +363,14 @@ export default function Settings() {
     const tl = gsap.timeline();
     
     // Animate elements out in reverse order
-    tl.to('.logout-confirm-modal .w-1\\.5.h-1\\.5, .logout-confirm-modal .w-1.h-1', {
-      scale: 0,
-      opacity: 0,
-      duration: 0.2,
-      ease: "power2.in",
-      stagger: 0.05
-    })
-    
-    .to('.logout-confirm-modal button', {
+    tl.to('.logout-confirm-modal button', {
       y: 20,
       opacity: 0,
       scale: 0.9,
       duration: 0.3,
       ease: "power2.in",
       stagger: 0.05
-    }, "-=0.1")
-    
-    .to('.logout-confirm-modal .w-2.h-2.bg-rose-300', {
-      scale: 0,
-      opacity: 0,
-      duration: 0.2,
-      ease: "power2.in"
-    }, "-=0.2")
+    })
     
     .to('.logout-confirm-modal .w-24.h-px', {
       scaleX: 0,
@@ -471,8 +435,12 @@ export default function Settings() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Checking authentication...</p>
+          <HeartbeatLoader 
+            size="lg" 
+            text="Logging Out" 
+            className="mb-4"
+          />
+          <p className="text-gray-600">Please wait while we log you out...</p>
         </div>
       </div>
     );
@@ -524,33 +492,104 @@ export default function Settings() {
               </button>
             </div>
 
-            {/* Bottom decorative dots */}
-            <div className="flex items-center justify-center space-x-2 mt-6">
-              <div className="w-1.5 h-1.5 bg-rose-300 rounded-full opacity-60"></div>
-              <div className="w-1 h-1 bg-pink-300 rounded-full opacity-40"></div>
-              <div className="w-1.5 h-1.5 bg-rose-300 rounded-full opacity-60"></div>
-            </div>
+            {/* Bottom decorative dots - Removed red dots */}
           </div>
         </div>
       )}
 
-      {/* Logout Animation Overlay (Framer Motion only) */}
-      <AnimatePresence>
-        {showLogoutAnimation && (
-          <motion.div
-            key="logout-logo"
-            className="fixed inset-0 flex flex-col items-center justify-center z-50"
-            style={{ background: 'rgba(255,255,255,0.95)', border: '4px solid red' }}
-          >
-            <h1 style={{ color: 'black', zIndex: 100 }}>LOGOUT OVERLAY TEST</h1>
-            <img src="/favicon.svg" alt="App Logo" className="w-28 h-28 mb-6 z-10" />
-            <div className="w-full text-center z-10">
-              <h3 className="text-2xl font-bold text-rose-600">Successfully Logged Out!</h3>
-              <p className="text-gray-500 mt-2">Redirecting to login...</p>
+      {/* Logout Animation Overlay */}
+      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
+        
+        {/* Animated Hearts Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Heart 1 */}
+          <div className="floating-heart absolute" style={{ left: '10%', top: '20%' }}>
+            <div className="w-6 h-6 text-red-400 opacity-80">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+          {/* Heart 2 */}
+          <div className="floating-heart absolute" style={{ right: '15%', top: '30%' }}>
+            <div className="w-5 h-5 text-pink-400 opacity-70">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+          </div>
+          {/* Heart 3 */}
+          <div className="floating-heart absolute" style={{ left: '20%', bottom: '25%' }}>
+            <div className="w-4 h-4 text-rose-400 opacity-90">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+          </div>
+          {/* Heart 4 */}
+          <div className="floating-heart absolute" style={{ right: '25%', bottom: '35%' }}>
+            <div className="w-5 h-5 text-red-500 opacity-60">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        {/* Subtle Background Orbs */}
+        <div className="absolute top-20 -left-20 w-48 h-48 bg-gradient-to-br from-rose-200/10 to-pink-200/10 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-20 -right-20 w-52 h-52 bg-gradient-to-br from-purple-200/10 to-rose-200/10 rounded-full blur-2xl"></div>
+        
+        {/* Main Content Container */}
+        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center relative overflow-hidden group">
+          {/* Card Glow Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-pink-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
+          
+          <div className="relative z-10">
+            {/* Brand Logo */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold mb-3" style={{ fontFamily: "'Inter', 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', sans-serif" }}>
+                <span className="bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent">
+                  Shaadi
+                </span>
+                <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent ml-2">
+                  Mantra
+                </span>
+              </h1>
+              <p className="text-slate-600 text-sm">
+                Your journey to forever starts here
+              </p>
+            </div>
+            
+            {/* Brand Logo */}
+            <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
+              {/* Brand Logo */}
+              <div className="logout-checkmark">
+                <img src="/icon.svg" alt="Shaadi Mantra" className="w-20 h-20 heartbeat-animation" />
+              </div>
+            </div>
+            
+            {/* Success Message */}
+            <div className="mb-6">
+              <h2 className="logout-title text-xl font-bold text-slate-800 mb-2">Successfully Logged Out!</h2>
+              <p className="logout-subtitle text-slate-600 text-sm">
+                Thank you for using Shaadi Mantra. We hope you found your perfect match!
+              </p>
+            </div>
+            
+            {/* Loading Dots - Removed red dots */}
+            
+            {/* Redirect Message */}
+            <p className="text-slate-500 text-xs">
+              Redirecting to login screen...
+            </p>
+          </div>
+          
+          {/* No decorative circles */}
+        </div>
+      </div>
 
       {/* Main Content (hide when animation is active) */}
       {!showLogoutAnimation && (
