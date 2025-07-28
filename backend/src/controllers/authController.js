@@ -7,8 +7,7 @@ const config = require('../config');
 const dataSourceService = require('../services/dataSourceService');
 const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
-const preApprovedEmailService = require('../services/preApprovedEmailService');
-const { User } = require('../models');
+const { User, PreapprovedEmail } = require('../models');
 
 // OTP store with expiration (in production, use Redis)
 const otpStore = new Map();
@@ -351,7 +350,37 @@ const authController = {
       // Check email approval
       let emailStatus;
       try {
-        emailStatus = preApprovedEmailService.getEmailStatus(sanitizedEmail);
+        const preapprovedEmail = await PreapprovedEmail.findOne({ email: sanitizedEmail });
+        
+        if (preapprovedEmail && preapprovedEmail.approvedByAdmin) {
+          emailStatus = {
+            approved: true,
+            type: 'preapproved',
+            approvedAt: preapprovedEmail.addedAt,
+            approvedBy: preapprovedEmail.addedBy || 'admin'
+          };
+        } else {
+          // Check if email is in admin list (these are automatically approved)
+          const adminEmails = [
+            'admin@shaadimantra.com',
+            'shaadimantra.help@gmail.com'
+          ];
+          
+          if (adminEmails.includes(sanitizedEmail)) {
+            emailStatus = {
+              approved: true,
+              type: 'admin',
+              approvedAt: new Date(),
+              approvedBy: 'system'
+            };
+          } else {
+            emailStatus = {
+              approved: false,
+              type: 'not_approved',
+              reason: 'Email not in pre-approved list'
+            };
+          }
+        }
       } catch (error) {
         console.error('❌ Email status check failed:', error);
         return res.status(500).json({
@@ -365,32 +394,14 @@ const authController = {
         console.log(`❌ Email not approved: ${sanitizedEmail}, reason: ${emailStatus.reason}`);
         
         if (emailStatus.type === 'not_approved') {
-          try {
-            const approvalRequest = preApprovedEmailService.requestApproval(sanitizedEmail, {
-              requestedAt: new Date().toISOString(),
-              userAgent: req.headers['user-agent'],
-              ip: clientIP,
-              referer: req.headers['referer']
-            });
-            
-            console.log(`❌ Email approval request: ${SecurityUtils.sanitizeEmailForLog(sanitizedEmail)}`);
-            
-            return res.status(403).json({
-              success: false,
-              error: 'Email not pre-approved',
-              message: 'Your email has been submitted for approval. Please contact support.',
-              code: 'EMAIL_NOT_APPROVED',
-              approvalRequest
-            });
-          } catch (error) {
-            console.error('❌ Approval request failed:', error);
-            return res.status(403).json({
-              success: false,
-              error: 'Email not pre-approved',
-              message: 'This email is not approved for registration. Please contact support.',
-              code: 'EMAIL_NOT_APPROVED'
-            });
-          }
+          console.log(`❌ Email approval request: ${SecurityUtils.sanitizeEmailForLog(sanitizedEmail)}`);
+          
+          return res.status(403).json({
+            success: false,
+            error: 'Email not pre-approved',
+            message: 'This email is not approved for registration. Please contact support.',
+            code: 'EMAIL_NOT_APPROVED'
+          });
         }
         
         return res.status(403).json({
@@ -595,7 +606,37 @@ const authController = {
       // Re-verify email approval
       let emailStatus;
       try {
-        emailStatus = preApprovedEmailService.getEmailStatus(sanitizedEmail);
+        const preapprovedEmail = await PreapprovedEmail.findOne({ email: sanitizedEmail });
+        
+        if (preapprovedEmail && preapprovedEmail.approvedByAdmin) {
+          emailStatus = {
+            approved: true,
+            type: 'preapproved',
+            approvedAt: preapprovedEmail.addedAt,
+            approvedBy: preapprovedEmail.addedBy || 'admin'
+          };
+        } else {
+          // Check if email is in admin list (these are automatically approved)
+          const adminEmails = [
+            'admin@shaadimantra.com',
+            'shaadimantra.help@gmail.com'
+          ];
+          
+          if (adminEmails.includes(sanitizedEmail)) {
+            emailStatus = {
+              approved: true,
+              type: 'admin',
+              approvedAt: new Date(),
+              approvedBy: 'system'
+            };
+          } else {
+            emailStatus = {
+              approved: false,
+              type: 'not_approved',
+              reason: 'Email not in pre-approved list'
+            };
+          }
+        }
       } catch (error) {
         console.error('❌ Email status re-check failed:', error);
         return res.status(500).json({
@@ -805,7 +846,37 @@ const authController = {
 
       let emailStatus;
       try {
-        emailStatus = preApprovedEmailService.getEmailStatus(req.user.email);
+        const preapprovedEmail = await PreapprovedEmail.findOne({ email: req.user.email });
+        
+        if (preapprovedEmail && preapprovedEmail.approvedByAdmin) {
+          emailStatus = {
+            approved: true,
+            type: 'preapproved',
+            approvedAt: preapprovedEmail.addedAt,
+            approvedBy: preapprovedEmail.addedBy || 'admin'
+          };
+        } else {
+          // Check if email is in admin list (these are automatically approved)
+          const adminEmails = [
+            'admin@shaadimantra.com',
+            'shaadimantra.help@gmail.com'
+          ];
+          
+          if (adminEmails.includes(req.user.email)) {
+            emailStatus = {
+              approved: true,
+              type: 'admin',
+              approvedAt: new Date(),
+              approvedBy: 'system'
+            };
+          } else {
+            emailStatus = {
+              approved: false,
+              type: 'not_approved',
+              reason: 'Email not in pre-approved list'
+            };
+          }
+        }
       } catch (error) {
         console.error('❌ Email status check failed:', error);
         emailStatus = { approved: false, reason: 'Status check failed', type: 'error' };

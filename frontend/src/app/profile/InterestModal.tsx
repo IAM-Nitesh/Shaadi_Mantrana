@@ -21,6 +21,9 @@ const popularInterests = [
 export default function InterestModal({ onClose, onAdd, existingInterests }: InterestModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  
+  // Ensure existingInterests is always an array
+  const safeExistingInterests = existingInterests || [];
   // GSAP modal entrance
   useEffect(() => {
     if (backdropRef.current) {
@@ -42,7 +45,7 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const availableInterests = popularInterests.filter(
-    interest => !existingInterests.includes(interest)
+    interest => !safeExistingInterests.includes(interest)
   );
 
   const toggleInterest = (interest: string) => {
@@ -54,7 +57,7 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   };
 
   const addCustomInterest = () => {
-    if (customInterest.trim() && !existingInterests.includes(customInterest.trim())) {
+    if (customInterest.trim() && !safeExistingInterests.includes(customInterest.trim())) {
       setSelectedInterests(prev => [...prev, customInterest.trim()]);
       setCustomInterest('');
     }

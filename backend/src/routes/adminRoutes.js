@@ -3,127 +3,126 @@
 
 const express = require('express');
 const router = express.Router();
+const { User, PreapprovedEmail, Invitation } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
-const preApprovedEmailService = require('../services/preApprovedEmailService');
-const emailService = require('../services/emailService');
-const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
+const InviteEmailService = require('../services/inviteEmailService');
 
-// Admin middleware (basic implementation - in production use proper role-based auth)
-const requireAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      error: 'Authentication required',
-      code: 'NO_AUTH'
-    });
-  }
-
-  // Simple admin check - in production, implement proper role-based authorization
-  const adminEmails = ['admin@shaadimantra.com', 'nitesh@shaadimantra.com', 'niteshkumar9591@gmail.com'];
-  if (!adminEmails.includes(req.user.email)) {
-    return res.status(403).json({
-      success: false,
-      error: 'Admin access required',
-      code: 'INSUFFICIENT_PERMISSIONS'
-    });
-  }
-
-  next();
-};
-
-// Encryption utilities for sensitive data
-const EncryptionUtils = {
-  // Encrypt email for logging/storage
-  encryptEmail: (email) => {
-    if (!email) return null;
-    const algorithm = 'aes-256-cbc';
-    const key = crypto.scryptSync(process.env.JWT_SECRET || 'default-key', 'salt', 32);
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher(algorithm, key);
-    let encrypted = cipher.update(email, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return `${iv.toString('hex')}:${encrypted}`;
-  },
-
-  // Hash email for comparison (one-way)
-  hashEmail: (email) => {
-    if (!email) return null;
-    return crypto.createHash('sha256')
-      .update(email.toLowerCase().trim())
-      .digest('hex');
-  },
-
-  // Sanitize email for logs (show only first 3 chars and domain)
-  sanitizeEmailForLog: (email) => {
-    if (!email) return 'unknown';
-    const parts = email.split('@');
-    if (parts.length !== 2) return 'invalid';
-    const username = parts[0];
-    const domain = parts[1];
-    return `${username.slice(0, 3)}***@${domain}`;
-  },
-
-  // Validate email input
-  validateEmailInput: (email) => {
-    if (!email || typeof email !== 'string') {
-      return { valid: false, error: 'Email is required and must be a string' };
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return { valid: false, error: 'Invalid email format' };
-    }
-    
-    if (email.length > 254) {
-      return { valid: false, error: 'Email too long' };
-    }
-    
-    return { valid: true, email: email.toLowerCase().trim() };
-  }
-};
-
-// Get all approved emails and stats
-router.get('/approved-emails', authenticateToken, requireAdmin, async (req, res) => {
+// Middleware to check if user is admin
+const adminMiddleware = async (req, res, next) => {
   try {
-    const emailData = preApprovedEmailService.getAllApprovedEmails();
-    res.status(200).json({
-      success: true,
-      data: emailData
-    });
+    const user = await User.findById(req.user.userId);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Admin privileges required.'
+      });
+    }
+    next();
   } catch (error) {
-    console.error('❌ Error getting approved emails:', error);
+    console.error('Admin middleware error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get approved emails',
-      message: error.message
+      error: 'Internal server error'
+    });
+  }
+};
+
+// Get all users (admin only)
+router.get('/users', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const users = await User.find({}, {
+      _id: 1,
+      email: 1,
+      'profile.name': 1,
+      'profile.firstName': 1,
+      'profile.lastName': 1,
+      role: 1,
+      status: 1,
+      createdAt: 1,
+      isFirstLogin: 1,
+      lastActive: 1,
+      userUuid: 1
+    }).sort({ createdAt: -1 });
+
+    // Get preapproved data for all users
+    const userEmails = users.map(user => user.email);
+    const preapprovedUsers = await PreapprovedEmail.find({ email: { $in: userEmails } });
+    
+    // Create a map for quick lookup
+    const preapprovedMap = {};
+    preapprovedUsers.forEach(preapproved => {
+      preapprovedMap[preapproved.email] = preapproved;
+    });
+
+    // Transform the data to include first and last name and preapproved status
+    const transformedUsers = users.map(user => {
+      const fullName = user.profile?.name || '';
+      const nameParts = fullName.split(' ');
+      const firstName = user.profile?.firstName || nameParts[0] || '';
+      const lastName = user.profile?.lastName || nameParts.slice(1).join(' ') || '';
+      
+      const preapproved = preapprovedMap[user.email];
+
+      return {
+        _id: user._id,
+        email: user.email,
+        firstName: firstName,
+        lastName: lastName,
+        fullName: fullName,
+        role: user.role,
+        status: user.status,
+        createdAt: user.createdAt,
+        lastActive: user.lastActive,
+        approvedByAdmin: preapproved ? preapproved.approvedByAdmin : false,
+        userUuid: user.userUuid
+      };
+    });
+
+    // Get preapproved emails that haven't been converted to users yet
+    const allPreapprovedEmails = await PreapprovedEmail.find({});
+    const userEmailSet = new Set(userEmails);
+    const pendingPreapproved = allPreapprovedEmails.filter(preapproved => 
+      !userEmailSet.has(preapproved.email)
+    );
+
+    // Add pending preapproved emails as "virtual users"
+    const pendingUsers = pendingPreapproved.map(preapproved => ({
+      _id: `pending_${preapproved._id}`,
+      email: preapproved.email,
+      firstName: '',
+      lastName: '',
+      fullName: '',
+      role: 'pending',
+      status: 'pending',
+      createdAt: preapproved.addedAt || preapproved.createdAt,
+      lastActive: null,
+      approvedByAdmin: preapproved.approvedByAdmin,
+      userUuid: preapproved.uuid,
+      isPending: true
+    }));
+
+    // Combine actual users with pending preapproved emails
+    const allUsers = [...transformedUsers, ...pendingUsers];
+
+    res.status(200).json({
+      success: true,
+      users: allUsers
+    });
+  } catch (error) {
+    console.error('❌ Get users error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch users'
     });
   }
 });
 
-// Get pending email approvals
-router.get('/pending-approvals', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const pendingApprovals = preApprovedEmailService.getPendingApprovals();
-    res.status(200).json({
-      success: true,
-      pendingApprovals,
-      count: pendingApprovals.length
-    });
-  } catch (error) {
-    console.error('❌ Error getting pending approvals:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get pending approvals',
-      message: error.message
-    });
-  }
-});
-
-// Approve an email
-router.post('/approve-email', authenticateToken, requireAdmin, async (req, res) => {
+// Add new user (admin only)
+router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -131,412 +130,641 @@ router.post('/approve-email', authenticateToken, requireAdmin, async (req, res) 
       });
     }
 
-    const result = await preApprovedEmailService.approveEmail(email);
-    
-    console.log(`✅ Admin ${req.user.email} approved email: ${email}`);
-    
-    res.status(200).json({
-      success: true,
-      message: result.message,
-      approvedEmail: result.email
-    });
-  } catch (error) {
-    console.error('❌ Error approving email:', error);
-    res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+    const normalizedEmail = email.toLowerCase().trim();
+    const userUuid = uuidv4();
+    const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-// Remove email from approved list
-router.post('/remove-email', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(409).json({
         success: false,
-        error: 'Email is required'
+        error: 'User with this email already exists'
       });
     }
 
-    const result = await preApprovedEmailService.removeEmail(email);
+    // Check if email already exists in preapproved collection
+    let existingPreapproved = await PreapprovedEmail.findOne({ email: normalizedEmail });
     
-    console.log(`🗑️ Admin ${req.user.email} removed email: ${email}`);
-    
-    res.status(200).json({
-      success: result.success,
-      message: result.message,
-      removedEmail: result.email
-    });
-  } catch (error) {
-    console.error('❌ Error removing email:', error);
-    res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Add approved domain
-router.post('/approve-domain', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { domain } = req.body;
-    
-    if (!domain) {
-      return res.status(400).json({
+    if (existingPreapproved) {
+      return res.status(409).json({
         success: false,
-        error: 'Domain is required'
+        error: 'Email already approved by admin'
       });
     }
 
-    const result = await preApprovedEmailService.addApprovedDomain(domain);
-    
-    console.log(`✅ Admin ${req.user.email} approved domain: ${domain}`);
-    
-    res.status(200).json({
-      success: true,
-      message: result.message,
-      approvedDomain: result.domain
+    // Create entry in preapproved collection
+    const newPreapproved = new PreapprovedEmail({
+      email: normalizedEmail,
+      uuid: userUuid,
+      isFirstLogin: true,
+      approvedByAdmin: true,
+      addedBy: req.user.userId
     });
-  } catch (error) {
-    console.error('❌ Error approving domain:', error);
-    res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
 
-// Get email approval statistics
-router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const stats = preApprovedEmailService.getStats();
-    res.status(200).json({
-      success: true,
-      stats
-    });
-  } catch (error) {
-    console.error('❌ Error getting stats:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get statistics',
-      message: error.message
-    });
-  }
-});
+    await newPreapproved.save();
 
-// Get approved emails info (for testing) - NO AUTH REQUIRED FOR TESTING
-router.get('/approved-emails', async (req, res) => {
-  try {
-    const emailsInfo = preApprovedEmailService.getAllApprovedEmails();
-    res.json({
-      success: true,
-      data: emailsInfo
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Check specific email info - NO AUTH REQUIRED FOR TESTING
-router.get('/email-info/:email', async (req, res) => {
-  try {
-    const email = req.params.email;
-    const emailInfo = preApprovedEmailService.getEmailInfo(email);
-    const emailStatus = preApprovedEmailService.getEmailStatus(email);
-    
-    res.json({
-      success: true,
-      email: email,
-      info: emailInfo,
-      status: emailStatus
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Test email service - NO AUTH REQUIRED FOR TESTING
-router.post('/test-email', async (req, res) => {
-  try {
-    const { email, testType = 'connection' } = req.body;
-    
-    if (testType === 'connection') {
-      const result = await emailService.testConnection();
-      res.json({
-        success: true,
-        test: 'connection',
-        result: result
-      });
-    } else if (testType === 'otp' && email) {
-      const testOTP = '999888';
-      const result = await emailService.sendOTP(email, testOTP, {
-        userName: 'Test User'
-      });
-      res.json({
-        success: true,
-        test: 'otp',
-        email: email,
-        result: result
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        error: 'Invalid test type or missing email'
-      });
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Secure Admin Endpoints for Email Management
-// POST /api/admin/email-info - Check specific email info (payload-based)
-router.post('/email-info', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    // Validate email input
-    const validation = EncryptionUtils.validateEmailInput(email);
-    if (!validation.valid) {
-      return res.status(400).json({
-        success: false,
-        error: validation.error,
-        code: 'INVALID_EMAIL_INPUT'
-      });
-    }
-
-    const sanitizedEmail = validation.email;
-    const emailInfo = preApprovedEmailService.getEmailInfo(sanitizedEmail);
-    const emailStatus = preApprovedEmailService.getEmailStatus(sanitizedEmail);
-    
-    // Log admin action with sanitized email
-    console.log(`🔍 Admin email lookup: ${EncryptionUtils.sanitizeEmailForLog(sanitizedEmail)}`);
-    
-    // Return info without exposing sensitive data in logs
-    res.json({
-      success: true,
-      emailHash: EncryptionUtils.hashEmail(sanitizedEmail), // For verification
-      info: emailInfo ? {
-        ...emailInfo,
-        email: EncryptionUtils.sanitizeEmailForLog(emailInfo.email) // Sanitized in response
-      } : null,
-      status: emailStatus,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('❌ Admin email info lookup failed:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get email info',
-      code: 'EMAIL_INFO_ERROR'
-    });
-  }
-});
-
-// POST /api/admin/test-email - Test email service (payload-based)
-router.post('/test-email', async (req, res) => {
-  try {
-    const { email, testType = 'connection' } = req.body;
-    
-    if (testType === 'connection') {
-      const result = await emailService.testConnection();
-      res.json({
-        success: true,
-        test: 'connection',
-        result: result,
-        timestamp: new Date().toISOString()
-      });
-    } else if (testType === 'otp' && email) {
-      // Validate email input
-      const validation = EncryptionUtils.validateEmailInput(email);
-      if (!validation.valid) {
-        return res.status(400).json({
-          success: false,
-          error: validation.error,
-          code: 'INVALID_EMAIL_INPUT'
+    // Create entry in invitations collection (optional - don't fail if this fails)
+    let invitationCreated = false;
+    try {
+      // Check if invitation already exists for this UUID
+      const existingInvitation = await Invitation.findOne({ uuid: userUuid });
+      if (!existingInvitation) {
+        const newInvitation = new Invitation({
+          uuid: userUuid,
+          email: normalizedEmail,
+          invitationId: invitationId,
+          sentBy: req.user.userId
         });
-      }
 
-      const sanitizedEmail = validation.email;
-      const testOTP = '999888';
-      
-      // Log admin action with sanitized email
-      console.log(`📧 Admin test email to: ${EncryptionUtils.sanitizeEmailForLog(sanitizedEmail)}`);
-      
-      const result = await emailService.sendOTP(sanitizedEmail, testOTP, {
-        userName: 'Test User'
-      });
-      
-      res.json({
-        success: true,
-        test: 'otp',
-        emailHash: EncryptionUtils.hashEmail(sanitizedEmail),
-        result: {
-          success: result.success,
-          messageId: result.messageId
-          // Don't expose the actual email in response
+        await newInvitation.save();
+        invitationCreated = true;
+        console.log(`✅ Invitation record created for ${normalizedEmail}`);
+      } else {
+        console.log(`ℹ️  Invitation already exists for UUID: ${userUuid}`);
+      }
+    } catch (invitationError) {
+      console.error('❌ Failed to create invitation record:', invitationError);
+      // Don't fail the user creation if invitation creation fails
+      // The invitation is optional for user creation
+    }
+
+    // Create new user with the same UUID
+    const newUser = new User({
+      email: normalizedEmail,
+      userUuid: userUuid,
+      profile: {
+        location: "India",
+        profileCompleteness: 17,  // Set correct value for new users
+        // Initialize all dropdown fields as undefined (empty)
+        gender: undefined,
+        maritalStatus: undefined,
+        manglik: undefined,
+        complexion: undefined,
+        eatingHabit: undefined,
+        smokingHabit: undefined,
+        drinkingHabit: undefined,
+        settleAbroad: undefined,
+        // Initialize other profile fields as empty
+        name: '',
+        nativePlace: '',
+        currentResidence: '',
+        dateOfBirth: '',
+        timeOfBirth: '',
+        placeOfBirth: '',
+        height: '',
+        weight: '',
+        education: '',
+        occupation: '',
+        annualIncome: '',
+        father: '',
+        mother: '',
+        brothers: '',
+        sisters: '',
+        fatherGotra: '',
+        motherGotra: '',
+        grandfatherGotra: '',
+        grandmotherGotra: '',
+        specificRequirements: '',
+        about: '',
+        interests: [],
+        images: []
+      },
+      preferences: {
+        location: [
+          "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+          "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+          "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+          "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+          "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+          "Uttar Pradesh", "Uttarakhand", "West Bengal",
+          "Andaman and Nicobar Islands", "Chandigarh",
+          "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+          "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+        ],
+        ageRange: {
+          min: 18,
+          max: 50
         },
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      res.status(400).json({
+        profession: [],
+        education: []
+      },
+      isFirstLogin: true,
+      role: 'user', // Default role
+      status: 'active'
+    });
+
+    await newUser.save();
+
+    // Send invitation email to the new user
+    let emailResult = null;
+    try {
+      emailResult = await InviteEmailService.sendInviteEmail(normalizedEmail, userUuid);
+      console.log(`✅ Invitation email sent to ${normalizedEmail}`);
+    } catch (emailError) {
+      console.error(`❌ Failed to send invitation email to ${normalizedEmail}:`, emailError);
+      // Don't fail the user creation if email fails
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'User added successfully with empty profile. Invitation email sent.',
+      email: normalizedEmail,
+      userId: newUser._id,
+      uuid: userUuid,
+      invitationId: invitationId,
+      invitationCreated: invitationCreated,
+      emailSent: !!emailResult?.success,
+      inviteLink: emailResult?.inviteLink || null
+    });
+
+  } catch (error) {
+    console.error('❌ Add user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add user'
+    });
+  }
+});
+
+
+
+// Remove user (admin only)
+router.delete('/users/:userId', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        error: 'Invalid test type or missing email',
-        code: 'INVALID_TEST_REQUEST'
+        error: 'User not found'
       });
     }
-  } catch (error) {
-    console.error('❌ Admin email test failed:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Email test failed',
-      code: 'EMAIL_TEST_ERROR',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Email service error'
-    });
-  }
-});
 
-// GET /api/admin/approved-emails - Get approved emails info (no sensitive data in URL)
-router.get('/approved-emails', async (req, res) => {
-  try {
-    const emailsInfo = preApprovedEmailService.getAllApprovedEmails();
-    
-    // Sanitize emails in response
-    const sanitizedResponse = {
-      ...emailsInfo,
-      emails: emailsInfo.emails.map(email => EncryptionUtils.sanitizeEmailForLog(email)),
-      emailsWithUuid: emailsInfo.emailsWithUuid.map(item => ({
-        ...item,
-        email: EncryptionUtils.sanitizeEmailForLog(item.email),
-        emailHash: EncryptionUtils.hashEmail(item.email)
-      }))
-    };
-    
-    console.log('🔍 Admin approved emails lookup');
-    
-    res.json({
-      success: true,
-      data: sanitizedResponse,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ Admin approved emails lookup failed:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get approved emails',
-      code: 'APPROVED_EMAILS_ERROR'
-    });
-  }
-});
-
-// POST /api/admin/verify-my-access - Verify admin access and get user info
-router.post('/verify-my-access', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const userEmail = req.user.email;
-    const emailInfo = preApprovedEmailService.getEmailInfo(userEmail);
-    
-    console.log(`🔐 Admin access verification: ${EncryptionUtils.sanitizeEmailForLog(userEmail)}`);
-    
-    res.json({
-      success: true,
-      user: {
-        emailHash: EncryptionUtils.hashEmail(userEmail),
-        uuid: emailInfo?.userUuid || null,
-        role: emailInfo?.role || 'user',
-        sanitizedEmail: EncryptionUtils.sanitizeEmailForLog(userEmail)
-      },
-      permissions: ['admin', 'email_management', 'user_management'],
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ Admin access verification failed:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Access verification failed',
-      code: 'ACCESS_VERIFICATION_ERROR'
-    });
-  }
-});
-
-// Secure admin endpoints with payload-based email handling
-// Check email status (POST with email in payload)
-router.post('/check-email', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email || typeof email !== 'string') {
+    // Prevent admin from removing themselves
+    if (user._id.toString() === req.user.userId) {
       return res.status(400).json({
         success: false,
-        error: 'Email is required in request body'
+        error: 'Cannot remove your own account'
       });
     }
 
-    const emailInfo = preApprovedEmailService.getEmailInfo(email);
-    const emailStatus = preApprovedEmailService.getEmailStatus(email);
-    
-    res.json({
+    // Prevent removing other admins
+    if (user.role === 'admin') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot remove admin accounts'
+      });
+    }
+
+    // Remove user from database
+    await User.findByIdAndDelete(userId);
+
+
+
+    res.status(200).json({
       success: true,
-      email: email.replace(/(.{3}).*(@.*)/, '$1***$2'), // Sanitized email for response
-      info: emailInfo ? {
-        ...emailInfo,
-        email: emailInfo.email.replace(/(.{3}).*(@.*)/, '$1***$2') // Sanitize in response
-      } : null,
-      status: emailStatus
+      message: 'User removed successfully'
     });
+
   } catch (error) {
+    console.error('❌ Remove user error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to remove user'
     });
   }
 });
 
-// Test email service configuration
-router.post('/test-email', async (req, res) => {
+// Get admin dashboard stats
+router.get('/stats', authenticateToken, adminMiddleware, async (req, res) => {
   try {
-    const { email, testType = 'connection' } = req.body;
+    // Count users excluding admins
+    const totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
+    const activeUsers = await User.countDocuments({ status: 'active', role: { $ne: 'admin' } });
+    const newUsers = await User.countDocuments({ isFirstLogin: true, role: { $ne: 'admin' } });
+    const adminUsers = await User.countDocuments({ role: 'admin' });
+
+    // Get preapproved stats (excluding admin emails)
+    // First, get all admin emails to exclude them from preapproved stats
+    const adminEmails = await User.find({ role: 'admin' }, { email: 1 });
+    const adminEmailList = adminEmails.map(user => user.email);
     
-    if (testType === 'connection') {
-      const result = await emailService.testConnection();
-      res.json({
-        success: true,
-        test: 'connection',
-        result: result
-      });
-    } else if (testType === 'otp' && email) {
-      const testOTP = '999888';
-      const result = await emailService.sendOTP(email, testOTP, {
-        userName: 'Test User'
-      });
-      res.json({
-        success: true,
-        test: 'otp',
-        email: email.replace(/(.{3}).*(@.*)/, '$1***$2'), // Sanitized email
-        result: result
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        error: 'Invalid test type or missing email'
-      });
-    }
+    const totalPreapproved = await PreapprovedEmail.countDocuments({ 
+      email: { $nin: adminEmailList } 
+    });
+    const approvedUsers = await PreapprovedEmail.countDocuments({ 
+      approvedByAdmin: true,
+      email: { $nin: adminEmailList }
+    });
+    const pausedUsers = await PreapprovedEmail.countDocuments({ 
+      approvedByAdmin: false,
+      email: { $nin: adminEmailList }
+    });
+
+    // Get invitation stats
+    const totalInvitations = await Invitation.countDocuments();
+    const totalInvitationCount = await Invitation.aggregate([
+      { $group: { _id: null, totalCount: { $sum: '$count' } } }
+    ]);
+
+    // Get recent registrations (last 7 days, excluding admins)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const recentRegistrations = await User.countDocuments({
+      createdAt: { $gte: sevenDaysAgo },
+      role: { $ne: 'admin' }
+    });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalUsers,
+        activeUsers,
+        newUsers,
+        adminUsers,
+        recentRegistrations,
+        totalPreapproved,
+        approvedUsers,
+        pausedUsers,
+        totalInvitations,
+        totalInvitationCount: totalInvitationCount[0]?.totalCount || 0
+      }
+    });
+
   } catch (error) {
+    console.error('❌ Get stats error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to fetch statistics'
+    });
+  }
+});
+
+// Helper function to send invitation email
+const sendInvitationEmail = async (userId, adminUserId) => {
+  // Find the user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Update user status to invited
+  user.status = 'invited';
+  await user.save();
+
+  // Check if invitation already exists
+  let invitation = await Invitation.findOne({ email: user.email });
+  
+  if (!invitation) {
+    // Create new invitation record
+    invitation = new Invitation({
+      uuid: user.userUuid,
+      email: user.email,
+      invitationId: `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sentBy: adminUserId
+    });
+  } else {
+    // Update existing invitation record
+    const newInvitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Add to history
+    invitation.history.push({
+      sentDate: invitation.sentDate,
+      invitationId: invitation.invitationId,
+      status: invitation.status,
+      sentBy: invitation.sentBy
+    });
+    
+    // Update current invitation
+    invitation.invitationId = newInvitationId;
+    invitation.sentDate = new Date();
+    invitation.count += 1;
+    invitation.sentBy = adminUserId;
+  }
+  
+  await invitation.save();
+
+  // Create or update entry in preapproved collection
+  let preapprovedEntry = await PreapprovedEmail.findOne({ email: user.email });
+  if (!preapprovedEntry) {
+    // Create new preapproved entry
+    preapprovedEntry = new PreapprovedEmail({
+      email: user.email,
+      uuid: user.userUuid,
+      approvedByAdmin: true,
+      addedBy: adminUserId,
+      addedAt: new Date()
+    });
+    await preapprovedEntry.save();
+    console.log(`✅ Preapproved entry created for ${user.email}`);
+  } else {
+    // Update existing preapproved entry to ensure it's approved
+    preapprovedEntry.approvedByAdmin = true;
+    await preapprovedEntry.save();
+    console.log(`✅ Preapproved entry updated for ${user.email}`);
+  }
+
+  // Send invitation email using user's UUID
+  const emailResult = await InviteEmailService.sendInviteEmail(user.email, user.userUuid);
+
+  return {
+    success: true,
+    message: 'Invitation email sent successfully',
+    email: user.email,
+    emailSent: emailResult.success,
+    inviteLink: emailResult.inviteLink,
+    messageId: emailResult.messageId
+  };
+};
+
+// Send invitation email to existing user (admin only)
+router.post('/users/:userId/send-invite', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const result = await sendInvitationEmail(req.params.userId, req.user.userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('❌ Send invite email error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send invitation email'
+    });
+  }
+});
+
+// Alternative endpoint for frontend compatibility
+router.post('/users/:userId/invite', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const result = await sendInvitationEmail(req.params.userId, req.user.userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('❌ Send invite email error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send invitation email'
+    });
+  }
+});
+
+// Pause user account (admin only)
+router.post('/users/:userId/pause', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Prevent admin from pausing themselves
+    if (user._id.toString() === req.user.userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot pause your own account'
+      });
+    }
+
+    // Prevent pausing other admins
+    if (user.role === 'admin') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot pause admin accounts'
+      });
+    }
+
+    // Update user status to paused
+    user.status = 'paused';
+    await user.save();
+
+    // Update preapproved entry to set approvedByAdmin to false
+    await PreapprovedEmail.findOneAndUpdate(
+      { email: user.email },
+      { approvedByAdmin: false },
+      { new: true }
+    );
+
+    console.log(`✅ User ${user.email} paused by admin`);
+
+    res.status(200).json({
+      success: true,
+      message: 'User account paused successfully',
+      email: user.email,
+      status: user.status
+    });
+
+  } catch (error) {
+    console.error('❌ Pause user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to pause user account'
+    });
+  }
+});
+
+// Resume user account (admin only)
+router.post('/users/:userId/resume', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Prevent resuming admin accounts (they should always be active)
+    if (user.role === 'admin') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot modify admin account status'
+      });
+    }
+
+    // Update user status to active
+    user.status = 'active';
+    await user.save();
+
+    // Update preapproved entry to set approvedByAdmin to true
+    await PreapprovedEmail.findOneAndUpdate(
+      { email: user.email },
+      { approvedByAdmin: true },
+      { new: true }
+    );
+
+    console.log(`✅ User ${user.email} resumed by admin`);
+
+    res.status(200).json({
+      success: true,
+      message: 'User account resumed successfully',
+      email: user.email,
+      status: user.status
+    });
+
+  } catch (error) {
+    console.error('❌ Resume user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to resume user account'
+    });
+  }
+});
+
+// Send bulk invitation emails (admin only)
+router.post('/users/send-bulk-invites', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({
+        success: false,
+        error: 'User IDs array is required'
+      });
+    }
+
+    // Get users
+    const users = await User.find({ _id: { $in: userIds } });
+
+    // Prepare users with UUIDs and update invitations
+    const usersWithUuid = [];
+    
+    for (const user of users) {
+      // Check if invitation already exists
+      let invitation = await Invitation.findOne({ email: user.email });
+      
+      if (!invitation) {
+        // Create new invitation record
+        invitation = new Invitation({
+          uuid: user.userUuid,
+          email: user.email,
+          invitationId: `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          sentBy: req.user.userId
+        });
+      } else {
+        // Update existing invitation record
+        const newInvitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Add to history
+        invitation.history.push({
+          sentDate: invitation.sentDate,
+          invitationId: invitation.invitationId,
+          status: invitation.status,
+          sentBy: invitation.sentBy
+        });
+        
+        // Update current invitation
+        invitation.invitationId = newInvitationId;
+        invitation.sentDate = new Date();
+        invitation.count += 1;
+        invitation.sentBy = req.user.userId;
+      }
+      
+      await invitation.save();
+      
+      // Create or update entry in preapproved collection
+      let preapprovedEntry = await PreapprovedEmail.findOne({ email: user.email });
+      if (!preapprovedEntry) {
+        // Create new preapproved entry
+        preapprovedEntry = new PreapprovedEmail({
+          email: user.email,
+          uuid: user.userUuid,
+          approvedByAdmin: true,
+          addedBy: req.user.userId,
+          addedAt: new Date()
+        });
+        await preapprovedEntry.save();
+        console.log(`✅ Preapproved entry created for ${user.email}`);
+      } else {
+        // Update existing preapproved entry to ensure it's approved
+        preapprovedEntry.approvedByAdmin = true;
+        await preapprovedEntry.save();
+        console.log(`✅ Preapproved entry updated for ${user.email}`);
+      }
+      
+      usersWithUuid.push({
+        email: user.email,
+        userUuid: user.userUuid
+      });
+    }
+
+    // Send bulk invitation emails
+    const results = await InviteEmailService.sendBulkInviteEmails(usersWithUuid);
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+
+    res.status(200).json({
+      success: true,
+      message: `Bulk invitation emails sent. ${successCount} successful, ${failureCount} failed.`,
+      results: results,
+      summary: {
+        total: results.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Send bulk invite emails error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send bulk invitation emails'
+    });
+  }
+});
+
+// Get invitation history for a user (admin only)
+router.get('/users/:userId/invitations', authenticateToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Find invitation history
+    const invitation = await Invitation.findOne({ email: user.email });
+    
+    if (!invitation) {
+      return res.status(200).json({
+        success: true,
+        invitation: null,
+        message: 'No invitation history found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      invitation: {
+        uuid: invitation.uuid,
+        email: invitation.email,
+        currentInvitationId: invitation.invitationId,
+        sentDate: invitation.sentDate,
+        count: invitation.count,
+        status: invitation.status,
+        history: invitation.history
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get invitation history error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch invitation history'
     });
   }
 });

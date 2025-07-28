@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { approvedEmails } from '../services/approvedEmails';
+
 import { AuthService } from '../services/auth-service';
+import configService from '../services/configService';
 import { gsap } from 'gsap';
+import HeartbeatLoader from '../components/HeartbeatLoader';
 
 export default function Home() {
   const [email, setEmail] = useState('');
@@ -13,6 +15,9 @@ export default function Home() {
   const [showOtp, setShowOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorId, setErrorId] = useState(0); // Add unique ID for error messages to prevent duplicates
+  const [lastError, setLastError] = useState(''); // Track last error to prevent duplicates
+  const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null); // Timeout for auto-clearing errors
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
   const [isRouterReady, setIsRouterReady] = useState(false);
@@ -26,14 +31,78 @@ export default function Home() {
   const featuresRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
 
-  const isApprovedEmail = (email: string) => {
-    return approvedEmails.includes(email.trim().toLowerCase());
+  const isApprovedEmail = async (email: string) => {
+    try {
+      // Use the backend URL directly since this is a client-side call
+      const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500';
+      const response = await fetch(`${backendUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      const data = await response.json();
+      return data.preapproved;
+    } catch (error) {
+      console.error('Error checking email approval:', error);
+      return false;
+    }
+  };
+
+  // Helper function to set error with unique ID to prevent duplicates
+  const setErrorWithId = (message: string) => {
+    // Clear any existing timeout
+    if (errorTimeout) {
+      clearTimeout(errorTimeout);
+    }
+    
+    // Only set error if it's different from the last error to prevent duplicates
+    if (message !== lastError) {
+      const newErrorId = errorId + 1;
+      setErrorId(newErrorId);
+      setError(message);
+      setLastError(message);
+      
+      // Auto-clear error after 5 seconds
+      const timeout = setTimeout(() => {
+        clearError();
+      }, 5000);
+      setErrorTimeout(timeout);
+    }
+  };
+
+  // Helper function to clear error
+  const clearError = () => {
+    // Clear any existing timeout
+    if (errorTimeout) {
+      clearTimeout(errorTimeout);
+      setErrorTimeout(null);
+    }
+    setError('');
+    setErrorId(0);
+    setLastError('');
   };
 
   useEffect(() => {
     const timer = setTimeout(() => setIsRouterReady(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Cleanup error timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (errorTimeout) {
+        clearTimeout(errorTimeout);
+      }
+    };
+  }, [errorTimeout]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setCanResend(true);
+    }
+  }, [countdown]);
 
   // GSAP animations on component mount
   useEffect(() => {
@@ -200,14 +269,17 @@ export default function Home() {
   };
 
   const handleSendOtp = async () => {
-    setError('');
+    clearError();
     const cleanEmail = email.trim().toLowerCase();
     if (!validateEmail(cleanEmail)) {
-      setError('Please enter a valid email address');
+      setErrorWithId('Please enter a valid email address');
       return;
     }
-    if (!isApprovedEmail(cleanEmail)) {
-      setError('This email is not approved by admin. Please contact support.');
+    
+    // Check if email is approved by admin
+    const isApproved = await isApprovedEmail(cleanEmail);
+    if (!isApproved) {
+      setErrorWithId('This email is not approved by admin. Please contact support.');
       return;
     }
     setIsLoading(true);
@@ -370,6 +442,9 @@ export default function Home() {
       }, 50);
       
     } catch (error: unknown) {
+      // Clear any existing error first
+      clearError();
+      
       let message = 'Failed to send OTP';
       if (error instanceof Error) {
         if (error.message.includes('429') || error.message.toLowerCase().includes('too many')) {
@@ -380,7 +455,7 @@ export default function Home() {
           message = error.message;
         }
       }
-      setError(message);
+      setErrorWithId(message);
       // Error shake animation
       if (cardRef.current) {
         gsap.to(cardRef.current, {
@@ -408,7 +483,9 @@ export default function Home() {
 
   const handleResendOtp = async () => {
     if (!canResend) return;
-    setError('');
+    clearError();
+    // Clear OTP text box first
+    setOtp('');
     setIsLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
@@ -416,6 +493,9 @@ export default function Home() {
       setCountdown(60);
       setCanResend(false);
     } catch (error: unknown) {
+      // Clear any existing error first
+      clearError();
+      
       let message = 'Failed to resend OTP';
       if (error instanceof Error) {
         if (error.message.includes('429') || error.message.toLowerCase().includes('too many')) {
@@ -426,33 +506,36 @@ export default function Home() {
           message = error.message;
         }
       }
-      setError(message);
+      setErrorWithId(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
-    try {
-      const data = await AuthService.verifyOTP(email, otpCode);
-      // Backend returns token in data.session.accessToken format
-      const token = data.session?.accessToken || data.token;
-      if (token) {
-        localStorage.setItem('authToken', token);
-      }
-      return data;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new Error(error.message || 'Invalid OTP');
-      }
-      throw new Error('Invalid OTP');
+    const data = await AuthService.verifyOTP(email, otpCode);
+    // Backend returns token in data.session.accessToken format
+    const token = data.session?.accessToken || data.token;
+    if (token) {
+      localStorage.setItem('authToken', token);
     }
+    
+    // Store user data including role for role-based routing
+    if (data.user) {
+      localStorage.setItem('userRole', data.user.role || 'user');
+      localStorage.setItem('userEmail', data.user.email);
+    }
+    
+    return data;
   };
 
   const handleVerifyOtp = async () => {
-    setError('');
+    // Prevent multiple rapid submissions
+    if (isLoading) return;
+    
+    clearError();
     if (otp.length < 6) {
-      setError('Please enter complete 6-digit OTP');
+      setErrorWithId('Please enter complete 6-digit OTP');
       return;
     }
     setIsLoading(true);
@@ -492,17 +575,29 @@ export default function Home() {
           ease: "back.out(1.7)"
         }, "-=0.3");
       
+      // Check user role and redirect accordingly
       if (isRouterReady && router) {
-        await router.push('/dashboard');
+        if (AuthService.isAdmin()) {
+          await router.push('/admin');
+        } else {
+          await router.push('/dashboard');
+        }
       } else {
-        window.location.href = '/dashboard';
+        if (AuthService.isAdmin()) {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
       }
     } catch (error: unknown) {
+      console.log('🔍 Error caught in handleVerifyOtp:', error);
+      
+      let errorMessage = 'Invalid OTP';
       if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Invalid OTP');
+        errorMessage = error.message;
       }
+      
+      setErrorWithId(errorMessage);
       // Error shake animation
       if (cardRef.current) {
         gsap.to(cardRef.current, {
@@ -682,11 +777,8 @@ export default function Home() {
                     <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                     {isLoading ? (
                       <div className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className="animate-pulse">Sending code...</span>
+                        <HeartbeatLoader size="sm" showText={false} className="mr-2" />
+                        <span>Sending code...</span>
                       </div>
                     ) : (
                       <span className="relative z-10">Send Verification Code</span>
@@ -809,6 +901,27 @@ export default function Home() {
                     </p>
                   </div>
 
+                  {/* Error Display - Above OTP inputs */}
+                  {error && (
+                    <div className="error-message bg-red-50 border-2 border-red-200 rounded-xl p-4 animate-fade-in mb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <p className="text-red-700 text-sm font-medium">{error}</p>
+                        </div>
+                        {/* Auto-clear indicator */}
+                        <div className="flex items-center text-red-500 text-xs">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1"></div>
+                          <span>Auto-clear in 5s</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Six Individual OTP Input Boxes */}
                   <div className="otp-inputs">
                     <div className="flex justify-center space-x-3">{[0, 1, 2, 3, 4, 5].map((index) => (
@@ -825,7 +938,7 @@ export default function Home() {
                               newOtp[index] = value;
                               const updatedOtp = newOtp.join('');
                               setOtp(updatedOtp);
-                              setError('');
+                              clearError(); // Clear error when user starts typing
                               
                               // Auto-focus next input with animation
                               if (value && index < 5) {
@@ -892,19 +1005,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Error Display */}
-                  {error && (
-                    <div className="error-message bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <p className="text-red-700 text-sm font-medium">{error}</p>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Action Buttons */}
                   <div className="otp-buttons space-y-4">
@@ -935,10 +1036,7 @@ export default function Home() {
                       <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                       {isLoading ? (
                         <div className="flex items-center justify-center">
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
+                          <HeartbeatLoader size="sm" showText={false} className="mr-2" />
                           <span>Verifying...</span>
                         </div>
                       ) : (

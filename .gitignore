@@ -32,13 +32,10 @@ capacitor-cordova-android-plugins/build/
 *.ipa
 
 # Environment variables (track only .env.example or .env.template)
-.env
-.env.*
-!.env.example
-!.env.template
-!.env.development
-!.env.production
-
+# .env
+# .env.*
+# frontend/.env*
+# backend/.env*
 
 # Logs
 *.log
@@ -158,3 +155,70 @@ ios/public
 # Lock files (if using only one lock file, ignore the others)
 package-lock.json
 yarn.lock
+
+# --- Local Testing and Utility Scripts ---
+backend/scripts/*
+!backend/scripts/README.md
+scripts/*
+!scripts/README.md
+
+# --- Build, Cache, and Temp Artifacts (additional) ---
+frontend/.next/
+frontend/dist/
+frontend/out/
+frontend/.cache/
+frontend/tmp/
+frontend/temp/
+frontend/test/
+frontend/__tests__/
+frontend/__mocks__/
+backend/.next/
+backend/dist/
+backend/.cache/
+backend/tmp/
+backend/temp/
+backend/test/
+backend/__tests__/
+backend/__mocks__/
+__tests__/
+__mocks__/
+test/
+tmp/
+temp/
+.cache/
+
+# --- Android/Capacitor/Next.js/Static Build Output (already covered, but explicit for clarity) ---
+android/app/src/main/assets/www/cache/
+android/app/src/main/assets/www/server/
+android/app/src/main/assets/www/static/
+
+# --- Allow .gitkeep or README.md in ignored folders ---
+!backend/scripts/.gitkeep
+!scripts/.gitkeep
+!backend/scripts/README.md
+!scripts/README.md
+!frontend/.next/.gitkeep
+!frontend/dist/.gitkeep
+!frontend/out/.gitkeep
+!frontend/.cache/.gitkeep
+!frontend/tmp/.gitkeep
+!frontend/temp/.gitkeep
+!frontend/test/.gitkeep
+!frontend/__tests__/.gitkeep
+!frontend/__mocks__/.gitkeep
+!backend/.next/.gitkeep
+!backend/dist/.gitkeep
+!backend/.cache/.gitkeep
+!backend/tmp/.gitkeep
+!backend/temp/.gitkeep
+!backend/test/.gitkeep
+!backend/__tests__/.gitkeep
+!backend/__mocks__/.gitkeep
+!__tests__/.gitkeep
+!__mocks__/.gitkeep
+test/.gitkeep
+tmp/.gitkeep
+temp/.gitkeep
+.cache/.gitkeep
+
+# --- End custom additions ---

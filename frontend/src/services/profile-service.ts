@@ -8,17 +8,52 @@ const API_CONFIG = {
 };
 
 export interface Profile {
-  id: number;
-  name: string;
-  age: number;
-  profession: string;
-  location: string;
-  education: string;
-  image: string;
-  interests: string[];
-  about: string;
+  // Basic fields
+  id?: string;
+  name?: string;
+  email: string;
+  userUuid?: string;
+  role: string;
   verified: boolean;
   lastActive: string;
+  isFirstLogin?: boolean;
+  
+  // Profile fields (from backend profile.profile)
+  gender?: string;
+  nativePlace?: string;
+  currentResidence?: string;
+  maritalStatus?: string;
+  manglik?: string;
+  dateOfBirth?: string;
+  timeOfBirth?: string;
+  placeOfBirth?: string;
+  height?: string;
+  weight?: string;
+  complexion?: string;
+  education?: string;
+  occupation?: string;
+  annualIncome?: string;
+  eatingHabit?: string;
+  smokingHabit?: string;
+  drinkingHabit?: string;
+  father?: string;
+  mother?: string;
+  brothers?: string;
+  sisters?: string;
+  fatherGotra?: string;
+  motherGotra?: string;
+  grandfatherGotra?: string;
+  grandmotherGotra?: string;
+  specificRequirements?: string;
+  settleAbroad?: string;
+  about?: string;
+  interests?: string[];
+  
+  // Legacy fields for backward compatibility
+  age?: number;
+  profession?: string;
+  location?: string;
+  image?: string;
 }
 
 export interface FilterCriteria {
@@ -35,8 +70,8 @@ export class ProfileService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.warn('API_BASE_URL not configured. Using demo profiles for development.');
-      return this.getDemoProfiles();
+      console.warn('API_BASE_URL not configured. Returning empty array.');
+      return [];
     }
 
     try {
@@ -60,6 +95,10 @@ export class ProfileService {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          // No profiles found, return empty array
+          return [];
+        }
         throw new Error(`Failed to fetch profiles: ${response.statusText}`);
       }
 
@@ -67,14 +106,8 @@ export class ProfileService {
       return data.profiles || [];
     } catch (error: unknown) {
       console.error('Error fetching profiles:', error);
-      
-      // Fallback to demo profiles in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Falling back to demo profiles due to API error');
-        return this.getDemoProfiles();
-      }
-      
-      throw new Error((error as Error)?.message || 'Failed to fetch profiles');
+      // Return empty array on error
+      return [];
     }
   }
 
@@ -117,24 +150,100 @@ export class ProfileService {
       return null;
     }
 
+    // Check if user is authenticated
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      console.log('🔐 No auth token found, returning null for unauthenticated user');
+      return null;
+    }
+
     try {
       const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+      if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          console.warn('Authentication failed, user may need to login again');
+          return null;
+        }
+        if (response.status === 404) {
+          console.log('Profile not found, returning null');
+          return null;
+        }
+        // For other errors, log but don't throw
+        console.error(`Profile fetch failed with status ${response.status}: ${response.statusText}`);
+        return null;
       }
 
       const data = await response.json();
-      return data.profile || null;
+      console.log('🔍 Backend profile response:', data);
+      
+      if (data.profile && typeof window !== 'undefined') {
+        // Store isFirstLogin in localStorage for onboarding/navigation logic
+        localStorage.setItem('isFirstLogin', String(data.profile.isFirstLogin));
+      }
+      
+      // The backend returns profile data nested under data.profile.profile
+      // We need to flatten this structure for the frontend
+      if (data.profile && data.profile.profile) {
+        const flattenedProfile = {
+          ...data.profile.profile, // All the profile fields (name, gender, etc.)
+          email: data.profile.email,
+          userUuid: data.profile.userUuid,
+          isFirstLogin: data.profile.isFirstLogin,
+          // Add any other top-level fields that might be needed
+          id: data.profile.userId?.toString(),
+          role: 'user', // Default role
+          verified: data.profile.verification?.isVerified || false,
+          lastActive: data.profile.lastActive || new Date().toISOString()
+        };
+        console.log('🔍 Flattened profile:', flattenedProfile);
+        return flattenedProfile;
+      }
+      
+      return data.profile ? { ...data.profile, email: data.profile.email, role: 'user', isFirstLogin: data.profile.isFirstLogin } : null;
     } catch (error: unknown) {
       console.error('Error fetching user profile:', error);
+      // Don't throw, just return null for graceful handling
       return null;
+    }
+  }
+
+  // Get user profile by UUID (public)
+  static async getProfileByUuid(uuid: string): Promise<Profile | null> {
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    if (!apiBaseUrl) return null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/profiles/uuid/${uuid}`);
+      if (!response.ok) throw new Error('Failed to fetch profile by UUID');
+      const data = await response.json();
+      return data.profile || null;
+    } catch (error) {
+      console.error('Error fetching profile by UUID:', error);
+      return null;
+    }
+  }
+
+  // Soft delete (deactivate) user profile
+  static async deleteProfile(): Promise<boolean> {
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    if (!apiBaseUrl) return false;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      return false;
     }
   }
 
@@ -144,7 +253,7 @@ export class ProfileService {
     
     return [
       {
-        id: 1,
+        id: '1',
         name: 'Priya S.',
         age: 26,
         profession: 'Software Engineer',
@@ -154,10 +263,12 @@ export class ProfileService {
         interests: ['Travel', 'Reading', 'Cooking'],
         about: 'Looking for a life partner who values family and career equally.',
         verified: true,
-        lastActive: '2 hours ago'
+        lastActive: '2 hours ago',
+        email: 'priya@example.com',
+        role: 'user'
       },
       {
-        id: 2,
+        id: '2',
         name: 'Arjun P.',
         age: 29,
         profession: 'Doctor',
@@ -167,10 +278,12 @@ export class ProfileService {
         interests: ['Music', 'Sports', 'Social Work'],
         about: 'Passionate doctor seeking a caring and understanding partner.',
         verified: true,
-        lastActive: '1 day ago'
+        lastActive: '1 day ago',
+        email: 'arjun@example.com',
+        role: 'user'
       },
       {
-        id: 3,
+        id: '3',
         name: 'Kavya R.',
         age: 24,
         profession: 'Teacher',
@@ -180,7 +293,9 @@ export class ProfileService {
         interests: ['Art', 'Dance', 'Literature'],
         about: 'Creative soul looking for someone who appreciates arts and culture.',
         verified: true,
-        lastActive: '3 hours ago'
+        lastActive: '3 hours ago',
+        email: 'kavya@example.com',
+        role: 'user'
       }
     ];
   }

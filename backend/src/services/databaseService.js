@@ -103,6 +103,7 @@ class DatabaseService {
 
       // Connect with Mongoose
       await mongoose.connect(connectionString, options);
+      console.log('Mongoose connected to DB:', mongoose.connection.name);
 
       // For MongoDB Atlas, also test with native client and ping
       if (isAtlas) {
@@ -244,10 +245,8 @@ class DatabaseService {
     if (!this.mongoClient) {
       throw new Error('Native MongoDB client not available');
     }
-    
-    // Use provided database name or default from connection
-    const databaseName = dbName || mongoose.connection.name || 'shaadimantra_dev';
-    return this.mongoClient.db(databaseName);
+    // Always use 'test' database
+    return this.mongoClient.db('test');
   }
 
   // Health check

@@ -89,11 +89,8 @@ export class EmailInvitationService {
     }
 
     try {
-      const url = adminKey 
-        ? `${apiBaseUrl}/api/admin/approved-emails?adminKey=${encodeURIComponent(adminKey)}`
-        : `${apiBaseUrl}/api/admin/approved-emails`;
-        
-      const response = await fetch(url, {
+      // Use the new admin API to get users
+      const response = await fetch(`${apiBaseUrl}/api/admin/users`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -106,7 +103,8 @@ export class EmailInvitationService {
       }
 
       const data = await response.json();
-      return data.emails || [];
+      // Extract emails from users data
+      return data.users?.map((user: any) => user.email) || [];
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error fetching approved emails:', error);
@@ -244,6 +242,183 @@ export class EmailInvitationService {
         return false;
       }
       console.error('Failed to remove approved email:', error);
+      return false;
+    }
+  }
+
+  // Create invitation (admin only)
+  static async createInvitation(email: string): Promise<any> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/invitations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ email })
+      });
+      if (response.status === 403) throw new Error('Only admin can send invitations');
+      if (response.status === 400) throw new Error('Email not preapproved');
+      if (!response.ok) throw new Error('Failed to create invitation');
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      return null;
+    }
+  }
+
+  // List all invitations (admin only)
+  static async getInvitations(): Promise<any[]> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return [];
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/invitations`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      if (response.status === 403) throw new Error('Only admin can view invitations');
+      if (!response.ok) throw new Error('Failed to fetch invitations');
+      return (await response.json()).invitations || [];
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+      return [];
+    }
+  }
+
+  // Get invitation by code/UUID
+  static async getInvitationByCode(code: string): Promise<any | null> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/invitations/${code}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch invitation');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching invitation:', error);
+      return null;
+    }
+  }
+
+  // Update invitation (accept/decline/resend)
+  static async updateInvitation(code: string, status: string): Promise<any | null> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/invitations/${code}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (!response.ok) throw new Error('Failed to update invitation');
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating invitation:', error);
+      return null;
+    }
+  }
+
+  // Delete invitation (admin only)
+  static async deleteInvitation(code: string): Promise<boolean> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return false;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/invitations/${code}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      if (!response.ok) throw new Error('Failed to delete invitation');
+      return true;
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      return false;
+    }
+  }
+
+  // List all preapproved emails (admin only)
+  static async listPreapprovedEmails(): Promise<{ email: string; uuid: string }[]> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return [];
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/admin/users`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const data = await response.json();
+      // Map users to email and uuid format
+      return data.users?.map((user: any) => ({
+        email: user.email,
+        uuid: user.userUuid
+      })) || [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  }
+
+  // Add a preapproved email (admin only)
+  static async addPreapprovedEmail(email: string): Promise<{ email: string; uuid: string } | null> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email,
+          firstName: 'User',
+          lastName: 'Name'
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to add user');
+      const data = await response.json();
+      return data.uuid ? { email: data.email, uuid: data.uuid } : null;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      return null;
+    }
+  }
+
+  // Remove a preapproved email (admin only) - Now pauses the user instead
+  static async removePreapprovedEmail(email: string): Promise<boolean> {
+    const apiBaseUrl = configService.apiBaseUrl;
+    if (!apiBaseUrl) return false;
+    try {
+      // First get the user to find their ID
+      const usersResponse = await fetch(`${apiBaseUrl}/api/admin/users`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!usersResponse.ok) throw new Error('Failed to fetch users');
+      const usersData = await usersResponse.json();
+      const user = usersData.users?.find((u: any) => u.email === email);
+      if (!user) throw new Error('User not found');
+      
+      // Pause the user
+      const response = await fetch(`${apiBaseUrl}/api/admin/users/${user._id}/pause`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to pause user');
+      return true;
+    } catch (error) {
+      console.error('Error pausing user:', error);
       return false;
     }
   }

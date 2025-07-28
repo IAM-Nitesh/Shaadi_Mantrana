@@ -34,9 +34,10 @@ class JWTSessionManager {
   // Create session with both tokens
   static createSession(user) {
     const payload = {
-      userId: user._id, // always use ObjectId
+      userId: user.userId || user._id, // use userId if present, else _id
       userUuid: user.userUuid, // Include UUID for monitoring
       email: user.email,
+      role: user.role || 'user',
       verified: user.verified || true,
       sessionId: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
     };
@@ -182,6 +183,7 @@ const authenticateToken = (req, res, next) => {
       userId: decoded.userId,
       userUuid: decoded.userUuid, // Include UUID for monitoring
       email: decoded.email,
+      role: decoded.role,
       verified: decoded.verified,
       sessionId: decoded.sessionId
     };

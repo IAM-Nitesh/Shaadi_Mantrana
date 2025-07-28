@@ -8,6 +8,39 @@ export const API_CONFIG = {
   EXTERNAL_VERIFY_OTP: process.env.NEXT_PUBLIC_API_BASE_URL ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/verify-otp` : null,
 };
 
+// Helper function to create user-friendly error messages
+function createUserFriendlyError(response: Response, errorData: any, context: 'sendOTP' | 'verifyOTP'): string {
+  let userFriendlyMessage = errorData.error || 'Authentication failed';
+  
+  switch (response.status) {
+    case 400:
+      userFriendlyMessage = errorData.error || (context === 'sendOTP' ? 'Invalid email format. Please check and try again.' : 'Invalid OTP. Please check and try again.');
+      break;
+    case 401:
+      userFriendlyMessage = 'Authentication failed. Please try again.';
+      break;
+    case 403:
+      userFriendlyMessage = errorData.error || 'This email is not authorized. Please contact support.';
+      break;
+    case 404:
+      userFriendlyMessage = 'Service not found. Please try again later.';
+      break;
+    case 409:
+      userFriendlyMessage = errorData.error || 'This email is already registered. Please try logging in.';
+      break;
+    case 429:
+      userFriendlyMessage = 'Too many attempts. Please wait a moment and try again.';
+      break;
+    case 500:
+      userFriendlyMessage = 'Server error. Please try again later.';
+      break;
+    default:
+      userFriendlyMessage = errorData.error || 'Something went wrong. Please try again.';
+  }
+  
+  return userFriendlyMessage;
+}
+
 // Production-ready API service
 export class AuthService {
   static async sendOTP(email: string) {
@@ -23,7 +56,9 @@ export class AuthService {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        const userFriendlyMessage = createUserFriendlyError(response, errorData, 'sendOTP');
+        throw new Error(userFriendlyMessage);
       }
       
       return await response.json();
@@ -40,7 +75,8 @@ export class AuthService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        const userFriendlyMessage = createUserFriendlyError(response, errorData, 'sendOTP');
+        throw new Error(userFriendlyMessage);
       }
       
       return await response.json();
@@ -76,7 +112,9 @@ export class AuthService {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        const userFriendlyMessage = createUserFriendlyError(response, errorData, 'verifyOTP');
+        throw new Error(userFriendlyMessage);
       }
       
       return await response.json();
@@ -93,7 +131,8 @@ export class AuthService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        const userFriendlyMessage = createUserFriendlyError(response, errorData, 'verifyOTP');
+        throw new Error(userFriendlyMessage);
       }
       
       const result = await response.json();
@@ -154,5 +193,27 @@ export class AuthService {
   static isAuthenticated(): boolean {
     if (typeof window === 'undefined') return false;
     return !!localStorage.getItem('authToken');
+  }
+
+  static getCurrentUserEmail(): string {
+    try {
+      return localStorage.getItem('userEmail') || '';
+    } catch (error) {
+      console.error('Error getting current user email:', error);
+      return '';
+    }
+  }
+
+  static getCurrentUserRole(): string {
+    try {
+      return localStorage.getItem('userRole') || 'user';
+    } catch (error) {
+      console.error('Error getting current user role:', error);
+      return 'user';
+    }
+  }
+
+  static isAdmin(): boolean {
+    return this.getCurrentUserRole() === 'admin';
   }
 }
