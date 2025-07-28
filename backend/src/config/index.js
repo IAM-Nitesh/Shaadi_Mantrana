@@ -32,7 +32,7 @@ const getMongoDBURI = () => {
   const environment = process.env.NODE_ENV || 'development';
   
   // Development MongoDB URI (provided with updated credentials)
-  const DEV_MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+  const DEV_MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
   
   switch (environment) {
     case 'development':

@@ -12,4 +12,10 @@ router.get('/me', authenticateToken, profileController.getProfile);
 // Update user profile (requires authentication)
 router.put('/me', authenticateToken, profileController.updateProfile);
 
+// Get user profile by UUID (public)
+router.get('/uuid/:uuid', profileController.getProfileByUuid);
+
+// Soft delete user profile (authenticated)
+router.delete('/me', authenticateToken, profileController.deleteProfile);
+
 module.exports = router;

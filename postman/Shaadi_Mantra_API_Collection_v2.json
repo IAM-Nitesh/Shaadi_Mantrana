@@ -200,6 +200,193 @@
               "path": ["api", "admin", "check-email"]
             }
           }
+        },
+        {
+          "name": "Create Invitation (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{invitee_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Get All Invitations (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Get Invitation by Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations/{{invitation_code}}",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations", "{{invitation_code}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Invitation (Accept/Decline/Resend)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"accepted\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations/{{invitation_code}}",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations", "{{invitation_code}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Invitation (Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations/{{invitation_code}}",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations", "{{invitation_code}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Invitation (Admin Only, Preapproved Email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"preapproved@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Create Invitation (Non-Admin, Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{non_admin_auth_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"preapproved@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Invitations (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Accept Invitation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations/{{invitation_code}}/accept",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations", "{{invitation_code}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Decline Invitation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations/{{invitation_code}}/decline",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations", "{{invitation_code}}", "decline"]
+            }
+          }
+        },
+        {
+          "name": "Delete Invitation (Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url_dev}}/api/invitations/{{invitation_code}}",
+              "host": ["{{base_url_dev}}"],
+              "path": ["api", "invitations", "{{invitation_code}}"]
+            }
+          }
         }
       ]
     }

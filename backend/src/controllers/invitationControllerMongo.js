@@ -1,13 +1,21 @@
 // MongoDB-integrated Invitation Controller
 const crypto = require('crypto');
-const { Invitation } = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const { Invitation, Preapproved } = require('../models');
 const { validateEmail, sanitizeInput } = require('../utils/security');
-const preApprovedEmailService = require('../services/preApprovedEmailService');
+
 
 class InvitationController {
   // Create new invitation
   async createInvitation(req, res) {
     try {
+      // Only admin can send invitations
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only admin can send invitations.'
+        });
+      }
       const { email, type = 'email' } = req.body;
       const userId = req.user?.userId;
       const userEmail = req.user?.email;
@@ -20,7 +28,6 @@ class InvitationController {
       }
 
       const sanitizedEmail = sanitizeInput(email);
-      
       if (!validateEmail(sanitizedEmail)) {
         return res.status(400).json({
           success: false,
@@ -28,9 +35,9 @@ class InvitationController {
         });
       }
 
-      // Check if email is already approved
-      const emailStatus = preApprovedEmailService.getEmailStatus(sanitizedEmail);
-      if (emailStatus.approved) {
+      // Check if email is already in preapproved collection
+      const existingPreapproved = await Preapproved.findOne({ email: sanitizedEmail });
+      if (existingPreapproved) {
         return res.status(400).json({
           success: false,
           error: 'Email is already approved for registration'
@@ -56,49 +63,31 @@ class InvitationController {
         });
       }
 
-      // Generate unique invitation code
-      let invitationCode;
-      let isUnique = false;
-      let attempts = 0;
-      
-      while (!isUnique && attempts < 10) {
-        invitationCode = crypto.randomBytes(6).toString('hex').toUpperCase();
-        const existing = await Invitation.findOne({ invitationCode });
-        if (!existing) isUnique = true;
-        attempts++;
-      }
-
-      if (!isUnique) {
-        return res.status(500).json({
-          success: false,
-          error: 'Failed to generate unique invitation code'
-        });
-      }
+      // Generate unique invitation ID
+      const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const userUuid = uuidv4();
 
       // Create invitation
       const invitation = new Invitation({
+        uuid: userUuid,
         email: sanitizedEmail,
-        invitationCode,
-        type,
-        sentBy: {
-          userId,
-          email: userEmail,
-          type: userId ? 'user' : 'admin'
-        },
-        metadata: {
-          ipAddress: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-                    req.connection?.remoteAddress || '127.0.0.1',
-          userAgent: req.headers['user-agent'],
-          source: 'web'
-        }
+        invitationId: invitationId,
+        sentBy: userId
       });
 
       await invitation.save();
 
       // Add email to pre-approved list
-      preApprovedEmailService.addApprovedEmail(sanitizedEmail, 'invitation');
+      const preapprovedEntry = new Preapproved({
+        email: sanitizedEmail,
+        uuid: userUuid,
+        isFirstLogin: true,
+        approvedByAdmin: true,
+        addedBy: userId
+      });
+      await preapprovedEntry.save();
 
-      console.log(`✅ Invitation created: ${sanitizedEmail} - Code: ${invitationCode}`);
+      console.log(`✅ Invitation created: ${sanitizedEmail} - ID: ${invitationId}`);
 
       res.status(201).json({
         success: true,
@@ -106,10 +95,8 @@ class InvitationController {
         invitation: {
           id: invitation._id,
           email: invitation.email,
-          invitationCode: invitation.invitationCode,
+          invitationId: invitation.invitationId,
           status: invitation.status,
-          type: invitation.type,
-          expiresAt: invitation.expiresAt,
           createdAt: invitation.createdAt
         }
       });
@@ -136,8 +123,8 @@ class InvitationController {
       }
 
       const invitation = await Invitation.findOne({
-        invitationCode: code.toUpperCase()
-      }).populate('sentBy.userId', 'profile.name email');
+        invitationId: code
+      }).populate('sentBy', 'profile.name email');
 
       if (!invitation) {
         return res.status(404).json({
@@ -212,7 +199,7 @@ class InvitationController {
       
       // If regular user, only show their invitations
       if (userId) {
-        query['sentBy.userId'] = userId;
+        query.sentBy = userId;
       }
 
       if (status) {
@@ -225,7 +212,7 @@ class InvitationController {
 
       // Find invitations
       const invitations = await Invitation.find(query)
-        .populate('sentBy.userId', 'profile.name email')
+        .populate('sentBy', 'profile.name email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -243,15 +230,11 @@ class InvitationController {
         invitations: invitations.map(inv => ({
           id: inv._id,
           email: inv.email,
-          invitationCode: inv.invitationCode,
+          invitationId: inv.invitationId,
           status: inv.status,
-          type: inv.type,
           sentBy: inv.sentBy,
-          sentAt: inv.sentAt,
-          openedAt: inv.openedAt,
-          acceptedAt: inv.acceptedAt,
-          expiresAt: inv.expiresAt,
-          attempts: inv.attempts,
+          sentDate: inv.sentDate,
+          count: inv.count,
           createdAt: inv.createdAt
         })),
         pagination: {
@@ -392,10 +375,7 @@ class InvitationController {
       await invitation.save();
 
       // Remove from pre-approved emails if it was added via invitation
-      const emailStatus = preApprovedEmailService.getEmailStatus(invitation.email);
-      if (emailStatus.approved && emailStatus.type === 'invitation') {
-        preApprovedEmailService.removeApprovedEmail(invitation.email);
-      }
+      await Preapproved.findOneAndDelete({ email: invitation.email });
 
       console.log(`❌ Invitation cancelled: ${invitation.email}`);
 

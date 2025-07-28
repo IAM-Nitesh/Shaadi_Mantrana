@@ -4,22 +4,17 @@
 export class ContactService {
   // Highly obfuscated contact information using base64 and ROT13
   private static readonly ENCODED_EMAIL = 'ZnVubnFuenRuZ2VuLnVyeWNBdHpudnlAZ3pueXkuaGJ6';
-  private static readonly ENCODED_PHONE = 'XzU0NzJPQ1U2NEI0RQ==';
+  private static readonly ENCODED_PHONE = 'NzA4Njg3NTAxMw==';
   
   // Decode and transform contact information
   private static decodeEmail(): string {
-    const decoded = atob(this.ENCODED_EMAIL);
-    return decoded.replace(/[a-zA-Z]/g, (char) => {
-      const start = char <= 'Z' ? 65 : 97;
-      return String.fromCharCode(((char.charCodeAt(0) - start + 13) % 26) + start);
-    });
+    // Direct decode for shaadimantra.help@gmail.com
+    return 'shaadimantra.help@gmail.com';
   }
   
   private static decodePhone(): string {
-    const decoded = atob(this.ENCODED_PHONE);
-    return decoded.replace(/[0-9]/g, (digit) => {
-      return String.fromCharCode(((parseInt(digit) + 7) % 10) + 48);
-    }).replace('_', '+');
+    // Direct decode for 7086875013
+    return '7086875013';
   }
   
   // Get support email in a secure way

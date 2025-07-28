@@ -6,17 +6,23 @@ import { useRouter } from 'next/navigation';
 import SwipeCard from './SwipeCard';
 import FilterModal, { FilterState } from './FilterModal';
 import { ProfileService, Profile } from '../../services/profile-service';
+import { MatchingService, type DiscoveryProfile } from '../../services/matching-service';
 import { AuthService } from '../../services/auth-service';
 import CustomIcon from '../../components/CustomIcon';
 import ModernNavigation from '../../components/ModernNavigation';
+import HeartbeatLoader from '../../components/HeartbeatLoader';
+
 import { gsap } from 'gsap';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function Dashboard() {
   const router = useRouter();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showFilter, setShowFilter] = useState(false);
-  const [matches, setMatches] = useState(0);
+  const [dailyLikeCount, setDailyLikeCount] = useState(0);
+  const [remainingLikes, setRemainingLikes] = useState(5);
+  const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,6 +32,9 @@ export default function Dashboard() {
     selectedCountry: '',
     selectedState: ''
   });
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
 
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,38 +44,86 @@ export default function Dashboard() {
 
   // Move loadProfiles above useEffect hooks
   const loadProfiles = useCallback(async () => {
+    // Check authentication before making API calls
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      console.log('🚫 Dashboard: No auth token found, skipping profile load');
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+    
+    if (!AuthService.isAuthenticated()) {
+      console.log('🚫 Dashboard: User not authenticated, skipping profile load');
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError('');
     
     try {
-      const filterCriteria = {
-        ageRange: filters.ageRange,
-        selectedProfessions: filters.selectedProfessions,
-        selectedLocations: filters.selectedCountry || filters.selectedState ? 
-          [filters.selectedCountry, filters.selectedState].filter(Boolean) : [],
-        selectedEducation: [],
-        selectedInterests: []
-      };
-
-      const fetchedProfiles = await ProfileService.getProfiles(filterCriteria);
-      setProfiles(fetchedProfiles);
+      console.log('🔄 Dashboard: Loading discovery profiles...');
+      const discoveryData = await MatchingService.getDiscoveryProfiles();
+      console.log('✅ Dashboard: Discovery profiles loaded:', discoveryData);
+      setProfiles(discoveryData.profiles);
+      setDailyLikeCount(discoveryData.dailyLikeCount);
+      setRemainingLikes(discoveryData.remainingLikes);
+      setDailyLimitReached(discoveryData.dailyLimitReached);
       setCurrentIndex(0);
     } catch (err: unknown) {
+      console.error('❌ Dashboard: Error loading profiles:', err);
       if (err instanceof Error) {
+        if (err.message.includes('Authentication failed') || err.message.includes('401')) {
+          console.log('🚫 Dashboard: Authentication failed, clearing token and redirecting to home');
+          localStorage.removeItem('authToken');
+          router.push('/');
+          return;
+        }
+        
+        // Handle specific error cases
+        if (err.message.includes('No profiles available')) {
+          console.log('📭 Dashboard: No profiles available, showing empty state');
+          setProfiles([]);
+          setError('');
+          return;
+        }
+        
+        if (err.message.includes('Daily like limit reached')) {
+          console.log('🚫 Dashboard: Daily limit reached');
+          setProfiles([]);
+          setDailyLimitReached(true);
+          setError('');
+          return;
+        }
+        
         setError(err.message || 'Failed to load profiles');
-        console.error('Error loading profiles:', err);
+      } else {
+        setError('Failed to load profiles');
       }
+      // Don't throw the error to prevent app crashes
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [router]);
 
   // Check authentication on component mount and load profiles
   useEffect(() => {
-    if (!AuthService.isAuthenticated()) {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      console.log('🚫 Dashboard: No auth token found, redirecting to home');
       router.push('/');
       return;
     }
+    
+    if (!AuthService.isAuthenticated()) {
+      console.log('🚫 Dashboard: User not authenticated, redirecting to home');
+      router.push('/');
+      return;
+    }
+    
+    console.log('✅ Dashboard: User authenticated, loading profiles');
     setIsAuthenticated(true);
     loadProfiles();
   }, [router, loadProfiles]);
@@ -77,6 +134,95 @@ export default function Dashboard() {
       loadProfiles();
     }
   }, [filters, profiles.length, loadProfiles]);
+
+  // Check for incomplete profile on component mount
+  useEffect(() => {
+    async function checkOnboarding() {
+      try {
+          const userProfile = await ProfileService.getUserProfile();
+        
+        if (userProfile) {
+          // Calculate profile completion
+          const calculateProfileCompletion = (profile: any): number => {
+            if (!profile) return 0;
+
+            const requiredFields = [
+              'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
+              'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
+              'maritalStatus', 'father', 'mother', 'about'
+            ];
+
+            const optionalFields = [
+              'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
+              'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
+              'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
+              'interests'
+            ];
+
+            let completedFields = 0;
+
+            // Check required fields (weight: 2x)
+            requiredFields.forEach(field => {
+              if (profile[field] && profile[field].toString().trim() !== '') {
+                completedFields += 2;
+              }
+            });
+
+            // Check optional fields (weight: 1x)
+            optionalFields.forEach(field => {
+              if (profile[field] && profile[field].toString().trim() !== '') {
+                completedFields += 1;
+              }
+            });
+
+            // Calculate percentage (max 100%)
+            const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
+            return percentage;
+          };
+
+          const completion = calculateProfileCompletion(userProfile);
+          setProfileCompletion(completion);
+
+          // Check if user is first-time user
+          const isFirstLogin = userProfile.isFirstLogin || completion < 75;
+          setIsFirstTimeUser(isFirstLogin);
+
+          // Check if user has already seen the onboarding overlay
+          const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
+          
+          // Show onboarding overlay for first-time users who haven't seen it
+          if (isFirstLogin && completion < 75 && !hasSeenOnboarding) {
+            setShowOnboarding(true);
+          }
+          
+          // If profile is 75%+ complete, ensure onboarding is marked as seen
+          if (completion >= 75 && !hasSeenOnboarding) {
+            console.log('✅ Dashboard: Profile 75%+ complete, marking onboarding as seen');
+            localStorage.setItem('hasSeenOnboarding', 'true');
+            localStorage.setItem('isFirstLogin', 'false');
+            setShowOnboarding(false);
+          }
+
+          // Redirect to profile if user has incomplete profile (regardless of onboarding status)
+          if (isFirstLogin && completion < 75) {
+            console.log('🚫 Dashboard: User has incomplete profile, redirecting to /profile');
+            console.log('📊 Profile completion:', completion, 'isFirstLogin:', userProfile.isFirstLogin, 'hasSeenOnboarding:', hasSeenOnboarding);
+            router.replace('/profile');
+            return;
+          }
+
+          // Store completion status
+          localStorage.setItem('profileCompletion', completion.toString());
+          localStorage.setItem('isFirstTimeUser', isFirstLogin.toString());
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        // Don't throw the error, just log it and continue
+        // This prevents the app from crashing due to profile fetch errors
+      }
+    }
+    checkOnboarding();
+  }, [router]);
 
   // GSAP animations on component mount and data load
   useEffect(() => {
@@ -274,21 +420,38 @@ export default function Dashboard() {
   }, [showFilter]);
 
   const handleSwipe = async (direction: 'left' | 'right') => {
+    // Check authentication before making API calls
+    if (!AuthService.isAuthenticated()) {
+      console.log('🚫 Dashboard: User not authenticated, cannot record swipe');
+      return;
+    }
+
     if (currentIndex >= profiles.length) return;
 
     const currentProfile = profiles[currentIndex];
-    const action = direction === 'right' ? 'like' : 'dislike';
     
     try {
-      // Record interaction with backend
-      await ProfileService.recordInteraction(currentProfile.id, action);
-      
       if (direction === 'right') {
-        setMatches(prev => prev + 1);
+        // Like the profile
+        const likeResponse = await MatchingService.likeProfile(currentProfile._id);
+        console.log('Like response:', likeResponse);
+        
+        if (likeResponse.isMutualMatch) {
+          // Show match notification
+          console.log('🎉 It\'s a match!');
+        }
+        
+        // Update daily like count
+        setDailyLikeCount(likeResponse.dailyLikeCount);
+        setRemainingLikes(likeResponse.remainingLikes);
+      } else {
+        // Pass on the profile
+        await MatchingService.passProfile(currentProfile._id);
       }
     } catch (error) {
       console.error('Error recording interaction:', error);
       // Don't block the UI for interaction recording failures
+      // Don't throw the error to prevent app crashes
     }
 
     // Move to next profile regardless of interaction recording success
@@ -304,14 +467,11 @@ export default function Dashboard() {
 
   // Filter profiles based on current filters (client-side backup)
   const filteredProfiles = profiles.filter(profile => {
-    const ageInRange = profile.age >= filters.ageRange[0] && profile.age <= filters.ageRange[1];
+    const ageInRange = profile.profile.age >= filters.ageRange[0] && profile.profile.age <= filters.ageRange[1];
     const professionMatch = filters.selectedProfessions.length === 0 || 
-                           filters.selectedProfessions.includes(profile.profession);
-    const locationMatch = (filters.selectedCountry === '' && filters.selectedState === '') ||
-                         (filters.selectedCountry !== '' && profile.location.includes(filters.selectedCountry)) ||
-                         (filters.selectedState !== '' && profile.location.includes(filters.selectedState));
+                           filters.selectedProfessions.includes(profile.profile.profession);
     
-    return ageInRange && professionMatch && locationMatch;
+    return ageInRange && professionMatch;
   });
 
   const hasActiveFilters = filters.selectedProfessions.length > 0 || 
@@ -324,7 +484,11 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <HeartbeatLoader 
+            size="lg" 
+            text="Checking Authentication" 
+            className="mb-4"
+          />
           <p className="text-slate-600">Checking authentication...</p>
         </div>
       </div>
@@ -332,6 +496,9 @@ export default function Dashboard() {
   }
 
   return (
+    <>
+
+      
     <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden page-wrapper">
       {/* Background Pattern with enhanced animations */}
       <div className="absolute inset-0 bg-gradient-to-br from-rose-100/20 to-pink-100/20"></div>
@@ -380,12 +547,13 @@ export default function Dashboard() {
             {/* Main Content with enhanced transitions */}
       <div className="pt-20 pb-24 px-4 relative z-10">
         {loading ? (
-          <div className="text-center py-20">
-            <div className="loading-container w-16 h-16 mx-auto mb-6 bg-rose-100 border border-rose-200 rounded-2xl flex items-center justify-center shadow-lg">
-              <div className="loading-spinner w-8 h-8 border-3 border-rose-500 border-t-transparent rounded-full"></div>
-            </div>
-            <h3 className="loading-title text-lg font-semibold text-gray-800">Finding Your Perfect Matches</h3>
-            <p className="loading-subtitle text-gray-600 mt-2">Please wait while we curate profiles for you...</p>
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <HeartbeatLoader 
+              size="lg" 
+              text="Finding Your Perfect Matches" 
+              className="mb-4"
+            />
+            <p className="text-gray-600 mt-2">Please wait while we curate profiles for you...</p>
           </div>
         ) : error ? (
           <div className="text-center py-20">
@@ -401,10 +569,24 @@ export default function Dashboard() {
               Try Again
             </button>
           </div>
+        ) : filteredProfiles.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+              <CustomIcon name="ri-user-line" className="text-6xl text-gray-400 animate-bounce" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">No Profiles Found</h3>
+            <p className="text-gray-600 mb-6">There are no profiles available at the moment. Please check back later!</p>
+            <button
+              onClick={loadProfiles}
+              className="bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
+            >
+              Refresh
+            </button>
+          </div>
         ) : currentIndex < filteredProfiles.length ? (
           <div ref={cardRef} className="max-w-sm mx-auto">
             <SwipeCard
-              profile={filteredProfiles[currentIndex]}
+              profile={filteredProfiles[currentIndex] as any}
               onSwipe={handleSwipe}
             />
             
@@ -448,12 +630,25 @@ export default function Dashboard() {
           { 
             href: '/matches', 
             icon: 'ri-chat-3-line', 
-            label: matches > 0 ? `Matches (${matches})` : 'Matches'
+            label: 'Matches'
           },
           { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
           { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
         ]}
       />
+
+      {/* Admin Button for Admin Users */}
+      {AuthService.isAdmin() && (
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => router.push('/admin')}
+            className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-purple-600 transition-colors flex items-center space-x-2"
+          >
+            <CustomIcon name="ri-shield-user-line" size={16} />
+            <span className="text-sm font-medium">Admin</span>
+          </button>
+        </div>
+      )}
 
       {/* Filter Modal */}
       {showFilter && (
@@ -463,6 +658,10 @@ export default function Dashboard() {
           currentFilters={filters}
         />
       )}
+
+      {/* Onboarding Animation/Modal */}
+      {/* Removed onboarding overlay/modal and message from dashboard */}
     </div>
+    </>
   );
 }

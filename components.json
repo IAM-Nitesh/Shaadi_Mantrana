@@ -1,0 +1,13 @@
+{
+  "style": "default",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "frontend/src/app/globals.css"
+  },
+  "aliases": {
+    "components": "frontend/src/components",
+    "lib": "frontend/src/lib"
+  }
+} 

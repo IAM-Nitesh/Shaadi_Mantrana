@@ -5,10 +5,10 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { validateEmail, sanitizeInput, hashPassword, verifyPassword, generateSessionToken } = require('../utils/security');
 const config = require('../config');
-const preApprovedEmailService = require('../services/preApprovedEmailService');
+
 const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
-const { User } = require('../models');
+const { User, PreapprovedEmail } = require('../models');
 
 // Session management
 const sessions = new Map();
@@ -76,10 +76,12 @@ const SecurityUtils = {
       clientInfo,
       createdAt: Date.now()
     });
+    console.log('Storing OTP:', otp, 'for', email, 'Current store:', Array.from(otpStore.entries()));
   },
 
   // Verify OTP
   verifyOTP: (email, otp) => {
+    console.log('Verifying OTP for', email, 'Current store:', Array.from(otpStore.entries()));
     const stored = otpStore.get(email);
     if (!stored) {
       return { valid: false, reason: 'OTP not found or expired' };
@@ -108,6 +110,7 @@ const SecurityUtils = {
 class AuthController {
   // Send OTP for email verification (No storage - for external service integration)
   async sendOTP(req, res) {
+    console.log('sendOTP received email:', req.body.email);
     try {
       const { email } = req.body;
 
@@ -136,6 +139,7 @@ class AuthController {
       const dailyRateLimit = SecurityUtils.checkRateLimit(`${clientIP}-daily-otp`, dailyLimit, dailyWindow);
       
       if (!dailyRateLimit.allowed) {
+        console.log('Returning 429: daily limit');
         return res.status(429).json({
           success: false,
           error: 'Daily OTP limit exceeded',
@@ -150,6 +154,7 @@ class AuthController {
       const shortTermRateLimit = SecurityUtils.checkRateLimit(`${clientIP}-otp`, shortTermLimit, shortTermWindow);
       
       if (!shortTermRateLimit.allowed) {
+        console.log('Returning 429: short-term limit');
         return res.status(429).json({
           success: false,
           error: 'Too many OTP requests',
@@ -158,12 +163,31 @@ class AuthController {
         });
       }
 
-      // Check if email is pre-approved
-      const emailStatus = preApprovedEmailService.getEmailStatus(sanitizedEmail);
-      if (!emailStatus.approved) {
+
+
+          // Check if email is approved by admin
+    const preapprovedUser = await PreapprovedEmail.findOne({ email: sanitizedEmail });
+      // Check if user is an admin (existing admin users should be able to login)
+      const existingUser = await User.findOne({ email: sanitizedEmail });
+      const isAdmin = existingUser && existingUser.role === 'admin';
+      
+      if (!isAdmin && !preapprovedUser) {
         return res.status(403).json({
           success: false,
-          error: 'Email not approved for registration'
+          error: 'Email not approved for registration',
+          message: 'This email is not approved by admin. Please contact support.'
+        });
+      }
+      // Admin users don't need to be in preapproved emails collection
+      if (isAdmin) {
+        console.log(`👑 Admin user ${sanitizedEmail} login attempt (bypassing preapproved check)`);
+      }
+      // Check if preapproved user is paused (only for non-admin users)
+      if (!isAdmin && preapprovedUser && !preapprovedUser.approvedByAdmin) {
+        return res.status(403).json({
+          success: false,
+          error: 'Account is paused',
+          message: 'Your account has been paused by admin. Please contact support.'
         });
       }
 
@@ -262,13 +286,72 @@ class AuthController {
 
       // Find or create user in MongoDB
       let user = await User.findOne({ email: sanitizedEmail });
+      const preapproved = await PreapprovedEmail.findOne({ email: sanitizedEmail });
+      const isAdmin = user && user.role === 'admin';
       
+      // Check if user is paused (for non-admin users)
+      if (user && !isAdmin && user.status === 'paused') {
+        return res.status(403).json({
+          success: false,
+          error: 'Your account has been paused by admin. Please contact support to resume your account.'
+        });
+      }
+      
+      if (!isAdmin && !preapproved) {
+        return res.status(403).json({
+          success: false,
+          error: 'This email is not preapproved by admin. Please contact support.'
+        });
+      }
       if (!user) {
-        // Create new user with UUID
+        // Check for duplicate uuid for same email
+        const existingUserWithUuid = await User.findOne({ userUuid: preapproved?.uuid });
+        if (existingUserWithUuid && existingUserWithUuid.email !== sanitizedEmail) {
+          return res.status(409).json({
+            success: false,
+            error: 'A user with this UUID already exists for a different email. Please contact support.'
+          });
+        }
+        const { v4: uuidv4 } = require('uuid');
         user = new User({
           email: sanitizedEmail,
+          userUuid: preapproved?.uuid || uuidv4(),
           profile: {
-            location: "India"
+            location: "India",
+            profileCompleteness: 17,  // Set correct value for new users
+            // Initialize all dropdown fields as undefined (empty)
+            gender: undefined,
+            maritalStatus: undefined,
+            manglik: undefined,
+            complexion: undefined,
+            eatingHabit: undefined,
+            smokingHabit: undefined,
+            drinkingHabit: undefined,
+            settleAbroad: undefined,
+            // Initialize other profile fields as empty
+            name: '',
+            nativePlace: '',
+            currentResidence: '',
+            dateOfBirth: '',
+            timeOfBirth: '',
+            placeOfBirth: '',
+            height: '',
+            weight: '',
+            education: '',
+            occupation: '',
+            annualIncome: '',
+            father: '',
+            mother: '',
+            brothers: '',
+            sisters: '',
+            fatherGotra: '',
+            motherGotra: '',
+            grandfatherGotra: '',
+            grandmotherGotra: '',
+            specificRequirements: '',
+            about: '',
+            interests: [],
+            images: []
           },
           preferences: {
             location: [
@@ -308,14 +391,20 @@ class AuthController {
               "Ladakh",
               "Lakshadweep",
               "Puducherry"
-            ]
+            ],
+            ageRange: {
+              min: 18,
+              max: 50
+            },
+            profession: [],
+            education: []
           },
           verification: {
             isVerified: true,
             verifiedAt: new Date(),
             approvalType: 'otp'
           },
-          status: 'active'
+          status: 'invited'
         });
         await user.save();
         console.log(`✅ New user created: ${sanitizedEmail} (UUID: ${user.userUuid})`);
@@ -327,6 +416,14 @@ class AuthController {
         // Fix legacy type issues
         user.profile = user.profile || {};
         user.profile.location = "India";
+        
+        // Clean up any empty string enum values to prevent validation errors
+        const enumFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad'];
+        enumFields.forEach(field => {
+          if (user.profile[field] === '') {
+            delete user.profile[field]; // Remove empty strings to use undefined instead
+          }
+        });
         user.preferences = user.preferences || {};
         user.preferences.location = [
           "Andhra Pradesh",
@@ -409,9 +506,37 @@ class AuthController {
 
     } catch (error) {
       console.error('❌ Verify OTP error:', error);
-      res.status(500).json({
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to verify OTP';
+      let statusCode = 500;
+      
+      if (error.name === 'ValidationError') {
+        statusCode = 400;
+        // Check for enum validation errors
+        const enumErrors = Object.keys(error.errors).filter(key => 
+          error.errors[key].kind === 'enum'
+        );
+        
+        if (enumErrors.length > 0) {
+          console.error('❌ Enum validation errors:', enumErrors);
+          errorMessage = 'Invalid profile data format. Please check your selections and try again.';
+        } else if (error.errors && error.errors['profile.maritalStatus']) {
+          errorMessage = 'Profile data validation error. Please contact support.';
+        } else {
+          errorMessage = 'Invalid data format. Please try again.';
+        }
+      } else if (error.name === 'MongoError' && error.code === 11000) {
+        statusCode = 409;
+        errorMessage = 'This email is already registered. Please try logging in.';
+      } else if (error.message && error.message.includes('not preapproved')) {
+        statusCode = 403;
+        errorMessage = 'This email is not authorized. Please contact support.';
+      }
+      
+      res.status(statusCode).json({
         success: false,
-        error: 'Failed to verify OTP'
+        error: errorMessage
       });
     }
   }

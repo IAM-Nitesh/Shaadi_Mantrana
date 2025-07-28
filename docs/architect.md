@@ -87,3 +87,13 @@
                   │ - WebSocket Real-time      │
                   └────────────────────────────┘
 
+
+# Tech Stack Overview
+
+| Layer      | Technology/Tool                                      |
+|------------|------------------------------------------------------|
+| Frontend   | Next.js, React, TypeScript, Tailwind CSS, GSAP       |
+| Backend    | Node.js, Express.js, Mongoose, JWT, Nodemailer       |
+| Database   | MongoDB                                              |
+| DevOps     | .env config, Postman, Markdown docs                  |
+| Mobile     | Capacitor (optional)                                 |

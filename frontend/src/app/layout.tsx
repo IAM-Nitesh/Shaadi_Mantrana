@@ -7,7 +7,12 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import ConsoleSuppressor from "../components/ConsoleSuppressor";
 import { usePathname } from 'next/navigation';
 import LenisProvider from "./LenisProvider";
+import NavigationGuard from "../components/NavigationGuard";
 import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ProfileService } from '../services/profile-service';
+import { AuthService } from '../services/auth-service';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -32,6 +37,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+  const [canNavigate, setCanNavigate] = useState(false);
+
+  // Access restriction and redirection removed. Allow regular navigation after login.
+
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <head>
@@ -52,20 +63,22 @@ export default function RootLayout({
         <ConsoleSuppressor />
         <ErrorBoundary />
         <LenisProvider>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -24 }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="min-h-screen"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
-      </LenisProvider>
-    </body>
-  </html>
-);
+          <NavigationGuard>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -24 }}
+                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                className="min-h-screen"
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </NavigationGuard>
+        </LenisProvider>
+      </body>
+    </html>
+  );
 }

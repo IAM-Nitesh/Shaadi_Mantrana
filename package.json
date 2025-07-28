@@ -17,7 +17,11 @@
     "start": "cd backend && npm start",
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
     "clean": "rm -rf frontend/.next frontend/out backend/node_modules frontend/node_modules",
-    "test": "echo \"Tests not yet implemented\" && exit 0"
+    "test": "echo \"Tests not yet implemented\" && exit 0",
+    "emails:add": "node scripts/manage-approved-emails.js add",
+    "emails:remove": "node scripts/manage-approved-emails.js remove",
+    "emails:list": "node scripts/manage-approved-emails.js list",
+    "emails:sync": "node scripts/manage-approved-emails.js sync"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -44,10 +48,22 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
+    "@radix-ui/react-icons": "^1.3.2",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-popover": "^1.1.14",
+    "@shadcn/ui": "^0.0.4",
     "@studio-freight/lenis": "^1.0.42",
+    "clsx": "^2.1.1",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
     "framer-motion": "^12.23.9",
+    "lucide-react": "^0.525.0",
     "react-chat-elements": "^12.0.18",
-    "react-intersection-observer": "^9.16.0"
+    "react-day-picker": "^9.8.0",
+    "react-icons": "^5.5.0",
+    "react-intersection-observer": "^9.16.0",
+    "react-tailwindcss-datepicker": "^2.0.0",
+    "react-time-picker": "^7.0.0"
   }
 }
