@@ -23,12 +23,179 @@ const userSchema = new mongoose.Schema({
   
   // Profile Information
   profile: {
+    // Basic Information
     name: {
       type: String,
       required: false,
       trim: true,
-      maxlength: 100
+      maxlength: 50
     },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female'],
+      required: false
+    },
+    nativePlace: {
+      type: String,
+      trim: true,
+      maxlength: 30
+    },
+    currentResidence: {
+      type: String,
+      trim: true,
+      maxlength: 30
+    },
+    maritalStatus: {
+      type: String,
+      enum: ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce'],
+      required: false
+    },
+    manglik: {
+      type: String,
+      enum: ['Yes', 'No', 'Don\'t Know'],
+      required: false
+    },
+    
+    // Birth Details
+    dateOfBirth: {
+      type: String,
+      trim: true
+    },
+    timeOfBirth: {
+      type: String,
+      trim: true
+    },
+    placeOfBirth: {
+      type: String,
+      trim: true,
+      maxlength: 30
+    },
+    
+    // Physical Details
+    height: {
+      type: String,
+      trim: true,
+      maxlength: 10
+    },
+    weight: {
+      type: String,
+      trim: true,
+      maxlength: 10
+    },
+    complexion: {
+      type: String,
+      enum: ['Fair', 'Medium', 'Dark'],
+      required: false
+    },
+    
+    // Professional Details
+    education: {
+      type: String,
+      trim: true,
+      maxlength: 50
+    },
+    occupation: {
+      type: String,
+      trim: true,
+      maxlength: 40
+    },
+    annualIncome: {
+      type: String,
+      trim: true,
+      maxlength: 15
+    },
+    
+    // Lifestyle Details
+    eatingHabit: {
+      type: String,
+      enum: ['Vegetarian', 'Non-Vegetarian', 'Eggetarian'],
+      required: false
+    },
+    smokingHabit: {
+      type: String,
+      enum: ['Yes', 'No', 'Occasionally'],
+      required: false
+    },
+    drinkingHabit: {
+      type: String,
+      enum: ['Yes', 'No', 'Occasionally'],
+      required: false
+    },
+    
+    // Family Details
+    father: {
+      type: String,
+      trim: true,
+      maxlength: 40
+    },
+    mother: {
+      type: String,
+      trim: true,
+      maxlength: 40
+    },
+    brothers: {
+      type: String,
+      trim: true,
+      maxlength: 2
+    },
+    sisters: {
+      type: String,
+      trim: true,
+      maxlength: 2
+    },
+    
+    // Gotra Details
+    fatherGotra: {
+      type: String,
+      trim: true,
+      maxlength: 20
+    },
+    motherGotra: {
+      type: String,
+      trim: true,
+      maxlength: 20
+    },
+    grandfatherGotra: {
+      type: String,
+      trim: true,
+      maxlength: 20
+    },
+    grandmotherGotra: {
+      type: String,
+      trim: true,
+      maxlength: 20
+    },
+    
+    // Preferences
+    specificRequirements: {
+      type: String,
+      trim: true,
+      maxlength: 200
+    },
+    settleAbroad: {
+      type: String,
+      enum: ['Yes', 'No', 'Maybe'],
+      required: false
+    },
+    about: {
+      type: String,
+      trim: true,
+      maxlength: 500
+    },
+    
+    // Interests and Images (keeping for future use)
+    interests: [{
+      type: String,
+      trim: true,
+      maxlength: 50
+    }],
+    images: [{
+      type: String,
+      trim: true,
+      maxlength: 500
+    }],
+    
+    // Legacy fields for backward compatibility
     age: {
       type: Number,
       min: 18,
@@ -44,26 +211,7 @@ const userSchema = new mongoose.Schema({
       trim: true,
       maxlength: 200
     },
-    education: {
-      type: String,
-      trim: true,
-      maxlength: 200
-    },
-    about: {
-      type: String,
-      trim: true,
-      maxlength: 1000
-    },
-    interests: [{
-      type: String,
-      trim: true,
-      maxlength: 50
-    }],
-    images: [{
-      type: String,
-      trim: true,
-      maxlength: 500
-    }],
+    
     profileCompleteness: {
       type: Number,
       default: 0,
@@ -86,11 +234,18 @@ const userSchema = new mongoose.Schema({
     }
   },
 
+  // Role
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user',
+  },
+
   // Status and Settings
   status: {
     type: String,
-    enum: ['active', 'inactive', 'suspended', 'pending'],
-    default: 'active'
+    enum: ['invited', 'active', 'paused'],
+    default: 'invited'
   },
   
   premium: {
@@ -102,6 +257,17 @@ const userSchema = new mongoose.Schema({
   lastActive: {
     type: Date,
     default: Date.now
+  },
+  
+  // Profile completion tracking
+  isFirstLogin: {
+    type: Boolean,
+    default: true
+  },
+  
+  profileCompleted: {
+    type: Boolean,
+    default: false
   },
   
   loginHistory: [{
@@ -128,7 +294,10 @@ const userSchema = new mongoose.Schema({
     location: [String],
     profession: [String],
     education: [String]
-  }
+  },
+
+
+
 }, {
   timestamps: true, // Adds createdAt and updatedAt
   toJSON: { virtuals: true },
@@ -161,7 +330,8 @@ userSchema.virtual('profileCompletion').get(function() {
 
 // Pre-save middleware to update profile completeness
 userSchema.pre('save', function(next) {
-  this.profile.profileCompleteness = this.profileCompletion;
+  const calculatedCompletion = this.profileCompletion;
+  this.profile.profileCompleteness = Math.min(calculatedCompletion, 100); // Cap at 100
   next();
 });
 
@@ -174,17 +344,18 @@ userSchema.methods.toPublicJSON = function() {
   delete user.loginHistory;
   
   return {
-    id: user._id,
-    userUuid: user.userUuid,
+    userId: user._id,
     email: user.email,
+    userUuid: user.userUuid,
+    role: user.role, // Include role for role-based routing
     profile: user.profile,
-    verification: {
-      isVerified: user.verification.isVerified
-    },
+    preferences: user.preferences,
+    verification: user.verification,
     status: user.status,
     premium: user.premium,
     lastActive: user.lastActive,
-    createdAt: user.createdAt
+    createdAt: user.createdAt,
+
   };
 };
 

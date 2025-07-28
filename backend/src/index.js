@@ -35,10 +35,13 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Rate limiting
+// Import configuration
+const config = require('./config');
+
+// Rate limiting - more lenient for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in development
   message: {
     error: 'Too many requests',
     message: 'Please try again later'
@@ -49,16 +52,16 @@ app.use('/api/', limiter);
 // Auth-specific rate limiting (moderate)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // limit each IP to 15 auth requests per windowMs (moderate)
+  max: process.env.NODE_ENV === 'production' ? 30 : 100, // More lenient in development
   message: {
     error: 'Too many authentication attempts',
     message: 'Please try again in 15 minutes'
   }
 });
 
-// CORS configuration
+// CORS configuration - use config values
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: config.SECURITY.CORS_ORIGINS,
   credentials: true,
 }));
 
@@ -78,6 +81,8 @@ const invitationRoutes = require('./routes/invitationRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const matchRoutes = require('./routes/matchRoutes');
+const matchingRoutes = require('./routes/matchingRoutes');
 
 // API Routes with rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
@@ -85,6 +90,8 @@ app.use('/api/invitations', invitationRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/matches', matchRoutes);
+app.use('/api/matching', matchingRoutes);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

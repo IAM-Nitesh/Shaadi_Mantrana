@@ -743,9 +743,29 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   0%, 100% {
     transform: scale(1);
   }
+  25% {
+    transform: scale(1.15);
+  }
   50% {
+    transform: scale(1.25);
+  }
+  75% {
     transform: scale(1.1);
   }
+}
+
+@keyframes heart-pounding {
+  0%, 100% { transform: scale(1); }
+  10% { transform: scale(1.18); }
+  20% { transform: scale(0.98); }
+  30% { transform: scale(1.13); }
+  40% { transform: scale(0.97); }
+  50% { transform: scale(1.08); }
+  60% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+.heart-pounding {
+  animation: heart-pounding 1.2s cubic-bezier(0.4,0,0.2,1) infinite;
 }
 
 /* Heart Float Animations - More Cute */
@@ -965,12 +985,104 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   animation: heartbeat 1.5s ease-in-out infinite;
 }
 
+.heartbeat-animation {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* Canvas-confetti will handle all confetti animations */
+
 .animate-wiggle {
   animation: wiggle 0.5s ease-in-out;
 }
 
 .animate-elastic {
   animation: elastic 0.6s ease-out forwards;
+}
+
+.animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+
+/* Premium Tilt Animation for Validation Errors */
+.animate-tilt-error { 
+  animation: tiltError 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) both; 
+}
+
+@keyframes tiltError {
+  0% {
+    transform: rotate(0deg) scale(1);
+    border-color: #e5e7eb;
+  }
+  15% {
+    transform: rotate(-1deg) scale(1.02);
+    border-color: #fecaca;
+  }
+  30% {
+    transform: rotate(2deg) scale(1.01);
+    border-color: #fca5a5;
+  }
+  45% {
+    transform: rotate(-2deg) scale(1.03);
+    border-color: #f87171;
+  }
+  60% {
+    transform: rotate(1.5deg) scale(1.01);
+    border-color: #ef4444;
+  }
+  75% {
+    transform: rotate(-1deg) scale(1.02);
+    border-color: #dc2626;
+  }
+  90% {
+    transform: rotate(0.5deg) scale(1.01);
+    border-color: #b91c1c;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    border-color: #dc2626;
+  }
+}
+
+/* Enhanced Tilt with Glow Effect */
+.animate-tilt-error-glow { 
+  animation: tiltErrorGlow 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) both; 
+}
+
+@keyframes tiltErrorGlow {
+  0% {
+    transform: rotate(0deg) scale(1);
+    border-color: #e5e7eb;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+  20% {
+    transform: rotate(-1.5deg) scale(1.02);
+    border-color: #fecaca;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+  }
+  40% {
+    transform: rotate(2.5deg) scale(1.01);
+    border-color: #fca5a5;
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.15);
+  }
+  60% {
+    transform: rotate(-2deg) scale(1.03);
+    border-color: #f87171;
+    box-shadow: 0 0 0 12px rgba(220, 38, 38, 0.2);
+  }
+  80% {
+    transform: rotate(1deg) scale(1.01);
+    border-color: #ef4444;
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.15);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    border-color: #dc2626;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+  }
 }
 
 /* Smooth Page Transitions */
@@ -996,4 +1108,131 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   .page-transition, .page-wrapper {
     transition: none !important;
   }
+}
+
+/* Disable animations for date and time pickers */
+[data-radix-popper-content-wrapper] {
+  animation: none !important;
+  transition: none !important;
+}
+
+[data-radix-popper-content-wrapper] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Admin Dashboard Specific Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes floatingHearts {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in-top {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+.floating-heart {
+  animation: floatingHearts 6s ease-in-out infinite;
+}
+
+.floating-heart:nth-child(1) { animation-delay: 0s; }
+.floating-heart:nth-child(2) { animation-delay: 1.5s; }
+.floating-heart:nth-child(3) { animation-delay: 3s; }
+.floating-heart:nth-child(4) { animation-delay: 4.5s; }
+
+/* Enhanced hover effects for admin dashboard */
+.admin-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-card-hover:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Menu transition enhancements */
+.menu-enter {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+}
+
+.menu-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: all 0.15s ease-out;
+}
+
+.menu-exit {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.menu-exit-active {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+  transition: all 0.1s ease-in;
 }

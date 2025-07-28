@@ -42,6 +42,11 @@ const iconMap: Record<string, string> = {
   'ri-building-line': '/icons/chakra.svg',
   'ri-heart-3-line': '/icons/heart-outline.svg',
   'ri-group-line': '/icons/group.svg',
+  // Onboarding icons
+  'heart': '/icons/heart-outline.svg',
+  'user': '/icons/user.svg',
+  'search': '/icons/filter.svg', // Using filter icon as fallback for search
+  'arrow-right': '/icons/arrow-right.svg',
 };
 
 export default function CustomIcon({ name, className = '', size = 24 }: CustomIconProps) {

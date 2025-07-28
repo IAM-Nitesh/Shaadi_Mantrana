@@ -522,18 +522,11 @@ const profileController = {
       const endIndex = startIndex + paginationValidation.limit;
       const paginatedProfiles = filteredProfiles.slice(startIndex, endIndex);
 
-      // Remove sensitive information for public viewing
-      const publicProfiles = paginatedProfiles.map(profile => {
-        const publicProfile = { ...profile };
-        
-        // Only show partial information for non-authenticated users
-        if (!req.user) {
-          publicProfile.about = profile.about ? profile.about.substring(0, 100) + '...' : '';
-          publicProfile.interests = profile.interests.slice(0, 3);
-        }
-        
-        return publicProfile;
-      });
+      // Transform demo profiles for public viewing
+      const publicProfiles = paginatedProfiles.map(profile => ({
+        ...profile,
+        isFirstLogin: false // Always include for demo
+      }));
 
       const processingTime = Date.now() - startTime;
 
@@ -620,6 +613,8 @@ const profileController = {
         // Hide sensitive information
         delete responseProfile.lastActive;
       }
+      // Always include isFirstLogin (simulate for demo)
+      responseProfile.isFirstLogin = false;
 
       const processingTime = Date.now() - startTime;
 
@@ -762,6 +757,96 @@ const profileController = {
         message: 'Failed to update profile',
         error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
         code: 'UPDATE_PROFILE_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
+  },
+
+  // Get profile by UUID (public endpoint)
+  async getProfileByUuid(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const { uuid } = req.params;
+      
+      if (!uuid || typeof uuid !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid UUID parameter',
+          code: 'INVALID_UUID'
+        });
+      }
+
+      // For static data, we'll simulate finding a profile by UUID
+      // In a real implementation, this would query the database
+      const profile = demoProfiles.find(p => p.userUuid === uuid || p.id.toString() === uuid);
+      
+      if (!profile) {
+        return res.status(404).json({
+          success: false,
+          message: 'Profile not found',
+          code: 'PROFILE_NOT_FOUND'
+        });
+      }
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`✅ Profile by UUID ${uuid} retrieved`);
+
+      res.status(200).json({
+        success: true,
+        profile: profile,
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error getting profile by UUID:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get profile by UUID',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'GET_PROFILE_BY_UUID_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
+  },
+
+  // Soft delete (deactivate) user profile
+  async deleteProfile(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      console.log(`🗑️ Profile deletion requested by ${req.user.email}`);
+      
+      // For static data, we'll simulate profile deletion
+      // In a real implementation, this would update the database
+      const processingTime = Date.now() - startTime;
+
+      console.log(`✅ Profile deletion simulated for user: ${req.user.email}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile deleted successfully',
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error deleting profile:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete profile',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'DELETE_PROFILE_ERROR',
         processingTime: `${processingTime}ms`
       });
     }
