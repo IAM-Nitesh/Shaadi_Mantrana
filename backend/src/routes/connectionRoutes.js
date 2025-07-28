@@ -3,19 +3,13 @@ const router = express.Router();
 const connectionController = require('../controllers/connectionControllerMongo');
 const { authenticateToken } = require('../middleware/auth');
 
-// Create a new connection
-router.post('/', authenticateToken, connectionController.createConnection);
+// Apply auth middleware to all routes
+router.use(authenticateToken);
 
-// Get all connections for the current user
-router.get('/', authenticateToken, connectionController.getConnections);
+// Get connection by ID (for chat)
+router.get('/:id', connectionController.getConnectionById.bind(connectionController));
 
-// Get a single connection by UUID
-router.get('/:uuid', authenticateToken, connectionController.getConnectionByUuid);
-
-// Update a connection (status, metadata)
-router.patch('/:uuid', authenticateToken, connectionController.updateConnection);
-
-// Delete a connection (unmatch/block)
-router.delete('/:uuid', authenticateToken, connectionController.deleteConnection);
+// Get all connections for current user
+router.get('/', connectionController.getUserConnections.bind(connectionController));
 
 module.exports = router; 

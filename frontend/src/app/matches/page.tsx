@@ -5,10 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AuthService } from '../../services/auth-service';
 import { MatchingService, type LikedProfile, type MutualMatch } from '../../services/matching-service';
+import { matchesCountService } from '../../services/matches-count-service';
 import CustomIcon from '../../components/CustomIcon';
 import { gsap } from 'gsap';
 import Image from 'next/image';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import StandardHeader from '../../components/StandardHeader';
+import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 
 // Helper to decode JWT and get current user ID
 function getCurrentUserId() {
@@ -30,6 +33,15 @@ export default function Matches() {
   const [mutualMatches, setMutualMatches] = useState<MutualMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileIncomplete, setShowProfileIncomplete] = useState(false);
+  const [unmatchingId, setUnmatchingId] = useState<string | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    ageRange: [18, 60],
+    selectedProfessions: [],
+    selectedCountry: '',
+    selectedState: ''
+  });
 
   // GSAP refs for animations
   const headerRef = useRef<HTMLDivElement>(null);
@@ -73,6 +85,51 @@ export default function Matches() {
 
     fetchMatches();
   }, []);
+
+  // Handle filter application
+  const handleApplyFilters = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setShowFilter(false);
+    
+    // Update active filters indicator
+    const hasActive = newFilters.selectedProfessions.length > 0 ||
+                     newFilters.selectedCountry !== '' ||
+                     newFilters.selectedState !== '' ||
+                     newFilters.ageRange[0] !== 18 ||
+                     newFilters.ageRange[1] !== 60;
+    setHasActiveFilters(hasActive);
+  };
+
+  // Handle unmatch
+  const handleUnmatch = async (profileId: string) => {
+    const profile = mutualMatches.find(m => m.profile._id === profileId) || 
+                   likedProfiles.find(l => l.profile._id === profileId);
+    const profileName = profile?.profile.profile?.name || 'this person';
+    
+    if (!confirm(`Are you sure you want to unmatch from ${profileName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setUnmatchingId(profileId);
+    try {
+      await MatchingService.unmatchProfile(profileId);
+      
+      // Remove from both lists
+      setLikedProfiles(prev => prev.filter(p => p.profile._id !== profileId));
+      setMutualMatches(prev => prev.filter(m => m.profile._id !== profileId));
+      
+      // Update global matches count
+      matchesCountService.fetchCount();
+      
+      // Show success message
+      alert('Successfully unmatched!');
+    } catch (error) {
+      console.error('Error unmatching:', error);
+      alert('Failed to unmatch. Please try again.');
+    } finally {
+      setUnmatchingId(null);
+    }
+  };
 
   useEffect(() => {
     async function checkOnboarding() {
@@ -264,19 +321,12 @@ export default function Matches() {
       )}
 
       {/* Header */}
-      <div ref={headerRef} className="fixed top-0 w-full backdrop-blur-sm bg-white/80 border-b border-white/20 shadow-lg z-40 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link 
-              href="/dashboard" 
-              className="w-10 h-10 flex items-center justify-center text-neutral-600 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:bg-gray-50 transition-colors duration-200 active:scale-95"
-            >
-              <CustomIcon name="ri-arrow-left-line" />
-            </Link>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">Matches</h1>
-          </div>
-        </div>
-      </div>
+      <StandardHeader
+        showFilter={true}
+        onFilterClick={() => setShowFilter(true)}
+        hasActiveFilters={hasActiveFilters}
+        showProfileLink={true}
+      />
 
       {/* Tab Switcher */}
       <div ref={tabsRef} className="relative z-10 pt-16 px-4 pb-4">
@@ -299,7 +349,7 @@ export default function Matches() {
                 : 'text-neutral-600 hover:text-neutral-800 hover:bg-white/50'
             }`}
           >
-            Requests
+            Requests ({likedProfiles.length})
           </button>
         </div>
       </div>
@@ -319,7 +369,7 @@ export default function Matches() {
           ) : mutualMatches.length > 0 ? (
               <div className="space-y-4">
                 {mutualMatches.map((match) => (
-                  <Link key={match.connectionId} href={`/chat/${match.profile._id}`}>
+                  <Link key={match.connectionId} href={`/chat/${match.connectionId}`}>
                     <div className="match-card p-6 bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
                       <div className="flex items-center space-x-4">
                         <div className="relative">
@@ -336,6 +386,20 @@ export default function Matches() {
                             <h3 className="font-semibold text-neutral-800 truncate">
                               {match.profile.profile?.name || 'Unknown'}
                             </h3>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleUnmatch(match.profile._id);
+                              }}
+                              disabled={unmatchingId === match.profile._id}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
+                              title="Unmatch"
+                            >
+                              <CustomIcon 
+                                name={unmatchingId === match.profile._id ? "ri-loader-4-line" : "ri-close-line"} 
+                                className={`text-lg ${unmatchingId === match.profile._id ? 'animate-spin' : ''}`}
+                              />
+                            </button>
                           </div>
                           <div className="flex items-center space-x-3 mb-2">
                             <p className="text-sm text-neutral-600 flex items-center space-x-1">
@@ -369,15 +433,108 @@ export default function Matches() {
               </div>
             )
         ) : (
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-              <CustomIcon name="ri-mail-line" className="text-6xl text-gray-400 animate-pulse" />
+          loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              <HeartbeatLoader 
+                size="lg" 
+                text="Loading Your Requests" 
+                className="mb-4"
+              />
+              <p className="text-gray-600 mt-2">Please wait while we fetch your requests...</p>
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No Requests</h3>
-            <p className="text-gray-600">Match requests will appear here</p>
-          </div>
+          ) : likedProfiles.length > 0 ? (
+            <div className="space-y-4">
+              {likedProfiles.map((likedProfile) => (
+                <div key={likedProfile.likeId} className="match-card p-6 bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <Image
+                        src={likedProfile.profile.profile?.images?.[0] || '/default-profile.svg'}
+                        alt={likedProfile.profile.profile?.name || 'Profile'}
+                        width={64}
+                        height={64}
+                        className="w-16 h-16 rounded-full object-cover object-top shadow-lg"
+                      />
+                      {likedProfile.isMutualMatch && (
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                          <CustomIcon name="ri-heart-fill" className="text-white text-xs" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-neutral-800 truncate">
+                          {likedProfile.profile.profile?.name || 'Unknown'}
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          {likedProfile.isMutualMatch && (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                              Match!
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-500">
+                            {new Date(likedProfile.likeDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <p className="text-sm text-neutral-600 flex items-center space-x-1">
+                          <CustomIcon name="ri-calendar-line" className="w-3 h-3" />
+                          <span>{likedProfile.profile.profile?.age}</span>
+                        </p>
+                        <p className="text-sm text-neutral-600 flex items-center space-x-1">
+                          <CustomIcon name="ri-briefcase-line" className="w-3 h-3" />
+                          <span className="truncate">{likedProfile.profile.profile?.profession}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          likedProfile.type === 'super_like' 
+                            ? 'bg-blue-100 text-blue-700' 
+                            : 'bg-rose-100 text-rose-700'
+                        }`}>
+                          {likedProfile.type === 'super_like' ? 'Super Like' : 'Like'}
+                        </span>
+                        {likedProfile.isMutualMatch && (
+                          <Link
+                            href={`/chat/${likedProfile.connectionId || 'temp'}`}
+                            className="px-3 py-1 bg-rose-500 text-white text-xs rounded-full font-medium hover:bg-rose-600 transition-colors duration-200"
+                          >
+                            Chat
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                <CustomIcon name="ri-heart-line" className="text-6xl text-gray-400 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Requests Yet</h3>
+              <p className="text-gray-600 mb-6">Start swiping right to send requests to profiles you like!</p>
+              <Link
+                href="/dashboard"
+                className="inline-block bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 hover:scale-105 shadow-lg"
+              >
+                Start Swiping
+              </Link>
+            </div>
+          )
         )}
       </div>
+
+      {/* Filter Modal */}
+      {showFilter && (
+        <FilterModal
+          onClose={() => setShowFilter(false)}
+          onApply={handleApplyFilters}
+          currentFilters={filters}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
@@ -391,10 +548,15 @@ export default function Matches() {
           </Link>
           <Link 
             href="/matches" 
-            className="flex flex-col items-center justify-center text-rose-500 transition-colors duration-200 active:bg-rose-50"
+            className="flex flex-col items-center justify-center text-rose-500 transition-colors duration-200 active:bg-rose-50 relative"
           >
             <CustomIcon name="ri-chat-3-line" className="text-xl mb-1" />
             <span className="text-xs">Matches</span>
+            {mutualMatches.length > 0 && (
+              <div className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center transform translate-x-0 translate-y-0">
+                {mutualMatches.length}
+              </div>
+            )}
           </Link>
           <Link 
             href="/profile" 

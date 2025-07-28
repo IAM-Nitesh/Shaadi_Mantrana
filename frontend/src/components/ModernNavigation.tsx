@@ -9,6 +9,7 @@ interface NavItem {
   icon: string;
   label: string;
   activeIcon?: string;
+  badge?: number;
 }
 
 interface ModernNavigationProps {
@@ -109,6 +110,13 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
               <span className={`${getLabelClasses(item.href)} relative z-10`}>
                 {item.label}
               </span>
+              
+              {/* Badge */}
+              {item.badge && item.badge > 0 && (
+                <div className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-20 transform translate-x-0 translate-y-0">
+                  {item.badge}
+                </div>
+              )}
               
               {/* Hover effect */}
               <div className="absolute inset-0 bg-gray-100/60 opacity-0 group-hover:opacity-40 transition-opacity duration-200 rounded-xl" />

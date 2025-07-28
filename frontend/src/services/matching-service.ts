@@ -37,6 +37,7 @@ export interface LikedProfile {
   likeDate: string;
   type: string;
   isMutualMatch: boolean;
+  connectionId?: string;
 }
 
 export interface MutualMatch {
@@ -204,6 +205,37 @@ export class MatchingService {
       return await response.json();
     } catch (error) {
       console.error('Error passing profile:', error);
+      throw error;
+    }
+  }
+
+  // Unmatch from a profile
+  static async unmatchProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    
+    if (!apiBaseUrl) {
+      console.warn('API_BASE_URL not configured. Demo unmatch recorded.');
+      return { success: true, message: 'Profile unmatched' };
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/matching/unmatch`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUserId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || 'Failed to unmatch profile');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error unmatching profile:', error);
       throw error;
     }
   }

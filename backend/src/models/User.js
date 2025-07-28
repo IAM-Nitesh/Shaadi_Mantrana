@@ -328,6 +328,22 @@ userSchema.virtual('profileCompletion').get(function() {
   return Math.round(completion);
 });
 
+// Virtual for age calculation (alternative approach)
+userSchema.virtual('calculatedAge').get(function() {
+  if (!this.profile.dateOfBirth) return null;
+  
+  const birthDate = new Date(this.profile.dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return age;
+});
+
 // Pre-save middleware to update profile completeness
 userSchema.pre('save', function(next) {
   const calculatedCompletion = this.profileCompletion;
