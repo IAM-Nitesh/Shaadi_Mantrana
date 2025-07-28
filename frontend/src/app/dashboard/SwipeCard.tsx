@@ -7,7 +7,22 @@ import { Profile } from '../../services/profile-service';
 import Image from 'next/image';
 
 interface SwipeCardProps {
-  profile: Profile;
+  profile: {
+    _id: string;
+    profile: {
+      name: string;
+      age?: number;
+      profession?: string;
+      images?: string[];
+      about?: string;
+      education?: string;
+      interests?: string[];
+      location?: string;
+    };
+    verification?: {
+      isVerified: boolean;
+    };
+  };
   onSwipe: (direction: 'left' | 'right') => void;
 }
 
@@ -36,22 +51,23 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   const [dragX, setDragX] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Get the first image from the images array, or use a default
+  const profileImage = profile.profile.images && profile.profile.images.length > 0 
+    ? profile.profile.images[0] 
+    : '';
 
   const handleImageError = () => {
-    try {
-      console.warn('Failed to load image for profile:', profile.name);
-      setImageError(true);
-    } catch (error) {
-      console.warn('Error in handleImageError:', error);
-    }
+    console.log('🖼️ Image failed to load, showing fallback');
+    setImageError(true);
+    setImageLoaded(false);
   };
 
   const handleImageLoad = () => {
-    try {
-      setImageError(false);
-    } catch (error) {
-      console.warn('Error in handleImageLoad:', error);
-    }
+    console.log('🖼️ Image loaded successfully');
+    setImageLoaded(true);
+    setImageError(false);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -144,10 +160,10 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       >
         {/* Main Image */}
         <div className="relative h-96">
-          {!imageError ? (
+          {!imageError && profileImage ? (
             <Image
-              src={profile.image}
-              alt={profile.name}
+              src={profileImage}
+              alt={`${profile.profile.name || 'Profile'}`}
               layout="fill"
               objectFit="cover"
               objectPosition="top"
@@ -158,7 +174,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
             <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
               <div className="text-center text-rose-600">
                 <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">{profile.name}</p>
+                <p className="text-lg font-medium">{profile.profile.name || 'Profile'}</p>
                 <p className="text-sm opacity-75">Photo unavailable</p>
               </div>
             </div>
@@ -171,8 +187,8 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           <div className="absolute bottom-4 left-4 right-4 text-white drop-shadow-lg">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-2xl font-bold">{profile.name}</h3>
-                <p className="text-lg opacity-90">{profile.age} years old</p>
+                <h3 className="text-2xl font-bold">{profile.profile.name || 'Unknown'}</h3>
+                <p className="text-lg opacity-90">{profile.profile.age || 'Unknown'} years old</p>
               </div>
               <button
                 onClick={() => setShowDetails(!showDetails)}
@@ -184,11 +200,11 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">
               <i className="ri-briefcase-line"></i>
-              <span>{profile.profession}</span>
+              <span>{profile.profile.profession || 'Not specified'}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90 mt-1">
               <i className="ri-map-pin-line"></i>
-              <span>{profile.location}</span>
+              <span>{profile.profile.location || 'Location not specified'}</span>
             </div>
           </div>
         </div>
@@ -198,25 +214,29 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           <div className="p-6 space-y-4 animate-fadeIn">
             <div>
               <h4 className="font-semibold text-gray-800 mb-2">Education</h4>
-              <p className="text-gray-600">{profile.education}</p>
+              <p className="text-gray-600">{profile.profile.education || 'Not specified'}</p>
             </div>
             
             <div>
               <h4 className="font-semibold text-gray-800 mb-2">About</h4>
-              <p className="text-gray-600">{profile.about}</p>
+              <p className="text-gray-600">{profile.profile.about || 'No information available'}</p>
             </div>
             
             <div>
               <h4 className="font-semibold text-gray-800 mb-2">Interests</h4>
               <div className="flex flex-wrap gap-2">
-                {profile.interests.map((interest, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
-                  >
-                    {interest}
-                  </span>
-                ))}
+                {profile.profile.interests && profile.profile.interests.length > 0 ? (
+                  profile.profile.interests.map((interest, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                    >
+                      {interest}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-500 text-sm">No interests specified</span>
+                )}
               </div>
             </div>
           </div>

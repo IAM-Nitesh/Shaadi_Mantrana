@@ -27,29 +27,121 @@ class MatchingController {
         });
       }
       
-      // Get profiles excluding current user and already liked profiles
-      const skip = (page - 1) * limit;
+      // Get current user to access their profile and preferences
+      const currentUser = await User.findById(userId);
+      if (!currentUser) {
+        console.log('❌ Current user not found');
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+      
+      console.log(`👤 Current user: ${currentUser.email}, Gender: ${currentUser.profile?.gender}`);
       
       // Get IDs of profiles the user has already liked
       const likedProfiles = await DailyLike.find({ userId }).select('likedProfileId');
       const likedProfileIds = likedProfiles.map(like => like.likedProfileId);
       console.log(`💕 User has liked ${likedProfileIds.length} profiles`);
       
-      // Get profiles that haven't been liked by the user
-      const profiles = await User.find({
+      // Build query filters
+      const queryFilters = {
         _id: { $ne: userId, $nin: likedProfileIds },
         status: 'active',
+        'verification.isVerified': true,
         'profile.name': { $exists: true, $ne: '' }
-      })
-      .select('profile.name profile.age profile.profession profile.images profile.about verification.isVerified')
-      .limit(limit)
-      .skip(skip)
-      .lean();
+      };
+      
+      // Filter by opposite gender
+      if (currentUser.profile?.gender) {
+        const oppositeGender = currentUser.profile.gender === 'Male' ? 'Female' : 'Male';
+        queryFilters['profile.gender'] = oppositeGender;
+        console.log(`🎯 Filtering by opposite gender: ${oppositeGender}`);
+      }
+      
+      // Filter by age range if user has preferences
+      if (currentUser.preferences?.ageRange) {
+        const { min, max } = currentUser.preferences.ageRange;
+        // Calculate date range for age filtering
+        const today = new Date();
+        const maxBirthDate = new Date(today.getFullYear() - min, today.getMonth(), today.getDate());
+        const minBirthDate = new Date(today.getFullYear() - max, today.getMonth(), today.getDate());
+        
+        queryFilters['profile.dateOfBirth'] = { 
+          $gte: minBirthDate.toISOString().split('T')[0], 
+          $lte: maxBirthDate.toISOString().split('T')[0] 
+        };
+        console.log(`📅 Filtering by age range: ${min}-${max} (birth dates: ${minBirthDate.toISOString().split('T')[0]} to ${maxBirthDate.toISOString().split('T')[0]})`);
+      }
+      
+      // Filter by location if user has preferences
+      if (currentUser.preferences?.location && currentUser.preferences.location.length > 0) {
+        // For now, let's be more lenient with location matching
+        // Only filter if user has specific location preferences (not all states)
+        if (currentUser.preferences.location.length < 10) {
+          const locationRegex = currentUser.preferences.location.map(loc => new RegExp(loc, 'i'));
+          queryFilters['$or'] = [
+            { 'profile.nativePlace': { $in: locationRegex } },
+            { 'profile.currentResidence': { $in: locationRegex } }
+          ];
+          console.log(`📍 Filtering by locations: ${currentUser.preferences.location.join(', ')}`);
+        } else {
+          console.log(`📍 User has broad location preferences (${currentUser.preferences.location.length} locations), skipping location filter`);
+        }
+      }
+      
+      console.log('🔍 Final query filters:', JSON.stringify(queryFilters, null, 2));
+      
+      // Debug: Check all available profiles first
+      const allProfiles = await User.find({
+        _id: { $ne: userId },
+        status: 'active',
+        'verification.isVerified': true
+      }).select('profile.name profile.gender profile.dateOfBirth verification.isVerified').lean();
+      
+      console.log(`🔍 Total available profiles (before filters): ${allProfiles.length}`);
+      allProfiles.forEach((profile, index) => {
+        console.log(`👤 Available profile ${index + 1}: ${profile.profile?.name} (${profile.profile?.gender}, ${profile.profile?.dateOfBirth})`);
+      });
+      
+      // Get profiles that match the criteria
+      const profiles = await User.find(queryFilters)
+        .select('profile.name profile.dateOfBirth profile.profession profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation verification.isVerified')
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .lean();
       
       console.log(`📋 Found ${profiles.length} profiles for discovery`);
       
+      // Calculate age for each profile and add to response
+      const profilesWithAge = profiles.map(profile => {
+        let age = null;
+        if (profile.profile?.dateOfBirth) {
+          const birthDate = new Date(profile.profile.dateOfBirth);
+          const today = new Date();
+          age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+        }
+        
+        return {
+          ...profile,
+          profile: {
+            ...profile.profile,
+            age: age
+          }
+        };
+      });
+      
+      // Log found profiles for debugging
+      profilesWithAge.forEach((profile, index) => {
+        console.log(`👤 Profile ${index + 1}: ${profile.profile?.name} (${profile.profile?.gender}, ${profile.profile?.age} years)`);
+      });
+      
       // Handle case when no profiles are found
-      if (!profiles || profiles.length === 0) {
+      if (!profilesWithAge || profilesWithAge.length === 0) {
         console.log('📭 No profiles available for discovery');
         return res.status(200).json({
           success: true,
@@ -63,7 +155,7 @@ class MatchingController {
       
       res.status(200).json({
         success: true,
-        profiles,
+        profiles: profilesWithAge,
         dailyLimitReached: false,
         dailyLikeCount,
         remainingLikes: 5 - dailyLikeCount
@@ -102,6 +194,8 @@ class MatchingController {
       const userId = req.user.userId;
       const { targetUserId, type = 'like' } = req.body;
       
+      console.log(`💕 Like request - User: ${userId}, Target: ${targetUserId}, Type: ${type}`);
+      
       if (!targetUserId) {
         return res.status(400).json({ success: false, error: 'Target user ID is required' });
       }
@@ -112,6 +206,8 @@ class MatchingController {
       
       // Check daily like limit
       const dailyLikeCount = await DailyLike.getDailyLikeCount(userId);
+      console.log(`📊 Daily like count: ${dailyLikeCount}`);
+      
       if (dailyLikeCount >= 5) {
         return res.status(429).json({ 
           success: false, 
@@ -123,14 +219,18 @@ class MatchingController {
       // Check if already liked
       const existingLike = await DailyLike.findOne({ userId, likedProfileId: targetUserId });
       if (existingLike) {
+        console.log('⚠️ Profile already liked');
         return res.status(409).json({ success: false, error: 'Profile already liked' });
       }
       
       // Validate target user exists
       const targetUser = await User.findById(targetUserId);
       if (!targetUser) {
+        console.log('❌ Target user not found');
         return res.status(404).json({ success: false, error: 'Target user not found' });
       }
+      
+      console.log(`✅ Target user found: ${targetUser.profile?.name}`);
       
       // Create the like
       const like = new DailyLike({
@@ -140,6 +240,8 @@ class MatchingController {
         likeDate: new Date()
       });
       await like.save();
+      
+      console.log(`💾 Like saved successfully: ${like._id}`);
       
       // Check for mutual match
       const mutualLike = await DailyLike.findOne({
@@ -195,15 +297,51 @@ class MatchingController {
     try {
       const userId = req.user.userId;
       
-      const likes = await DailyLike.getLikedProfiles(userId);
+      console.log(`🔍 Fetching liked profiles for user: ${userId}`);
       
-      const likedProfiles = likes.map(like => ({
-        likeId: like._id,
-        profile: like.likedProfileId,
-        likeDate: like.likeDate,
-        type: like.type,
-        isMutualMatch: like.isMutualMatch
+      const likes = await DailyLike.getLikedProfiles(userId);
+      console.log(`📋 Found ${likes.length} likes for user`);
+      
+      const likedProfiles = await Promise.all(likes.map(async (like) => {
+        const likedUser = like.likedProfileId;
+        console.log(`💕 Like: ${like._id}, Target: ${likedUser?._id}, Name: ${likedUser?.profile?.name}`);
+        
+        // If it's a mutual match, find the connection
+        let connectionId = null;
+        if (like.isMutualMatch) {
+          const connection = await Connection.findOne({
+            users: { $all: [userId, likedUser._id] },
+            status: 'accepted'
+          });
+          connectionId = connection?._id;
+        }
+        
+        return {
+          likeId: like._id,
+          profile: {
+            _id: likedUser._id,
+            profile: {
+              name: likedUser.profile?.name || 'Unknown',
+              age: likedUser.profile?.age || null,
+              profession: likedUser.profile?.profession || null,
+              images: likedUser.profile?.images || [],
+              about: likedUser.profile?.about || null,
+              education: likedUser.profile?.education || null,
+              interests: likedUser.profile?.interests || [],
+              location: likedUser.profile?.location || null
+            },
+            verification: {
+              isVerified: likedUser.verification?.isVerified || false
+            }
+          },
+          likeDate: like.likeDate,
+          type: like.type,
+          isMutualMatch: like.isMutualMatch,
+          connectionId: connectionId
+        };
       }));
+      
+      console.log(`✅ Returning ${likedProfiles.length} liked profiles`);
       
       res.status(200).json({
         success: true,
@@ -296,6 +434,51 @@ class MatchingController {
     } catch (error) {
       console.error('❌ Pass profile error:', error);
       res.status(500).json({ success: false, error: 'Failed to pass profile' });
+    }
+  }
+
+  // Unmatch from a profile
+  async unmatchProfile(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { targetUserId } = req.body;
+      
+      console.log(`🚫 Unmatch request - User: ${userId}, Target: ${targetUserId}`);
+      
+      if (!targetUserId) {
+        return res.status(400).json({ success: false, error: 'Target user ID is required' });
+      }
+      
+      if (userId === targetUserId) {
+        return res.status(400).json({ success: false, error: 'Cannot unmatch from your own profile' });
+      }
+      
+      // Find and delete the like records for both users
+      const [userLike, targetLike] = await Promise.all([
+        DailyLike.findOneAndDelete({ userId, likedProfileId: targetUserId }),
+        DailyLike.findOneAndDelete({ userId: targetUserId, likedProfileId: userId })
+      ]);
+      
+      console.log(`🗑️ Deleted likes - User like: ${userLike?._id}, Target like: ${targetLike?._id}`);
+      
+      // Find and delete the connection if it exists
+      const connection = await Connection.findOneAndDelete({
+        users: { $all: [userId, targetUserId] },
+        status: 'accepted'
+      });
+      
+      console.log(`🔗 Deleted connection: ${connection?._id}`);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Successfully unmatched',
+        deletedLikes: [userLike?._id, targetLike?._id].filter(Boolean),
+        deletedConnection: connection?._id
+      });
+      
+    } catch (error) {
+      console.error('❌ Unmatch profile error:', error);
+      res.status(500).json({ success: false, error: 'Failed to unmatch profile' });
     }
   }
 }

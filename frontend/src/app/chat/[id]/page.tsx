@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatComponent from './ChatComponent';
 import { AuthService } from '../../../services/auth-service';
@@ -20,8 +21,9 @@ const demoMatchDetails = {
   }
 };
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -67,16 +69,16 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         
         if (isStaticMode) {
           // Static mode: use demo data
-          const demoMatch = demoMatchDetails[params.id as keyof typeof demoMatchDetails];
+          const demoMatch = demoMatchDetails[id as keyof typeof demoMatchDetails];
           if (!demoMatch) {
             setError('Match not found');
             return;
           }
           setMatch(demoMatch);
         } else {
-          // MongoDB mode: fetch real match data
+          // MongoDB mode: fetch connection and other user's profile
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles/uuid/${params.id}`,
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/connections/${id}`,
             {
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -86,14 +88,37 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           );
           
           if (!response.ok) {
-            setError('Match not found');
+            setError('Connection not found');
             return;
           }
           
           const data = await response.json();
+          
+          // Get the other user's profile from the connection
+          // Extract current user ID from JWT token
+          const token = localStorage.getItem('authToken');
+          let currentUserId = null;
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              currentUserId = payload.userId || payload._id || payload.id;
+            } catch (e) {
+              console.error('Error parsing JWT token:', e);
+            }
+          }
+          
+          const otherUser = data.connection.users.find((user: any) => user._id !== currentUserId);
+          
+          if (!otherUser) {
+            setError('Other user not found in connection');
+            return;
+          }
+          
           setMatch({
-            name: data.profile?.name || 'Unknown User',
-            image: data.profile?.images?.[0] || '/demo-profiles/default-profile.svg'
+            name: otherUser.profile?.name || 'Unknown User',
+            image: otherUser.profile?.images?.[0] || '/demo-profiles/default-profile.svg',
+            connectionId: id,
+            otherUserId: otherUser._id
           });
         }
       } catch (error) {
@@ -105,7 +130,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     }
 
     loadMatch();
-  }, [params.id, router]);
+  }, [id, router]);
 
   if (loading) {
     return (

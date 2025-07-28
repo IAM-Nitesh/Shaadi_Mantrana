@@ -24,4 +24,7 @@ router.get('/matches', matchingController.getMutualMatches.bind(matchingControll
 // Get daily like statistics
 router.get('/stats', matchingController.getDailyLikeStats.bind(matchingController));
 
+// Unmatch from a profile
+router.post('/unmatch', matchingController.unmatchProfile.bind(matchingController));
+
 module.exports = router; 

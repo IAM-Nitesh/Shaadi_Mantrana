@@ -20,6 +20,8 @@ import { format, setHours, setMinutes, setSeconds } from 'date-fns';
 import 'react-time-picker/dist/TimePicker.css';
 import { TimePicker } from '../../components/time-picker';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import StandardHeader from '../../components/StandardHeader';
+import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 
 // Demo profile data - ONLY used in static mode (when NEXT_PUBLIC_API_BASE_URL is not configured)
 const defaultProfileData = {
@@ -100,6 +102,14 @@ export default function Profile() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(
     typeof window !== 'undefined' ? localStorage.getItem('hasSeenOnboarding') === 'true' : false
   );
+  const [showFilter, setShowFilter] = useState(false);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    ageRange: [18, 60],
+    selectedProfessions: [],
+    selectedCountry: '',
+    selectedState: ''
+  });
 
   // GSAP refs for animations
   const headerRef = useRef<HTMLDivElement>(null);
@@ -1379,6 +1389,20 @@ export default function Profile() {
   }
 
   // When overlay is dismissed, set hasSeenOnboarding to true
+  // Handle filter application
+  const handleApplyFilters = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setShowFilter(false);
+    
+    // Update active filters indicator
+    const hasActive = newFilters.selectedProfessions.length > 0 ||
+                     newFilters.selectedCountry !== '' ||
+                     newFilters.selectedState !== '' ||
+                     newFilters.ageRange[0] !== 18 ||
+                     newFilters.ageRange[1] !== 60;
+    setHasActiveFilters(hasActive);
+  };
+
   const handleDismissWelcome = () => {
     setShowWelcome(false);
     setIsEditing(true);
@@ -1498,38 +1522,22 @@ export default function Profile() {
       )}
       
       {/* Header */}
-      <div ref={headerRef} className="fixed top-0 w-full backdrop-blur-sm bg-white/80 border-b border-white/20 shadow-lg z-40 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h1 className="profile-title text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">My Profile</h1>
-          <button
-            onClick={() => {
-              if (!isEditing) {
-                // Clear all error styling when entering edit mode
-                document.querySelectorAll('[data-field]').forEach(el => {
-                  const element = el as HTMLElement;
-                  element.classList.remove('border-red-500', 'bg-red-50', 'animate-shake');
-                  element.style.boxShadow = '';
-                  element.style.borderRadius = '';
-                  element.style.padding = '';
-                  element.style.margin = '';
-                });
-                setFieldErrors({});
-              }
-              setIsEditing(!isEditing);
-            }}
-            className="edit-toggle-btn btn-secondary text-sm py-2 px-4 hover-lift"
-          >
-            {isEditing ? 'Cancel' : 'Edit'}
-          </button>
-        </div>
-      </div>
+      <StandardHeader
+        showFilter={true}
+        onFilterClick={() => setShowFilter(true)}
+        hasActiveFilters={hasActiveFilters}
+        showProfileLink={true}
+      />
 
       {/* Content */}
       <div className="relative z-10 pt-16 pb-24 page-transition">
+
+        
         {/* Profile Image */}
         <div className="px-4 py-6">
-          <div className="relative w-32 h-32 mx-auto">
-            {profile.images && profile.images.length > 0 && profile.images[0] ? (
+          <div className="flex items-center justify-center space-x-4">
+            <div className="relative w-32 h-32">
+                          {profile.images && profile.images.length > 0 && profile.images[0] ? (
               <Image
                 src={profile.images[0]}
                 alt="Profile"
@@ -1538,37 +1546,73 @@ export default function Profile() {
                 className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
               />
             ) : (
-              <button
-                type="button"
-                onClick={handleCameraClick}
-                className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-rose-300 bg-white/60 hover:bg-rose-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-rose-400"
+              <div className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-rose-300 bg-white/60 transition-all duration-200 relative"
                 style={{ minHeight: 128, minWidth: 128 }}
               >
                 <Image
                   src="/icons/user.svg"
-                  alt="Upload Profile"
+                  alt="Profile Placeholder"
                   width={64}
                   height={64}
                   className="mx-auto mb-2 opacity-70"
                 />
-                <span className="text-xs text-rose-500 font-semibold">Upload Image</span>
+                <span className="text-xs text-rose-500 font-semibold">No Photo</span>
+                
+                {/* Small camera icon for upload when editing */}
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleCameraClick}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-rose-500 flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-rose-400 border border-rose-200"
+                  >
+                    <CustomIcon name="ri-camera-line" className="text-sm" />
+                  </button>
+                )}
+              </div>
+            )}
+              
+
+              
+                          {/* Camera icon for editing - only show when there's an image */}
+            {isEditing && profile.images && profile.images.length > 0 && profile.images[0] && (
+              <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full flex items-center justify-center shadow-xl border-3 bg-rose-500 border-white text-white hover:bg-rose-600 transition-colors duration-200 cursor-pointer">
+                <CustomIcon name="ri-camera-line" size={22} />
+              </div>
+            )}
+            </div>
+            
+            {/* Edit Button - Only show when not editing */}
+            {!isEditing && (
+              <button
+                onClick={() => {
+                  // Clear all error styling when entering edit mode
+                  document.querySelectorAll('[data-field]').forEach(el => {
+                    const element = el as HTMLElement;
+                    element.classList.remove('border-red-500', 'bg-red-50', 'animate-shake');
+                    element.style.boxShadow = '';
+                    element.style.borderRadius = '';
+                    element.style.padding = '';
+                    element.style.margin = '';
+                  });
+                  setFieldErrors({});
+                  setIsEditing(true);
+                }}
+                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <CustomIcon name="ri-edit-line" className="text-sm" />
+                <span className="text-sm">Edit</span>
               </button>
             )}
-            
-            {/* Age Badge */}
-            {profile.dateOfBirth && (
-              <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg border-2 border-white">
-                {calculateAge(profile.dateOfBirth)}y
-              </div>
-            )}
-            
-            {/* Image upload disabled for now - will be implemented later */}
-            {isEditing && (
-              <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full flex items-center justify-center shadow-xl border-3 bg-gray-100 border-gray-300 text-gray-400">
-                <CustomIcon name="ri-camera-off-line" size={22} />
-              </div>
-            )}
           </div>
+          
+          {/* Small file requirements note when editing */}
+          {isEditing && (
+            <div className="mt-2 text-center">
+              <p className="text-xs text-gray-500">
+                📸 JPG/JPEG only • Max 2MB
+              </p>
+            </div>
+          )}
           
           {/* Hidden file input */}
           <input
@@ -1579,13 +1623,7 @@ export default function Profile() {
             className="hidden"
           />
           
-          {/* Image upload disabled for now */}
-          <div className="mt-3 p-3 rounded-lg text-sm bg-gray-100 text-gray-600 border border-gray-200">
-            <div className="font-medium mb-1">Image upload coming soon</div>
-            <div className="text-xs opacity-75">
-              Profile images will be available in the next update
-            </div>
-          </div>
+
         </div>
 
         {/* Profile Name and Quick Info */}
@@ -1625,7 +1663,7 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Name</label>
                   {isEditing ? (
                                        <input
                      type="text"
@@ -1644,7 +1682,7 @@ export default function Profile() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Gender</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Gender</label>
                   {isEditing ? (
                     <select
                       value={profile.gender || ""}
@@ -1666,7 +1704,7 @@ export default function Profile() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Native Place</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Native Place</label>
                   {isEditing ? (
                                        <input
                      type="text"
@@ -1683,7 +1721,7 @@ export default function Profile() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Current Residence</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Current Residence</label>
                   {isEditing ? (
                                        <input
                      type="text"
@@ -1702,7 +1740,7 @@ export default function Profile() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Marital Status</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Marital Status</label>
                   {isEditing ? (
                     <select
                       value={profile.maritalStatus || ""}
@@ -1723,7 +1761,7 @@ export default function Profile() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Manglik</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Manglik</label>
                   {isEditing ? (
                     <select
                       value={profile.manglik || ""}
@@ -1755,7 +1793,7 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Date</label>
                   {isEditing ? (
                     <DatePicker
                       date={dateValue.startDate ? (() => {
@@ -1786,7 +1824,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Time</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Time</label>
                   {isEditing ? (
                     <TimePicker
                       time={clockTime}
@@ -1812,7 +1850,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Place</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Place</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1840,7 +1878,7 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Height</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Height</label>
                   {isEditing ? (
                     <div className="flex flex-col md:flex-row gap-2 w-full">
                       <select
@@ -1877,7 +1915,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Weight</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Weight</label>
                   {isEditing ? (
                     <input
                       type="number"
@@ -1894,7 +1932,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Complexion</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Complexion</label>
                   {isEditing ? (
                     <select
                       value={profile.complexion || ""}
@@ -1926,7 +1964,7 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Father's Gotra</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Father's Gotra</label>
                   {isEditing ? (
                                        <input
                      type="text"
@@ -1942,7 +1980,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Mother's Gotra</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Mother's Gotra</label>
                   {isEditing ? (
                                        <input
                      type="text"
@@ -1960,7 +1998,7 @@ export default function Profile() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Grandfather's Gotra</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Grandfather's Gotra</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1974,7 +2012,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Grandmother's Gotra</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Grandmother's Gotra</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1999,7 +2037,7 @@ export default function Profile() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Education</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Education</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -2015,7 +2053,7 @@ export default function Profile() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Occupation</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Occupation</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -2031,7 +2069,7 @@ export default function Profile() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Annual Income</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Annual Income</label>
                 {isEditing ? (
                   <input
                     type="number"
@@ -2057,7 +2095,7 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Eating Habit</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Eating Habit</label>
                   {isEditing ? (
                     <select
                       value={profile.eatingHabit || ""}
@@ -2077,7 +2115,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Smoking</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Smoking</label>
                   {isEditing ? (
                     <select
                       value={profile.smokingHabit || ""}
@@ -2097,7 +2135,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Drinking</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Drinking</label>
                   {isEditing ? (
                     <select
                       value={profile.drinkingHabit || ""}
@@ -2128,7 +2166,7 @@ export default function Profile() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Father</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Father</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -2144,7 +2182,7 @@ export default function Profile() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Mother</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Mother</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -2161,7 +2199,7 @@ export default function Profile() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Brothers</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Brothers</label>
                   {isEditing ? (
                     <input
                       type="number"
@@ -2178,7 +2216,7 @@ export default function Profile() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Sisters</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Sisters</label>
                   {isEditing ? (
                     <input
                       type="number"
@@ -2206,7 +2244,7 @@ export default function Profile() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Specific Requirements</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Specific Requirements</label>
                 {isEditing ? (
                   <textarea
                     value={profile.specificRequirements || ""}
@@ -2222,7 +2260,7 @@ export default function Profile() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Willingness to Settle Abroad</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Willingness to Settle Abroad</label>
                 {isEditing ? (
                                       <select
                       value={profile.settleAbroad || ""}
@@ -2315,6 +2353,15 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Filter Modal */}
+      {showFilter && (
+        <FilterModal
+          onClose={() => setShowFilter(false)}
+          onApply={handleApplyFilters}
+          currentFilters={filters}
+        />
+      )}
+
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
         <div className="grid grid-cols-4 h-16">
@@ -2340,11 +2387,13 @@ export default function Profile() {
                 router.push('/matches');
               }
             }}
-            className="flex flex-col items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-gray-50 transition-all duration-200 group w-full h-full"
+            className="flex flex-col items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-gray-50 transition-all duration-200 group w-full h-full relative"
             type="button"
           >
             <CustomIcon name="ri-chat-3-line" className="text-xl mb-1 group-hover:scale-110 transition-transform duration-200" />
             <span className="text-xs">Matches</span>
+            {/* Note: We'll need to fetch matches count for profile page */}
+            {/* Badge would go here when matches count is available */}
           </button>
           <Link 
             href="/profile" 

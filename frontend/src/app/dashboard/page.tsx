@@ -8,9 +8,12 @@ import FilterModal, { FilterState } from './FilterModal';
 import { ProfileService, Profile } from '../../services/profile-service';
 import { MatchingService, type DiscoveryProfile } from '../../services/matching-service';
 import { AuthService } from '../../services/auth-service';
+import { matchesCountService } from '../../services/matches-count-service';
 import CustomIcon from '../../components/CustomIcon';
 import ModernNavigation from '../../components/ModernNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import MatchAnimation from '../../components/MatchAnimation';
+import StandardHeader from '../../components/StandardHeader';
 
 import { gsap } from 'gsap';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -35,12 +38,27 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [showMatchAnimation, setShowMatchAnimation] = useState(false);
+  const [matchName, setMatchName] = useState('');
+  const [matchesCount, setMatchesCount] = useState(0);
 
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to matches count updates
+  useEffect(() => {
+    const unsubscribe = matchesCountService.subscribe((count) => {
+      setMatchesCount(count);
+    });
+    
+    // Initial fetch
+    matchesCountService.fetchCount();
+    
+    return unsubscribe;
+  }, []);
 
   // Move loadProfiles above useEffect hooks
   const loadProfiles = useCallback(async () => {
@@ -439,6 +457,11 @@ export default function Dashboard() {
         if (likeResponse.isMutualMatch) {
           // Show match notification
           console.log('🎉 It\'s a match!');
+          setMatchName(currentProfile.profile.name || 'Someone');
+          setShowMatchAnimation(true);
+          
+          // Update matches count
+          matchesCountService.fetchCount();
         }
         
         // Update daily like count
@@ -505,43 +528,12 @@ export default function Dashboard() {
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.1),transparent_50%)]"></div>
       
       {/* Header */}
-      <div ref={headerRef} className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-xl z-40 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div>
-              <h1 className="text-xl font-bold tracking-wide leading-tight" style={{ fontFamily: "'Inter', 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', sans-serif" }}>
-                <span className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent font-extrabold letter-spacing-tight">
-                  Shaadi
-                </span>
-                <span className="bg-gradient-to-br from-rose-600 via-pink-600 to-rose-700 bg-clip-text text-transparent font-light ml-1 letter-spacing-wide">
-                  Mantra
-                </span>
-              </h1>
-              <div className="flex items-center justify-start space-x-1 mt-1">
-                <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-rose-400 rounded-full"></div>
-                <div className="w-1.5 h-1.5 bg-rose-500 rounded-full pulse-indicator"></div>
-                <div className="w-3 h-0.5 bg-gradient-to-r from-rose-400 to-gray-300 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowFilter(true)}
-              className="w-10 h-10 flex items-center justify-center text-neutral-600 relative bg-white border border-neutral-200 rounded-2xl shadow-sm hover-lift"
-            >
-              <CustomIcon name="ri-filter-3-line" />
-              {hasActiveFilters && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-rose-500 rounded-full pulse-badge flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-rose-500 rounded-full"></div>
-                </div>
-              )}
-            </button>
-            <Link href="/profile" className="w-10 h-10 flex items-center justify-center bg-white border-2 border-rose-500 rounded-2xl shadow-lg hover:bg-rose-50">
-              <CustomIcon name="ri-user-line" className="text-rose-500" />
-            </Link>
-          </div>
-        </div>
-      </div>
+      <StandardHeader
+        showFilter={true}
+        onFilterClick={() => setShowFilter(true)}
+        hasActiveFilters={hasActiveFilters}
+        showProfileLink={true}
+      />
 
       {/* Main Content */}
             {/* Main Content with enhanced transitions */}
@@ -586,7 +578,7 @@ export default function Dashboard() {
         ) : currentIndex < filteredProfiles.length ? (
           <div ref={cardRef} className="max-w-sm mx-auto">
             <SwipeCard
-              profile={filteredProfiles[currentIndex] as any}
+              profile={filteredProfiles[currentIndex]}
               onSwipe={handleSwipe}
             />
             
@@ -630,7 +622,8 @@ export default function Dashboard() {
           { 
             href: '/matches', 
             icon: 'ri-chat-3-line', 
-            label: 'Matches'
+            label: 'Matches',
+            badge: matchesCount
           },
           { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
           { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
@@ -658,6 +651,13 @@ export default function Dashboard() {
           currentFilters={filters}
         />
       )}
+
+      {/* Match Animation */}
+      <MatchAnimation
+        isVisible={showMatchAnimation}
+        onClose={() => setShowMatchAnimation(false)}
+        matchName={matchName}
+      />
 
       {/* Onboarding Animation/Modal */}
       {/* Removed onboarding overlay/modal and message from dashboard */}
