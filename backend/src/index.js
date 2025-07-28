@@ -11,6 +11,9 @@ dotenv.config();
 // Import database service
 const databaseService = require('./services/databaseService');
 
+// Import chat service
+const chatService = require('./services/chatService');
+
 // Import request logging middleware
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
@@ -83,6 +86,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
+const connectionRoutes = require('./routes/connectionRoutes');
 
 // API Routes with rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
@@ -92,6 +96,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/matching', matchingRoutes);
+app.use('/api/connections', connectionRoutes);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -164,7 +169,7 @@ async function startServer() {
     await databaseService.connect();
     
     // Start the server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Backend server running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/health`);
       console.log(`📊 Database status: http://localhost:${PORT}/api/database/status`);
@@ -172,6 +177,15 @@ async function startServer() {
       console.log(`💾 Database: ${databaseService.getConnectionStatus().name || 'Not connected'}`);
       console.log('✅ Server startup complete!');
     });
+
+    // Initialize Socket.IO chat service
+    chatService.initialize(server);
+    console.log('💬 Socket.IO chat service initialized');
+
+    // Setup periodic cleanup for chat data
+    setInterval(() => {
+      chatService.cleanup();
+    }, 60 * 60 * 1000); // Run cleanup every hour
     
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);
