@@ -73,7 +73,7 @@ dailyLikeSchema.statics.canLikeToday = function(userId, date = new Date()) {
 // Static method to get liked profiles for a user
 dailyLikeSchema.statics.getLikedProfiles = function(userId) {
   return this.find({ userId })
-    .populate('likedProfileId', 'profile.name profile.age profile.profession profile.images verification.isVerified')
+    .populate('likedProfileId', 'profile.name profile.age profile.profession profile.images profile.about profile.education profile.interests profile.location verification.isVerified')
     .sort({ createdAt: -1 });
 };
 
