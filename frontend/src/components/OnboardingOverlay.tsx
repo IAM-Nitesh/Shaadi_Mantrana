@@ -6,6 +6,7 @@ import { gsap } from 'gsap';
 import Link from 'next/link';
 import CustomIcon from './CustomIcon';
 import HeartbeatLoader from './HeartbeatLoader';
+import confetti from 'canvas-confetti';
 
 interface OnboardingOverlayProps {
   isVisible: boolean;
@@ -64,6 +65,90 @@ export default function OnboardingOverlay({ isVisible, onComplete, profileComple
         { opacity: 1, duration: 0.5, ease: "power2.out" }
       );
 
+      // Trigger confetti animation immediately when overlay becomes visible
+      if (typeof window !== 'undefined') {
+        // Create a burst of confetti
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+          zIndex: 9999
+        });
+
+        // Add a second burst after a short delay
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            spread: 50,
+            origin: { y: 0.7 },
+            colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+            zIndex: 9999
+          });
+        }, 500);
+
+        // Add more confetti bursts over 10 seconds
+        setTimeout(() => {
+          confetti({
+            particleCount: 30,
+            spread: 60,
+            origin: { y: 0.5 },
+            colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+            zIndex: 9999
+          });
+        }, 2000);
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 40,
+            spread: 80,
+            origin: { y: 0.8 },
+            colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+            zIndex: 9999
+          });
+        }, 3500);
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 25,
+            spread: 40,
+            origin: { y: 0.6 },
+            colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+            zIndex: 9999
+          });
+        }, 5000);
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 35,
+            spread: 70,
+            origin: { y: 0.7 },
+            colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+            zIndex: 9999
+          });
+        }, 6500);
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 20,
+            spread: 50,
+            origin: { y: 0.5 },
+            colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+            zIndex: 9999
+          });
+        }, 8000);
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 30,
+            spread: 60,
+            origin: { y: 0.8 },
+            colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+            zIndex: 9999
+          });
+        }, 9500);
+      }
+
       // Step through onboarding messages
       for (let i = 0; i < onboardingSteps.length; i++) {
         setCurrentStep(i);
@@ -104,7 +189,7 @@ export default function OnboardingOverlay({ isVisible, onComplete, profileComple
     };
 
     startOnboarding();
-  }, [isVisible, profileCompletion, onComplete, isButtonEnabled]);
+  }, [isVisible, profileCompletion, onboardingSteps.length, onComplete]);
 
   const currentStepData = onboardingSteps[currentStep];
 
@@ -129,9 +214,9 @@ export default function OnboardingOverlay({ isVisible, onComplete, profileComple
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
-                className="w-20 h-20 bg-gradient-to-br from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
+                className="w-32 h-32 bg-gradient-to-br from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg heartbeat-animation"
               >
-                <CustomIcon name={currentStepData.icon} className="w-10 h-10 text-white" />
+                <CustomIcon name={currentStepData.icon} className="w-16 h-16 text-white" />
               </motion.div>
 
               {/* Title */}

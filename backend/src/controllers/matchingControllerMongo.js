@@ -106,7 +106,7 @@ class MatchingController {
       
       // Get profiles that match the criteria
       const profiles = await User.find(queryFilters)
-        .select('profile.name profile.dateOfBirth profile.profession profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation verification.isVerified')
+        .select('profile.name profile.dateOfBirth profile.profession profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation verification.isVerified profileCompleted')
         .limit(limit)
         .skip((page - 1) * limit)
         .lean();
@@ -131,7 +131,8 @@ class MatchingController {
           profile: {
             ...profile.profile,
             age: age
-          }
+          },
+          profileCompleted: profile.profileCompleted || false
         };
       });
       
@@ -332,7 +333,8 @@ class MatchingController {
             },
             verification: {
               isVerified: likedUser.verification?.isVerified || false
-            }
+            },
+            profileCompleted: likedUser.profileCompleted || false
           },
           likeDate: like.likeDate,
           type: like.type,

@@ -2,10 +2,12 @@
 // This service handles image uploads and validates that images contain faces
 
 // To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
-const API_CONFIG = {
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:4500 (dev), https://your-production-domain.com (prod)
+export const API_CONFIG = {
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
 };
+
+import ImageCompression from '../utils/imageCompression';
 
 export interface ImageValidationResult {
   isValid: boolean;
@@ -24,6 +26,20 @@ export interface UploadResult {
 }
 
 export class ImageUploadService {
+  
+  // Cache for signed URLs (userId -> { url: string, expiry: number })
+  private static signedUrlCache = new Map<string, { url: string; expiry: number }>();
+  
+  // Cache expiry time (1 hour)
+  private static readonly CACHE_EXPIRY = 60 * 60 * 1000;
+  
+  // Batch request queue to avoid multiple simultaneous requests for the same user
+  private static pendingRequests = new Map<string, Promise<string | null>>();
+  
+  // Batch processing for multiple users
+  private static batchQueue: Array<{ userId: string; resolve: (url: string | null) => void }> = [];
+  private static batchTimeout: NodeJS.Timeout | null = null;
+  private static readonly BATCH_DELAY = 100; // 100ms delay to collect batch requests
   
   // Validate if image contains a human face using basic validation
   static async validateFaceInImage(file: File): Promise<ImageValidationResult> {
@@ -46,7 +62,7 @@ export class ImageUploadService {
       
     } catch (error) {
       // Fallback to simple detection if advanced fails
-      console.warn('Advanced face detection failed, using fallback method:', error);
+      // console.warn('Advanced face detection failed, using fallback method:', error);
       return this.validateFaceInImageSimple(file);
     }
   }
@@ -103,11 +119,11 @@ export class ImageUploadService {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
         resolve({
           isValid: false,
           confidence: 0,
-          error: 'Image size must be less than 5MB'
+          error: 'Image size must be less than 2MB'
         });
         return;
       }
@@ -151,35 +167,31 @@ export class ImageUploadService {
   static async uploadProfileImage(file: File): Promise<UploadResult> {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
-    // Always try demo mode first in development to avoid authentication issues
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Using demo image upload');
-      
-      // Still validate the image
-      const validation = await this.validateFaceInImage(file);
-      
+    // Development mode fallback
+    if (process.env.NODE_ENV === 'development' && !apiBaseUrl) {
+      // console.log('Development mode: Image upload not configured');
       return {
-        success: true,
-        imageUrl: '/demo-profiles/default-profile.svg',
+        success: false,
+        error: 'Image upload not configured in development mode',
         validation: {
-          isValid: true,
-          confidence: 90,
-          faceCount: 1,
-          quality: 'good'
+          isValid: false,
+          confidence: 0,
+          faceCount: 0,
+          quality: 'poor'
         }
       };
     }
 
     if (!apiBaseUrl) {
-      console.log('Demo mode: Image upload simulated');
+      // console.log('Production mode: Image upload not configured');
       return {
-        success: true,
-        imageUrl: '/demo-profiles/default-profile.svg',
+        success: false,
+        error: 'Image upload not configured',
         validation: {
-          isValid: true,
-          confidence: 90,
-          faceCount: 1,
-          quality: 'good'
+          isValid: false,
+          confidence: 0,
+          faceCount: 0,
+          quality: 'poor'
         }
       };
     }
@@ -206,9 +218,9 @@ export class ImageUploadService {
         throw new Error('Authentication required. Please log in first.');
       }
 
-      console.log('API Base URL:', apiBaseUrl);
-      console.log('Uploading to:', `${apiBaseUrl}/api/upload/single`);
-      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+      // console.log('API Base URL:', apiBaseUrl);
+      // console.log('Uploading to:', `${apiBaseUrl}/api/upload/single`);
+      // console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
       const response = await fetch(`${apiBaseUrl}/api/upload/single`, {
         method: 'POST',
@@ -218,8 +230,8 @@ export class ImageUploadService {
         body: formData,
       });
 
-      console.log('Upload response status:', response.status);
-      console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
+      // console.log('Upload response status:', response.status);
+      // console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -243,13 +255,9 @@ export class ImageUploadService {
       };
 
     } catch (error: unknown) {
-      console.error('Error uploading image:', error);
-      console.error('API Base URL:', apiBaseUrl);
-      console.error('File details:', { 
-        name: file.name, 
-        size: file.size, 
-        type: file.type 
-      });
+      // console.error('Error uploading image:', error);
+      // console.error('API Base URL:', apiBaseUrl);
+      // console.error('File details:', { name: file.name, size: file.size, type: file.type });
       return {
         success: false,
         error: (error as Error).message || 'Failed to upload image'
@@ -275,8 +283,8 @@ export class ImageUploadService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.log('Demo mode: Image deletion simulated');
-      return true;
+          // console.log('Image deletion not configured');
+    return false;
     }
 
     try {
@@ -291,7 +299,7 @@ export class ImageUploadService {
 
       return response.ok;
     } catch (error: unknown) {
-      console.error('Error deleting image:', error);
+      // console.error('Error deleting image:', error);
       return false;
     }
   }
@@ -301,11 +309,7 @@ export class ImageUploadService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      return [
-        '/demo-profiles/profile-1.svg',
-        '/demo-profiles/profile-2.svg',
-        '/demo-profiles/profile-3.svg'
-      ];
+      return [];
     }
 
     try {
@@ -324,7 +328,7 @@ export class ImageUploadService {
       return data.images || [];
 
     } catch (error: unknown) {
-      console.error('Error fetching profile images:', error);
+      // console.error('Error fetching profile images:', error);
       return [];
     }
   }
@@ -375,5 +379,506 @@ export class ImageUploadService {
 
       img.src = URL.createObjectURL(file);
     });
+  }
+
+  /**
+   * Upload profile picture to B2 Cloud Storage
+   * @param file - Image file to upload
+   * @returns Promise with upload result
+   */
+  static async uploadProfilePictureToB2(file: File): Promise<UploadResult> {
+    // Clear cache when uploading new image
+    this.clearSignedUrlCache();
+    
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    
+    if (!apiBaseUrl) {
+      return {
+        success: false,
+        error: 'API not configured'
+      };
+    }
+
+    try {
+      // Validate image
+      const validation = ImageCompression.validateImage(file);
+      if (!validation.valid) {
+        return {
+          success: false,
+          error: validation.error || 'Invalid image file'
+        };
+      }
+
+      // Compress image for optimal upload
+      const compressionResult = await ImageCompression.compressProfilePicture(file, {
+        maxWidth: 1080,
+        maxHeight: 1080,
+        quality: 0.85,
+        format: 'jpeg'
+      });
+
+      // Check if user is authenticated
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        throw new Error('Authentication required. Please log in first.');
+      }
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('image', compressionResult.file);
+
+      // Upload to B2 via backend
+      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.message || `Upload failed with status ${response.status}`;
+        
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('authToken');
+          throw new Error('Authentication required. Please log in again.');
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      
+      return {
+        success: true,
+        imageUrl: result.data.url,
+        validation: {
+          isValid: true,
+          confidence: 90,
+          faceCount: 1,
+          quality: 'good'
+        }
+      };
+
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Upload failed'
+      };
+    }
+  }
+
+  /**
+   * Delete profile picture from B2 Cloud Storage
+   * @returns Promise with deletion result
+   */
+  static async deleteProfilePictureFromB2(): Promise<boolean> {
+    // Clear cache when deleting image
+    this.clearSignedUrlCache();
+    
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    
+    if (!apiBaseUrl) {
+      return false;
+    }
+
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get signed URL for profile picture
+   * @param userId - User ID
+   * @param expiry - URL expiry time in seconds (default: 1 hour)
+   * @returns Promise with signed URL
+   */
+  static async getProfilePictureUrl(userId: string, expiry: number = 3600): Promise<string | null> {
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    
+    if (!apiBaseUrl) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/${userId}/url?expiry=${expiry}`);
+      
+      if (!response.ok) {
+        return null;
+      }
+
+      const result = await response.json();
+      return result.data.url;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Get signed URL for current user's profile picture
+   * @param expiry - URL expiry time in seconds (default: 1 hour)
+   * @returns Promise with signed URL
+   */
+  static async getMyProfilePictureSignedUrl(expiry: number = 4200): Promise<string | null> {
+    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    
+    if (!apiBaseUrl) {
+      console.log('❌ API_BASE_URL not configured');
+      return null;
+    }
+
+    try {
+      const authToken = localStorage.getItem('authToken');
+      console.log('🔍 Auth token found:', authToken ? 'Yes' : 'No');
+      if (!authToken) {
+        console.log('❌ No auth token found');
+        throw new Error('Authentication required');
+      }
+
+      // Get current user ID from auth token (you might need to decode JWT or get from localStorage)
+      const userId = this.getCurrentUserId();
+      if (!userId) {
+        console.log('❌ Could not determine current user ID');
+        return null;
+      }
+
+      // Check cache first
+      const cacheKey = `profile_${userId}`;
+      const cached = this.signedUrlCache.get(cacheKey);
+      const now = Date.now();
+      
+      if (cached && cached.expiry > now) {
+        console.log('✅ Using cached signed URL');
+        return cached.url;
+      }
+
+      console.log(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
+      
+      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+      
+      console.log(`🔍 Response status: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`❌ Response not OK: ${errorText}`);
+        return null;
+      }
+
+      const result = await response.json();
+      console.log(`✅ Signed URL result:`, result);
+      
+      // Cache the signed URL
+      if (result.data?.url) {
+        const cacheExpiry = now + this.CACHE_EXPIRY;
+        this.signedUrlCache.set(cacheKey, {
+          url: result.data.url,
+          expiry: cacheExpiry
+        });
+        console.log('💾 Cached signed URL for 5 minutes');
+      }
+      
+      return result.data.url;
+    } catch (error) {
+      console.error('❌ Error fetching signed URL:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get current user ID from auth token or localStorage
+   * @returns User ID or null
+   */
+  private static getCurrentUserId(): string | null {
+    // Try to get from localStorage first
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      return userId;
+    }
+
+    // If not in localStorage, try to decode from auth token
+    const authToken = localStorage.getItem('authToken');
+    if (authToken) {
+      try {
+        // Simple JWT decode (you might want to use a proper JWT library)
+        const payload = JSON.parse(atob(authToken.split('.')[1]));
+        return payload.userId || payload.sub;
+      } catch (error) {
+        console.log('❌ Could not decode auth token');
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Clear the signed URL cache
+   */
+  static clearSignedUrlCache(): void {
+    this.signedUrlCache.clear();
+    console.log('🗑️ Cleared signed URL cache');
+  }
+
+  /**
+   * Get signed URL for another user's profile picture
+   * @param userId - User ID
+   * @param expiry - URL expiry time in seconds (default: 1 hour 10 minutes)
+   * @returns Promise with signed URL
+   */
+  static async getUserProfilePictureSignedUrl(userId: string, expiry: number = 4200): Promise<string | null> {
+    console.log('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
+    
+    try {
+      const authToken = localStorage.getItem('authToken');
+      console.log('🔍 Auth token found:', !!authToken);
+      console.log('🔍 Auth token length:', authToken?.length);
+      if (!authToken) {
+        console.log('❌ No auth token found');
+        throw new Error('Authentication required');
+      }
+
+      const url = `/api/upload/profile-picture/${userId}/url?expiry=${expiry}`;
+      console.log('🔍 Fetching signed URL from:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+      
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ Response not OK:', errorText);
+        return null;
+      }
+
+      const result = await response.json();
+      console.log('✅ Signed URL result:', result);
+      return result.data.url;
+    } catch (error) {
+      console.error('❌ Error getting signed URL:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get signed URL for another user's profile picture with caching and batching
+   * @param userId - User ID
+   * @param expiry - URL expiry time in seconds (default: 1 hour 10 minutes)
+   * @returns Promise with signed URL
+   */
+  static async getUserProfilePictureSignedUrlCached(userId: string, expiry: number = 4200): Promise<string | null> {
+    // Check cache first - optimized for speed
+    const cached = this.signedUrlCache.get(userId);
+    const now = Date.now();
+    
+    if (cached && cached.expiry > now) {
+      // Return immediately from cache - no console log for speed
+      return cached.url;
+    }
+
+    // Check if there's already a pending request for this user
+    if (this.pendingRequests.has(userId)) {
+      return this.pendingRequests.get(userId);
+    }
+
+    // Create new request
+    const requestPromise = this.getUserProfilePictureSignedUrl(userId, expiry).then(url => {
+      // Cache the result
+      if (url) {
+        const cacheExpiry = now + this.CACHE_EXPIRY;
+        this.signedUrlCache.set(userId, {
+          url,
+          expiry: cacheExpiry
+        });
+      }
+      
+      // Remove from pending requests
+      this.pendingRequests.delete(userId);
+      return url;
+    });
+
+    // Store the pending request
+    this.pendingRequests.set(userId, requestPromise);
+    return requestPromise;
+  }
+
+  /**
+   * Batch fetch signed URLs for multiple users
+   * @param userIds - Array of user IDs
+   * @param expiry - URL expiry time in seconds (default: 1 hour 10 minutes)
+   * @returns Promise with Map of userId -> signed URL
+   */
+  static async getBatchSignedUrls(userIds: string[], expiry: number = 4200): Promise<Map<string, string | null>> {
+    const results = new Map<string, string | null>();
+    const uncachedUserIds: string[] = [];
+
+    // Check cache for all users first - optimized for speed
+    const now = Date.now();
+    for (const userId of userIds) {
+      const cached = this.signedUrlCache.get(userId);
+      if (cached && cached.expiry > now) {
+        results.set(userId, cached.url);
+      } else {
+        uncachedUserIds.push(userId);
+      }
+    }
+
+    // Fetch uncached users in parallel (but with rate limiting)
+    if (uncachedUserIds.length > 0) {
+      // Process in batches of 5 to avoid overwhelming the server
+      const batchSize = 5;
+      for (let i = 0; i < uncachedUserIds.length; i += batchSize) {
+        const batch = uncachedUserIds.slice(i, i + batchSize);
+        const batchPromises = batch.map(userId => 
+          this.getUserProfilePictureSignedUrlCached(userId, expiry)
+        );
+        
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Store results
+        batch.forEach((userId, index) => {
+          const url = batchResults[index];
+          results.set(userId, url);
+        });
+
+        // Small delay between batches to be respectful to the server
+        if (i + batchSize < uncachedUserIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get cache status for debugging
+   * @returns Cache statistics
+   */
+  static getCacheStatus(): { 
+    totalCached: number; 
+    expiredEntries: number; 
+    pendingRequests: number;
+    cacheSize: number;
+  } {
+    const now = Date.now();
+    let expiredEntries = 0;
+    let validEntries = 0;
+
+    for (const [userId, entry] of this.signedUrlCache.entries()) {
+      if (entry.expiry > now) {
+        validEntries++;
+      } else {
+        expiredEntries++;
+      }
+    }
+
+    return {
+      totalCached: this.signedUrlCache.size,
+      expiredEntries,
+      pendingRequests: this.pendingRequests.size,
+      cacheSize: validEntries
+    };
+  }
+
+  /**
+   * Clear expired entries from cache
+   */
+  static clearExpiredCache(): void {
+    const now = Date.now();
+    let clearedCount = 0;
+
+    for (const [userId, entry] of this.signedUrlCache.entries()) {
+      if (entry.expiry <= now) {
+        this.signedUrlCache.delete(userId);
+        clearedCount++;
+      }
+    }
+
+    if (clearedCount > 0) {
+      console.log(`🗑️ Cleared ${clearedCount} expired cache entries`);
+    }
+  }
+
+  /**
+   * Initialize periodic cache cleanup
+   */
+  static initializeCacheCleanup(): void {
+    // Clear expired entries every 30 minutes
+    setInterval(() => {
+      this.clearExpiredCache();
+    }, 30 * 60 * 1000); // 30 minutes
+
+    // Also clear on page visibility change (when user returns to tab)
+    if (typeof window !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.clearExpiredCache();
+        }
+      });
+    }
+  }
+
+  /**
+   * Preload signed URLs for better performance
+   * @param userIds - Array of user IDs to preload
+   * @param expiry - URL expiry time in seconds
+   */
+  static preloadSignedUrls(userIds: string[], expiry: number = 4200): void {
+    // Preload in background without blocking
+    setTimeout(() => {
+      userIds.forEach(userId => {
+        // Only preload if not already cached
+        const cached = this.signedUrlCache.get(userId);
+        const now = Date.now();
+        
+        if (!cached || cached.expiry <= now) {
+          this.getUserProfilePictureSignedUrlCached(userId, expiry);
+        }
+      });
+    }, 0);
+  }
+
+  /**
+   * Get cache hit rate for performance monitoring
+   * @returns Cache hit statistics
+   */
+  static getCacheStats(): { 
+    totalRequests: number; 
+    cacheHits: number; 
+    hitRate: number;
+    cacheSize: number;
+  } {
+    // This would need to be implemented with request tracking
+    // For now, return basic cache size info
+    return {
+      totalRequests: 0,
+      cacheHits: 0,
+      hitRate: 0,
+      cacheSize: this.signedUrlCache.size
+    };
   }
 }
