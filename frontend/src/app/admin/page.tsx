@@ -518,7 +518,7 @@ export default function AdminPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
               <HeartbeatLoader 
-                size="lg" 
+                size="xxl" 
                 text="Loading Admin Panel" 
                 className="mb-4"
               />

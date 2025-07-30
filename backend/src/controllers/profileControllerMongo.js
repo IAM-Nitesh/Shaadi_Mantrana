@@ -40,7 +40,8 @@ class ProfileController {
         success: true,
         profile: {
           ...user.toPublicJSON(),
-          isFirstLogin: isFirstLogin
+          isFirstLogin: isFirstLogin,
+          profileCompleteness: user.profile.profileCompleteness || 0
         }
       });
 
@@ -94,6 +95,60 @@ class ProfileController {
             const age = parseInt(updates[field]);
             if (age >= 18 && age <= 80) {
               sanitizedUpdates[`profile.${field}`] = age;
+            }
+          } else if (field === 'dateOfBirth') {
+            // Enhanced date of birth validation with gender-specific age requirements
+            const birthDate = new Date(updates[field]);
+            const today = new Date();
+            
+            if (!isNaN(birthDate.getTime()) && birthDate < today) {
+              // Calculate age
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const monthDiff = today.getMonth() - birthDate.getMonth();
+              
+              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              
+              // Get user's gender for age validation
+              const user = await User.findById(userId);
+              const gender = user?.profile?.gender;
+              
+              // Gender-specific age validation
+              let isValidAge = false;
+              if (gender === 'Male') {
+                isValidAge = age >= 21 && age <= 80;
+              } else if (gender === 'Female') {
+                isValidAge = age >= 18 && age <= 80;
+              } else {
+                // Default validation if gender not specified
+                isValidAge = age >= 18 && age <= 80;
+              }
+              
+              if (isValidAge) {
+                sanitizedUpdates[`profile.${field}`] = updates[field];
+              } else {
+                console.log(`❌ Age validation failed: ${age} years old, gender: ${gender}`);
+              }
+            }
+          } else if (field === 'height') {
+            // Enhanced height validation for feet and inches format
+            const heightValue = updates[field];
+            const heightMatch = heightValue.match(/^(\d+)'(\d+)"?$/);
+            
+            if (heightMatch) {
+              const feet = parseInt(heightMatch[1]);
+              const inches = parseInt(heightMatch[2]);
+              const totalInches = (feet * 12) + inches;
+              
+              // Min 4 feet (48 inches), Max 8 feet (96 inches)
+              if (totalInches >= 48 && totalInches <= 96) {
+                sanitizedUpdates[`profile.${field}`] = heightValue;
+              } else {
+                console.log(`❌ Height validation failed: ${heightValue} (${totalInches} inches)`);
+              }
+            } else {
+              console.log(`❌ Height format validation failed: ${heightValue}`);
             }
           } else if (field === 'interests') {
             if (Array.isArray(updates[field])) {
@@ -186,7 +241,7 @@ class ProfileController {
         const requiredFields = [
           'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
           'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-          'maritalStatus', 'father', 'mother', 'about'
+          'maritalStatus', 'father', 'mother', 'about', 'images'
         ];
 
         const optionalFields = [
@@ -197,32 +252,58 @@ class ProfileController {
         ];
 
         let completedFields = 0;
+        let totalWeight = 0;
 
         // Check required fields (weight: 2x)
         requiredFields.forEach(field => {
-          if (profile[field] && profile[field].toString().trim() !== '') {
-            completedFields += 2;
+          totalWeight += 2;
+          if (profile[field]) {
+            if (field === 'images') {
+              // Images field should have at least one image
+              if (Array.isArray(profile[field]) && profile[field].length > 0) {
+                completedFields += 2;
+              }
+            } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
+              completedFields += 2;
+            } else if (typeof profile[field] === 'number' && profile[field] > 0) {
+              completedFields += 2;
+            }
           }
         });
 
         // Check optional fields (weight: 1x)
         optionalFields.forEach(field => {
-          if (profile[field] && profile[field].toString().trim() !== '') {
-            completedFields += 1;
+          totalWeight += 1;
+          if (profile[field]) {
+            if (field === 'interests') {
+              // Interests field should have at least one interest
+              if (Array.isArray(profile[field]) && profile[field].length > 0) {
+                completedFields += 1;
+              }
+            } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
+              completedFields += 1;
+            } else if (typeof profile[field] === 'number' && profile[field] > 0) {
+              completedFields += 1;
+            }
           }
         });
 
         // Calculate percentage (max 100%)
-        const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
+        const percentage = Math.min(100, Math.round((completedFields / totalWeight) * 100));
         return percentage;
       };
 
       const completion = calculateProfileCompletion(profile);
       console.log(`📊 Profile completion: ${completion}%`);
       
-      // Check if user should be marked as not first login (75% threshold)
-      if (completion >= 75) {
-        console.log('🎉 Profile is 75%+ complete! Updating user status...');
+      // Save profile completeness to database
+      user.profile.profileCompleteness = completion;
+      await user.save();
+      console.log(`💾 Profile completeness saved to database: ${completion}%`);
+      
+      // Check if user should be marked as not first login (100% threshold)
+      if (completion >= 100) {
+        console.log('🎉 Profile is 100% complete! Updating user status...');
         
         // Update isFirstLogin in PreapprovedEmail collection
         const preapprovedUpdate = await PreapprovedEmail.findOneAndUpdate(
@@ -237,22 +318,24 @@ class ProfileController {
           user.status = 'active';
           user.profileCompleted = true;
           await user.save();
-          console.log(`✅ User ${user.email} status updated to active (profile 75%+ complete)`);
+          console.log(`✅ User ${user.email} status updated to active (profile 100% complete)`);
         } else {
           console.log(`ℹ️ User ${user.email} status is already ${user.status}, no change needed`);
         }
       } else {
-        console.log('⚠️ Profile is less than 75% complete, keeping user status as is');
+        console.log('⚠️ Profile is less than 100% complete, keeping user status as is');
       }
 
       console.log(`✅ Profile updated for user: ${req.user.userUuid} (${user.email})`, {
-        updatedFields: Object.keys(sanitizedUpdates)
+        updatedFields: Object.keys(sanitizedUpdates),
+        profileCompleteness: completion
       });
 
       res.status(200).json({
         success: true,
         message: 'Profile updated successfully',
-        profile: user.toPublicJSON()
+        profile: user.toPublicJSON(),
+        profileCompleteness: completion
       });
 
     } catch (error) {

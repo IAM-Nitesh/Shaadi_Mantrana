@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const crypto = require('crypto');
 const { SecurityUtils } = require('../utils/security');
+const B2StorageService = require('../services/b2StorageService');
 
 // Enhanced validation utilities for uploads
 const UploadValidationUtils = {
@@ -287,6 +288,27 @@ const createMulterStorage = () => {
   });
 };
 
+// Memory storage for B2 uploads (needs buffer)
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB for profile pictures
+    files: 1, // Single file for profile picture
+    fieldNameSize: 100,
+    fieldSize: 1024,
+    fields: 10
+  },
+  fileFilter: (req, file, cb) => {
+    const validation = UploadValidationUtils.validateFileType(file);
+    if (!validation.valid) {
+      cb(new Error(validation.error), false);
+    } else {
+      cb(null, true);
+    }
+  }
+});
+
+// Disk storage for regular uploads
 const upload = multer({
   storage: createMulterStorage(),
   limits: {
@@ -809,7 +831,376 @@ const uploadController = {
         processingTime: `${processingTime}ms`
       });
     }
+  },
+
+  /**
+   * Upload profile picture to B2 Cloud Storage
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async uploadProfilePicture(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      console.log('🔍 uploadProfilePicture called');
+      console.log('📁 req.file:', req.file);
+      console.log('👤 req.user:', req.user);
+      
+      // Check if user is authenticated
+      if (!req.user || !req.user.userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+          code: 'AUTH_REQUIRED'
+        });
+      }
+
+      // Check if file exists
+      if (!req.file) {
+        console.log('❌ No file provided in req.file');
+        console.log('📋 req.body:', req.body);
+        console.log('📋 req.files:', req.files);
+        return res.status(400).json({
+          success: false,
+          message: 'No file provided',
+          code: 'NO_FILE_PROVIDED'
+        });
+      }
+
+      // Validate file
+      const fileValidation = UploadValidationUtils.validateFileType(req.file);
+      if (!fileValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: fileValidation.error,
+          code: 'INVALID_FILE_TYPE'
+        });
+      }
+
+      const sizeValidation = UploadValidationUtils.validateFileSize(req.file, 10 * 1024 * 1024); // 10MB max
+      if (!sizeValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: sizeValidation.error,
+          code: 'INVALID_FILE_SIZE'
+        });
+      }
+
+      // Check upload rate limit
+      const rateLimitCheck = checkUploadRateLimit(req.user.userId, req.ip);
+      if (!rateLimitCheck.allowed) {
+        return res.status(429).json({
+          success: false,
+          message: 'Upload rate limit exceeded',
+          code: 'RATE_LIMIT_EXCEEDED',
+          retryAfter: rateLimitCheck.retryAfter
+        });
+      }
+
+      // Initialize B2 storage service
+      const b2Storage = new B2StorageService();
+
+      console.log(`⏱️ Starting B2 upload at: ${new Date().toISOString()}`);
+      
+      // Upload to B2
+      const uploadResult = await b2Storage.uploadProfilePicture(
+        req.file.buffer,
+        req.user.userId
+      );
+      
+      console.log(`⏱️ B2 upload completed at: ${new Date().toISOString()}`);
+
+      // Update user's profile with the file reference
+      const User = require('../models/User');
+      await User.findByIdAndUpdate(req.user.userId, {
+        $set: {
+          'profile.images': uploadResult.fileName // Store the file path, frontend will use signed URLs
+        }
+      });
+
+      // Record upload in database
+      const uploadRecord = {
+        id: crypto.randomUUID(),
+        filename: uploadResult.fileName,
+        originalName: req.file.originalname,
+        size: uploadResult.size,
+        sizeFormatted: UploadValidationUtils.formatFileSize(uploadResult.size),
+        mimeType: req.file.mimetype,
+        category: 'profile_picture',
+        url: uploadResult.url,
+        uploadedBy: req.user.email,
+        uploadedAt: new Date().toISOString(),
+        storageProvider: 'b2',
+        fileId: uploadResult.fileId
+      };
+
+      // Save to uploads collection (if you have one)
+      // await UploadRecord.create(uploadRecord);
+
+      const processingTime = Date.now() - startTime;
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile picture uploaded successfully',
+        data: {
+          fileName: uploadResult.fileName,
+          fileId: uploadResult.fileId,
+          size: uploadResult.size,
+          sizeFormatted: UploadValidationUtils.formatFileSize(uploadResult.size),
+          url: uploadResult.url,
+          uploadedAt: uploadRecord.uploadedAt
+        },
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Profile picture upload failed:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload profile picture',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'PROFILE_PICTURE_UPLOAD_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
+  },
+
+  /**
+   * Delete profile picture from B2 Cloud Storage
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async deleteProfilePicture(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      // Check if user is authenticated
+      if (!req.user || !req.user.userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+          code: 'AUTH_REQUIRED'
+        });
+      }
+
+      // Initialize B2 storage service
+      const b2Storage = new B2StorageService();
+
+      // Delete from B2
+      const deleteResult = await b2Storage.deleteProfilePicture(req.user.userId);
+
+      // Clear user's profile picture data
+      const User = require('../models/User');
+      await User.findByIdAndUpdate(req.user.userId, {
+        $unset: {
+          'profile.images': 1
+        }
+      });
+
+      const processingTime = Date.now() - startTime;
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile picture deleted successfully',
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Profile picture deletion failed:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete profile picture',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'PROFILE_PICTURE_DELETE_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
+  },
+
+  /**
+   * Get profile picture URL (with signed URL for private access)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getProfilePictureUrl(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const { userId } = req.params;
+      const { expiry = 3600 } = req.query; // Default 1 hour
+
+      // Initialize B2 storage service
+      const b2Storage = new B2StorageService();
+
+      // Check if profile picture exists
+      const exists = await b2Storage.profilePictureExists(userId);
+      if (!exists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Profile picture not found',
+          code: 'PROFILE_PICTURE_NOT_FOUND'
+        });
+      }
+
+      // Generate signed URL
+      const signedUrl = await b2Storage.getSignedUrl(userId, parseInt(expiry));
+
+      const processingTime = Date.now() - startTime;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          url: signedUrl,
+          expiry: parseInt(expiry),
+          userId: userId
+        },
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Profile picture URL generation failed:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate profile picture URL',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'PROFILE_PICTURE_URL_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
+  },
+
+  /**
+   * Get signed URL for current user's profile picture
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getMyProfilePictureUrl(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const userId = req.user.userId;
+      const { expiry = 3600 } = req.query; // Default 1 hour
+
+      console.log(`🔍 getMyProfilePictureUrl called for user: ${userId}`);
+
+      // Initialize B2 storage service
+      const b2Storage = new B2StorageService();
+
+      // Check if profile picture exists
+      console.log(`🔍 Checking if profile picture exists for user: ${userId}`);
+      const exists = await b2Storage.profilePictureExists(userId);
+      console.log(`🔍 Profile picture exists: ${exists}`);
+      
+      if (!exists) {
+        console.log(`❌ Profile picture not found for user: ${userId}`);
+        return res.status(404).json({
+          success: false,
+          message: 'Profile picture not found',
+          code: 'PROFILE_PICTURE_NOT_FOUND'
+        });
+      }
+
+      // Generate signed URL
+      console.log(`🔍 Generating signed URL for user: ${userId}`);
+      const signedUrl = await b2Storage.getSignedUrl(userId, parseInt(expiry));
+      console.log(`✅ Signed URL generated: ${signedUrl}`);
+
+      const processingTime = Date.now() - startTime;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          url: signedUrl,
+          expiry: parseInt(expiry),
+          userId: userId
+        },
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ My profile picture URL generation failed:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate profile picture URL',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'PROFILE_PICTURE_URL_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
+  },
+
+  /**
+   * Get B2 storage statistics
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getStorageStats(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      // Check if user is admin
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required',
+          code: 'ADMIN_ACCESS_REQUIRED'
+        });
+      }
+
+      // Initialize B2 storage service
+      const b2Storage = new B2StorageService();
+
+      // Get storage stats
+      const stats = await b2Storage.getStorageStats();
+
+      const processingTime = Date.now() - startTime;
+
+      res.status(200).json({
+        success: true,
+        data: stats,
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Storage stats retrieval failed:', error);
+      const processingTime = Date.now() - startTime;
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve storage statistics',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        code: 'STORAGE_STATS_ERROR',
+        processingTime: `${processingTime}ms`
+      });
+    }
   }
 };
 
-module.exports = uploadController;
+module.exports = {
+  ...uploadController,
+  upload,
+  uploadMemory
+};

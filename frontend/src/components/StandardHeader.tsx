@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CustomIcon from './CustomIcon';
+import { usePathname } from 'next/navigation';
 
 interface StandardHeaderProps {
   title?: string;
@@ -27,6 +28,8 @@ export default function StandardHeader({
   backHref,
   rightElement
 }: StandardHeaderProps) {
+  const pathname = usePathname();
+
   return (
     <motion.div 
       initial={{ y: -100, opacity: 0 }}

@@ -9,17 +9,7 @@ import { AuthService } from '../../../services/auth-service';
 import CustomIcon from '../../../components/CustomIcon';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 
-// Demo match details - ONLY used in static mode
-const demoMatchDetails = {
-  '1': {
-    name: 'Priya Sharma',
-    image: '/demo-profiles/match-1.svg'
-  },
-  '2': {
-    name: 'Kavya Reddy',
-    image: '/demo-profiles/match-2.svg'
-  }
-};
+// Chat page for matched profiles
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -54,8 +44,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       const profileCompletion = localStorage.getItem('profileCompletion');
       const completion = profileCompletion ? parseInt(profileCompletion) : 0;
       
-      // Allow access if profile completion is 75% or higher
-      if (isFirstLogin && completion < 75) {
+      // Allow access if profile completion is 100% or higher
+      if (isFirstLogin && completion < 100) {
         router.replace('/profile');
         return;
       }
@@ -65,62 +55,50 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
     async function loadMatch() {
       try {
-        const isStaticMode = !process.env.NEXT_PUBLIC_API_BASE_URL;
+        // Fetch connection and other user's profile from MongoDB
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/connections/${id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
         
-        if (isStaticMode) {
-          // Static mode: use demo data
-          const demoMatch = demoMatchDetails[id as keyof typeof demoMatchDetails];
-          if (!demoMatch) {
-            setError('Match not found');
-            return;
-          }
-          setMatch(demoMatch);
-        } else {
-          // MongoDB mode: fetch connection and other user's profile
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/connections/${id}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          
-          if (!response.ok) {
-            setError('Connection not found');
-            return;
-          }
-          
-          const data = await response.json();
-          
-          // Get the other user's profile from the connection
-          // Extract current user ID from JWT token
-          const token = localStorage.getItem('authToken');
-          let currentUserId = null;
-          if (token) {
-            try {
-              const payload = JSON.parse(atob(token.split('.')[1]));
-              currentUserId = payload.userId || payload._id || payload.id;
-            } catch (e) {
-              console.error('Error parsing JWT token:', e);
-            }
-          }
-          
-          const otherUser = data.connection.users.find((user: any) => user._id !== currentUserId);
-          
-          if (!otherUser) {
-            setError('Other user not found in connection');
-            return;
-          }
-          
-          setMatch({
-            name: otherUser.profile?.name || 'Unknown User',
-            image: otherUser.profile?.images?.[0] || '/demo-profiles/default-profile.svg',
-            connectionId: id,
-            otherUserId: otherUser._id
-          });
+        if (!response.ok) {
+          setError('Connection not found');
+          return;
         }
+        
+        const data = await response.json();
+        
+        // Get the other user's profile from the connection
+        // Extract current user ID from JWT token
+        const token = localStorage.getItem('authToken');
+        let currentUserId = null;
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            currentUserId = payload.userId || payload._id || payload.id;
+          } catch (e) {
+            console.error('Error parsing JWT token:', e);
+          }
+        }
+        
+        const otherUser = data.connection.users.find((user: any) => user._id !== currentUserId);
+        
+        if (!otherUser) {
+          setError('Other user not found in connection');
+          return;
+        }
+        
+        setMatch({
+          name: otherUser.profile?.name || 'Unknown User',
+          image: otherUser.profile?.images?.[0] || '/demo-profiles/default-profile.svg',
+          connectionId: id,
+          otherUserId: otherUser._id
+        });
       } catch (error) {
         console.error('Error loading match:', error);
         setError('Failed to load match');

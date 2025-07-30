@@ -2,7 +2,7 @@
                     │     React Frontend          │
                     │   (Next.js + Capacitor)     │
                     │     PWA + Mobile Native     │
-                    │     Port: 3006              │
+                    │     Port: 3000              │
                     │ • OTP-Only Login (Email)    │
                     │ • Swipe Matching UI         │
                     │ • Profile Management        │
@@ -17,7 +17,7 @@
                     ┌─────────────────────────────┐
                     │  Express.js + Helmet API    │
                     │  (Secure Backend + Auth)    │
-                    │     Port: 5001              │
+                    │     Port: 5050              │
                     │ • JWT Session Management    │
                     │ • Email-Only Authentication │
                     │ • Pre-approved Email Check  │
@@ -150,3 +150,7 @@
 - **CORS Configuration**: Proper cross-origin resource sharing
 - **Error Handling**: Comprehensive error management and user feedback
 - **Data Sanitization**: Input validation and sanitization throughout the app
+
+
+logging 
+ Logflare (for Cloudflare or Vercel)

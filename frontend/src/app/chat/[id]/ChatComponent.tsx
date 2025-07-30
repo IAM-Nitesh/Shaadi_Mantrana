@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatService, ChatMessage } from '../../../services/chat-service';
+import { ChatMessage } from '../../../services/chat-service';
+import { ImageUploadService } from '../../../services/image-upload-service';
 import CustomIcon from '../../../components/CustomIcon';
+import { ChatService } from '../../../services/chat-service';
+import { MatchingService } from '../../../services/matching-service';
 
 interface Match {
   name: string;
@@ -37,11 +40,36 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   const [isSending, setIsSending] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [showDisappearingBanner, setShowDisappearingBanner] = useState(true);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showUnmatchMenu, setShowUnmatchMenu] = useState(false);
+  const [isUnmatching, setIsUnmatching] = useState(false);
   
   // Debug banner state changes
   useEffect(() => {
     console.log('🎬 Banner state changed:', showDisappearingBanner);
   }, [showDisappearingBanner]);
+  
+  // Fetch profile image for the match
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (match.otherUserId) {
+        try {
+          const signedUrl = await ImageUploadService.getUserProfilePictureSignedUrlCached(match.otherUserId);
+          if (signedUrl) {
+            setProfileImageUrl(signedUrl);
+            setImageError(false);
+          }
+        } catch (error) {
+          console.error('Failed to fetch profile image for match:', match.otherUserId, error);
+          setImageError(true);
+        }
+      }
+    };
+
+    fetchProfileImage();
+  }, [match.otherUserId]);
   
   // Debug banner state changes
   useEffect(() => {
@@ -74,17 +102,25 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       setShowDisappearingBanner(false);
     }, 5000);
 
-    return () => {
-      console.log('🎬 Chat banner timer cleared');
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
+  // Close unmatch menu when clicking outside
   useEffect(() => {
-    if (!connectionId) {
-      console.error('No connection ID provided for chat');
-      return;
-    }
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showUnmatchMenu && !target.closest('.unmatch-menu')) {
+        setShowUnmatchMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUnmatchMenu]);
+
+  // Initialize chat connection
+  useEffect(() => {
+    if (!connectionId) return;
 
     const currentUserId = getCurrentUserId();
     if (!currentUserId) {
@@ -92,159 +128,83 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       return;
     }
 
-    // Try to initialize chat service
-    try {
-      chatService.initialize(currentUserId);
-      
-      // Check connection status after a delay
-      setTimeout(() => {
-        const connected = chatService.isSocketConnected();
-        setIsConnected(connected);
-        setConnectionError(!connected);
-        
-        if (connected) {
-          // Join the chat room
-          chatService.joinRoom(connectionId);
-
-          // Set up message handler
-          chatService.onMessage(connectionId, (chatMessage: ChatMessage) => {
-            const isOwnMessage = chatMessage.senderId === currentUserId;
-            
-            const newMessage: ChatMessageUI = {
-              id: chatMessage.id,
-              text: chatMessage.message,
-              timestamp: new Date(chatMessage.timestamp),
-              isOwn: isOwnMessage,
-              status: isOwnMessage ? 'read' : 'delivered'
-            };
-
-            setMessages(prev => [...prev, newMessage]);
-          });
-
-          // Set up chat history handler
-          chatService.onChatHistory(connectionId, (history: ChatMessage[]) => {
-            const historyMessages: ChatMessageUI[] = history.map(msg => ({
-              id: msg.id,
-              text: msg.message,
-              timestamp: new Date(msg.timestamp),
-              isOwn: msg.senderId === currentUserId,
-              status: msg.senderId === currentUserId ? 'read' : 'delivered'
-            }));
-            setMessages(historyMessages);
-          });
-
-          // Set up typing indicators
-          chatService.onTyping(connectionId, (userId) => {
-            if (userId !== currentUserId) {
-              setIsTyping(true);
-            }
-          });
-
-          chatService.onStoppedTyping(connectionId, (userId) => {
-            if (userId !== currentUserId) {
-              setIsTyping(false);
-            }
-          });
+    // Initialize chat service
+    const initializeChat = async () => {
+      try {
+        // Fetch initial messages using the new caching system
+        const data = await ChatService.getChatMessages(connectionId);
+        if (data.success) {
+          setMessages(data.messages || []);
         }
-      }, 2000);
-
-    } catch (error) {
-      console.error('Failed to initialize chat service:', error);
-      setConnectionError(true);
-    }
-
-    // Check connection status periodically
-    const checkConnection = () => {
-      const connected = chatService.isSocketConnected();
-      setIsConnected(connected);
-      setConnectionError(!connected);
-    };
-
-    const interval = setInterval(checkConnection, 5000);
-
-    return () => {
-      clearInterval(interval);
-      if (connectionId) {
-        chatService.removeHandlers(connectionId);
-        chatService.leaveRoom(connectionId);
+        setIsConnected(true);
+      } catch (error) {
+        console.error('Failed to initialize chat:', error);
+        setConnectionError(true);
       }
     };
+
+    initializeChat();
   }, [connectionId]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
+  // Send message function
   const sendMessage = async () => {
-    if (!message.trim() || isSending) return;
+    if (!message.trim() || !connectionId || isSending) return;
 
+    setIsSending(true);
     const messageText = message.trim();
     setMessage('');
-    setIsSending(true);
 
-    // Add message to UI immediately with 'sending' status
-    const tempMessage: ChatMessageUI = {
-      id: `temp_${Date.now()}`,
-      text: messageText,
-      timestamp: new Date(),
-      isOwn: true,
-      status: 'sending'
-    };
-
-    setMessages(prev => [...prev, tempMessage]);
-
-    // Try to send via Socket.IO if connected
-    if (isConnected && connectionId) {
-      const success = chatService.sendMessage(connectionId, messageText);
+    try {
+      // Send message using the new service
+      const response = await ChatService.sendMessage(connectionId, messageText);
       
-      if (success) {
-        // Update message status to 'sent'
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === tempMessage.id 
-              ? { ...msg, status: 'sent' as const }
-              : msg
-          )
-        );
+      if (response.success) {
+        // Add message to local state
+        const newMessage: ChatMessageUI = {
+          id: Date.now().toString(),
+          text: messageText,
+          timestamp: new Date(),
+          isOwn: true,
+          status: 'sent'
+        };
         
-        // Stop typing indicator
-        if (typingTimeout) {
-          clearTimeout(typingTimeout);
-        }
-        chatService.stopTyping(connectionId);
+        setMessages(prev => [...prev, newMessage]);
       } else {
-        // Mark as failed
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === tempMessage.id 
-              ? { ...msg, status: 'failed' as const }
-              : msg
-          )
-        );
+        console.error('Failed to send message:', response.message);
       }
-    } else {
-      // Fallback: just mark as sent (demo mode)
-      setTimeout(() => {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === tempMessage.id 
-              ? { ...msg, status: 'sent' as const }
-              : msg
-          )
-        );
-      }, 1000);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle unmatch
+  const handleUnmatch = async () => {
+    if (!connectionId || isUnmatching) return;
+    
+    if (!confirm(`Are you sure you want to unmatch from ${match.name}? This action cannot be undone.`)) {
+      return;
     }
 
-    setIsSending(false);
+    setIsUnmatching(true);
+    try {
+      await MatchingService.unmatchProfile(connectionId);
+      
+      // Show success message and redirect
+      alert('Successfully unmatched!');
+      router.push('/matches');
+    } catch (error) {
+      console.error('Error unmatching:', error);
+      alert('Failed to unmatch. Please try again.');
+    } finally {
+      setIsUnmatching(false);
+      setShowUnmatchMenu(false);
+    }
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
-    
-    if (!connectionId || !isConnected) return;
-
-    // Start typing indicator
-    chatService.startTyping(connectionId);
     
     // Clear existing timeout
     if (typingTimeout) {
@@ -253,7 +213,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
     
     // Set new timeout to stop typing indicator
     const timeout = setTimeout(() => {
-      chatService.stopTyping(connectionId);
+      // Typing stopped
     }, 2000);
     
     setTypingTimeout(timeout);
@@ -317,9 +277,22 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 400 }}
           >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white font-semibold text-lg shadow-lg">
-              {match.name.charAt(0).toUpperCase()}
-            </div>
+            {profileImageUrl && !imageError ? (
+              <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg">
+                <Image
+                  src={profileImageUrl}
+                  alt={match.name}
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white font-semibold text-lg shadow-lg">
+                {match.name.charAt(0).toUpperCase()}
+              </div>
+            )}
             {/* Connection status indicator */}
             <motion.div 
               className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
@@ -347,6 +320,39 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 </motion.span>
               )}
             </div>
+          </div>
+          
+          {/* Unmatch Menu */}
+          <div className="relative unmatch-menu">
+            <button
+              onClick={() => setShowUnmatchMenu(!showUnmatchMenu)}
+              className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+              title="More options"
+            >
+              <CustomIcon name="ri-more-2-fill" className="text-xl" />
+            </button>
+            
+            {showUnmatchMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute right-0 top-12 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[160px]"
+              >
+                <button
+                  onClick={handleUnmatch}
+                  disabled={isUnmatching}
+                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors duration-200"
+                >
+                  <CustomIcon 
+                    name={isUnmatching ? "ri-loader-4-line" : "ri-user-unfollow-line"} 
+                    className={`text-lg ${isUnmatching ? 'animate-spin' : ''}`}
+                  />
+                  <span>{isUnmatching ? 'Unmatching...' : 'Unmatch'}</span>
+                </button>
+              </motion.div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -376,7 +382,17 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         className={`flex-1 pb-28 px-4 overflow-y-auto z-10 ${showDisappearingBanner ? 'pt-32' : 'pt-24'}`}
         style={{ paddingTop: showDisappearingBanner ? '120px' : '96px' }}
       >
-        {messages.length === 0 ? (
+        {loading ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center justify-center h-full text-center"
+          >
+            <CustomIcon name="ri-loader-4-line" className="text-5xl text-rose-500 animate-spin mb-4" />
+            <p className="text-gray-600">Loading messages...</p>
+          </motion.div>
+        ) : messages.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
