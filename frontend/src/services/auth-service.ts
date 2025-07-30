@@ -1,5 +1,5 @@
 // To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:4500 (dev), https://your-production-domain.com (prod)
 export const API_CONFIG = {
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
   SEND_OTP_ENDPOINT: '/api/auth/send-otp',
@@ -83,7 +83,7 @@ export class AuthService {
     } catch (error: unknown) {
       // In development, provide more specific error messages
       if (process.env.NODE_ENV === 'development') {
-        console.error('AuthService.sendOTP error:', error);
+        // console.error('AuthService.sendOTP error:', error);
         
         // If it's a network error, provide specific guidance
         if (error instanceof Error && error.message.includes('fetch')) {
@@ -143,13 +143,18 @@ export class AuthService {
         localStorage.setItem('refreshToken', result.session.refreshToken);
         localStorage.setItem('sessionId', result.session.sessionId);
         localStorage.setItem('userEmail', email);
+        
+        // Store user role if available in response
+        if (result.user && result.user.role) {
+          localStorage.setItem('userRole', result.user.role);
+        }
       }
       
       return result;
     } catch (error: unknown) {
       // In development, provide more specific error messages
       if (process.env.NODE_ENV === 'development') {
-        console.error('AuthService.verifyOTP error:', error);
+        // console.error('AuthService.verifyOTP error:', error);
         
         // If it's a network error, provide specific guidance
         if (error instanceof Error && error.message.includes('fetch')) {
@@ -185,7 +190,7 @@ export class AuthService {
       
       return { success: true, message: 'Successfully logged out' };
     } catch (error: unknown) {
-      console.error('Logout error:', error);
+      // console.error('Logout error:', error);
       return { success: false, message: 'Error during logout' };
     }
   }
@@ -199,7 +204,7 @@ export class AuthService {
     try {
       return localStorage.getItem('userEmail') || '';
     } catch (error) {
-      console.error('Error getting current user email:', error);
+      // console.error('Error getting current user email:', error);
       return '';
     }
   }
@@ -208,12 +213,63 @@ export class AuthService {
     try {
       return localStorage.getItem('userRole') || 'user';
     } catch (error) {
-      console.error('Error getting current user role:', error);
+      // console.error('Error getting current user role:', error);
       return 'user';
     }
   }
 
   static isAdmin(): boolean {
-    return this.getCurrentUserRole() === 'admin';
+    try {
+      const userRole = localStorage.getItem('userRole');
+      return userRole === 'admin';
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  }
+
+  static async verifyAdminAccess(): Promise<boolean> {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.log('🔍 verifyAdminAccess: No auth token found');
+        return false;
+      }
+
+      const apiUrl = API_CONFIG.API_BASE_URL + '/api/auth/profile';
+      console.log('🔍 verifyAdminAccess: Fetching profile from:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        console.log('🔍 verifyAdminAccess: API call failed, status:', response.status);
+        // Fallback to localStorage role if API call fails
+        return this.isAdmin();
+      }
+      
+      const userData = await response.json();
+      console.log('🔍 verifyAdminAccess: User data from API:', userData);
+      
+      const isAdminFromAPI = userData.user?.role === 'admin';
+      console.log('🔍 verifyAdminAccess: Role from API:', userData.user?.role, 'Is admin:', isAdminFromAPI);
+      
+      // Update localStorage role to keep it in sync
+      localStorage.setItem('userRole', isAdminFromAPI ? 'admin' : 'user');
+      console.log('🔍 verifyAdminAccess: Updated localStorage userRole to:', isAdminFromAPI ? 'admin' : 'user');
+      
+      return isAdminFromAPI;
+    } catch (error) {
+      console.error('Error verifying admin access:', error);
+      // Fallback to localStorage role
+      return this.isAdmin();
+    }
+  }
+
+  static getAuthToken(): string | null {
+    return localStorage.getItem('authToken');
   }
 }

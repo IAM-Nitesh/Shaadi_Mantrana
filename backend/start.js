@@ -17,7 +17,7 @@ async function startApplication() {
   console.log(`   Environment: ${config.NODE_ENV}`);
   console.log(`   Data Source: ${config.DATA_SOURCE.toUpperCase()}`);
   console.log(`   Port: ${config.PORT}`);
-  console.log(`   Database: ${config.DATABASE.URI ? config.DATABASE.URI.replace(/:[^:@]*@/, ':***@') : 'Static/Mock Mode'}`);
+  console.log(`   Database: ${config.DATABASE.URI ? config.DATABASE.URI.replace(/:[^:@]*@/, ':***@') : 'MongoDB URI not configured'}`);
   console.log(`   Debug Mode: ${config.FEATURES.DEBUG_MODE}`);
   console.log(`   Email Service: ${process.env.GMAIL_APP_PASSWORD ? 'Configured' : 'Not configured'}`);
   console.log('');
@@ -36,8 +36,8 @@ async function startApplication() {
       console.log('   - connections: User connection requests and status');
       console.log('');
     } else {
-      console.log('📊 Using Static/Mock Data - No database connection needed');
-      console.log('✅ Mock controllers loaded successfully\n');
+        console.log('📊 MongoDB mode - Database connection required');
+  console.log('✅ MongoDB controllers loaded successfully\n');
     }
 
     // Start the Express server

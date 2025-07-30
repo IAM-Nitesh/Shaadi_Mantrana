@@ -183,17 +183,19 @@ const userSchema = new mongoose.Schema({
       maxlength: 500
     },
     
-    // Interests and Images (keeping for future use)
+    // Interests and Images
     interests: [{
       type: String,
       trim: true,
       maxlength: 50
     }],
-    images: [{
+    images: {
       type: String,
       trim: true,
       maxlength: 500
-    }],
+    },
+    
+
     
     // Legacy fields for backward compatibility
     age: {
@@ -219,6 +221,8 @@ const userSchema = new mongoose.Schema({
       max: 100
     }
   },
+
+
 
   // Authentication
   verification: {
@@ -246,6 +250,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['invited', 'active', 'paused'],
     default: 'invited'
+  },
+  
+  // Admin approval status
+  isApprovedByAdmin: {
+    type: Boolean,
+    default: false
   },
   
   premium: {
@@ -323,7 +333,7 @@ userSchema.virtual('profileCompletion').get(function() {
   });
   
   if (this.profile.interests && this.profile.interests.length > 0) completion += 10;
-  if (this.profile.images && this.profile.images.length > 0) completion += 10;
+  if (this.profile.images) completion += 10;
   
   return Math.round(completion);
 });
@@ -371,7 +381,7 @@ userSchema.methods.toPublicJSON = function() {
     premium: user.premium,
     lastActive: user.lastActive,
     createdAt: user.createdAt,
-
+    profileCompleted: user.profileCompleted || false
   };
 };
 

@@ -296,6 +296,14 @@ class AuthController {
           error: 'Your account has been paused by admin. Please contact support to resume your account.'
         });
       }
+
+      // Check if user is approved by admin (for non-admin users)
+      if (user && !isAdmin && user.isApprovedByAdmin === false) {
+        return res.status(403).json({
+          success: false,
+          error: 'Your account has been paused by admin. Please contact support to resume your account.'
+        });
+      }
       
       if (!isAdmin && !preapproved) {
         return res.status(403).json({
@@ -463,17 +471,14 @@ class AuthController {
           "Lakshadweep",
           "Puducherry"
         ];
-        // Add login history
-        user.loginHistory.push({
+        // OPTIMIZED: Update lastLogin instead of loginHistory array
+        user.lastLogin = {
           timestamp: new Date(),
           ipAddress: clientIP,
-          userAgent: req.headers['user-agent']
-        });
-        
-        // Keep only last 10 login records
-        if (user.loginHistory.length > 10) {
-          user.loginHistory = user.loginHistory.slice(-10);
-        }
+          userAgent: req.headers['user-agent'],
+          deviceType: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 
+                     req.headers['user-agent']?.includes('Tablet') ? 'tablet' : 'desktop'
+        };
         
         await user.save();
         console.log(`✅ User login: ${sanitizedEmail} (UUID: ${user.userUuid})`);

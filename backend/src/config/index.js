@@ -6,29 +6,12 @@ require('dotenv').config({
 // Fallback to .env if environment-specific file doesn't exist
 require('dotenv').config();
 
-// Environment-based MongoDB connection string selection
-const getDataSource = () => {
-  return process.env.DATA_SOURCE || 'static'; // Default to static for development
-};
-
+// MongoDB connection string selection
 const getPort = () => {
-  const dataSource = getDataSource();
-  if (dataSource === 'static') {
-    return process.env.PORT_STATIC || process.env.PORT || 4500;
-  } else if (dataSource === 'mongodb') {
-    return process.env.PORT_MONGODB || process.env.PORT || 5500;
-  }
-  return process.env.PORT || 4500;
+  return process.env.PORT || 5500;
 };
 
 const getMongoDBURI = () => {
-  const dataSource = getDataSource();
-  
-  // If data source is static, return null to use mock controllers
-  if (dataSource === 'static') {
-    return null;
-  }
-  
   const environment = process.env.NODE_ENV || 'development';
   
   // Development MongoDB URI (provided with updated credentials)
@@ -58,8 +41,8 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: getPort(),
   
-  // Data source configuration
-  DATA_SOURCE: getDataSource(),
+  // Data source configuration (MongoDB only)
+  DATA_SOURCE: 'mongodb',
   
   // Database configuration with environment-based selection
   DATABASE: {
@@ -124,9 +107,7 @@ module.exports = {
   
   // API configuration
   API: {
-    BASE_URL: getDataSource() === 'static'
-      ? 'http://localhost:4500'
-      : process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5550}`,
+    BASE_URL: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5500}`,
     VERSION: 'v1',
     RATE_LIMIT: {
       WINDOW_MS: 15 * 60 * 1000, // 15 minutes
@@ -138,9 +119,8 @@ module.exports = {
     }
   },
   
-  // Feature flags based on environment and data source
+  // Feature flags based on environment
   FEATURES: {
-    USE_STATIC_DEMO: getDataSource() === 'static',
     ENABLE_EMAIL: process.env.ENABLE_EMAIL === 'true' && process.env.SMTP_HOST,
     ENABLE_RATE_LIMITING: process.env.ENABLE_RATE_LIMITING !== 'false',
     DEBUG_MODE: process.env.DEBUG_MODE === 'true' || process.env.NODE_ENV === 'development',
@@ -160,8 +140,8 @@ module.exports = {
   // Environment info for debugging
   ENVIRONMENT_INFO: {
     environment: process.env.NODE_ENV || 'development',
-    dataSource: getDataSource(),
-    mongodbUri: getMongoDBURI() ? getMongoDBURI().replace(/:[^:@]*@/, ':***@') : 'Static/Mock Mode',
+    dataSource: 'mongodb',
+    mongodbUri: getMongoDBURI() ? getMongoDBURI().replace(/:[^:@]*@/, ':***@') : 'MongoDB URI not configured',
     port: getPort(),
     debugMode: process.env.DEBUG_MODE === 'true' || process.env.NODE_ENV === 'development'
   }

@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthService } from '../../services/auth-service';
+import StandardHeader from '../../components/StandardHeader';
+import ModernNavigation from '../../components/ModernNavigation';
+import { matchesCountService } from '../../services/matches-count-service';
 import { gsap } from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
@@ -29,27 +32,40 @@ export default function Settings() {
 
   // Add state to control logout animation overlay
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [matchesCount, setMatchesCount] = useState(0);
 
   // Check authentication on component mount
   useEffect(() => {
-    if (!AuthService.isAuthenticated()) {
-      router.push('/');
-      return;
-    }
-    setIsAuthenticated(true);
+    const checkAuth = async () => {
+      try {
+        const isAuthenticated = await AuthService.isAuthenticated();
+        setIsAuthenticated(isAuthenticated);
+        
+        if (!isAuthenticated) {
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        router.push('/');
+      }
+    };
     
-    // Load saved settings from localStorage
-    const savedNotifications = localStorage.getItem('notifications');
-    const savedPrivacy = localStorage.getItem('privacy');
-    
-    if (savedNotifications) {
-      setNotifications(JSON.parse(savedNotifications));
-    }
-    
-    if (savedPrivacy) {
-      setPrivacy(JSON.parse(savedPrivacy));
-    }
+    checkAuth();
   }, [router]);
+
+  // Subscribe to matches count updates
+  useEffect(() => {
+    const unsubscribe = matchesCountService.subscribe((count) => {
+      setMatchesCount(count);
+    });
+    
+    // Initial fetch
+    matchesCountService.fetchCount();
+    
+    return unsubscribe;
+  }, []);
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
@@ -806,27 +822,20 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Bottom Navigation */}
-          <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 px-0 py-0 shadow-lg">
-            <div className="grid grid-cols-4 h-16">
-              <Link href="/dashboard" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
-                <CustomIcon name="ri-heart-line" className="text-lg" />
-                <span className="text-xs mt-1">Discover</span>
-              </Link>
-              <Link href="/matches" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
-                <CustomIcon name="ri-chat-3-line" className="text-lg" />
-                <span className="text-xs mt-1">Matches</span>
-              </Link>
-              <Link href="/profile" className="flex flex-col items-center justify-center text-gray-400 transition-all duration-200 hover:bg-gray-50">
-                <CustomIcon name="ri-user-line" className="text-lg" />
-                <span className="text-xs mt-1">Profile</span>
-              </Link>
-              <Link href="/settings" className="flex flex-col items-center justify-center text-rose-500 transition-all duration-200 hover:bg-rose-50">
-                <CustomIcon name="ri-settings-line" className="text-lg" />
-                <span className="text-xs mt-1">Settings</span>
-              </Link>
-            </div>
-          </div>
+          {/* Modern Bottom Navigation */}
+          <ModernNavigation 
+            items={[
+              { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
+              { 
+                href: '/matches', 
+                icon: 'ri-chat-3-line', 
+                label: 'Matches',
+                ...(matchesCount > 0 && { badge: matchesCount })
+              },
+              { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
+              { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+            ]}
+          />
         </div>
       )}
     </div>

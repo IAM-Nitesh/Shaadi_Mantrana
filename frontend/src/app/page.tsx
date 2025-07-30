@@ -239,8 +239,13 @@ export default function Home() {
   useEffect(() => {
     if (isRouterReady) {
       if (AuthService.isAuthenticated()) {
-        // User is already logged in, redirect to dashboard
-        router.push('/dashboard');
+        // Check if user is admin and redirect accordingly
+        if (AuthService.isAdmin()) {
+          router.push('/admin/dashboard');
+        } else {
+          // User is already logged in, redirect to dashboard
+          router.push('/dashboard');
+        }
       }
     }
   }, [isRouterReady, router]);
@@ -554,7 +559,7 @@ export default function Home() {
     
     try {
       const cleanEmail = email.trim().toLowerCase();
-      await verifyOtpWithBackend(cleanEmail, otp);
+      const result = await verifyOtpWithBackend(cleanEmail, otp);
       
       // Success animation before redirect
       gsap.timeline()
@@ -575,18 +580,32 @@ export default function Home() {
           ease: "back.out(1.7)"
         }, "-=0.3");
       
-      // Check user role and redirect accordingly
+      // Check user role from backend response and redirect accordingly
       if (isRouterReady && router) {
-        if (AuthService.isAdmin()) {
-          await router.push('/admin');
+        if (result.user?.role === 'admin') {
+          await router.push('/admin/dashboard');
         } else {
-          await router.push('/dashboard');
+          // Check if user is first-time user and redirect to profile instead of dashboard
+          const isFirstLogin = result.user?.isFirstLogin || false;
+          if (isFirstLogin) {
+            console.log('🎯 First-time user detected, redirecting to /profile');
+            await router.push('/profile');
+          } else {
+            await router.push('/dashboard');
+          }
         }
       } else {
-        if (AuthService.isAdmin()) {
-          window.location.href = '/admin';
+        if (result.user?.role === 'admin') {
+          window.location.href = '/admin/dashboard';
         } else {
-          window.location.href = '/dashboard';
+          // Check if user is first-time user and redirect to profile instead of dashboard
+          const isFirstLogin = result.user?.isFirstLogin || false;
+          if (isFirstLogin) {
+            console.log('🎯 First-time user detected, redirecting to /profile');
+            window.location.href = '/profile';
+          } else {
+            window.location.href = '/dashboard';
+          }
         }
       }
     } catch (error: unknown) {

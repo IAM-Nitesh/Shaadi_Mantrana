@@ -1,0 +1,58 @@
+Backblaze B2 offers a very generous free tier, but it’s important to know its limits to estimate when you might start incurring charges.
+
+🎁 Backblaze B2 Free Tier (as of 2025)
+
+Resource	Monthly Free Allowance
+Storage	10 GB
+Download (egress)	1 GB per day (~30 GB/month)
+Class B Transactions	2,500/day (~75,000/month)
+Class C Transactions	2,500/day (~75,000/month)
+Note: Beyond these limits, you're charged per GB or per transaction.
+
+📊 From Your Billing Snapshot
+
+Between May 29, 2025 – July 29, 2025, your usage is:
+
+Storage: $0.00 — indicates <10 GB stored
+Bandwidth: $0.00 — likely <30 GB/month
+API calls (list/create): Minimal
+Transactions (Class B & C): $0.00 — so <75,000/month
+📈 When Might You Hit the Limit?
+
+Let’s assume each profile picture is ~300 KB (compressed JPEG).
+
+1. Storage Usage Estimate
+# of Pictures	Size Each	Total	Status
+100 users	300 KB	30 MB	Safe
+1,000 users	300 KB	300 MB	Still Safe
+30,000 users	300 KB	~9 GB	Near Limit
+35,000 users	300 KB	~10.5 GB	Exceeds Free Tier 🚨
+✅ You can support ~30,000 active users uploading 1 photo each before exceeding the 10 GB free storage limit.
+2. Download Bandwidth Estimate
+If each user downloads their profile pic once/day (e.g., page load):
+
+Daily Downloads	Data Served/day	Monthly Bandwidth
+100	~30 MB	~900 MB
+500	~150 MB	~4.5 GB 🚨
+1,000+	~300 MB+	~9+ GB
+✅ You can support ~100–300 daily active downloads without exceeding the 1 GB/day (30 GB/month) free bandwidth.
+🚨 When You'll Likely Exceed Free Tier
+
+Around 30,000 stored profile images (assuming no old versions kept)
+Or 300+ daily downloads of profile pictures
+Or heavy use of listing/metadata operations (though these are still cheap)
+💰 Post-Free Pricing (2025)
+
+Resource	Price (USD)
+Storage	$0.005/GB/month
+Download (egress)	$0.01/GB
+Class B TX	$0.004/1,000 calls
+Class C TX	$0.004/1,000 calls
+Example: Exceeding 10 GB storage by 5 GB = $0.025/month
+
+✅ Tips to Stay Within Free Tier
+
+🧹 Enable lifecycle rules: Keep only latest version of image
+🖼 Compress images (under 300 KB ideally)
+🧮 Cache profile pictures on your server/CDN to avoid daily downloads
+🧑‍💻 Limit API calls (batch operations when possible)

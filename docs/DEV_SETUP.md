@@ -9,18 +9,14 @@
 
 ## Environment Configuration
 
-### 1. Unified Environment File
+### 1. Environment File
 
-Create a single `.env` file at the project root. Example:
+Create a `.env` file at the project root. Example:
 
 ```
 # --- General ---
 NODE_ENV=development
-PORT=4500
-
-# --- Data Source ---
-DATA_SOURCE=mongodb         # Options: mongodb, static
-USE_MONGODB=true           # true for MongoDB, false for static/mock
+PORT=5500
 
 # --- MongoDB ---
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/shaadimantra_dev?retryWrites=true&w=majority
@@ -42,11 +38,7 @@ FROM_EMAIL=noreply@shaadimantra.com
 ENABLE_EMAIL=false
 
 # --- API Base URL for Frontend ---
-# Set this for the frontend to point to the correct backend port
-# For static:   NEXT_PUBLIC_API_BASE_URL=http://localhost:3500
-# For dev:      NEXT_PUBLIC_API_BASE_URL=http://localhost:4500
-# For prod:     NEXT_PUBLIC_API_BASE_URL=http://localhost:5500
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4500
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5500
 ```
 
 ### 2. Install Dependencies
@@ -59,27 +51,20 @@ cd ../frontend && npm install
 
 ### 3. Running the Application
 
-#### **Static Backend (port 3500):**
-```bash
-npm run static:backend
-npm run static:frontend
-```
-
-#### **Dev Backend (port 4500):**
+#### **Development Mode:**
 ```bash
 npm run dev:backend
 npm run dev:frontend
 ```
 
-#### **Prod Backend (port 5500):**
+#### **Production Mode:**
 ```bash
 npm run prod:backend
 npm run prod:frontend
 ```
 
-#### **Run Both (static/dev/prod):**
+#### **Run Both:**
 ```bash
-npm run static:all
 npm run dev:all
 npm run prod:all
 ```
@@ -96,7 +81,7 @@ npm run lint:fix # (if available)
 
 ### 5. Directory Structure
 
-See `DIRECTORY_STRUCTURE.md` for a full overview of the cleaned and unified project layout.
+See `DIRECTORY_STRUCTURE.md` for a full overview of the project layout.
 
 ### 6. Troubleshooting
 - If you see port conflicts, kill the process using the port (`lsof -ti:PORT` and `kill -9 PID`).
@@ -105,4 +90,4 @@ See `DIRECTORY_STRUCTURE.md` for a full overview of the cleaned and unified proj
 
 ---
 
-Your ShaadiMantra development environment is now ready for static, dev, or prod workflows with a single unified setup!
+Your ShaadiMantra development environment is now ready for MongoDB-based development and production workflows!

@@ -9,6 +9,7 @@ import { ProfileService, Profile } from '../../services/profile-service';
 import { MatchingService, type DiscoveryProfile } from '../../services/matching-service';
 import { AuthService } from '../../services/auth-service';
 import { matchesCountService } from '../../services/matches-count-service';
+import { ImageUploadService } from '../../services/image-upload-service';
 import CustomIcon from '../../components/CustomIcon';
 import ModernNavigation from '../../components/ModernNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
@@ -90,6 +91,18 @@ export default function Dashboard() {
       setRemainingLikes(discoveryData.remainingLikes);
       setDailyLimitReached(discoveryData.dailyLimitReached);
       setCurrentIndex(0);
+
+      // Batch load signed URLs for profile images
+      if (discoveryData.profiles.length > 0) {
+        const userIds = discoveryData.profiles
+          .filter(profile => profile.profile.images && profile.profile.images.length > 0)
+          .map(profile => profile._id);
+        
+        if (userIds.length > 0) {
+          // Preload signed URLs in background for instant loading
+          ImageUploadService.preloadSignedUrls(userIds);
+        }
+      }
     } catch (err: unknown) {
       console.error('❌ Dashboard: Error loading profiles:', err);
       if (err instanceof Error) {
@@ -135,97 +148,37 @@ export default function Dashboard() {
       return;
     }
     
+    // Check if user is admin and redirect to admin dashboard
+    if (AuthService.isAdmin()) {
+      console.log('👑 Dashboard: Admin user detected, redirecting to admin dashboard');
+      router.push('/admin/dashboard');
+      return;
+    }
+    
+    // Check if user is authenticated
     if (!AuthService.isAuthenticated()) {
       console.log('🚫 Dashboard: User not authenticated, redirecting to home');
       router.push('/');
       return;
     }
-    
-    console.log('✅ Dashboard: User authenticated, loading profiles');
-    setIsAuthenticated(true);
-    loadProfiles();
-  }, [router, loadProfiles]);
 
-  // Reload profiles when filters change
-  useEffect(() => {
-    if (profiles.length > 0) {
-      loadProfiles();
-    }
-  }, [filters, profiles.length, loadProfiles]);
-
-  // Check for incomplete profile on component mount
-  useEffect(() => {
-    async function checkOnboarding() {
+    // Check profile completion immediately before loading dashboard content
+    const checkProfileCompletion = async () => {
       try {
-          const userProfile = await ProfileService.getUserProfile();
-        
+        const userProfile = await ProfileService.getUserProfile();
         if (userProfile) {
-          // Calculate profile completion
-          const calculateProfileCompletion = (profile: any): number => {
-            if (!profile) return 0;
-
-            const requiredFields = [
-              'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-              'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-              'maritalStatus', 'father', 'mother', 'about'
-            ];
-
-            const optionalFields = [
-              'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
-              'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
-              'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
-              'interests'
-            ];
-
-            let completedFields = 0;
-
-            // Check required fields (weight: 2x)
-            requiredFields.forEach(field => {
-              if (profile[field] && profile[field].toString().trim() !== '') {
-                completedFields += 2;
-              }
-            });
-
-            // Check optional fields (weight: 1x)
-            optionalFields.forEach(field => {
-              if (profile[field] && profile[field].toString().trim() !== '') {
-                completedFields += 1;
-              }
-            });
-
-            // Calculate percentage (max 100%)
-            const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
-            return percentage;
-          };
-
-          const completion = calculateProfileCompletion(userProfile);
-          setProfileCompletion(completion);
-
-          // Check if user is first-time user
-          const isFirstLogin = userProfile.isFirstLogin || completion < 75;
-          setIsFirstTimeUser(isFirstLogin);
-
-          // Check if user has already seen the onboarding overlay
-          const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
+          // Update profile completion using ProfileService (backend authority)
+          ProfileService.updateProfileCompletion(userProfile);
           
-          // Show onboarding overlay for first-time users who haven't seen it
-          if (isFirstLogin && completion < 75 && !hasSeenOnboarding) {
-            setShowOnboarding(true);
-          }
-          
-          // If profile is 75%+ complete, ensure onboarding is marked as seen
-          if (completion >= 75 && !hasSeenOnboarding) {
-            console.log('✅ Dashboard: Profile 75%+ complete, marking onboarding as seen');
-            localStorage.setItem('hasSeenOnboarding', 'true');
-            localStorage.setItem('isFirstLogin', 'false');
-            setShowOnboarding(false);
-          }
+          // Get completion from ProfileService (backend authority)
+          const completion = ProfileService.getProfileCompletion();
+          const isFirstLogin = userProfile.isFirstLogin || completion < 100;
 
-          // Redirect to profile if user has incomplete profile (regardless of onboarding status)
-          if (isFirstLogin && completion < 75) {
-            console.log('🚫 Dashboard: User has incomplete profile, redirecting to /profile');
-            console.log('📊 Profile completion:', completion, 'isFirstLogin:', userProfile.isFirstLogin, 'hasSeenOnboarding:', hasSeenOnboarding);
-            router.replace('/profile');
+          // If profile is incomplete, redirect immediately to prevent flash
+          if (isFirstLogin && completion < 100) {
+            console.log('🚫 Dashboard: User has incomplete profile, redirecting to /profile immediately');
+            console.log('📊 Profile completion:', completion, 'isFirstLogin:', userProfile.isFirstLogin);
+            window.location.href = '/profile';
             return;
           }
 
@@ -234,13 +187,28 @@ export default function Dashboard() {
           localStorage.setItem('isFirstTimeUser', isFirstLogin.toString());
         }
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        // Don't throw the error, just log it and continue
-        // This prevents the app from crashing due to profile fetch errors
+        console.error('Error checking profile completion:', error);
+        // On error, redirect to profile to be safe
+        window.location.href = '/profile';
+        return;
       }
+    };
+
+    // Check profile completion first
+    checkProfileCompletion().then(() => {
+      // Only proceed with dashboard loading if profile is complete
+      console.log('✅ Dashboard: User authenticated and profile complete, loading profiles...');
+      setIsAuthenticated(true);
+      loadProfiles();
+    });
+  }, [router, loadProfiles]);
+
+  // Reload profiles when filters change
+  useEffect(() => {
+    if (profiles.length > 0) {
+      loadProfiles();
     }
-    checkOnboarding();
-  }, [router]);
+  }, [filters, profiles.length, loadProfiles]);
 
   // GSAP animations on component mount and data load
   useEffect(() => {
@@ -460,8 +428,8 @@ export default function Dashboard() {
           setMatchName(currentProfile.profile.name || 'Someone');
           setShowMatchAnimation(true);
           
-          // Update matches count
-          matchesCountService.fetchCount();
+          // Update matches count immediately for better UX
+          matchesCountService.incrementCount();
         }
         
         // Update daily like count
@@ -528,11 +496,20 @@ export default function Dashboard() {
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.1),transparent_50%)]"></div>
       
       {/* Header */}
-      <StandardHeader
+      <StandardHeader 
         showFilter={true}
         onFilterClick={() => setShowFilter(true)}
-        hasActiveFilters={hasActiveFilters}
-        showProfileLink={true}
+        hasActiveFilters={!!filters.selectedCountry || !!filters.selectedState || filters.selectedProfessions.length > 0}
+        rightElement={
+          <div className="flex items-center space-x-2">
+            <Link 
+              href="/admin/login" 
+              className="text-xs text-gray-500 hover:text-blue-600 transition-colors duration-200 px-2 py-1 rounded hover:bg-blue-50"
+            >
+              Admin
+            </Link>
+          </div>
+        }
       />
 
       {/* Main Content */}
@@ -578,7 +555,16 @@ export default function Dashboard() {
         ) : currentIndex < filteredProfiles.length ? (
           <div ref={cardRef} className="max-w-sm mx-auto">
             <SwipeCard
-              profile={filteredProfiles[currentIndex]}
+              profile={{
+                _id: filteredProfiles[currentIndex]._id,
+                profile: {
+                  ...filteredProfiles[currentIndex].profile,
+                  images: Array.isArray(filteredProfiles[currentIndex].profile.images) 
+                    ? filteredProfiles[currentIndex].profile.images[0] || ''
+                    : filteredProfiles[currentIndex].profile.images || ''
+                },
+                verification: filteredProfiles[currentIndex].verification
+              }}
               onSwipe={handleSwipe}
             />
             
@@ -623,7 +609,7 @@ export default function Dashboard() {
             href: '/matches', 
             icon: 'ri-chat-3-line', 
             label: 'Matches',
-            badge: matchesCount
+            ...(matchesCount > 0 && { badge: matchesCount })
           },
           { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
           { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },

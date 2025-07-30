@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { AuthService } from '../../services/auth-service';
-import HeartbeatLoader from '../../components/HeartbeatLoader';
+import StandardHeader from '../../components/StandardHeader';
+import AdminBottomNavigation from '../../components/AdminBottomNavigation';
+import { gsap } from 'gsap';
 
 export default function AdminLayout({
   children,
@@ -11,48 +13,75 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const pathname = usePathname();
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkAdminAccess = () => {
-      // Check if user is authenticated
+    checkAuthentication();
+  }, [pathname]);
+
+  const checkAuthentication = async () => {
+    try {
+      // Skip authentication check for login page
+      if (pathname === '/admin/login') {
+        setIsChecking(false);
+        setIsAuthenticated(true); // Allow access to login page
+        return;
+      }
+
+      // Check if user is authenticated using existing auth system
       if (!AuthService.isAuthenticated()) {
-        router.push('/');
+        router.replace('/'); // Redirect to main app login
         return;
       }
 
-      // Check if user has admin role
-      if (!AuthService.isAdmin()) {
-        router.push('/dashboard');
+      // Verify admin access using existing profile endpoint
+      const hasAdminAccess = await AuthService.verifyAdminAccess();
+      if (!hasAdminAccess) {
+        router.replace('/'); // Redirect to main app if not admin
         return;
       }
 
-      setIsAuthorized(true);
-      setIsLoading(false);
-    };
+      setIsAuthenticated(true);
+      
+      // Redirect to dashboard if accessing admin root
+      if (pathname === '/admin') {
+        router.replace('/admin/dashboard');
+      }
+    } catch (error) {
+      console.error('Admin authentication check failed:', error);
+      router.replace('/'); // Redirect to main app on error
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
-    checkAdminAccess();
-  }, [router]);
-
-  if (isLoading) {
+  // Show loading while checking authentication
+  if (isChecking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <HeartbeatLoader 
-            size="lg" 
-            text="Loading Admin Panel" 
-            className="mb-4"
-          />
-          <p className="text-gray-600">Please wait...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 mt-4">Checking admin access...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthorized) {
-    return null; // Router will handle redirect
+  // Only render children if authenticated or on login page
+  if (isAuthenticated || pathname === '/admin/login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <StandardHeader showProfileLink={false} />
+        <main className="pb-20 pt-20 admin-content">
+          {children}
+        </main>
+        <AdminBottomNavigation />
+      </div>
+    );
   }
 
-  return <>{children}</>;
+  // Return null for unauthenticated users (except login page)
+  return null;
 } 

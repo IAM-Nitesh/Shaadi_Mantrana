@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
+const reactEmailService = require('./reactEmailService');
 
 class EmailService {
   constructor() {
@@ -32,20 +33,24 @@ class EmailService {
         }
       });
 
-      // Verify the connection
-      this.transporter.verify((error, success) => {
-        if (error) {
-          console.error('❌ Email service verification failed:', error.message);
-          this.transporter = null;
-        } else {
-          console.log('✅ Email service is ready and verified');
-          this.initialized = true;
-        }
-      });
+      // Set initialized flag immediately
+      this.initialized = true;
+      console.log('✅ Email service initialized successfully');
 
     } catch (error) {
       console.error('❌ Failed to initialize email service:', error.message);
       this.transporter = null;
+      this.initialized = false;
+    }
+  }
+
+  // Generate OTP email template using React Email
+  async generateOTPEmailTemplate(otp, userEmail) {
+    try {
+      return await reactEmailService.renderOTPEmail(otp, userEmail);
+    } catch (error) {
+      console.error('❌ Failed to render OTP email template:', error.message);
+      throw new Error('Failed to generate OTP email template using React Email');
     }
   }
 
@@ -68,61 +73,29 @@ class EmailService {
     }
 
     try {
+      const htmlContent = await this.generateOTPEmailTemplate(otp, email);
+      
       const mailOptions = {
         from: {
           name: 'Shaadi Mantra',
           address: config.EMAIL.SMTP_USER
         },
         to: email,
-        subject: 'Your OTP for Shaadi Mantra Login',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">Shaadi Mantra</h1>
-              <p style="color: #f0f0f0; margin: 10px 0 0 0;">Your Journey to Love Begins Here</p>
-            </div>
-            
-            <div style="background: #ffffff; padding: 40px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-              <h2 style="color: #333; text-align: center; margin-bottom: 30px;">Your Login OTP</h2>
-              
-              <div style="background: #f8f9ff; padding: 30px; border-radius: 10px; text-align: center; margin: 30px 0;">
-                <p style="color: #666; margin-bottom: 15px; font-size: 16px;">Your One-Time Password is:</p>
-                <div style="font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 8px; font-family: 'Courier New', monospace;">${otp}</div>
-              </div>
-              
-              <div style="margin: 30px 0; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                <p style="margin: 0; color: #856404;">
-                  <strong>⚠️ Security Notice:</strong> This OTP is valid for 10 minutes only. Never share it with anyone.
-                </p>
-              </div>
-              
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                Enter this OTP in the Shaadi Mantra app to complete your login. If you didn't request this OTP, please ignore this email.
-              </p>
-              
-              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #999; font-size: 14px;">
-                  Best wishes,<br>
-                  <strong>Team Shaadi Mantra</strong>
-                </p>
-              </div>
-            </div>
-          </div>
-        `,
-        text: `
-Hello,
-
-Your OTP for Shaadi Mantra login is: ${otp}
-
-This OTP is valid for 10 minutes only. Please enter it in the app to complete your login.
-
-If you didn't request this OTP, please ignore this email.
-
-Best wishes,
-Team Shaadi Mantra
-        `
+        subject: 'Verify Your Shaadi Mantra Account - OTP Code',
+        html: htmlContent,
+        // Explicitly set to HTML only - no text fallback
+        text: undefined,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'X-Priority': '1',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'high',
+          'MIME-Version': '1.0',
+          'X-Mailer': 'Shaadi Mantra React Email System'
+        }
       };
 
+      console.log(`📧 Attempting to send OTP email to ${email}...`);
       const info = await this.transporter.sendMail(mailOptions);
       
       console.log(`✅ OTP email sent to ${email}: ${info.messageId}`);

@@ -24,7 +24,7 @@ class DatabaseService {
   getConnectionOptions() {
     const connectionString = this.getConnectionString();
     
-    // Return empty options if no connection string (static/mock mode)
+    // Return empty options if no connection string (MongoDB not configured)
     if (!connectionString) {
       return {};
     }
@@ -82,10 +82,10 @@ class DatabaseService {
 
       const connectionString = this.getConnectionString();
       
-      // Skip connection if no connection string (static/mock mode)
-      if (!connectionString) {
-        console.log('📊 No database connection needed (static/mock mode)');
-        this.isConnected = true; // Mark as "connected" for static mode
+          // Skip connection if no connection string (MongoDB not configured)
+    if (!connectionString) {
+      console.log('📊 No database connection string configured');
+      this.isConnected = false; // Mark as not connected
         return;
       }
       

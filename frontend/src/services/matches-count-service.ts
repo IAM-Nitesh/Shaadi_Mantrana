@@ -2,18 +2,39 @@
 import { MatchingService } from './matching-service';
 
 class MatchesCountService {
-  private count: number = 0;
+  private count: number | null = null;
   private listeners: Set<(count: number) => void> = new Set();
 
   // Get current count
   getCount(): number {
-    return this.count;
+    return this.count || 0;
   }
 
   // Set count and notify listeners
   setCount(count: number) {
-    this.count = count;
+    // Only set count if it's a valid number (not null, undefined, or negative)
+    if (count !== null && count !== undefined && count >= 0) {
+      this.count = count;
+      this.notifyListeners();
+    }
+  }
+
+  // Increment count (for when a new match is created)
+  incrementCount() {
+    if (this.count === null) {
+      this.count = 1;
+    } else {
+      this.count += 1;
+    }
     this.notifyListeners();
+  }
+
+  // Decrement count (for when a match is removed)
+  decrementCount() {
+    if (this.count !== null && this.count > 0) {
+      this.count -= 1;
+      this.notifyListeners();
+    }
   }
 
   // Fetch count from server
@@ -24,9 +45,9 @@ class MatchesCountService {
       this.setCount(count);
       return count;
     } catch (error) {
-      console.error('Error fetching matches count:', error);
-      this.setCount(0);
-      return 0;
+      // console.error('Error fetching matches count:', error);
+      // Don't reset to 0 on error, keep the last known count
+      return this.count || 0;
     }
   }
 
@@ -34,7 +55,7 @@ class MatchesCountService {
   subscribe(listener: (count: number) => void): () => void {
     this.listeners.add(listener);
     // Immediately call with current count
-    listener(this.count);
+    listener(this.count || 0);
     
     // Return unsubscribe function
     return () => {
@@ -46,9 +67,9 @@ class MatchesCountService {
   private notifyListeners() {
     this.listeners.forEach(listener => {
       try {
-        listener(this.count);
+        listener(this.count || 0);
       } catch (error) {
-        console.error('Error in matches count listener:', error);
+        // console.error('Error in matches count listener:', error);
       }
     });
   }

@@ -4,7 +4,15 @@ const nextConfig = {
   // output: 'export', // Commented out for development
   // trailingSlash: true, // Commented out to prevent trailing slash issues
   images: {
-    unoptimized: true
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'f003.backblazeb2.com',
+        port: '',
+        pathname: '/file/**',
+      },
+    ],
   },
   // distDir: '../android/app/src/main/assets/www', // Commented out for development
   eslint: {
@@ -18,7 +26,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500'}/api/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500'}/api/:path*`,
       },
     ];
   },

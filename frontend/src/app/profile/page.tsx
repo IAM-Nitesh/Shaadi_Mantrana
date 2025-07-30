@@ -7,57 +7,22 @@ import InterestModal from './InterestModal';
 import { ImageUploadService, UploadResult } from '../../services/image-upload-service';
 import { AuthService } from '../../services/auth-service';
 import CustomIcon from '../../components/CustomIcon';
+import ImageCompression from '../../utils/imageCompression';
 import { gsap } from 'gsap';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
 import { ProfileService } from '../../services/profile-service';
-import { AnimatePresence, motion } from 'framer-motion';
 import { DatePicker } from '../../components/date-picker';
-import * as Popover from '@radix-ui/react-popover';
-import { Label } from '@radix-ui/react-label';
-import { ClockIcon, CalendarIcon } from '@radix-ui/react-icons';
-import { format, setHours, setMinutes, setSeconds } from 'date-fns';
+import { format } from 'date-fns';
 import 'react-time-picker/dist/TimePicker.css';
 import { TimePicker } from '../../components/time-picker';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import StandardHeader from '../../components/StandardHeader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
+import ModernNavigation from '../../components/ModernNavigation';
+import { matchesCountService } from '../../services/matches-count-service';
 
-// Demo profile data - ONLY used in static mode (when NEXT_PUBLIC_API_BASE_URL is not configured)
-const defaultProfileData = {
-  name: '',
-  gender: '',
-  nativePlace: '',
-  currentResidence: '',
-  maritalStatus: '',
-  manglik: '',
-  dateOfBirth: '',
-  timeOfBirth: '',
-  placeOfBirth: '',
-  height: '',
-  weight: '',
-  complexion: '',
-  fatherGotra: '',
-  motherGotra: '',
-  grandfatherGotra: '',
-  grandmotherGotra: '',
-  education: '',
-  occupation: '',
-  annualIncome: '',
-  eatingHabit: '',
-  smokingHabit: '',
-  drinkingHabit: '',
-  father: '',
-  mother: '',
-  brothers: '',
-  sisters: '',
-  specificRequirements: '',
-  settleAbroad: '',
-  about: '',
-  interests: [],
-  verified: false,
-  images: []
-};
+
 
 // Helper to format time as hh:mm AM/PM
 function formatTime(date: Date) {
@@ -93,7 +58,6 @@ export default function Profile() {
   const [welcomeButtonEnabled, setWelcomeButtonEnabled] = useState(false);
   const [welcomeTimeLeft, setWelcomeTimeLeft] = useState(15);
   const [profile, setProfile] = useState<any>(null);
-  const [saveMessage, setSaveMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const welcomeRef = useRef<HTMLDivElement>(null);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
@@ -110,6 +74,14 @@ export default function Profile() {
     selectedCountry: '',
     selectedState: ''
   });
+  
+  // Matches count state
+  const [matchesCount, setMatchesCount] = useState(0);
+  
+  // Temporary image state for preview before B2 upload
+  const [tempImageFile, setTempImageFile] = useState<File | null>(null);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+  const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
 
   // GSAP refs for animations
   const headerRef = useRef<HTMLDivElement>(null);
@@ -138,69 +110,129 @@ export default function Profile() {
         rotation: 0,
         duration: 0.8,
         ease: "back.out(1.7)"
-      })
-      // Add subtle bounce effect
-      .to(welcomeRef.current, {
+      });
+      
+      // Add subtle hover animation
+      tl.to(welcomeRef.current, {
         y: -5,
         duration: 0.3,
-        ease: "power2.out",
-        yoyo: true,
-        repeat: 1
+        ease: "power2.out"
       }, "-=0.2");
       
-      // Trigger canvas-confetti animation
-      const triggerConfetti = () => {
-        // Fire multiple confetti bursts
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
+      // Return to normal position
+      tl.to(welcomeRef.current, {
+        y: 0,
+        duration: 0.3,
+        ease: "power2.out"
+      }, "-=0.1");
+
+      // Trigger confetti animation when onboarding overlay becomes visible
+      if (typeof window !== 'undefined') {
+        // Import confetti dynamically to avoid SSR issues
+        import('canvas-confetti').then((confettiModule) => {
+          const confetti = confettiModule.default;
+          
+          // Create a burst of confetti
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+            zIndex: 9999
+          });
+
+          // Add a second burst after a short delay
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              spread: 50,
+              origin: { y: 0.7 },
+              colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+              zIndex: 9999
+            });
+          }, 500);
+
+          // Add more confetti bursts over 10 seconds
+          setTimeout(() => {
+            confetti({
+              particleCount: 30,
+              spread: 60,
+              origin: { y: 0.5 },
+              colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+              zIndex: 9999
+            });
+          }, 2000);
+
+          setTimeout(() => {
+            confetti({
+              particleCount: 40,
+              spread: 80,
+              origin: { y: 0.8 },
+              colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+              zIndex: 9999
+            });
+          }, 3500);
+
+          setTimeout(() => {
+            confetti({
+              particleCount: 25,
+              spread: 40,
+              origin: { y: 0.6 },
+              colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+              zIndex: 9999
+            });
+          }, 5000);
+
+          setTimeout(() => {
+            confetti({
+              particleCount: 35,
+              spread: 70,
+              origin: { y: 0.7 },
+              colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+              zIndex: 9999
+            });
+          }, 6500);
+
+          setTimeout(() => {
+            confetti({
+              particleCount: 20,
+              spread: 50,
+              origin: { y: 0.5 },
+              colors: ['#ec4899', '#f97316', '#8b5cf6', '#06b6d4', '#10b981'],
+              zIndex: 9999
+            });
+          }, 8000);
+
+          setTimeout(() => {
+            confetti({
+              particleCount: 30,
+              spread: 60,
+              origin: { y: 0.8 },
+              colors: ['#f43f5e', '#e879f9', '#f59e0b', '#84cc16', '#22d3ee'],
+              zIndex: 9999
+            });
+          }, 9500);
         });
-        
-        // Additional bursts for more dramatic effect
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 }
-          });
-        }, 250);
-        
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 }
-          });
-        }, 400);
-        
-        // Continuous confetti shower
-        const confettiInterval = setInterval(() => {
-          confetti({
-            particleCount: 30,
-            spread: 90,
-            origin: { y: 0.6 }
-          });
-        }, 2000);
-        
-        // Stop confetti after 10 seconds
-        setTimeout(() => {
-          clearInterval(confettiInterval);
-        }, 10000);
-      };
-      
-      // Trigger confetti after a short delay
-      setTimeout(triggerConfetti, 500);
+      }
     }
   }, [showWelcome]);
+
+  // Subscribe to matches count updates
+  useEffect(() => {
+    const unsubscribe = matchesCountService.subscribe((count) => {
+      setMatchesCount(count);
+    });
+    
+    // Initial fetch
+    matchesCountService.fetchCount();
+    
+    return unsubscribe;
+  }, []);
 
   // For date picker state
   const [dateValue, setDateValue] = useState({ startDate: null, endDate: null });
   // For time picker state
   const [clockTime, setClockTime] = useState(new Date());
-  const [showClock, setShowClock] = useState(false);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -218,7 +250,7 @@ export default function Profile() {
       setDateValue(dateString ? { startDate: dateString, endDate: dateString } : { startDate: null, endDate: null });
       if (profile.timeOfBirth) {
         // If already a Date, use as is; if string, parse to Date
-        let t = profile.timeOfBirth;
+        const t = profile.timeOfBirth;
         let d: Date;
         if (typeof t === 'string') {
           d = new Date(`1970-01-01T${t}`);
@@ -249,7 +281,7 @@ export default function Profile() {
     setLoadingProfile(true);
     ProfileService.getUserProfile().then((apiProfile) => {
       if (apiProfile) {
-        // Use API profile directly - no merging with demo data
+        // Use API profile directly from MongoDB
         console.log('📋 API Profile from MongoDB:', apiProfile);
         console.log('🎯 Dropdown values in loaded profile:', {
           gender: apiProfile.gender,
@@ -264,73 +296,93 @@ export default function Profile() {
         setProfile(apiProfile);
         setShowWelcome(!!apiProfile.isFirstLogin);
         console.log('✅ Profile set successfully');
-      } else {
-        // Only use default data if we're in static mode (no API_BASE_URL)
-        const isStaticMode = !process.env.NEXT_PUBLIC_API_BASE_URL;
-        if (isStaticMode) {
-          console.log('📋 Static mode: Using default profile data');
-          setProfile(defaultProfileData);
-          setShowWelcome(true); // Show onboarding for new users
-        } else {
-          console.log('📋 MongoDB mode: No profile found, user needs to create profile');
-          // In MongoDB mode, create an empty profile structure for new users
-          const emptyProfile = {
-            email: localStorage.getItem('userEmail') || '',
-            role: 'user',
-            verified: false,
-            lastActive: new Date().toISOString(),
-            isFirstLogin: true,
-            // Initialize all required fields as empty
-            name: '',
-            gender: '',
-            nativePlace: '',
-            currentResidence: '',
-            maritalStatus: '',
-            manglik: '',
-            dateOfBirth: '',
-            timeOfBirth: '',
-            placeOfBirth: '',
-            height: '',
-            weight: '',
-            complexion: '',
-            education: '',
-            occupation: '',
-            annualIncome: '',
-            eatingHabit: '',
-            smokingHabit: '',
-            drinkingHabit: '',
-            father: '',
-            mother: '',
-            brothers: '',
-            sisters: '',
-            fatherGotra: '',
-            motherGotra: '',
-            grandfatherGotra: '',
-            grandmotherGotra: '',
-            specificRequirements: '',
-            settleAbroad: '',
-            about: '',
-            interests: []
-          };
-          console.log('📋 Created empty profile:', emptyProfile);
-          setProfile(emptyProfile);
-          setShowWelcome(true);
+        
+        // Update profile completion using ProfileService
+        ProfileService.updateProfileCompletion(apiProfile);
+        
+        // Store user ID in localStorage for caching
+        if (apiProfile.userId) {
+          localStorage.setItem('userId', apiProfile.userId);
         }
+        
+        // Always fetch signed URL for profile image if it exists
+        if (apiProfile.images) {
+          console.log('🔍 Profile image found:', apiProfile.images);
+          
+          // Always fetch signed URL, regardless of whether it's a direct B2 URL or not
+          console.log('🔄 Fetching signed URL for profile image...');
+          
+          // Add a small delay to ensure the profile is fully loaded
+          setTimeout(() => {
+            ImageUploadService.getMyProfilePictureSignedUrl()
+              .then((signedUrl) => {
+                if (signedUrl) {
+                  setSignedImageUrl(signedUrl);
+                  console.log('✅ Signed URL fetched:', signedUrl);
+                } else {
+                  console.log('⚠️ No signed URL returned for profile image');
+                }
+              })
+              .catch((error) => {
+                console.error('Failed to fetch signed URL:', error);
+              });
+          }, 100);
+        } else {
+          console.log('ℹ️ No profile image found in profile data');
+          console.log('🔍 Profile structure:', apiProfile);
+        }
+      } else {
+        // No profile found, create empty profile for new user
+        console.log('📋 No profile found, creating empty profile for new user');
+        const emptyProfile = {
+          email: localStorage.getItem('userEmail') || '',
+          role: 'user',
+          verified: false,
+          lastActive: new Date().toISOString(),
+          isFirstLogin: true,
+          // Initialize all required fields as empty
+          name: '',
+          gender: '',
+          nativePlace: '',
+          currentResidence: '',
+          maritalStatus: '',
+          manglik: '',
+          dateOfBirth: '',
+          timeOfBirth: '',
+          placeOfBirth: '',
+          height: '',
+          weight: '',
+          complexion: '',
+          education: '',
+          occupation: '',
+          annualIncome: '',
+          eatingHabit: '',
+          smokingHabit: '',
+          drinkingHabit: '',
+          father: '',
+          mother: '',
+          brothers: '',
+          sisters: '',
+          fatherGotra: '',
+          motherGotra: '',
+          grandfatherGotra: '',
+          grandmotherGotra: '',
+          specificRequirements: '',
+          settleAbroad: '',
+          about: '',
+          interests: []
+        };
+        console.log('📋 Created empty profile:', emptyProfile);
+        setProfile(emptyProfile);
+        setShowWelcome(true);
       }
       setLoadingProfile(false);
     }).catch((error) => {
       console.error('❌ Error loading profile:', error);
-      // Only fallback to default data in static mode
-      const isStaticMode = !process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (isStaticMode) {
-        setProfile(defaultProfileData);
-        setShowWelcome(true);
-      } else {
-        // In MongoDB mode, show error state
-        console.error('❌ MongoDB connection error - cannot load profile');
-        setProfile(null);
-        setShowWelcome(false);
-      }
+      // Show error state
+      console.error('❌ MongoDB connection error - cannot load profile');
+      setProfile(null);
+      setShowWelcome(false);
       setLoadingProfile(false);
     });
   }, [isAuthenticated]);
@@ -339,30 +391,45 @@ export default function Profile() {
   useEffect(() => {
     if (profile && typeof profile.isFirstLogin !== 'undefined') {
       const seen = typeof window !== 'undefined' ? localStorage.getItem('hasSeenOnboarding') === 'true' : hasSeenOnboarding;
-      const profileCompletion = localStorage.getItem('profileCompletion');
-      const completion = profileCompletion ? parseInt(profileCompletion) : 0;
+      const profileCompletion = ProfileService.getProfileCompletion();
       
-      // Only show onboarding if profile is incomplete (< 75%) and user hasn't seen it
-      const shouldShowOnboarding = !!profile.isFirstLogin && !seen && completion < 75;
+      // Only show onboarding if profile is incomplete (< 100%) and user hasn't seen it
+      const shouldShowOnboarding = !!profile.isFirstLogin && !seen && profileCompletion < 100;
       setShowWelcome(shouldShowOnboarding);
       
       console.log('🎯 Profile page onboarding check:', {
         isFirstLogin: profile.isFirstLogin,
         hasSeenOnboarding: seen,
-        profileCompletion: completion,
+        profileCompletion: profileCompletion,
         shouldShowOnboarding,
         profile: profile
       });
       
-      // If profile is 75%+ complete, ensure onboarding is marked as seen
-      if (completion >= 75 && !seen) {
-        console.log('✅ Profile 75%+ complete, marking onboarding as seen');
+      // If profile is 100% complete, ensure onboarding is marked as seen
+      if (profileCompletion >= 100 && !seen) {
+        console.log('✅ Profile 100% complete, marking onboarding as seen');
         localStorage.setItem('hasSeenOnboarding', 'true');
         localStorage.setItem('isFirstLogin', 'false');
         setShowWelcome(false);
       }
     }
   }, [profile, hasSeenOnboarding]);
+
+  // Get profile completion for display (backend authority)
+  const profileCompletion = ProfileService.getProfileCompletion();
+  const isProfileComplete = profileCompletion >= 100;
+
+  // Real-time frontend calculation for display (for user feedback during editing)
+  const realTimeCompletion = profile ? ProfileService.calculateProfileCompletion(profile) : 0;
+  const isRealTimeComplete = realTimeCompletion >= 100;
+
+  // Update localStorage when profile completion changes (backend authority)
+  useEffect(() => {
+    if (profile && typeof window !== 'undefined') {
+      // Use ProfileService to update completion from backend
+      ProfileService.updateProfileCompletion(profile);
+    }
+  }, [profile]);
 
   // GSAP premium entrance animation
   useEffect(() => {
@@ -509,9 +576,9 @@ export default function Profile() {
     const validationDetails: {[key: string]: any} = {};
     
     requiredFields.forEach(field => {
-      let fieldValue = profile[field];
-      let isEmpty = false;
-      let reason = '';
+              const fieldValue = profile[field];
+        let isEmpty = false;
+        let reason = '';
       
       // Special handling for height field (two dropdowns)
       if (field === 'height') {
@@ -716,14 +783,82 @@ export default function Profile() {
       const enumFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad'];
       const cleanProfile = { ...profile };
       
-      // Only remove enum fields if they are explicitly empty strings, not if they're undefined
-      // This allows dropdown values to be saved even if they weren't in the initial profile
+      // Handle empty dropdown values by setting defaults for required fields
+      // If user doesn't pick a value, set the first option as default
+      const dropdownDefaults = {
+        gender: 'Male', // Default to first option
+        maritalStatus: 'Never Married', // Default to first option
+        manglik: 'No', // Default to second option (more common)
+        complexion: 'Medium', // Default to second option
+        eatingHabit: 'Vegetarian', // Default to first option
+        smokingHabit: 'No', // Default to second option (more common)
+        drinkingHabit: 'No', // Default to second option (more common)
+        settleAbroad: 'Maybe' // Default to third option (neutral)
+      };
+      
+      // Set default values for empty dropdown fields
       enumFields.forEach(field => {
-        if (cleanProfile[field] === '') {
-          delete cleanProfile[field];
+        if (cleanProfile[field] === '' || cleanProfile[field] === null || cleanProfile[field] === undefined) {
+          cleanProfile[field] = dropdownDefaults[field as keyof typeof dropdownDefaults];
+          console.log(`🎯 Set default value for ${field}: ${cleanProfile[field]}`);
         }
-        // Don't delete if undefined or null - let the backend handle it
       });
+      
+      // Handle interests - ensure at least one interest is selected
+      if (!cleanProfile.interests || cleanProfile.interests.length === 0) {
+        cleanProfile.interests = ['Reading']; // Default interest
+        console.log('🎯 Set default interest: Reading');
+      }
+      
+      // Calculate profile completeness before sending to backend
+      const calculateProfileCompletion = (profile: any): number => {
+        if (!profile) return 0;
+
+        // If backend provides profileCompleteness, use it as the authoritative source
+        if (profile.profileCompleteness !== undefined) {
+          console.log('📊 Using backend profileCompleteness:', profile.profileCompleteness);
+          return profile.profileCompleteness;
+        }
+
+        // Fallback to frontend calculation if backend doesn't provide profileCompleteness
+        console.log('📊 Backend profileCompleteness not available, using frontend calculation');
+        
+        const requiredFields = [
+          'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
+          'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
+          'maritalStatus', 'father', 'mother', 'about', 'images'
+        ];
+
+        const optionalFields = [
+          'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
+          'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
+          'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
+          'interests'
+        ];
+
+        let completedFields = 0;
+
+        // Check required fields (weight: 2x)
+        requiredFields.forEach(field => {
+          if (profile[field] && profile[field].toString().trim() !== '') {
+            completedFields += 2;
+          }
+        });
+
+        // Check optional fields (weight: 1x)
+        optionalFields.forEach(field => {
+          if (profile[field] && profile[field].toString().trim() !== '') {
+            completedFields += 1;
+          }
+        });
+
+        // Calculate percentage (max 100%)
+        const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
+        return percentage;
+      };
+
+      const calculatedCompleteness = calculateProfileCompletion(cleanProfile);
+      console.log(`📊 Calculated profile completion: ${calculatedCompleteness}%`);
       
       console.log('🧹 Cleaned profile data:', cleanProfile);
       
@@ -745,15 +880,56 @@ export default function Profile() {
         settleAbroad: profileData.settleAbroad
       });
 
+      // Check if user has a profile picture (either existing or temporary)
+      const hasExistingImage = profile.profile?.images || signedImageUrl;
+      const hasTemporaryImage = tempImageFile || tempImageUrl;
+      
+      if (!hasExistingImage && !hasTemporaryImage) {
+        setUploadMessage('❌ Please select a profile picture before saving. Click the camera icon to upload an image.');
+        setIsUploading(false);
+        return; // Stop the save process
+      }
+
+      // Upload image to B2 if there's a temporary image
+      let uploadedImageUrl = null;
+      if (tempImageFile) {
+        setUploadMessage('☁️ Saving your profile picture...');
+        try {
+          const uploadResult = await ImageUploadService.uploadProfilePictureToB2(tempImageFile);
+          if (uploadResult.success && uploadResult.imageUrl) {
+            uploadedImageUrl = uploadResult.imageUrl;
+            console.log('✅ Image uploaded to B2:', uploadedImageUrl);
+            setUploadMessage('✅ Your profile picture is being verified. It will be visible once approved.');
+          } else {
+            throw new Error(uploadResult.error || 'Failed to upload image');
+          }
+        } catch (uploadError) {
+          console.error('❌ Image upload failed:', uploadError);
+          const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error';
+          
+          // Show specific error message for "No file provided"
+          if (errorMessage.includes('No file provided')) {
+            setUploadMessage('❌ Please select a profile picture before saving. Click the camera icon to upload an image.');
+            setIsUploading(false);
+            return; // Stop the save process
+          }
+          
+          throw new Error(`Failed to upload image: ${errorMessage}`);
+        }
+      }
+
       // Call backend API to update profile
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
       const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
-        body: JSON.stringify(profileData),
+        body: JSON.stringify({
+          ...profileData,
+          images: uploadedImageUrl || profileData.images
+        }),
       });
 
       if (!response.ok) {
@@ -783,58 +959,34 @@ export default function Profile() {
           }));
         }
         
-        // Calculate profile completion
-        const calculateProfileCompletion = (profile: any): number => {
-          if (!profile) return 0;
-
-          const requiredFields = [
-            'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-            'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-            'maritalStatus', 'father', 'mother', 'about'
-          ];
-
-          const optionalFields = [
-            'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
-            'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
-            'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
-            'interests'
-          ];
-
-          let completedFields = 0;
-
-          // Check required fields (weight: 2x)
-          requiredFields.forEach(field => {
-            if (profile[field] && profile[field].toString().trim() !== '') {
-              completedFields += 2;
-            }
-          });
-
-          // Check optional fields (weight: 1x)
-          optionalFields.forEach(field => {
-            if (profile[field] && profile[field].toString().trim() !== '') {
-              completedFields += 1;
-            }
-          });
-
-          // Calculate percentage (max 100%)
-          const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
-          return percentage;
-        };
-
-        const completion = calculateProfileCompletion(refreshedProfile || { ...profile, ...profileData });
-        
         // Update localStorage
         if (typeof window !== 'undefined') {
-          localStorage.setItem('isFirstLogin', completion >= 75 ? 'false' : 'true');
+          localStorage.setItem('isFirstLogin', calculatedCompleteness >= 100 ? 'false' : 'true');
           localStorage.setItem('hasSeenOnboarding', 'true');
-          localStorage.setItem('profileCompletion', completion.toString());
+          localStorage.setItem('profileCompletion', calculatedCompleteness.toString());
         }
         
-        // Show success message
-        if (completion >= 75) {
+        // Show success message with profile picture verification info
+        if (uploadedImageUrl) {
+          // Add a delay to simulate verification process
+          setTimeout(() => {
+            setUploadMessage('✅ Profile picture verified and visible!');
+            setTimeout(() => {
+              setUploadMessage('');
+            }, 3000);
+          }, 2000);
+        }
+        
+        if (calculatedCompleteness >= 100) {
           alert('Profile saved successfully! You can now use Discover and Matches.');
         } else {
-          alert('Profile saved successfully! Please complete more fields to access all features.');
+          alert('Profile saved successfully! Please complete all required fields including profile picture to access all features.');
+        }
+        
+        // Clear temporary image state after successful save
+        if (tempImageFile || tempImageUrl) {
+          setTempImageFile(null);
+          setTempImageUrl(null);
         }
         
         // Exit edit mode
@@ -852,8 +1004,8 @@ export default function Profile() {
           element.style.margin = '';
         });
         
-        // Redirect to dashboard after a short delay if profile is 75% complete
-        if (completion >= 75) {
+        // Redirect to dashboard after a short delay if profile is 100% complete
+        if (calculatedCompleteness >= 100) {
           setTimeout(() => {
             router.push('/dashboard');
           }, 1500);
@@ -898,37 +1050,39 @@ export default function Profile() {
         return;
       }
 
-      setUploadMessage('🔍 Checking image quality...');
+      setUploadMessage('🔍 Validating image...');
 
-      // Validate image quality first
-      const qualityCheck = await ImageUploadService.validateImageQuality(file);
-      if (!qualityCheck.isValid) {
-        setUploadMessage(`❌ ${qualityCheck.error || 'Invalid image quality'}`);
+      // Validate image using ImageCompression utility
+      const validation = ImageCompression.validateImage(file);
+      if (!validation.valid) {
+        setUploadMessage(`❌ ${validation.error || 'Invalid image file'}`);
         setIsUploading(false);
         return;
       }
 
-      setUploadMessage('🤖 Detecting face in image...');
-
-      // Upload and validate face
-      const result: UploadResult = await ImageUploadService.uploadProfileImage(file);
-      
-      if (result.success && result.imageUrl) {
-        // Update profile with new image
-        setProfile(prev => ({
-          ...prev,
-          images: [result.imageUrl!, ...((prev.images || []).slice(1))]
-        }));
-        
-        // Clear the success message after a short delay
-        setTimeout(() => {
-          setUploadMessage('');
-        }, 1000);
-      } else {
-        setUploadMessage(`❌ ${result.error || 'Failed to upload image'}`);
+      // Check file size before creating preview
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        setUploadMessage('❌ File too large. Please select an image less than 2MB');
+        setIsUploading(false);
+        return;
       }
+
+      // Create preview URL for immediate display
+      const previewUrl = await ImageCompression.createPreviewUrl(file);
+      
+      // Store file and preview URL for later B2 upload
+      setTempImageFile(file);
+      setTempImageUrl(previewUrl);
+      
+                setUploadMessage('Image selected! Click "Save Changes" to upload');
+      
+      // Clear the success message after a short delay
+      setTimeout(() => {
+        setUploadMessage('');
+      }, 3000);
     } catch (error) {
-      console.error('Image upload error:', error);
+      console.error('Image validation error:', error);
       setUploadMessage('❌ Error processing image. Please try again with a different photo.');
     } finally {
       setIsUploading(false);
@@ -936,6 +1090,51 @@ export default function Profile() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    // If there's a temporary image, just clear it
+    if (tempImageFile || tempImageUrl) {
+      setTempImageFile(null);
+      setTempImageUrl(null);
+      setUploadMessage('✅ Temporary image removed');
+      setTimeout(() => {
+        setUploadMessage('');
+      }, 2000);
+      return;
+    }
+
+    // If there's an existing profile image, delete from B2
+    if (!profile.profile?.images && !signedImageUrl) return;
+
+    setIsUploading(true);
+    setUploadMessage('🗑️ Deleting profile picture...');
+
+    try {
+      const success = await ImageUploadService.deleteProfilePictureFromB2();
+      
+      if (success) {
+        // Remove image from profile
+        setProfile(prev => ({
+          ...prev,
+          images: null
+        }));
+        
+        setUploadMessage('✅ Profile picture deleted successfully!');
+        
+        // Clear the success message after a short delay
+        setTimeout(() => {
+          setUploadMessage('');
+        }, 3000);
+      } else {
+        setUploadMessage('❌ Failed to delete profile picture');
+      }
+    } catch (error) {
+      console.error('Profile picture deletion error:', error);
+      setUploadMessage('❌ Error deleting profile picture. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -1193,8 +1392,73 @@ export default function Profile() {
     about: {
       pattern: /^[a-zA-Z0-9\s\.\,\!\?\-\:\;]+$/,
       maxLength: 500,
-      minLength: 20,
-      message: 'About should only contain letters, numbers, spaces, and basic punctuation (20-500 characters)'
+      minLength: 10,
+      message: 'About section should be meaningful (min 10 characters, max 500 characters)',
+      customValidation: (value: string) => {
+        // Check for placeholder content
+        const placeholderPatterns = ['naaaa', 'test', 'placeholder', 'dummy'];
+        return !placeholderPatterns.some(pattern => 
+          value.toLowerCase().includes(pattern.toLowerCase())
+        );
+      }
+    },
+    dateOfBirth: {
+      pattern: /^\d{4}-\d{2}-\d{2}$/,
+      maxLength: 10,
+      minLength: 10,
+      customValidation: (value: string) => {
+        if (!value) return false;
+        
+        const birthDate = new Date(value);
+        const today = new Date();
+        
+        // Check if date is valid and in the past
+        if (isNaN(birthDate.getTime()) || birthDate >= today) {
+          return false;
+        }
+        
+        // Calculate age
+        let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          calculatedAge--;
+        }
+        
+        // Gender-specific age validation
+        const gender = profile?.gender;
+        if (gender === 'Male') {
+          return calculatedAge >= 21 && calculatedAge <= 80;
+        } else if (gender === 'Female') {
+          return calculatedAge >= 18 && calculatedAge <= 80;
+        }
+        
+        // Default validation if gender not specified
+        return calculatedAge >= 18 && calculatedAge <= 80;
+      },
+      message: 'Date of birth must be valid and meet age requirements (Male: 21+, Female: 18+)'
+    },
+    height: {
+      pattern: /^\d+'(\d+)?"?$/,
+      maxLength: 10,
+      minLength: 3,
+      customValidation: (value: string) => {
+        if (!value) return false;
+        
+        // Parse height in feet and inches format (e.g., "5'8"", "6'2"")
+        const heightMatch = value.match(/^(\d+)'(\d+)"?$/);
+        if (!heightMatch) return false;
+        
+        const feet = parseInt(heightMatch[1]);
+        const inches = parseInt(heightMatch[2]);
+        
+        // Convert to total inches for validation
+        const totalInches = (feet * 12) + inches;
+        
+        // Min 4 feet (48 inches), Max 8 feet (96 inches)
+        return totalInches >= 48 && totalInches <= 96;
+      },
+      message: 'Height must be between 4\'0" and 8\'0" in feet and inches format (e.g., 5\'8")'
     },
     fatherGotra: {
       pattern: /^[a-zA-Z]+$/,
@@ -1358,8 +1622,7 @@ export default function Profile() {
       inches = match[2] || '';
     }
   }
-  // Today's date for max date
-  const todayStr = new Date().toISOString().split('T')[0];
+
 
   // Show loading screen while checking authentication or loading profile
   if (!isAuthenticated || loadingProfile) {
@@ -1457,7 +1720,7 @@ export default function Profile() {
               {/* Welcome Message */}
               <div className="mb-6">
                 <div className="flex items-center justify-center mx-auto mb-4">
-                  <img src="/icon.svg" alt="Shaadi Mantra" className="w-16 h-16 heartbeat-animation" />
+                  <img src="/icon.svg" alt="Shaadi Mantra" className="w-32 h-32 heartbeat-animation" />
                 </div>
                 <h2 className="text-xl font-bold text-slate-800 mb-2">Welcome to Your Journey!</h2>
                 <p className="text-slate-600 text-sm leading-relaxed">
@@ -1532,53 +1795,122 @@ export default function Profile() {
       {/* Content */}
       <div className="relative z-10 pt-16 pb-24 page-transition">
 
-        
+        {/* Profile Completion Status Banner */}
+        {!isRealTimeComplete && (
+          <div className="mx-4 mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <CustomIcon name="ri-information-line" className="text-amber-600 text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                  Complete Your Profile to Unlock Features
+                </h3>
+                <p className="text-xs text-amber-700 mb-2">
+                  You need 100% profile completion to access Discover and Matches
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 bg-amber-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${realTimeCompletion}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs font-semibold text-amber-800">
+                    {realTimeCompletion}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Complete Success Banner */}
+        {isRealTimeComplete && (
+          <div className="mx-4 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <CustomIcon name="ri-check-circle-line" className="text-green-600 text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-green-800 mb-1">
+                  Profile Complete! 🎉
+                </h3>
+                <p className="text-xs text-green-700">
+                  You can now access Discover and Matches features
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Profile Image */}
         <div className="px-4 py-6">
-          <div className="flex items-center justify-center space-x-4">
+          <div className={`flex items-center gap-4 ${!isEditing ? 'justify-end pr-8' : 'justify-center'}`}>
+            {/* Profile Image Container - Centrally Aligned */}
             <div className="relative w-32 h-32">
-                          {profile.images && profile.images.length > 0 && profile.images[0] ? (
-              <Image
-                src={profile.images[0]}
-                alt="Profile"
-                width={128}
-                height={128}
-                className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-rose-300 bg-white/60 transition-all duration-200 relative"
-                style={{ minHeight: 128, minWidth: 128 }}
-              >
-                <Image
-                  src="/icons/user.svg"
-                  alt="Profile Placeholder"
-                  width={64}
-                  height={64}
-                  className="mx-auto mb-2 opacity-70"
-                />
-                <span className="text-xs text-rose-500 font-semibold">No Photo</span>
-                
-                {/* Small camera icon for upload when editing */}
-                {isEditing && (
-                  <button
-                    type="button"
-                    onClick={handleCameraClick}
-                    className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-rose-500 flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-rose-400 border border-rose-200"
-                  >
-                    <CustomIcon name="ri-camera-line" className="text-sm" />
-                  </button>
-                )}
-              </div>
-            )}
-              
+              {/* Show temporary image if available, otherwise show existing profile image */}
+              {(tempImageUrl || signedImageUrl) ? (
+                <div className="relative">
+                  <Image
+                    src={tempImageUrl || signedImageUrl}
+                    alt="Profile"
+                    width={128}
+                    height={128}
+                    className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
+                    onError={(e) => {
+                      console.error('❌ Image failed to load:', e);
+                    }}
+                  />
 
+                </div>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-rose-300 bg-white/60 transition-all duration-200 relative"
+                  style={{ minHeight: 128, minWidth: 128 }}
+                >
+                  <Image
+                    src="/icons/user.svg"
+                    alt="Profile Placeholder"
+                    width={64}
+                    height={64}
+                    className="mx-auto mb-2 opacity-70"
+                  />
+                  <span className="text-xs text-rose-500 font-semibold">No Photo</span>
+                  
+                  {/* Small camera icon for upload when editing */}
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={handleCameraClick}
+                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-rose-500 flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-rose-400 border border-rose-200"
+                    >
+                      <CustomIcon name="ri-camera-line" className="text-sm" />
+                    </button>
+                  )}
+                </div>
+              )}
               
-                          {/* Camera icon for editing - only show when there's an image */}
-            {isEditing && profile.images && profile.images.length > 0 && profile.images[0] && (
-              <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full flex items-center justify-center shadow-xl border-3 bg-rose-500 border-white text-white hover:bg-rose-600 transition-colors duration-200 cursor-pointer">
-                <CustomIcon name="ri-camera-line" size={22} />
-              </div>
-            )}
+              {/* Camera and Delete icons for editing - show when there's an image (temporary or existing) */}
+              {isEditing && (tempImageUrl || signedImageUrl || profile.profile?.images) && (
+                <>
+                  {/* Camera icon for upload */}
+                  <button
+                    onClick={handleCameraClick}
+                    className="absolute -bottom-2 -right-2 text-rose-500 hover:text-rose-600 transition-colors duration-200 cursor-pointer"
+                  >
+                    <CustomIcon name="ri-camera-line" size={22} />
+                  </button>
+                  
+                  {/* Delete icon */}
+                  <button
+                    onClick={handleDeleteProfilePicture}
+                    className="absolute -top-2 -right-2 text-red-500 hover:text-red-600 transition-colors duration-200 cursor-pointer"
+                    title={tempImageUrl ? "Remove temporary image" : "Delete profile picture"}
+                  >
+                    <CustomIcon name="ri-delete-bin-line" size={18} />
+                  </button>
+                </>
+              )}
             </div>
             
             {/* Edit Button - Only show when not editing */}
@@ -1605,14 +1937,22 @@ export default function Profile() {
             )}
           </div>
           
-          {/* Small file requirements note when editing */}
-          {isEditing && (
-            <div className="mt-2 text-center">
-              <p className="text-xs text-gray-500">
-                📸 JPG/JPEG only • Max 2MB
-              </p>
+          {/* Upload Message */}
+          {uploadMessage && (
+            <div className={`mt-2 p-2 rounded-lg text-sm ${
+              uploadMessage.includes('❌') ? 'bg-red-100 text-red-700' :
+              uploadMessage.includes('Image selected!') ? 'bg-green-100 text-green-700' :
+              uploadMessage.includes('✅') ? 'bg-green-100 text-green-700' :
+              'bg-blue-100 text-blue-700'
+            }`}>
+              {uploadMessage}
             </div>
           )}
+          
+
+          
+
+
           
           {/* Hidden file input */}
           <input
@@ -1622,8 +1962,6 @@ export default function Profile() {
             onChange={handleImageUpload}
             className="hidden"
           />
-          
-
         </div>
 
         {/* Profile Name and Quick Info */}
@@ -1693,11 +2031,12 @@ export default function Profile() {
                       data-field="gender"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                      <option value="">Select Gender</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.gender}</p>
+                    <p className="text-neutral-800 text-sm">{profile.gender || 'Not specified'}</p>
                   )}
                 </div>
               </div>
@@ -1751,12 +2090,13 @@ export default function Profile() {
                       data-field="maritalStatus"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring-rose-500"
                     >
+                      <option value="">Select Marital Status</option>
                       <option value="Never Married">Never Married</option>
                       <option value="Divorced">Divorced</option>
                       <option value="Widowed">Widowed</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.maritalStatus}</p>
+                    <p className="text-neutral-800 text-sm">{profile.maritalStatus || 'Not specified'}</p>
                   )}
                 </div>
                 
@@ -1772,9 +2112,10 @@ export default function Profile() {
                       data-field="manglik"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                      <option value="">Select Manglik Status</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
-                      <option value="Don't Know">Don't Know</option>
+                      <option value="Don\'t Know">Don't Know</option>
                     </select>
                   ) : (
                     <p className="text-neutral-800 text-sm">{profile.manglik || 'Not specified'}</p>
@@ -1943,6 +2284,7 @@ export default function Profile() {
                       data-field="complexion"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                      <option value="">Select Complexion</option>
                       <option value="Fair">Fair</option>
                       <option value="Medium">Medium</option>
                       <option value="Dark">Dark</option>
@@ -2106,6 +2448,7 @@ export default function Profile() {
                       data-field="eatingHabit"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                      <option value="">Select Eating Habit</option>
                       <option value="Vegetarian">Vegetarian</option>
                       <option value="Eggetarian">Eggetarian</option>
                       <option value="Non-Vegetarian">Non-Vegetarian</option>
@@ -2126,6 +2469,7 @@ export default function Profile() {
                       data-field="smokingHabit"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                      <option value="">Select Smoking Habit</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
                       <option value="Occasionally">Occasionally</option>
@@ -2146,9 +2490,10 @@ export default function Profile() {
                       data-field="drinkingHabit"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                      <option value="">Select Drinking Habit</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
-                      <option value="Socially">Socially</option>
+                      <option value="Occasionally">Occasionally</option>
                     </select>
                   ) : (
                     <p className="text-neutral-800 text-sm">{profile.drinkingHabit || 'Not specified'}</p>
@@ -2271,6 +2616,7 @@ export default function Profile() {
                       data-field="settleAbroad"
                       className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                     >
+                    <option value="">Select Preference</option>
                     <option value="Yes">Yes</option>
                     <option value="No">No</option>
                     <option value="Maybe">Maybe</option>
@@ -2362,55 +2708,20 @@ export default function Profile() {
         />
       )}
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="grid grid-cols-4 h-16">
-          <button
-            onClick={() => {
-              if (profile.isFirstLogin) {
-                router.push('/profile');
-              } else {
-                router.push('/dashboard');
-              }
-            }}
-            className="flex flex-col items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-gray-50 transition-all duration-200 group w-full h-full"
-            type="button"
-          >
-            <CustomIcon name="ri-heart-line" className="text-xl mb-1 group-hover:scale-110 transition-transform duration-200" />
-            <span className="text-xs">Discover</span>
-          </button>
-          <button
-            onClick={() => {
-              if (profile.isFirstLogin) {
-                router.push('/profile');
-              } else {
-                router.push('/matches');
-              }
-            }}
-            className="flex flex-col items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-gray-50 transition-all duration-200 group w-full h-full relative"
-            type="button"
-          >
-            <CustomIcon name="ri-chat-3-line" className="text-xl mb-1 group-hover:scale-110 transition-transform duration-200" />
-            <span className="text-xs">Matches</span>
-            {/* Note: We'll need to fetch matches count for profile page */}
-            {/* Badge would go here when matches count is available */}
-          </button>
-          <Link 
-            href="/profile" 
-            className="flex flex-col items-center justify-center text-rose-500 active:bg-rose-50"
-          >
-            <CustomIcon name="ri-user-line" className="text-xl mb-1" />
-            <span className="text-xs">Profile</span>
-          </Link>
-          <Link 
-            href="/settings" 
-            className="flex flex-col items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-gray-50 transition-all duration-200 group"
-          >
-            <CustomIcon name="ri-settings-line" className="text-xl mb-1 group-hover:scale-110 transition-transform duration-200" />
-            <span className="text-xs">Settings</span>
-          </Link>
-        </div>
-      </div>
+      {/* Modern Bottom Navigation */}
+      <ModernNavigation 
+        items={[
+          { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
+          { 
+            href: '/matches', 
+            icon: 'ri-chat-3-line', 
+            label: 'Matches',
+            ...(matchesCount > 0 && { badge: matchesCount })
+          },
+          { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
+          { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+        ]}
+      />
 
       {/* Interest Modal */}
       {showInterestModal && (

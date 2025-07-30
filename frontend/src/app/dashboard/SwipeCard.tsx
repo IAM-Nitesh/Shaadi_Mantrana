@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Profile } from '../../services/profile-service';
 import Image from 'next/image';
+import { ImageUploadService } from '../../services/image-upload-service';
 
 interface SwipeCardProps {
   profile: {
@@ -13,7 +14,7 @@ interface SwipeCardProps {
       name: string;
       age?: number;
       profession?: string;
-      images?: string[];
+      images?: string;
       about?: string;
       education?: string;
       interests?: string[];
@@ -47,16 +48,34 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       );
     }
   }, [profile]);
+
+  // Fetch signed URL for profile image when profile changes
+  useEffect(() => {
+    const fetchSignedUrl = async () => {
+      if (profile.profile.images && profile._id) {
+        try {
+          const signedUrl = await ImageUploadService.getUserProfilePictureSignedUrlCached(profile._id);
+          if (signedUrl) {
+            setSignedImageUrl(signedUrl);
+          }
+        } catch (error) {
+          console.error('Failed to fetch signed URL for user:', profile._id, error);
+        }
+      }
+    };
+
+    fetchSignedUrl();
+  }, [profile._id, profile.profile.images]);
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
 
-  // Get the first image from the images array, or use a default
-  const profileImage = profile.profile.images && profile.profile.images.length > 0 
-    ? profile.profile.images[0] 
-    : '';
+  // Get the profile image, or use a default
+  const profileImage = profile.profile.images || '';
 
   const handleImageError = () => {
     console.log('🖼️ Image failed to load, showing fallback');
@@ -160,9 +179,9 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       >
         {/* Main Image */}
         <div className="relative h-96">
-          {!imageError && profileImage ? (
+          {!imageError && (signedImageUrl || profileImage) ? (
             <Image
-              src={profileImage}
+              src={signedImageUrl || profileImage}
               alt={`${profile.profile.name || 'Profile'}`}
               layout="fill"
               objectFit="cover"

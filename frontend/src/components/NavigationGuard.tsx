@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ProfileService } from '../services/profile-service';
 import HeartbeatLoader from './HeartbeatLoader';
+import { ProfileService } from '../services/profile-service';
 
 interface NavigationGuardProps {
   children: React.ReactNode;
@@ -14,53 +14,30 @@ export default function NavigationGuard({ children }: NavigationGuardProps) {
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
-  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
+  // Admin routes - only accessible to admin users
+  const adminRoutes = ['/admin', '/admin/dashboard', '/admin/users', '/admin/email-invitations', '/admin/data-safety'];
+  
+  // Regular user routes - not accessible to admin users
+  const userRoutes = ['/dashboard', '/matches', '/chat', '/profile', '/settings', '/help', '/privacy', '/terms'];
+  
   // Allowed routes for first-time users
   const allowedRoutes = ['/profile', '/', '/auth', '/login', '/logout'];
+  
+  // Check if current route is admin route
+  const isAdminRoute = (path: string) => {
+    return adminRoutes.some(route => path.startsWith(route));
+  };
+
+  // Check if current route is user route
+  const isUserRoute = (path: string) => {
+    return userRoutes.some(route => path.startsWith(route));
+  };
   
   // Check if current route is allowed for first-time users
   const isRouteAllowed = (path: string) => {
     return allowedRoutes.some(route => path.startsWith(route));
-  };
-
-  // Calculate profile completion percentage
-  const calculateProfileCompletion = (profile: any): number => {
-    if (!profile) return 0;
-
-    const requiredFields = [
-      'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-      'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-      'maritalStatus', 'father', 'mother', 'about'
-    ];
-
-    const optionalFields = [
-      'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
-      'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
-      'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
-      'interests'
-    ];
-
-    let completedFields = 0;
-    const totalFields = requiredFields.length + optionalFields.length;
-
-    // Check required fields (weight: 2x)
-    requiredFields.forEach(field => {
-      if (profile[field] && profile[field].toString().trim() !== '') {
-        completedFields += 2;
-      }
-    });
-
-    // Check optional fields (weight: 1x)
-    optionalFields.forEach(field => {
-      if (profile[field] && profile[field].toString().trim() !== '') {
-        completedFields += 1;
-      }
-    });
-
-    // Calculate percentage (max 100%)
-    const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
-    return percentage;
   };
 
   useEffect(() => {
@@ -76,68 +53,53 @@ export default function NavigationGuard({ children }: NavigationGuardProps) {
 
         console.log('🔍 Checking user status...');
         
-        // Get user profile with retry logic
-        let profile = null;
-        let retryCount = 0;
-        const maxRetries = 3;
-        
-        while (retryCount < maxRetries) {
-          try {
-            profile = await ProfileService.getUserProfile();
-            break; // Success, exit retry loop
-          } catch (error) {
-            retryCount++;
-            console.error(`❌ Profile fetch attempt ${retryCount} failed:`, error);
-            
-            if (retryCount >= maxRetries) {
-              throw error; // Re-throw after max retries
-            }
-            
-            // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        // Check if user is admin (from localStorage)
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'admin') {
+          setIsAdmin(true);
+          
+          // If admin is on a user route, redirect to admin dashboard
+          if (isUserRoute(pathname)) {
+            console.log('🚫 Admin user redirected from user route to admin dashboard');
+            router.replace('/admin/dashboard');
+            setIsChecking(false);
+            return;
           }
+          
+          // If admin is on root or allowed route, redirect to admin dashboard
+          if (pathname === '/' || isRouteAllowed(pathname)) {
+            console.log('🚫 Admin user redirected to admin dashboard');
+            router.replace('/admin/dashboard');
+            setIsChecking(false);
+            return;
+          }
+          
+          // Admin is on admin route, allow access
+          setIsChecking(false);
+          return;
+        } else {
+          setIsAdmin(false);
         }
         
-        if (profile) {
-          const completion = calculateProfileCompletion(profile);
-          setProfileCompletion(completion);
+        // Check if user is first-time user (from localStorage)
+        const isFirstTimeUser = localStorage.getItem('isFirstTimeUser') === 'true';
+        const isFirstLogin = localStorage.getItem('isFirstLogin') === 'true';
+        const profileCompletion = ProfileService.getProfileCompletion();
+        
+        const shouldBeFirstTimeUser = isFirstLogin || profileCompletion < 100;
+        setIsFirstTimeUser(shouldBeFirstTimeUser);
 
-          // Check if user is first-time user (isFirstLogin is true or profile completion < 75%)
-          // Also check localStorage for consistency
-          const localStorageIsFirstLogin = localStorage.getItem('isFirstLogin') === 'true';
-          const localStorageIsFirstTimeUser = localStorage.getItem('isFirstTimeUser') === 'true';
-          
-          const isFirstLogin = profile.isFirstLogin || localStorageIsFirstLogin || completion < 75;
-          const isFirstTimeUser = isFirstLogin || localStorageIsFirstTimeUser;
-          
-          setIsFirstTimeUser(isFirstTimeUser);
-
-          // Store completion status
-          localStorage.setItem('profileCompletion', completion.toString());
-          localStorage.setItem('isFirstTimeUser', isFirstTimeUser.toString());
-          
-          // If profile is 75%+ complete, ensure onboarding is marked as seen
-          if (completion >= 75) {
-            console.log('✅ NavigationGuard: Profile 75%+ complete, marking onboarding as seen');
-            localStorage.setItem('hasSeenOnboarding', 'true');
-            localStorage.setItem('isFirstLogin', 'false');
-          }
-
-          // Redirect if needed
-          if (isFirstTimeUser && !isRouteAllowed(pathname)) {
-            console.log('🚫 Navigation blocked: First-time user redirected to profile');
-            console.log('📊 Profile completion:', completion, 'isFirstLogin:', profile.isFirstLogin, 'localStorage isFirstLogin:', localStorageIsFirstLogin);
-            router.replace('/profile');
-          }
-        } else {
-          console.log('⚠️ No profile found, treating as first-time user');
-          setIsFirstTimeUser(true);
-          localStorage.setItem('isFirstTimeUser', 'true');
+        // Redirect if needed (only for non-admin users)
+        if (shouldBeFirstTimeUser && !isRouteAllowed(pathname)) {
+          console.log('🚫 Navigation blocked: First-time user redirected to profile');
+          console.log('📊 Profile completion:', profileCompletion, 'isFirstLogin:', isFirstLogin);
+          // Use immediate redirect to prevent any flash
+          window.location.href = '/profile';
+          return;
         }
       } catch (error) {
         console.error('❌ Error checking user status:', error);
-        // On error, allow navigation but mark as first-time user
-        // Don't throw the error to prevent app crashes
+        // On error, allow navigation
         setIsFirstTimeUser(true);
         localStorage.setItem('isFirstTimeUser', 'true');
       } finally {
@@ -163,6 +125,31 @@ export default function NavigationGuard({ children }: NavigationGuardProps) {
     );
   }
 
+  // If admin user is trying to access user routes, redirect to admin dashboard
+  if (isAdmin && isUserRoute(pathname)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="animate-bounce mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-white text-2xl">👨‍💼</span>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Admin Access Required</h2>
+          <p className="text-gray-600 mb-6">
+            You are logged in as an administrator. Please use the admin dashboard for system management.
+          </p>
+          <button
+            onClick={() => router.push('/admin/dashboard')}
+            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+          >
+            Go to Admin Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // If first-time user and trying to access restricted route, redirect
   if (isFirstTimeUser && !isRouteAllowed(pathname)) {
     return (
@@ -175,7 +162,7 @@ export default function NavigationGuard({ children }: NavigationGuardProps) {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Complete Your Profile First</h2>
           <p className="text-gray-600 mb-6">
-            Please complete at least 75% of your profile before accessing other features. This helps us provide you with better matches.
+            Please complete 100% of your profile before accessing other features. This helps us provide you with better matches.
           </p>
           <button
             onClick={() => router.push('/profile')}
