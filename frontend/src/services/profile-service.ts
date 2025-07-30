@@ -2,14 +2,15 @@
 // This service handles fetching profiles and uses the same API config as auth service
 
 // To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
-const API_CONFIG = {
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:4500 (dev), https://your-production-domain.com (prod)
+export const API_CONFIG = {
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
 };
 
 export interface Profile {
   // Basic fields
   id?: string;
+  userId?: string;
   name?: string;
   email: string;
   userUuid?: string;
@@ -54,6 +55,13 @@ export interface Profile {
   profession?: string;
   location?: string;
   image?: string;
+  images?: string;
+  
+  // Profile object from backend
+  profile?: {
+    images?: string;
+    [key: string]: any;
+  };
 }
 
 export interface FilterCriteria {
@@ -70,7 +78,7 @@ export class ProfileService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.warn('API_BASE_URL not configured. Returning empty array.');
+      // console.warn('API_BASE_URL not configured. Returning empty array.');
       return [];
     }
 
@@ -105,7 +113,7 @@ export class ProfileService {
       const data = await response.json();
       return data.profiles || [];
     } catch (error: unknown) {
-      console.error('Error fetching profiles:', error);
+      // console.error('Error fetching profiles:', error);
       // Return empty array on error
       return [];
     }
@@ -116,8 +124,8 @@ export class ProfileService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.log(`Demo mode: ${action} recorded for profile ${profileId}`);
-      return true;
+          // console.log(`API not configured: ${action} not recorded for profile ${profileId}`);
+    return false;
     }
 
     try {
@@ -136,7 +144,7 @@ export class ProfileService {
 
       return response.ok;
     } catch (error: unknown) {
-      console.error('Error recording interaction:', error);
+      // console.error('Error recording interaction:', error);
       return false;
     }
   }
@@ -146,14 +154,14 @@ export class ProfileService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.warn('API_BASE_URL not configured. Using demo profile for development.');
+      // console.warn('API_BASE_URL not configured. No profile available.');
       return null;
     }
 
     // Check if user is authenticated
     const authToken = localStorage.getItem('authToken');
     if (!authToken) {
-      console.log('🔐 No auth token found, returning null for unauthenticated user');
+      // console.log('🔐 No auth token found, returning null for unauthenticated user');
       return null;
     }
 
@@ -168,20 +176,20 @@ export class ProfileService {
 
       if (!response.ok && response.status !== 304) {
         if (response.status === 401) {
-          console.warn('Authentication failed, user may need to login again');
+          // console.warn('Authentication failed, user may need to login again');
           return null;
         }
         if (response.status === 404) {
-          console.log('Profile not found, returning null');
+          // console.log('Profile not found, returning null');
           return null;
         }
         // For other errors, log but don't throw
-        console.error(`Profile fetch failed with status ${response.status}: ${response.statusText}`);
+        // console.error(`Profile fetch failed with status ${response.status}: ${response.statusText}`);
         return null;
       }
 
       const data = await response.json();
-      console.log('🔍 Backend profile response:', data);
+      // console.log('🔍 Backend profile response:', data);
       
       if (data.profile && typeof window !== 'undefined') {
         // Store isFirstLogin in localStorage for onboarding/navigation logic
@@ -202,13 +210,13 @@ export class ProfileService {
           verified: data.profile.verification?.isVerified || false,
           lastActive: data.profile.lastActive || new Date().toISOString()
         };
-        console.log('🔍 Flattened profile:', flattenedProfile);
+        // console.log('🔍 Flattened profile:', flattenedProfile);
         return flattenedProfile;
       }
       
       return data.profile ? { ...data.profile, email: data.profile.email, role: 'user', isFirstLogin: data.profile.isFirstLogin } : null;
     } catch (error: unknown) {
-      console.error('Error fetching user profile:', error);
+      // console.error('Error fetching user profile:', error);
       // Don't throw, just return null for graceful handling
       return null;
     }
@@ -224,7 +232,7 @@ export class ProfileService {
       const data = await response.json();
       return data.profile || null;
     } catch (error) {
-      console.error('Error fetching profile by UUID:', error);
+      // console.error('Error fetching profile by UUID:', error);
       return null;
     }
   }
@@ -242,61 +250,99 @@ export class ProfileService {
       });
       return response.ok;
     } catch (error) {
-      console.error('Error deleting profile:', error);
+      // console.error('Error deleting profile:', error);
       return false;
     }
   }
 
-  // Demo profiles for development/fallback
-  private static getDemoProfiles(): Profile[] {
-    console.warn('⚠️ Using demo profiles. Configure API_BASE_URL for production.');
+  // Check if user can access restricted features (Discover, Matches)
+  static canAccessRestrictedFeatures(): boolean {
+    if (typeof window === 'undefined') return false;
     
-    return [
-      {
-        id: '1',
-        name: 'Priya S.',
-        age: 26,
-        profession: 'Software Engineer',
-        location: 'Mumbai, Maharashtra',
-        education: 'B.Tech Computer Science',
-        image: '/demo-profiles/profile-1.svg',
-        interests: ['Travel', 'Reading', 'Cooking'],
-        about: 'Looking for a life partner who values family and career equally.',
-        verified: true,
-        lastActive: '2 hours ago',
-        email: 'priya@example.com',
-        role: 'user'
-      },
-      {
-        id: '2',
-        name: 'Arjun P.',
-        age: 29,
-        profession: 'Doctor',
-        location: 'Delhi, India',
-        education: 'MBBS, MD',
-        image: '/demo-profiles/profile-2.svg',
-        interests: ['Music', 'Sports', 'Social Work'],
-        about: 'Passionate doctor seeking a caring and understanding partner.',
-        verified: true,
-        lastActive: '1 day ago',
-        email: 'arjun@example.com',
-        role: 'user'
-      },
-      {
-        id: '3',
-        name: 'Kavya R.',
-        age: 24,
-        profession: 'Teacher',
-        location: 'Bangalore, Karnataka',
-        education: 'M.Ed English Literature',
-        image: '/demo-profiles/profile-3.svg',
-        interests: ['Art', 'Dance', 'Literature'],
-        about: 'Creative soul looking for someone who appreciates arts and culture.',
-        verified: true,
-        lastActive: '3 hours ago',
-        email: 'kavya@example.com',
-        role: 'user'
-      }
+    const profileCompletion = localStorage.getItem('profileCompletion');
+    const completion = profileCompletion ? parseInt(profileCompletion) : 0;
+    
+    // User can access restricted features only if profile is 100% complete
+    return completion >= 100;
+  }
+
+  // Get profile completion percentage from localStorage (backend authority)
+  static getProfileCompletion(): number {
+    if (typeof window === 'undefined') return 0;
+    
+    const profileCompletion = localStorage.getItem('profileCompletion');
+    return profileCompletion ? parseInt(profileCompletion) : 0;
+  }
+
+  // Check if user is in onboarding state
+  static isInOnboarding(): boolean {
+    if (typeof window === 'undefined') return false;
+    
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
+    const isFirstLogin = localStorage.getItem('isFirstLogin') === 'true';
+    const profileCompletion = this.getProfileCompletion();
+    
+    // User is in onboarding if they haven't seen onboarding OR profile is incomplete
+    return !hasSeenOnboarding || (isFirstLogin && profileCompletion < 100);
+  }
+
+  // Calculate profile completion for real-time feedback (frontend calculation)
+  static calculateProfileCompletion(profile: any): number {
+    if (!profile) return 0;
+
+    const requiredFields = [
+      'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
+      'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
+      'maritalStatus', 'father', 'mother', 'about', 'images'
     ];
+
+    const optionalFields = [
+      'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
+      'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
+      'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
+      'interests'
+    ];
+
+    let completedFields = 0;
+
+    // Check required fields (weight: 2x)
+    requiredFields.forEach(field => {
+      if (profile[field] && profile[field].toString().trim() !== '') {
+        completedFields += 2;
+      }
+    });
+
+    // Check optional fields (weight: 1x)
+    optionalFields.forEach(field => {
+      if (profile[field] && profile[field].toString().trim() !== '') {
+        completedFields += 1;
+      }
+    });
+
+    // Calculate percentage (max 100%)
+    const percentage = Math.min(100, Math.round((completedFields / (requiredFields.length * 2 + optionalFields.length)) * 100));
+    return percentage;
+  }
+
+  // Update profile completion from backend data (backend authority)
+  static updateProfileCompletion(profile: any): void {
+    if (typeof window === 'undefined' || !profile) return;
+    
+    // Use backend profileCompleteness as the authoritative source
+    if (profile.profileCompleteness !== undefined) {
+      const completion = profile.profileCompleteness;
+      console.log('📊 Using backend profileCompleteness:', completion);
+      localStorage.setItem('profileCompletion', completion.toString());
+      
+      // If profile is complete, mark onboarding as seen
+      if (completion >= 100) {
+        localStorage.setItem('hasSeenOnboarding', 'true');
+        localStorage.setItem('isFirstLogin', 'false');
+      }
+    } else {
+      console.log('⚠️ Backend profileCompleteness not available, using frontend calculation as fallback');
+      const completion = this.calculateProfileCompletion(profile);
+      localStorage.setItem('profileCompletion', completion.toString());
+    }
   }
 }

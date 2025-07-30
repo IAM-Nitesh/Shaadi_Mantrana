@@ -1,198 +1,180 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
+import CustomIcon from '../../../components/CustomIcon';
+import { gsap } from 'gsap';
 
-interface DataSafetyInfo {
-  dataCollected: {
-    personalInfo: boolean;
-    financialInfo: boolean;
-    healthInfo: boolean;
-    location: boolean;
-    contacts: boolean;
-    userContent: boolean;
-    searchHistory: boolean;
-    identifiers: boolean;
-    usage: boolean;
-    diagnostics: boolean;
-  };
-  dataSharing: {
-    shared: boolean;
-    sharedForAdvertising: boolean;
-    sharedForAnalytics: boolean;
-    sharedForDevelopment: boolean;
-  };
-  dataSecurity: {
-    dataEncrypted: boolean;
-    userCanRequestDeletion: boolean;
-    userCanRequestData: boolean;
-  };
-}
-
-export default function DataSafetyForm() {
-  const [dataSafety, setDataSafety] = useState<DataSafetyInfo>({
-    dataCollected: {
-      personalInfo: true, // Name, email for matrimonial profiles
-      financialInfo: false,
-      healthInfo: false,
-      location: true, // For local matches
-      contacts: false,
-      userContent: true, // Profile info, messages
-      searchHistory: true, // Matching preferences
-      identifiers: true, // User ID, device ID
-      usage: true, // App interaction data
-      diagnostics: false
-    },
-    dataSharing: {
-      shared: false, // No third-party sharing
-      sharedForAdvertising: false,
-      sharedForAnalytics: false,
-      sharedForDevelopment: false
-    },
-    dataSecurity: {
-      dataEncrypted: true,
-      userCanRequestDeletion: true,
-      userCanRequestData: true
-    }
-  });
-
-  const generatePlayStoreForm = () => {
-    const form = {
-      "app_name": "Shaadi Mantra",
-      "app_package": "com.shaadimatra.app",
-      "data_safety": {
-        "data_collected": {
-          "personal_info": {
-            "collected": dataSafety.dataCollected.personalInfo,
-            "shared": false,
-            "optional": false,
-            "purpose": ["Account management", "Personalization"]
-          },
-          "location": {
-            "collected": dataSafety.dataCollected.location,
-            "shared": false,
-            "optional": true,
-            "purpose": ["App functionality"]
-          },
-          "user_content": {
-            "collected": dataSafety.dataCollected.userContent,
-            "shared": false,
-            "optional": false,
-            "purpose": ["App functionality", "Personalization"]
-          },
-          "identifiers": {
-            "collected": dataSafety.dataCollected.identifiers,
-            "shared": false,
-            "optional": false,
-            "purpose": ["Account management", "App functionality"]
-          }
-        },
-        "data_shared": {
-          "shared_with_third_parties": dataSafety.dataSharing.shared
-        },
-        "security_practices": {
-          "data_encrypted_in_transit": true,
-          "data_encrypted_at_rest": true,
-          "data_deletion_policy": "User can request deletion",
-          "data_export_policy": "User can request data export",
-          "independent_security_review": false,
-          "privacy_policy_url": "https://shaadimatra.com/privacy"
-        }
-      }
-    };
-
-    return JSON.stringify(form, null, 2);
-  };
+export default function DataSafety() {
+  useEffect(() => {
+    // Animate content on load
+    gsap.fromTo('.safety-card', 
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
+    );
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Google Play Data Safety Form Generator</h1>
-        
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Data Collection Summary</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="container mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-10 pt-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-3 flex items-center">
+            <CustomIcon name="ri-shield-check-line" className="text-4xl text-blue-600 mr-4" />
+            Admin Data Management
+          </h1>
+          <p className="text-gray-600 text-lg">Admin tools for data safety, privacy, and user management</p>
+        </div>
+
+        {/* Admin Security & Actions Section */}
+        <div className="safety-card bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-10">
+          <div className="flex items-center mb-8">
+            <div className="bg-blue-100 rounded-full w-14 h-14 flex items-center justify-center mr-5">
+              <CustomIcon name="ri-lock-password-line" className="text-3xl text-blue-600" />
+            </div>
             <div>
-              <h3 className="font-medium text-gray-700 mb-3">Data Collected</h3>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    checked={dataSafety.dataCollected.personalInfo}
-                    onChange={(e) => setDataSafety(prev => ({
-                      ...prev,
-                      dataCollected: { ...prev.dataCollected, personalInfo: e.target.checked }
-                    }))}
-                    className="mr-2"
-                  />
-                  Personal Information (Name, Email)
-                </label>
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    checked={dataSafety.dataCollected.location}
-                    onChange={(e) => setDataSafety(prev => ({
-                      ...prev,
-                      dataCollected: { ...prev.dataCollected, location: e.target.checked }
-                    }))}
-                    className="mr-2"
-                  />
-                  Location Data
-                </label>
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    checked={dataSafety.dataCollected.userContent}
-                    onChange={(e) => setDataSafety(prev => ({
-                      ...prev,
-                      dataCollected: { ...prev.dataCollected, userContent: e.target.checked }
-                    }))}
-                    className="mr-2"
-                  />
-                  User Content (Photos, Messages)
-                </label>
-              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Admin Security & Actions</h2>
+              <p className="text-gray-600">Security measures and available admin actions</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div className="text-center p-6 bg-blue-50 rounded-xl">
+              <div className="text-4xl text-blue-600 mx-auto mb-4">🔐</div>
+              <h3 className="font-semibold text-gray-800 mb-3 text-lg">Admin Authentication</h3>
+              <p className="text-sm text-gray-600">Secure admin login with role-based access control</p>
             </div>
             
-            <div>
-              <h3 className="font-medium text-gray-700 mb-3">Security Practices</h3>
-              <div className="space-y-2">
-                <div className="flex items-center text-green-600">
-                  <i className="ri-shield-check-line mr-2"></i>
-                  Data encrypted in transit
-                </div>
-                <div className="flex items-center text-green-600">
-                  <i className="ri-shield-check-line mr-2"></i>
-                  Data encrypted at rest
-                </div>
-                <div className="flex items-center text-green-600">
-                  <i className="ri-shield-check-line mr-2"></i>
-                  User can delete data
-                </div>
-                <div className="flex items-center text-green-600">
-                  <i className="ri-shield-check-line mr-2"></i>
-                  User can export data
-                </div>
+            <div className="text-center p-6 bg-green-50 rounded-xl">
+              <div className="text-4xl text-green-600 mx-auto mb-4">👥</div>
+              <h3 className="font-semibold text-gray-800 mb-3 text-lg">User Management</h3>
+              <p className="text-sm text-gray-600">View, pause, resume, and manage user accounts</p>
+            </div>
+            
+            <div className="text-center p-6 bg-yellow-50 rounded-xl">
+              <div className="text-4xl text-yellow-600 mx-auto mb-4">📧</div>
+              <h3 className="font-semibold text-gray-800 mb-3 text-lg">Invitation Control</h3>
+              <p className="text-sm text-gray-600">Send and track email invitations</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 rounded-xl p-8">
+            <h3 className="font-semibold text-gray-800 mb-6 flex items-center text-lg">
+              <div className="text-blue-500 mr-3">🛡️</div>
+              Admin Capabilities
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center">
+                <div className="text-green-500 mr-4 text-xl">👁️</div>
+                <span className="text-gray-700">View all user profiles and data</span>
+              </div>
+              <div className="flex items-center">
+                <div className="text-yellow-500 mr-4 text-xl">⏸️</div>
+                <span className="text-gray-700">Pause user accounts</span>
+              </div>
+              <div className="flex items-center">
+                <div className="text-green-500 mr-4 text-xl">▶️</div>
+                <span className="text-gray-700">Resume user accounts</span>
+              </div>
+              <div className="flex items-center">
+                <div className="text-blue-500 mr-4 text-xl">📧</div>
+                <span className="text-gray-700">Send email invitations</span>
+              </div>
+              <div className="flex items-center">
+                <div className="text-purple-500 mr-4 text-xl">🖼️</div>
+                <span className="text-gray-700">Access profile images</span>
+              </div>
+              <div className="flex items-center">
+                <div className="text-indigo-500 mr-4 text-xl">📊</div>
+                <span className="text-gray-700">Monitor platform statistics</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Generated Play Store Form</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
-            {generatePlayStoreForm()}
-          </pre>
+        {/* Data Access Section */}
+        <div className="safety-card bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-10">
+          <div className="flex items-center mb-8">
+            <div className="bg-purple-100 rounded-full w-14 h-14 flex items-center justify-center mr-5">
+              <CustomIcon name="ri-database-line" className="text-3xl text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Data Access & Management</h2>
+              <p className="text-gray-600">Admin access to user data and platform information</p>
+            </div>
+          </div>
           
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-medium text-blue-800 mb-2">Instructions:</h3>
-            <ol className="text-sm text-blue-700 space-y-1">
-              <li>1. Copy the JSON above</li>
-              <li>2. Go to Google Play Console → App content → Data safety</li>
-              <li>3. Fill in the form based on the generated data</li>
-              <li>4. Ensure your privacy policy URL is accessible</li>
-              <li>5. Submit for review</li>
-            </ol>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-6 flex items-center text-lg">
+                <CustomIcon name="ri-user-line" className="text-green-500 mr-3" />
+                User Data Access
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">View user profiles and personal information</span>
+                </li>
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Access profile images and media files</span>
+                </li>
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Monitor user activity and login history</span>
+                </li>
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Track profile completion status</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-6 flex items-center text-lg">
+                <CustomIcon name="ri-settings-line" className="text-blue-500 mr-3" />
+                Platform Management
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Manage user account status</span>
+                </li>
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Send and track invitations</span>
+                </li>
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Monitor platform statistics</span>
+                </li>
+                <li className="flex items-start">
+                  <CustomIcon name="ri-check-line" className="text-green-500 mt-1 mr-3 flex-shrink-0 text-lg" />
+                  <span className="text-gray-700">Access cloud storage management</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Support Section */}
+        <div className="safety-card bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+          <div className="flex items-center mb-8">
+            <div className="bg-orange-100 rounded-full w-14 h-14 flex items-center justify-center mr-5">
+              <CustomIcon name="ri-customer-service-2-line" className="text-3xl text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Admin Support & Resources</h2>
+              <p className="text-gray-600">Support and resources for admin operations</p>
+            </div>
+          </div>
+          
+          <div className="text-center p-8 bg-blue-50 rounded-xl max-w-md mx-auto">
+            <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mx-auto mb-4" />
+            <h3 className="font-semibold text-gray-800 mb-3 text-lg">Admin Support</h3>
+            <p className="text-sm text-gray-600 mb-4">For admin access and technical support</p>
+            <a href="mailto:shaadimantra.help@gmail.com" className="text-blue-600 hover:text-blue-700 font-medium">
+              shaadimantra.help@gmail.com
+            </a>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 // This service handles sending welcome emails to all approved users
 
 // To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
 import configService from './configService';
 
 export interface InvitationResult {
@@ -28,19 +28,13 @@ export class EmailInvitationService {
     const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
-      // Demo mode
-      console.log('Demo mode: Email invitations simulated');
+      // No API configured
+      // console.log('No API configured: Email invitations not sent');
       return {
-        total: 5,
-        sent: 5,
+        total: 0,
+        sent: 0,
         failed: 0,
-        results: [
-          { email: 'demo1@example.com', status: 'sent' },
-          { email: 'demo2@example.com', status: 'sent' },
-          { email: 'demo3@example.com', status: 'sent' },
-          { email: 'demo4@example.com', status: 'sent' },
-          { email: 'demo5@example.com', status: 'sent' }
-        ]
+        results: []
       };
     }
 
@@ -80,12 +74,8 @@ export class EmailInvitationService {
     const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
-      // Demo mode
-      return [
-        'demo1@example.com',
-        'demo2@example.com',
-        'demo3@example.com'
-      ];
+      // No API configured
+      return [];
     }
 
     try {
@@ -107,10 +97,10 @@ export class EmailInvitationService {
       return data.users?.map((user: any) => user.email) || [];
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error('Error fetching approved emails:', error);
+        // console.error('Error fetching approved emails:', error);
         throw error;
       }
-      console.error('Error fetching approved emails:', error);
+      // console.error('Error fetching approved emails:', error);
       throw error;
     }
   }
@@ -122,8 +112,8 @@ export class EmailInvitationService {
     const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
-      // Demo mode - accept any non-empty key
-      return adminKey && adminKey.length > 0;
+      // No API configured - no validation
+      return false;
     }
 
     // In production, this would validate against the backend
@@ -186,7 +176,7 @@ export class EmailInvitationService {
     const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
-      console.log(`Demo mode: Added ${email} to approved emails`);
+      // console.log(`Demo mode: Added ${email} to approved emails`);
       return true;
     }
 
@@ -203,10 +193,10 @@ export class EmailInvitationService {
       return response.ok;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error('Failed to add approved email:', error);
+        // console.error('Failed to add approved email:', error);
         return false;
       }
-      console.error('Failed to add approved email:', error);
+      // console.error('Failed to add approved email:', error);
       return false;
     }
   }
@@ -221,7 +211,7 @@ export class EmailInvitationService {
     const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
-      console.log(`Demo mode: Removed ${email} from approved emails`);
+      // console.log(`Demo mode: Removed ${email} from approved emails`);
       return true;
     }
 
@@ -238,10 +228,10 @@ export class EmailInvitationService {
       return response.ok;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error('Failed to remove approved email:', error);
+        // console.error('Failed to remove approved email:', error);
         return false;
       }
-      console.error('Failed to remove approved email:', error);
+      // console.error('Failed to remove approved email:', error);
       return false;
     }
   }
@@ -264,7 +254,7 @@ export class EmailInvitationService {
       if (!response.ok) throw new Error('Failed to create invitation');
       return await response.json();
     } catch (error) {
-      console.error('Error creating invitation:', error);
+      // console.error('Error creating invitation:', error);
       return null;
     }
   }
@@ -281,7 +271,7 @@ export class EmailInvitationService {
       if (!response.ok) throw new Error('Failed to fetch invitations');
       return (await response.json()).invitations || [];
     } catch (error) {
-      console.error('Error fetching invitations:', error);
+      // console.error('Error fetching invitations:', error);
       return [];
     }
   }
@@ -297,7 +287,7 @@ export class EmailInvitationService {
       if (!response.ok) throw new Error('Failed to fetch invitation');
       return await response.json();
     } catch (error) {
-      console.error('Error fetching invitation:', error);
+      // console.error('Error fetching invitation:', error);
       return null;
     }
   }
@@ -318,7 +308,7 @@ export class EmailInvitationService {
       if (!response.ok) throw new Error('Failed to update invitation');
       return await response.json();
     } catch (error) {
-      console.error('Error updating invitation:', error);
+      // console.error('Error updating invitation:', error);
       return null;
     }
   }
@@ -335,7 +325,7 @@ export class EmailInvitationService {
       if (!response.ok) throw new Error('Failed to delete invitation');
       return true;
     } catch (error) {
-      console.error('Error deleting invitation:', error);
+      // console.error('Error deleting invitation:', error);
       return false;
     }
   }
@@ -359,7 +349,7 @@ export class EmailInvitationService {
         uuid: user.userUuid
       })) || [];
     } catch (error) {
-      console.error('Error fetching users:', error);
+      // console.error('Error fetching users:', error);
       return [];
     }
   }
@@ -385,7 +375,7 @@ export class EmailInvitationService {
       const data = await response.json();
       return data.uuid ? { email: data.email, uuid: data.uuid } : null;
     } catch (error) {
-      console.error('Error adding user:', error);
+      // console.error('Error adding user:', error);
       return null;
     }
   }
@@ -418,7 +408,7 @@ export class EmailInvitationService {
       if (!response.ok) throw new Error('Failed to pause user');
       return true;
     } catch (error) {
-      console.error('Error pausing user:', error);
+      // console.error('Error pausing user:', error);
       return false;
     }
   }

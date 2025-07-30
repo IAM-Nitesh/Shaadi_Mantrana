@@ -87,6 +87,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 // API Routes with rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
@@ -97,6 +98,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/connections', connectionRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
