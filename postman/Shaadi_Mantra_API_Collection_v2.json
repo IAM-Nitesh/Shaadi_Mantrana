@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Shaadi Mantra API Collection",
-    "description": "Complete API collection for testing Shaadi Mantra backend endpoints in both Static and MongoDB modes",
+    "name": "Shaadi Mantrana API Collection",
+    "description": "Complete API collection for testing Shaadi Mantrana backend endpoints in both Static and MongoDB modes",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -13,7 +13,7 @@
     },
     {
       "key": "base_url_dev", 
-      "value": "http://localhost:4500",
+      "value": "http://localhost:5500",
       "description": "Base URL for Dev mode"
     },
     {

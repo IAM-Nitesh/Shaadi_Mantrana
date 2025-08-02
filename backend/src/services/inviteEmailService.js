@@ -4,8 +4,8 @@ const reactEmailService = require('./reactEmailService');
 
 class InviteEmailService {
   constructor() {
-    this.fromEmail = config.EMAIL.FROM_EMAIL || 'shaadimantra.help@gmail.com';
-    this.fromName = config.EMAIL.FROM_NAME || 'Shaadi Mantra';
+    this.fromEmail = config.EMAIL.FROM_EMAIL || 'shaadimantrana.help@gmail.com';
+    this.fromName = config.EMAIL.FROM_NAME || 'Shaadi Mantrana';
     this.transporter = null;
     this.initialized = false;
     
@@ -96,7 +96,7 @@ class InviteEmailService {
       }
 
       // Email content
-      const subject = '🎉 Welcome to Shaadi Mantra - Your Journey Begins!';
+      const subject = '🎉 Welcome to Shaadi Mantrana - Your Journey Begins!';
       const htmlContent = await this.generateOnboardingEmailHTML(userEmail, inviteLink, userUuid);
 
       // Email options
@@ -113,7 +113,7 @@ class InviteEmailService {
           'X-MSMail-Priority': 'High',
           'Importance': 'high',
           'MIME-Version': '1.0',
-          'X-Mailer': 'Shaadi Mantra React Email System'
+          'X-Mailer': 'Shaadi Mantrana React Email System'
         }
       };
 
@@ -174,7 +174,7 @@ class InviteEmailService {
       }
 
       // Email content
-      const subject = '🎉 Welcome to Shaadi Mantra - Your Exclusive Invitation';
+      const subject = '🎉 Welcome to Shaadi Mantrana - Your Exclusive Invitation';
       const htmlContent = await this.generateInviteEmailHTML(userEmail, inviteLink, userUuid);
 
       // Email options
@@ -191,7 +191,7 @@ class InviteEmailService {
           'X-MSMail-Priority': 'High',
           'Importance': 'high',
           'MIME-Version': '1.0',
-          'X-Mailer': 'Shaadi Mantra React Email System'
+          'X-Mailer': 'Shaadi Mantrana React Email System'
         }
       };
 

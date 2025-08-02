@@ -1,10 +1,13 @@
 // Image Upload Service for Frontend
 // This service handles image uploads and validates that images contain faces
 
-// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env file.
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:4500 (dev), https://your-production-domain.com (prod)
+// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
+import { config } from './configService';
+import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
+
 export const API_CONFIG = {
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500',
+  API_BASE_URL: config.apiBaseUrl,
 };
 
 import ImageCompression from '../utils/imageCompression';
@@ -212,9 +215,9 @@ export class ImageUploadService {
       const formData = new FormData();
       formData.append('image', file);
 
-      // Check if user is authenticated
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
         throw new Error('Authentication required. Please log in first.');
       }
 
@@ -222,10 +225,16 @@ export class ImageUploadService {
       // console.log('Uploading to:', `${apiBaseUrl}/api/upload/single`);
       // console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        throw new Error('Authentication required. Please log in first.');
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/upload/single`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
         body: formData,
       });
@@ -288,11 +297,17 @@ export class ImageUploadService {
     }
 
     try {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return false;
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/upload/delete-image`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
         body: JSON.stringify({ imageUrl }),
       });
@@ -313,10 +328,16 @@ export class ImageUploadService {
     }
 
     try {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return [];
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/upload/profile-images`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
       });
 
@@ -409,17 +430,17 @@ export class ImageUploadService {
         };
       }
 
-      // Compress image for optimal upload
+      // Compress image for optimal upload with improved quality
       const compressionResult = await ImageCompression.compressProfilePicture(file, {
-        maxWidth: 1080,
-        maxHeight: 1080,
-        quality: 0.85,
+        maxWidth: 1200, // Increased for better quality
+        maxHeight: 1200, // Increased for better quality
+        quality: 0.95, // Increased for better quality
         format: 'jpeg'
       });
 
-      // Check if user is authenticated
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('Authentication required. Please log in first.');
       }
 
@@ -431,7 +452,7 @@ export class ImageUploadService {
       const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
         body: formData,
       });
@@ -441,7 +462,6 @@ export class ImageUploadService {
         const errorMessage = errorData.error || errorData.message || `Upload failed with status ${response.status}`;
         
         if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('authToken');
           throw new Error('Authentication required. Please log in again.');
         }
         
@@ -484,15 +504,16 @@ export class ImageUploadService {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
-        throw new Error('Authentication required');
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return false;
       }
 
       const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
       });
 
@@ -543,19 +564,21 @@ export class ImageUploadService {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      console.log('🔍 Auth token found:', authToken ? 'Yes' : 'No');
-      if (!authToken) {
-        console.log('❌ No auth token found');
-        throw new Error('Authentication required');
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      console.log('🔍 Bearer token found:', bearerToken ? 'Yes' : 'No');
+      if (!bearerToken) {
+        console.log('❌ No bearer token found');
+        return null;
       }
 
-      // Get current user ID from auth token (you might need to decode JWT or get from localStorage)
-      const userId = this.getCurrentUserId();
-      if (!userId) {
+      // Get current user ID from server-side auth
+      const user = await getCurrentUser();
+      if (!user) {
         console.log('❌ Could not determine current user ID');
         return null;
       }
+      const userId = user.userUuid;
 
       // Check cache first
       const cacheKey = `profile_${userId}`;
@@ -571,7 +594,7 @@ export class ImageUploadService {
       
       const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`, {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
       });
       
@@ -604,30 +627,21 @@ export class ImageUploadService {
   }
 
   /**
-   * Get current user ID from auth token or localStorage
+   * Get current user ID from server-side auth
    * @returns User ID or null
    */
-  private static getCurrentUserId(): string | null {
-    // Try to get from localStorage first
-    const userId = localStorage.getItem('userId');
-    if (userId) {
-      return userId;
-    }
-
-    // If not in localStorage, try to decode from auth token
-    const authToken = localStorage.getItem('authToken');
-    if (authToken) {
-      try {
-        // Simple JWT decode (you might want to use a proper JWT library)
-        const payload = JSON.parse(atob(authToken.split('.')[1]));
-        return payload.userId || payload.sub;
-      } catch (error) {
-        console.log('❌ Could not decode auth token');
-        return null;
+  private static async getCurrentUserId(): Promise<string | null> {
+    try {
+      // Get user info from server-side auth
+      const user = await getCurrentUser();
+      if (user) {
+        return user.userUuid;
       }
+      return null;
+    } catch (error) {
+      console.log('❌ Could not get current user ID from server auth');
+      return null;
     }
-
-    return null;
   }
 
   /**
@@ -648,12 +662,13 @@ export class ImageUploadService {
     console.log('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
     
     try {
-      const authToken = localStorage.getItem('authToken');
-      console.log('🔍 Auth token found:', !!authToken);
-      console.log('🔍 Auth token length:', authToken?.length);
-      if (!authToken) {
-        console.log('❌ No auth token found');
-        throw new Error('Authentication required');
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      console.log('🔍 Bearer token found:', !!bearerToken);
+      console.log('🔍 Bearer token length:', bearerToken?.length);
+      if (!bearerToken) {
+        console.log('❌ No bearer token found');
+        return null;
       }
 
       const url = `/api/upload/profile-picture/${userId}/url?expiry=${expiry}`;
@@ -661,7 +676,7 @@ export class ImageUploadService {
       
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
         },
       });
       

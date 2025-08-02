@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import { AuthService } from '../../../services/auth-service';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
 import Image from 'next/image';
 import { ImageUploadService } from '../../../services/image-upload-service';
+import ToastService from '../../../services/toastService';
 
 interface User {
   _id: string;
@@ -17,12 +19,19 @@ interface User {
   createdAt: string;
   lastActive: string;
   approvedByAdmin?: boolean;
+  isFirstLogin?: boolean;
+  profileCompleteness?: number;
   profile: {
     name?: string;
     profileCompleteness?: number;
     images?: string;
   };
   profileCompleted?: boolean;
+  verification?: {
+    isVerified?: boolean;
+    approvalType?: string;
+  };
+  isUpdating?: boolean;
 }
 
 interface UserStats {
@@ -41,6 +50,11 @@ export default function AdminUsers() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [profileImages, setProfileImages] = useState<Map<string, string>>(new Map());
   const [imagesLoading, setImagesLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    userId: string;
+    action: 'pause' | 'resume';
+    userEmail: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -97,7 +111,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         console.log('🔍 Users: No auth token found');
         router.push('/');
@@ -149,7 +163,7 @@ export default function AdminUsers() {
       const newProfileImages = new Map<string, string>();
       
       // Debug: Check admin authentication token
-      const adminToken = AuthService.getAuthToken();
+      const adminToken = await ServerAuthService.getBearerToken();
       console.log('🔍 Admin auth token available:', !!adminToken);
       console.log('🔍 Admin auth token length:', adminToken?.length);
       console.log('🔍 Admin auth token preview:', adminToken?.substring(0, 20) + '...');
@@ -215,18 +229,18 @@ export default function AdminUsers() {
         ImageUploadService.preloadSignedUrls(userIds);
       }
       
-      // Calculate stats from users based on profileCompleteness and approvedByAdmin
+      // Calculate stats from users based on status and approvedByAdmin
       const users = data.users || [];
       setStats({
         totalUsers: users.length,
         activeUsers: users.filter((user: any) => 
-          (user.profile?.profileCompleteness || 0) === 100 && user.approvedByAdmin === true
+          user.status === 'active' && user.approvedByAdmin === true
         ).length,
         pausedUsers: users.filter((user: any) => 
-          (user.profile?.profileCompleteness || 0) === 100 && user.approvedByAdmin === false
+          user.status === 'paused'
         ).length,
         invitedUsers: users.filter((user: any) => 
-          (user.profile?.profileCompleteness || 0) < 100
+          user.status === 'invited' || user.approvedByAdmin === false
         ).length
       });
 
@@ -246,11 +260,20 @@ export default function AdminUsers() {
 
   const resumeUser = async (userId: string) => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         router.push('/');
         return;
       }
+
+      // Show loading state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isUpdating: true }
+            : user
+        )
+      );
 
       const response = await fetch(`/api/admin/users/${userId}/resume`, {
         method: 'PATCH',
@@ -262,32 +285,68 @@ export default function AdminUsers() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to resume user');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to resume user' }));
+        throw new Error(errorData.error || 'Failed to resume user');
       }
 
-      // Update local state
+      const result = await response.json();
+
+      // Update local state with server response
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user._id === userId 
-            ? { ...user, status: 'active', approvedByAdmin: true }
+            ? { 
+                ...user, 
+                status: 'active', 
+                approvedByAdmin: true,
+                isUpdating: false,
+                verification: {
+                  ...user.verification,
+                  isVerified: true
+                }
+              }
             : user
         )
       );
+
+      // Show success message
+      ToastService.success(`User ${result.user?.email || 'resumed'} successfully`);
 
       // Refetch users to update stats
       fetchUsers();
     } catch (error) {
       console.error('Error resuming user:', error);
+      
+      // Reset loading state on error
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isUpdating: false }
+            : user
+        )
+      );
+      
+      // Show error message
+      ToastService.error(error instanceof Error ? error.message : 'Failed to resume user');
     }
   };
 
   const pauseUser = async (userId: string) => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         router.push('/');
         return;
       }
+
+      // Show loading state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isUpdating: true }
+            : user
+        )
+      );
 
       const response = await fetch(`/api/admin/users/${userId}/pause`, {
         method: 'PATCH',
@@ -299,28 +358,55 @@ export default function AdminUsers() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to pause user');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to pause user' }));
+        throw new Error(errorData.error || 'Failed to pause user');
       }
 
-      // Update local state
+      const result = await response.json();
+
+      // Update local state with server response
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user._id === userId 
-            ? { ...user, status: 'paused', approvedByAdmin: false }
+            ? { 
+                ...user, 
+                status: 'paused', 
+                approvedByAdmin: false,
+                isUpdating: false,
+                verification: {
+                  ...user.verification,
+                  isVerified: false
+                }
+              }
             : user
         )
       );
+
+      // Show success message
+      ToastService.success(`User ${result.user?.email || 'paused'} successfully`);
 
       // Refetch users to update stats
       fetchUsers();
     } catch (error) {
       console.error('Error pausing user:', error);
+      
+      // Reset loading state on error
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isUpdating: false }
+            : user
+        )
+      );
+      
+      // Show error message
+      ToastService.error(error instanceof Error ? error.message : 'Failed to pause user');
     }
   };
 
   const resendInvite = async (userId: string, userEmail: string) => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         router.push('/');
         return;
@@ -392,11 +478,40 @@ export default function AdminUsers() {
     }
   };
 
+  const handlePauseUser = (userId: string, userEmail: string) => {
+    setConfirmAction({ userId, action: 'pause', userEmail });
+    setOpenDropdown(null);
+  };
+
+  const handleResumeUser = (userId: string, userEmail: string) => {
+    setConfirmAction({ userId, action: 'resume', userEmail });
+    setOpenDropdown(null);
+  };
+
+  const confirmPauseResume = async () => {
+    if (!confirmAction) return;
+    
+    try {
+      if (confirmAction.action === 'pause') {
+        await pauseUser(confirmAction.userId);
+      } else {
+        await resumeUser(confirmAction.userId);
+      }
+    } finally {
+      setConfirmAction(null);
+    }
+  };
+
+  const cancelPauseResume = () => {
+    setConfirmAction(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
         <HeartbeatLoader 
-          size="xxl" 
+          logoSize="xxxxl"
+          textSize="xl"
           text="Loading users..." 
           showText={true}
         />
@@ -572,25 +687,36 @@ export default function AdminUsers() {
                       {(() => {
                         const profileCompleteness = user.profile?.profileCompleteness || 0;
                         const isApproved = user.approvedByAdmin;
+                        const userStatus = user.status;
                         
                         let status = 'invited';
                         let statusClass = 'bg-gray-100 text-gray-800';
+                        let statusIcon = 'ri-time-line';
                         
-                        if (profileCompleteness === 100 && isApproved === true) {
+                        if (userStatus === 'active' && isApproved === true) {
                           status = 'active';
                           statusClass = 'bg-green-100 text-green-800';
-                        } else if (profileCompleteness === 100 && isApproved === false) {
+                          statusIcon = 'ri-check-line';
+                        } else if (userStatus === 'paused' || isApproved === false) {
                           status = 'paused';
                           statusClass = 'bg-yellow-100 text-yellow-800';
+                          statusIcon = 'ri-pause-line';
                         } else if (profileCompleteness < 100) {
                           status = 'invited';
                           statusClass = 'bg-blue-100 text-blue-800';
+                          statusIcon = 'ri-mail-line';
                         }
                         
                         return (
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>
-                            {status}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>
+                              <CustomIcon name={statusIcon} className="mr-1 text-xs" />
+                              {status}
+                            </span>
+                            {user.isUpdating && (
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            )}
+                          </div>
                         );
                       })()}
                     </td>
@@ -619,8 +745,13 @@ export default function AdminUsers() {
                           <button
                             onClick={() => setOpenDropdown(openDropdown === user._id ? null : user._id)}
                             className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                            disabled={user.isUpdating}
                           >
-                            <span className="text-lg font-bold">⋯</span>
+                            {user.isUpdating ? (
+                              <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <span className="text-lg font-bold">⋯</span>
+                            )}
                           </button>
                           
                           {openDropdown === user._id && (
@@ -629,34 +760,71 @@ export default function AdminUsers() {
                                 {(() => {
                                   const profileCompleteness = user.profile?.profileCompleteness || 0;
                                   const isApproved = user.approvedByAdmin;
+                                  const userStatus = user.status;
                                   
                                   return (
                                     <>
-                                      {/* Show Pause button for active users (100% complete + approved) */}
-                                      {profileCompleteness === 100 && isApproved === true && (
+                                      {/* Show Pause button for active users */}
+                                      {userStatus === 'active' && isApproved === true && (
                                         <button
-                                          onClick={() => {
-                                            pauseUser(user._id);
-                                            setOpenDropdown(null);
-                                          }}
-                                          className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center"
+                                          onClick={() => handlePauseUser(user._id, user.email)}
+                                          disabled={user.isUpdating}
+                                          className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                          <CustomIcon name="ri-pause-circle-line" className="mr-2" />
+                                          {user.isUpdating ? (
+                                            <div className="w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                          ) : (
+                                            <CustomIcon name="ri-pause-circle-line" className="mr-2" />
+                                          )}
                                           Pause
                                         </button>
                                       )}
                                       
-                                      {/* Show Resume button for paused users (100% complete + not approved) */}
-                                      {profileCompleteness === 100 && isApproved === false && (
+                                      {/* Show Resume button for paused users */}
+                                      {userStatus === 'paused' && isApproved === false && (
                                         <button
-                                          onClick={() => {
-                                            resumeUser(user._id);
-                                            setOpenDropdown(null);
-                                          }}
-                                          className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center"
+                                          onClick={() => handleResumeUser(user._id, user.email)}
+                                          disabled={user.isUpdating}
+                                          className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                          <CustomIcon name="ri-play-circle-line" className="mr-2" />
+                                          {user.isUpdating ? (
+                                            <div className="w-3 h-3 border border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                          ) : (
+                                            <CustomIcon name="ri-play-circle-line" className="mr-2" />
+                                          )}
                                           Resume
+                                        </button>
+                                      )}
+                                      
+                                      {/* Show Resume button for users with 100% profile but not approved */}
+                                      {profileCompleteness === 100 && userStatus !== 'active' && isApproved === false && (
+                                        <button
+                                          onClick={() => handleResumeUser(user._id, user.email)}
+                                          disabled={user.isUpdating}
+                                          className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          {user.isUpdating ? (
+                                            <div className="w-3 h-3 border border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                          ) : (
+                                            <CustomIcon name="ri-play-circle-line" className="mr-2" />
+                                          )}
+                                          Resume
+                                        </button>
+                                      )}
+                                      
+                                      {/* Show Pause button for users with 100% profile and approved */}
+                                      {profileCompleteness === 100 && userStatus !== 'paused' && isApproved === true && (
+                                        <button
+                                          onClick={() => handlePauseUser(user._id, user.email)}
+                                          disabled={user.isUpdating}
+                                          className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          {user.isUpdating ? (
+                                            <div className="w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                          ) : (
+                                            <CustomIcon name="ri-pause-circle-line" className="mr-2" />
+                                          )}
+                                          Pause
                                         </button>
                                       )}
                                       
@@ -666,7 +834,8 @@ export default function AdminUsers() {
                                           resendInvite(user._id, user.email);
                                           setOpenDropdown(null);
                                         }}
-                                        className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center"
+                                        disabled={user.isUpdating}
+                                        className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                       >
                                         <CustomIcon name="ri-mail-send-line" className="mr-2" />
                                         Resend Invite
@@ -695,6 +864,57 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
+      {/* Confirmation Dialog */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center mb-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
+                confirmAction.action === 'pause' ? 'bg-yellow-100' : 'bg-green-100'
+              }`}>
+                <CustomIcon 
+                  name={confirmAction.action === 'pause' ? 'ri-pause-circle-line' : 'ri-play-circle-line'} 
+                  className={`text-2xl ${confirmAction.action === 'pause' ? 'text-yellow-600' : 'text-green-600'}`} 
+                />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {confirmAction.action === 'pause' ? 'Pause User' : 'Resume User'}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {confirmAction.userEmail}
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              {confirmAction.action === 'pause' 
+                ? 'Are you sure you want to pause this user? They will no longer be able to log in or update their profile.'
+                : 'Are you sure you want to resume this user? They will regain access to log in and update their profile.'
+              }
+            </p>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelPauseResume}
+                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPauseResume}
+                className={`flex-1 px-4 py-2 text-white rounded-xl transition-colors ${
+                  confirmAction.action === 'pause' 
+                    ? 'bg-yellow-500 hover:bg-yellow-600' 
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {confirmAction.action === 'pause' ? 'Pause User' : 'Resume User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

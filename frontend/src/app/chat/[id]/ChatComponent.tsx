@@ -10,6 +10,8 @@ import { ImageUploadService } from '../../../services/image-upload-service';
 import CustomIcon from '../../../components/CustomIcon';
 import { ChatService } from '../../../services/chat-service';
 import { MatchingService } from '../../../services/matching-service';
+import ToastService from '../../../services/toastService';
+import { ServerAuthService } from '../../../services/server-auth-service';
 
 interface Match {
   name: string;
@@ -81,8 +83,8 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   const connectionId = match.connectionId;
 
   // Get current user ID from JWT token
-  const getCurrentUserId = (): string | null => {
-    const token = localStorage.getItem('authToken');
+  const getCurrentUserId = async (): Promise<string | null> => {
+    const token = await ServerAuthService.getBearerToken();
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -122,15 +124,14 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   useEffect(() => {
     if (!connectionId) return;
 
-    const currentUserId = getCurrentUserId();
-    if (!currentUserId) {
-      console.error('No current user ID found');
-      return;
-    }
-
-    // Initialize chat service
     const initializeChat = async () => {
       try {
+        const currentUserId = await getCurrentUserId();
+        if (!currentUserId) {
+          console.error('No current user ID found');
+          return;
+        }
+
         // Fetch initial messages using the new caching system
         const data = await ChatService.getChatMessages(connectionId);
         if (data.success) {
@@ -192,11 +193,11 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       await MatchingService.unmatchProfile(connectionId);
       
       // Show success message and redirect
-      alert('Successfully unmatched!');
+              ToastService.success('Successfully unmatched!');
       router.push('/matches');
     } catch (error) {
       console.error('Error unmatching:', error);
-      alert('Failed to unmatch. Please try again.');
+              ToastService.error('Failed to unmatch. Please try again.');
     } finally {
       setIsUnmatching(false);
       setShowUnmatchMenu(false);

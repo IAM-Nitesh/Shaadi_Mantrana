@@ -1,0 +1,1097 @@
+{
+	"info": {
+		"_postman_id": "shaadi-mantra-v4-comprehensive",
+		"name": "Shaadi Mantra API - Comprehensive Testing v4",
+		"description": "Complete API testing collection for Shaadi Mantra backend with security and performance testing capabilities",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "shaadi-mantra-v4"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/send-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "send-otp"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Store auth token for subsequent requests",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.session && response.session.accessToken) {",
+									"        pm.environment.set('authToken', response.session.accessToken);",
+									"        pm.environment.set('refreshToken', response.session.refreshToken);",
+									"        pm.environment.set('sessionId', response.session.sessionId);",
+									"        console.log('Auth tokens stored successfully');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"otp\": \"{{testOTP}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/verify-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "verify-otp"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile (Auth Required)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "profile"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "refresh"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "logout"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Preapproved Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/preapproved/check?email={{testEmail}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "preapproved", "check"],
+							"query": [
+								{
+									"key": "email",
+									"value": "{{testEmail}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👤 Profile Management",
+			"item": [
+				{
+					"name": "Get All Profiles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test User Updated\",\n  \"age\": 25,\n  \"gender\": \"female\",\n  \"location\": \"Mumbai, India\",\n  \"bio\": \"Updated test bio\",\n  \"interests\": [\"reading\", \"traveling\"],\n  \"profileCompleteness\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile by UUID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/uuid/{{testUserUuid}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "uuid", "{{testUserUuid}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete My Profile",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Onboarding Message",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"hasSeenOnboardingMessage\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me/onboarding",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me", "onboarding"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💕 Matching & Discovery",
+			"item": [
+				{
+					"name": "Get Discovery Profiles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/discovery",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "discovery"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Like Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"likedUserId\": \"{{testLikedUserId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "like"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pass Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"likedUserId\": \"{{testLikedUserId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/pass",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "pass"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Liked Profiles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/liked",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "liked"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Mutual Matches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/matches",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "matches"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Daily Like Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "stats"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unmatch Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"likedUserId\": \"{{testLikedUserId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/unmatch",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "unmatch"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💬 Chat & Connections",
+			"item": [
+				{
+					"name": "Get User Connections",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/connections",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "connections"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Connection by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/connections/{{connectionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "connections", "{{connectionId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/chat/{{connectionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "chat", "{{connectionId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"Hello! This is a test message.\",\n  \"messageType\": \"text\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/chat/{{connectionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "chat", "{{connectionId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Messages as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/chat/{{connectionId}}/read",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "chat", "{{connectionId}}", "read"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📤 File Upload",
+			"item": [
+				{
+					"name": "Upload Single File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/upload/single",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "upload", "single"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Multiple Files",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/upload/multiple",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "upload", "multiple"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Profile Picture",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/upload/profile-picture",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "upload", "profile-picture"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Upload History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/upload/history",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "upload", "history"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Picture URL",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/upload/profile-picture/url",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "upload", "profile-picture", "url"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Storage Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/upload/storage/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "upload", "storage", "stats"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📧 Invitations",
+			"item": [
+				{
+					"name": "Send Invitation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"message\": \"Join me on Shaadi Mantra!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invitations",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "invitations"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invitations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invitations",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "invitations"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔒 Security Testing",
+			"item": [
+				{
+					"name": "SQL Injection Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"'; DROP TABLE users; --\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/verify-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "verify-otp"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "XSS Test",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"<script>alert('XSS')</script>\",\n  \"bio\": \"<img src=x onerror=alert('XSS')>\",\n  \"age\": 25\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "NoSQL Injection Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/uuid/{\"$ne\":null}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "uuid", "{\"$ne\":null}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Token Test",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid_token_here"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Missing Token Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Rate Limiting Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"rate_limit_test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/send-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "send-otp"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Large Payload Test",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bio\": \"{{largeString}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚡ Performance Testing",
+			"item": [
+				{
+					"name": "Health Check - Performance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profiles - Performance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles?page=1&limit=50",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Discovery Profiles - Performance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/matching/discovery",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "matching", "discovery"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧹 Cleanup",
+			"item": [
+				{
+					"name": "Delete Test Profile",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/profiles/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "profiles", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout and Clear Tokens",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Clear all environment variables",
+									"pm.environment.unset('authToken');",
+									"pm.environment.unset('refreshToken');",
+									"pm.environment.unset('sessionId');",
+									"pm.environment.unset('testUserUuid');",
+									"pm.environment.unset('connectionId');",
+									"console.log('All test tokens cleared');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "logout"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script for common setup",
+					"console.log('Request:', pm.request.method, pm.request.url);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Common test script",
+					"pm.test('Status code is valid', function () {",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 400, 401, 403, 404, 429, 500]);",
+					"});",
+					"",
+					"pm.test('Response time is less than 5000ms', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test('Response has valid JSON', function () {",
+					"    if (pm.response.code !== 204) {",
+					"        pm.response.to.have.jsonBody();",
+					"    }",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5500",
+			"type": "string"
+		},
+		{
+			"key": "testEmail",
+			"value": "test@example.com",
+			"type": "string"
+		},
+		{
+			"key": "testOTP",
+			"value": "123456",
+			"type": "string"
+		},
+		{
+			"key": "inviteEmail",
+			"value": "invite@example.com",
+			"type": "string"
+		},
+		{
+			"key": "testUserUuid",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "connectionId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "testLikedUserId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "largeString",
+			"value": "A".repeat(10000),
+			"type": "string"
+		}
+	]
+} 
