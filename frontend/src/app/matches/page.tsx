@@ -477,10 +477,11 @@ function MatchesContent() {
             href: '/matches', 
             icon: 'ri-chat-3-line', 
             label: 'Matches',
+            activeIcon: 'ri-chat-3-fill',
             ...(matchesCount > 0 && { badge: matchesCount })
           },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
+          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
         ]}
       />
     </div>
