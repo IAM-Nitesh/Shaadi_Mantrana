@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ServerAuthService, type AuthUser } from '../services/server-auth-service';
+import tokenRefreshService from '../services/token-refresh-service';
 
 export interface UseServerAuthReturn {
   user: AuthUser | null;
@@ -37,7 +38,8 @@ function determineRedirectPath(user: AuthUser): string | null {
 
 // Cache management utilities
 const CACHE_KEY = 'auth_cache';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 10 * 60 * 1000; // Increased to 10 minutes for better caching
+const MIN_REQUEST_INTERVAL = 60 * 1000; // Increased to 60 seconds minimum between requests
 
 interface AuthCache {
   user: AuthUser;
@@ -145,9 +147,9 @@ export function useServerAuth(): UseServerAuthReturn {
       }
     }
     
-    // Prevent too frequent requests
+    // Prevent too frequent requests - increased interval
     const now = Date.now();
-    if (!forceRefresh && now - lastCheckTime < 30000) { // 30 seconds minimum between requests
+    if (!forceRefresh && now - lastCheckTime < MIN_REQUEST_INTERVAL) { // 60 seconds minimum between requests
       console.log('🔍 useServerAuth: Too soon since last check, using cache');
       const cached = getCachedAuth();
       if (cached) {
@@ -183,11 +185,12 @@ export function useServerAuth(): UseServerAuthReturn {
         setCachedAuth(response.user, redirectPath);
         setLastCheckTime(Date.now());
       } else {
-        console.log('❌ useServerAuth: User not authenticated');
+        console.log('ℹ️ useServerAuth: User not authenticated - this is normal for unauthenticated users');
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
         setRedirectTo('/');
+        setError(''); // Clear any previous errors for unauthenticated state
       }
     } catch (error) {
       console.error('❌ useServerAuth: Authentication check failed:', error);
@@ -217,6 +220,12 @@ export function useServerAuth(): UseServerAuthReturn {
         setRedirectTo('/');
         setError(null);
         setRetryCount(0);
+        
+        // Clear auth cache in auth-utils as well
+        if (typeof window !== 'undefined') {
+          const { clearAuthStatusCache } = await import('../services/auth-utils');
+          clearAuthStatusCache();
+        }
       } else {
         console.log('❌ useServerAuth: Logout failed:', result.message);
         setError(result.message);
@@ -332,6 +341,51 @@ export function useServerAuth(): UseServerAuthReturn {
     };
   }, [isClient]); // Add isClient to dependencies
 
+  // Handle token refresh events
+  useEffect(() => {
+    if (!isClient) return;
+
+    const handleTokenRefresh = (success: boolean) => {
+      console.log('🔄 useServerAuth: Token refresh event received:', success);
+      
+      if (success) {
+        // Token was refreshed successfully, clear cache and re-check auth
+        console.log('✅ useServerAuth: Token refreshed, re-checking authentication');
+        clearCachedAuth();
+        checkAuth(true); // Force refresh to get updated user data
+      } else {
+        // Token refresh failed, user needs to re-authenticate
+        console.log('❌ useServerAuth: Token refresh failed, clearing authentication');
+        setUser(null);
+        setIsAuthenticated(false);
+        clearCachedAuth();
+        setRedirectTo('/');
+        setError('Session expired. Please log in again.');
+      }
+    };
+
+    const handleTokenExpired = () => {
+      console.log('⚠️ useServerAuth: Token expired event received');
+      setUser(null);
+      setIsAuthenticated(false);
+      clearCachedAuth();
+      setRedirectTo('/');
+      setError('Session expired. Please log in again.');
+    };
+
+    // Start token refresh service if user is authenticated
+    if (isAuthenticated && user) {
+      console.log('🔄 useServerAuth: Starting token refresh service for authenticated user');
+      tokenRefreshService.start(handleTokenRefresh, handleTokenExpired);
+    }
+
+    // Cleanup function
+    return () => {
+      console.log('🔄 useServerAuth: Cleaning up token refresh service');
+      tokenRefreshService.stop();
+    };
+  }, [isClient, isAuthenticated, user, checkAuth]);
+
   // Add a method to clear cache for debugging/testing
   const clearCache = useCallback(() => {
     console.log('🔍 useServerAuth: Clearing authentication cache');
@@ -341,6 +395,13 @@ export function useServerAuth(): UseServerAuthReturn {
     setRedirectTo(null);
     setError(null);
     initialAuthCheckRef.current = false;
+    
+    // Clear auth cache in auth-utils as well
+    if (typeof window !== 'undefined') {
+      import('../services/auth-utils').then(({ clearAuthStatusCache }) => {
+        clearAuthStatusCache();
+      });
+    }
   }, []);
 
   // Add a method to force refresh authentication
@@ -348,6 +409,13 @@ export function useServerAuth(): UseServerAuthReturn {
     console.log('🔍 useServerAuth: Force refreshing authentication');
     clearCachedAuth();
     initialAuthCheckRef.current = false;
+    
+    // Clear auth cache in auth-utils as well
+    if (typeof window !== 'undefined') {
+      const { clearAuthStatusCache } = await import('../services/auth-utils');
+      clearAuthStatusCache();
+    }
+    
     await checkAuth(true);
   }, [checkAuth]);
 

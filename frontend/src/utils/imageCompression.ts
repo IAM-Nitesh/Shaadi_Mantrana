@@ -22,9 +22,9 @@ export interface CompressionResult {
 
 export class ImageCompression {
   private static readonly DEFAULT_OPTIONS: CompressionOptions = {
-    maxWidth: 1200, // Increased from 1080 for better quality
-    maxHeight: 1200, // Increased from 1080 for better quality
-    quality: 0.95, // Increased from 0.85 to 0.95 for better quality
+    maxWidth: 1200,    // Increased from 1000 for better quality
+    maxHeight: 1200,   // Increased from 1000 for better quality
+    quality: 0.95,     // Increased from 0.85 to 0.95 for better quality
     format: 'jpeg',
     stripMetadata: true
   };
@@ -254,6 +254,176 @@ export class ImageCompression {
     }
 
     return results;
+  }
+
+  /**
+   * Get optimal compression options based on device type
+   * @param deviceType - Type of device
+   * @returns Compression options optimized for the device
+   */
+  static getOptimalOptions(deviceType: 'mobile' | 'tablet' | 'desktop'): CompressionOptions {
+    const deviceOptions = {
+      mobile: { 
+        maxWidth: 600, 
+        maxHeight: 600, 
+        quality: 0.75 
+      },
+      tablet: { 
+        maxWidth: 800, 
+        maxHeight: 800, 
+        quality: 0.80 
+      },
+      desktop: { 
+        maxWidth: 1000, 
+        maxHeight: 1000, 
+        quality: 0.85 
+      }
+    };
+    
+    return { ...this.DEFAULT_OPTIONS, ...deviceOptions[deviceType] };
+  }
+
+  /**
+   * Detect device type based on screen size
+   * @returns Device type for optimization
+   */
+  static detectDeviceType(): 'mobile' | 'tablet' | 'desktop' {
+    if (typeof window === 'undefined') return 'desktop'; // SSR fallback
+    
+    const width = window.innerWidth;
+    
+    if (width < 768) return 'mobile';
+    if (width < 1024) return 'tablet';
+    return 'desktop';
+  }
+
+  /**
+   * Compress image with device-optimized settings
+   * @param file - Original image file
+   * @returns Promise with compressed file optimized for current device
+   */
+  static async compressForDevice(file: File): Promise<CompressionResult> {
+    const deviceType = this.detectDeviceType();
+    const options = this.getOptimalOptions(deviceType);
+    
+    console.log(`📱 Compressing image for ${deviceType} device with options:`, options);
+    
+    return this.compressProfilePicture(file, options);
+  }
+
+  /**
+   * Test compression with different quality levels and provide analysis
+   * @param file - Original image file
+   * @returns Promise with compression analysis for different quality levels
+   */
+  static async testCompressionLevels(file: File): Promise<{
+    original: { size: number; dimensions: { width: number; height: number } };
+    results: Array<{
+      quality: number;
+      result: CompressionResult;
+      savings: number;
+    }>;
+    recommendation: {
+      quality: number;
+      reason: string;
+    };
+  }> {
+    const qualities = [0.6, 0.75, 0.85, 0.95];
+    const results = [];
+    
+    // Get original dimensions
+    const originalDimensions = await this.getImageDimensions(file);
+    
+    for (const quality of qualities) {
+      const result = await this.compressProfilePicture(file, { quality });
+      const savings = ((file.size - result.compressedSize) / file.size) * 100;
+      
+      results.push({
+        quality,
+        result,
+        savings
+      });
+    }
+    
+    // Recommend optimal quality based on file size and savings
+    const recommendation = this.getOptimalQualityRecommendation(file.size, results);
+    
+    return {
+      original: {
+        size: file.size,
+        dimensions: originalDimensions
+      },
+      results,
+      recommendation
+    };
+  }
+
+  /**
+   * Get optimal quality recommendation based on file size and compression results
+   * @param originalSize - Original file size in bytes
+   * @param results - Compression results for different qualities
+   * @returns Recommended quality level with reasoning
+   */
+  private static getOptimalQualityRecommendation(
+    originalSize: number, 
+    results: Array<{ quality: number; result: CompressionResult; savings: number }>
+  ): { quality: number; reason: string } {
+    const originalSizeMB = originalSize / (1024 * 1024);
+    
+    // For very large files (>5MB), prioritize compression
+    if (originalSizeMB > 5) {
+      return {
+        quality: 0.75,
+        reason: 'Large file size - prioritizing compression over quality'
+      };
+    }
+    
+    // For medium files (2-5MB), balanced approach
+    if (originalSizeMB > 2) {
+      return {
+        quality: 0.85,
+        reason: 'Medium file size - balanced quality and compression'
+      };
+    }
+    
+    // For small files (<2MB), prioritize quality
+    return {
+      quality: 0.85,
+      reason: 'Small file size - maintaining high quality'
+    };
+  }
+
+  /**
+   * Get detailed compression statistics
+   * @param result - Compression result
+   * @returns Detailed statistics about the compression
+   */
+  static getCompressionStats(result: CompressionResult): {
+    originalSizeFormatted: string;
+    compressedSizeFormatted: string;
+    savingsFormatted: string;
+    compressionRatioFormatted: string;
+    qualityScore: 'Excellent' | 'Good' | 'Acceptable' | 'Poor';
+  } {
+    const originalSizeFormatted = this.formatFileSize(result.originalSize);
+    const compressedSizeFormatted = this.formatFileSize(result.compressedSize);
+    const savingsFormatted = this.formatFileSize(result.originalSize - result.compressedSize);
+    const compressionRatioFormatted = `${result.compressionRatio.toFixed(1)}%`;
+    
+    // Determine quality score based on compression ratio
+    let qualityScore: 'Excellent' | 'Good' | 'Acceptable' | 'Poor';
+    if (result.compressionRatio < 50) qualityScore = 'Excellent';
+    else if (result.compressionRatio < 70) qualityScore = 'Good';
+    else if (result.compressionRatio < 85) qualityScore = 'Acceptable';
+    else qualityScore = 'Poor';
+    
+    return {
+      originalSizeFormatted,
+      compressedSizeFormatted,
+      savingsFormatted,
+      compressionRatioFormatted,
+      qualityScore
+    };
   }
 }
 

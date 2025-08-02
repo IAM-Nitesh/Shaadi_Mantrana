@@ -156,7 +156,7 @@ export interface DiscoveryProfile {
     age?: number;
     profession?: string;
     occupation?: string;
-    images?: string[];
+    images?: string | string[]; // Handle both string and array cases
     about?: string;
     education?: string;
     nativePlace?: string;
