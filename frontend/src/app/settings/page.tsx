@@ -280,26 +280,7 @@ function SettingsContent() {
           yoyo: true
         }, "-=0.2")
         
-        // Phase 9: Add continuous floating animation to decorative elements
-        .fromTo('.logout-overlay .absolute.border', {
-          scale: 0,
-          opacity: 0,
-          rotation: -180
-        }, {
-          scale: 1,
-          opacity: 1,
-          rotation: 0,
-          duration: 0.8,
-          ease: "elastic.out(1, 0.4)",
-          stagger: 0.2
-        }, "-=2")
-        
-        .to('.logout-overlay .absolute.border', {
-          rotation: "+=360",
-          duration: 8,
-          ease: "none",
-          repeat: -1
-        }, "-=0.5")
+        // Phase 9: Border animations removed for cleaner logout experience
         
         // Phase 10: Add particle floating animations
         .to('.logout-circle .absolute.animate-bounce', {
@@ -549,7 +530,7 @@ function SettingsContent() {
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               {/* Brand Logo */}
               <div className="logout-checkmark">
-                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-20 h-20 heartbeat-animation" />
+                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-48 h-48 heartbeat-animation" />
               </div>
             </div>
             
