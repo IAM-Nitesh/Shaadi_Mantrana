@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useTransition, useState, useEffect } from 'react';
+import { useTransition, useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomIcon from './CustomIcon';
 import { useServerAuth } from '../hooks/useServerAuth';
@@ -21,25 +21,136 @@ interface SmoothNavigationProps {
   className?: string;
 }
 
-export default function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
+// Simplified navigation item component with subtle animations
+const NavigationItem = memo(({ 
+  item, 
+  isActive, 
+  isDisabled, 
+  onNavigate, 
+  onHover 
+}: {
+  item: NavItem;
+  isActive: boolean;
+  isDisabled: boolean;
+  onNavigate: (href: string) => void;
+  onHover: (href: string | null) => void;
+}) => {
+  const getNavItemClasses = useMemo(() => {
+    const baseClasses = `
+      flex flex-col items-center justify-center
+      relative overflow-hidden
+      mobile-touch-feedback
+      transition-all duration-150 ease-out
+      group
+      min-h-[64px] flex-1
+    `;
+    
+    if (isDisabled) {
+      return `${baseClasses} text-gray-300 cursor-not-allowed opacity-50`;
+    }
+    
+    return `${baseClasses} text-rose-500`;
+  }, [isDisabled]);
+
+  const getIconClasses = useMemo(() => {
+    const baseClasses = `nav-icon ${isActive ? 'active' : ''}`;
+    return baseClasses;
+  }, [isActive]);
+
+  const getLabelClasses = useMemo(() => {
+    const baseClasses = `
+      text-xs font-medium
+      transition-all duration-150 ease-out
+      transform
+      text-rose-500
+    `;
+    
+    if (isDisabled) {
+      return `${baseClasses} text-gray-300`;
+    }
+    
+    if (isActive) {
+      return `${baseClasses} font-semibold`;
+    }
+    
+    return `${baseClasses}`;
+  }, [isActive, isDisabled]);
+
+  return (
+    <motion.button
+      onClick={() => !isDisabled && onNavigate(item.href)}
+      onMouseEnter={() => onHover(item.href)}
+      onMouseLeave={() => onHover(null)}
+      className={getNavItemClasses}
+      disabled={isDisabled}
+      whileHover={{ scale: isDisabled ? 1 : 1.02 }} // Minimal scale effect
+      whileTap={{ scale: isDisabled ? 1 : 0.98 }} // Minimal press effect
+      transition={{ duration: 0.12 }} // Very fast transition
+    >
+      {/* Icon */}
+      <motion.div
+        className={getIconClasses}
+        animate={{
+          y: isActive ? -1 : 0, // Minimal movement
+        }}
+        transition={{ duration: 0.12 }} // Very fast transition
+      >
+        <CustomIcon 
+          name={isActive && item.activeIcon ? item.activeIcon : item.icon} 
+          className="text-2xl"
+        />
+      </motion.div>
+
+      {/* Label */}
+      <motion.span
+        className={getLabelClasses}
+        animate={{
+          y: isActive ? -1 : 0, // Minimal movement
+        }}
+        transition={{ duration: 0.12 }} // Very fast transition
+      >
+        {item.label}
+      </motion.span>
+
+      {/* Badge */}
+      {item.badge && item.badge > 0 && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.15 }} // Fast badge animation
+          className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+        >
+          {item.badge > 99 ? '99+' : item.badge}
+        </motion.div>
+      )}
+    </motion.button>
+  );
+});
+
+NavigationItem.displayName = 'NavigationItem';
+
+function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const { user, isAuthenticated } = useServerAuth();
   const { setTransitioning } = usePageTransition();
-  const { navigateTo, preloadRoute } = useOptimizedNavigation();
+  const { navigateTo, preloadRoutes } = useOptimizedNavigation();
 
+  // Performance optimization: Memoized route preloading
+  const routePaths = useMemo(() => items.map(item => item.href), [items]);
+  
   // Preload routes for better performance
   useEffect(() => {
-    items.forEach(item => {
-      if (item.href !== pathname) {
-        preloadRoute(item.href);
-      }
-    });
-  }, [items, pathname, preloadRoute]);
+    const routesToPreload = routePaths.filter(href => href !== pathname);
+    if (routesToPreload.length > 0) {
+      preloadRoutes(routesToPreload);
+    }
+  }, [routePaths, pathname, preloadRoutes]);
 
-  const handleNavigation = async (href: string) => {
+  // Performance optimization: Memoized navigation handler
+  const handleNavigation = useCallback(async (href: string) => {
     // Check if user is trying to access restricted features
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
     
@@ -75,178 +186,53 @@ export default function SmoothNavigation({ items, className = '' }: SmoothNaviga
     
     // Use optimized navigation for better performance
     navigateTo(href, { immediate: true });
-  };
+  }, [user, navigateTo]);
 
-  const getNavItemClasses = (href: string) => {
-    const isActive = pathname === href;
-    const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
-    const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
-    
-    const baseClasses = `
-      flex flex-col items-center justify-center
-      relative overflow-hidden
-      mobile-touch-feedback
-      transition-all duration-300 ease-out
-      group
-      min-h-[64px] flex-1
-    `;
-    
-    if (isDisabled) {
-      return `${baseClasses} text-gray-300 cursor-not-allowed opacity-50`;
-    }
-    
-    // All icons should have red color by default and when active
-    return `${baseClasses} text-rose-500`;
-  };
+  // Performance optimization: Memoized hover handler
+  const handleHover = useCallback((href: string | null) => {
+    setHoveredItem(href);
+  }, []);
 
-  const getIconClasses = (href: string) => {
-    const isActive = pathname === href;
-    const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
-    const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
-    
-    const baseClasses = `
-      text-2xl mb-1
-      transition-all duration-300 ease-out
-      transform
-    `;
-    
-    if (isDisabled) {
-      return `${baseClasses} scale-90 opacity-50`;
-    }
-    
-    if (isActive) {
-      return `${baseClasses} scale-110`;
-    }
-    
-    return `${baseClasses} group-hover:scale-105`;
-  };
+  // Performance optimization: Memoized navigation items
+  const navigationItems = useMemo(() => 
+    items.map(item => {
+      const isActive = pathname === item.href;
+      const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
+      const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
+      const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
+      const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
 
-  const getLabelClasses = (href: string) => {
-    const isActive = pathname === href;
-    const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
-    const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
-    
-    const baseClasses = `
-      text-xs font-medium
-      transition-all duration-300 ease-out
-      transform
-      text-rose-500
-    `;
-    
-    if (isDisabled) {
-      return `${baseClasses} scale-90 opacity-50`;
-    }
-    
-    if (isActive) {
-      return `${baseClasses} scale-105 font-semibold`;
-    }
-    
-    return `${baseClasses} group-hover:scale-105`;
-  };
+      return {
+        item,
+        isActive,
+        isDisabled,
+      };
+    }), [items, pathname, user]
+  );
 
   return (
-    <nav className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 shadow-lg z-50 nav-transition-optimized ${className}`}>
-      <div className="flex items-center justify-around px-2 py-2">
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
-          const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-          const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
-          const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
-          
-          return (
-            <motion.button
+    <motion.div
+      initial={{ y: 20, opacity: 0 }} // Minimal entrance animation
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }} // Smooth, natural easing
+      className={`fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg ${className}`}
+    >
+      <div className="flex justify-around items-center py-4 px-4">
+        <AnimatePresence>
+          {navigationItems.map(({ item, isActive, isDisabled }) => (
+            <NavigationItem
               key={item.href}
-              onClick={() => !isDisabled && handleNavigation(item.href)}
-              onHoverStart={() => {
-                setHoveredItem(item.href);
-                // Preload on hover for instant navigation
-                if (item.href !== pathname) {
-                  preloadRoute(item.href);
-                }
-              }}
-              onHoverEnd={() => setHoveredItem(null)}
-              className={getNavItemClasses(item.href)}
-              whileHover={!isDisabled ? { scale: 1.02 } : {}} // Reduced scale for subtler effect
-              whileTap={!isDisabled ? { scale: 0.98 } : {}} // Reduced scale for subtler effect
-              disabled={isDisabled}
-            >
-              {/* Hover effect */}
-              <AnimatePresence>
-                {hoveredItem === item.href && !isActive && !isDisabled && (
-                  <motion.div
-                    className="absolute inset-0 bg-rose-50/50 rounded-xl"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.15 }} // Faster hover effect
-                  />
-                )}
-              </AnimatePresence>
-
-              {/* Icon */}
-              <motion.div
-                className={`${getIconClasses(item.href)} nav-icon ${isActive ? 'active' : ''}`}
-                animate={{
-                  y: isActive ? -1 : 0, // Reduced movement for smoother feel
-                }}
-                transition={{ duration: 0.15 }} // Faster transition
-              >
-                <CustomIcon 
-                  name={isActive && item.activeIcon ? item.activeIcon : item.icon} 
-                  className="transition-all duration-200" // Faster icon transition
-                />
-              </motion.div>
-
-              {/* Label */}
-              <motion.span
-                className={getLabelClasses(item.href)}
-                animate={{
-                  y: isActive ? -0.5 : 0, // Reduced movement for smoother feel
-                }}
-                transition={{ duration: 0.15 }} // Faster transition
-              >
-                {item.label}
-              </motion.span>
-
-              {/* Badge */}
-              {item.badge && item.badge > 0 && (
-                <motion.div
-                  className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3, ease: "backOut" }}
-                >
-                  {item.badge > 99 ? '99+' : item.badge}
-                </motion.div>
-              )}
-
-              {/* Loading indicator */}
-              {isPending && pathname === item.href && (
-                <motion.div
-                  className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-xl flex items-center justify-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }} // Faster loading indicator
-                >
-                  <motion.div
-                    className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} // Faster rotation
-                  />
-                </motion.div>
-              )}
-            </motion.button>
-          );
-        })}
+              item={item}
+              isActive={isActive}
+              isDisabled={isDisabled}
+              onNavigate={handleNavigation}
+              onHover={handleHover}
+            />
+          ))}
+        </AnimatePresence>
       </div>
-    </nav>
+    </motion.div>
   );
-} 
+}
+
+export default memo(SmoothNavigation); 

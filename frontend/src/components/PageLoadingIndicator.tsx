@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePageTransition } from './PageTransitionProvider';
 import { usePageDataLoading } from './PageDataLoadingProvider';
 import { usePathname } from 'next/navigation';
+import { useMemo } from 'react';
 
 export default function PageLoadingIndicator() {
   const { isTransitioning } = usePageTransition();
@@ -11,8 +12,8 @@ export default function PageLoadingIndicator() {
   const pathname = usePathname();
   const show = isTransitioning || !isPageDataLoaded;
 
-  // Don't show loading indicator on specific pages or states
-  const shouldHide = () => {
+  // Performance optimization: Memoized should hide logic
+  const shouldHide = useMemo(() => {
     // Don't show on authentication loading pages (ServerAuthGuard)
     if (pathname === '/' || pathname === '/login') {
       return true;
@@ -29,10 +30,10 @@ export default function PageLoadingIndicator() {
     }
     
     return false;
-  };
+  }, [pathname, isPageDataLoaded]);
 
   // Don't render if we should hide the indicator
-  if (shouldHide()) {
+  if (shouldHide) {
     return null;
   }
 
@@ -42,23 +43,22 @@ export default function PageLoadingIndicator() {
         <motion.div
           className="fixed left-0 right-0 z-[60] pointer-events-none flex flex-col items-center loading-fast hardware-accelerated"
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}
-          initial={{ opacity: 0, y: 50 }} // Reduced movement for smoother feel
+          initial={{ opacity: 0, y: 10 }} // Minimal movement
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }} // Reduced movement for smoother feel
-          transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }} // Faster, optimized easing
+          exit={{ opacity: 0, y: 10 }} // Minimal movement
+          transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }} // Fast, smooth transition
         >
-          {/* Loading indicator removed */}
-          {/* Progress bar just above nav icons */}
+          {/* Simplified progress bar */}
           <div className="h-1 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 shadow-lg mx-4 rounded-full overflow-hidden w-full max-w-md">
             <motion.div
-              className="h-full bg-white/20"
+              className="h-full bg-gradient-to-r from-white/20 to-white/40"
               initial={{ width: '0%' }}
               animate={{ width: '100%' }}
-              transition={{ 
-                duration: 0.6, // Reduced from 0.8s for faster progress
-                ease: [0.25, 0.46, 0.45, 0.94], // Optimized easing
+              transition={{
+                duration: 0.6, // Faster progress animation
+                ease: 'easeInOut',
                 repeat: Infinity,
-                repeatType: "reverse"
+                repeatType: 'reverse'
               }}
             />
           </div>

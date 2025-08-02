@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -13,13 +13,11 @@ interface PageTransitionContextType {
 
 const PageTransitionContext = createContext<PageTransitionContextType | undefined>(undefined);
 
-export const usePageTransition = () => {
-  const context = useContext(PageTransitionContext);
-  if (!context) {
-    throw new Error('usePageTransition must be used within a PageTransitionProvider');
-  }
-  return context;
-};
+export function usePageTransition() {
+  const ctx = useContext(PageTransitionContext);
+  if (!ctx) throw new Error('usePageTransition must be used within PageTransitionProvider');
+  return ctx;
+}
 
 interface PageTransitionProviderProps {
   children: ReactNode;
@@ -31,42 +29,44 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
   const [previousPath, setPreviousPath] = useState('');
   const [currentPath, setCurrentPath] = useState(pathname);
 
+  // Simplified transition settings for seamless experience
+  const transitionSettings = useMemo(() => ({
+    duration: 0.15, // Very fast for seamless feel
+    ease: [0.25, 0.46, 0.45, 0.94], // Smooth, natural easing
+    opacity: { duration: 0.12 }, // Fast opacity for instant feel
+  }), []);
+
   useEffect(() => {
     if (pathname !== currentPath) {
       setPreviousPath(currentPath);
       setCurrentPath(pathname);
       setTransitioning(true);
       
-      // Reset transition state after animation completes
+      // Very short transition time for seamless experience
       const timer = setTimeout(() => {
         setTransitioning(false);
-      }, 300);
+      }, 150); // Reduced to 150ms for instant feel
       
       return () => clearTimeout(timer);
     }
   }, [pathname, currentPath]);
 
-  const value = {
+  const value = useMemo(() => ({
     isTransitioning,
     setTransitioning,
     previousPath,
     currentPath,
-  };
+  }), [isTransitioning, previousPath, currentPath]);
 
   return (
     <PageTransitionContext.Provider value={value}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={pathname}
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.98 }}
-          transition={{
-            duration: 0.3,
-            ease: [0.4, 0.0, 0.2, 1], // Custom easing for ultra-smooth feel
-            opacity: { duration: 0.2 },
-            scale: { duration: 0.25 },
-          }}
+          initial={{ opacity: 0 }} // Simple fade in
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }} // Simple fade out
+          transition={transitionSettings}
           className="min-h-screen"
         >
           {children}

@@ -7,6 +7,7 @@ import PageTransitionProvider from '../components/PageTransitionProvider';
 import PageLoadingIndicator from '../components/PageLoadingIndicator';
 import LenisProvider from './LenisProvider';
 import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
+import PerformanceOptimizer from '../components/PerformanceOptimizer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,16 +24,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <LenisProvider>
-          <PageDataLoadingProvider>
-            <PageTransitionProvider>
-              <PageLoadingIndicator />
-              {/* <NavigationGuard> */}
-                {children}
-              {/* </NavigationGuard> */}
-            </PageTransitionProvider>
-          </PageDataLoadingProvider>
-        </LenisProvider>
+        <PerformanceOptimizer>
+          <LenisProvider>
+            <PageDataLoadingProvider>
+              <PageTransitionProvider>
+                <PageLoadingIndicator />
+                {/* <NavigationGuard> */}
+                  {children}
+                {/* </NavigationGuard> */}
+              </PageTransitionProvider>
+            </PageDataLoadingProvider>
+          </LenisProvider>
+        </PerformanceOptimizer>
         
         {/* Party.js for confetti animations */}
         <script
@@ -113,7 +116,7 @@ export default function RootLayout({
                       // Enable swipe to dismiss
                       swipeDirection="x"
                       swipeThreshold={50}
-                    />
+                      />
       </body>
     </html>
   );
