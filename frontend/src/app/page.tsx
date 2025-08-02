@@ -889,7 +889,6 @@ export default function Home() {
                   {countdown > 0 && (
                     <div className="countdown-timer text-center">
                       <div className="inline-flex items-center bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse mr-2"></div>
                         <span className="text-amber-700 text-sm font-medium">
                           Resend in <span className="font-bold">{countdown}s</span>
                         </span>

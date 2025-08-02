@@ -140,15 +140,37 @@ class ToastService {
 
   // Image Upload Specific Toasts
   static imageUploadSuccess() {
-    return toast.success('📸 Profile picture updated successfully!', {
+    return toast.success('📸 Profile picture uploaded successfully!', {
       id: 'image-upload-success',
-      duration: 4000,
+      duration: 3000,
     });
   }
 
   static imageUploadError() {
     return toast.error('📸 Failed to update profile picture. Please try again.', {
       id: 'image-upload-error',
+    });
+  }
+
+  // Profile Action Specific Toasts
+  static profilePictureUploaded() {
+    return toast.success('📸 Profile picture uploaded successfully!', {
+      id: 'profile-picture-uploaded',
+      duration: 3000,
+    });
+  }
+
+  static profileSaved() {
+    return toast.success('🎉 Profile saved successfully! You can now use Discover and Matches.', {
+      id: 'profile-saved',
+      duration: 4000,
+    });
+  }
+
+  static profilePictureVerificationPending() {
+    return toast.success('✅ Your profile picture is being verified. It will be visible once approved.', {
+      id: 'profile-picture-verification-pending',
+      duration: 5000,
     });
   }
 

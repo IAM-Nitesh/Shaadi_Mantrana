@@ -470,7 +470,7 @@ function DashboardContent() {
             <p className="text-gray-600 mb-6">There are no profiles available at the moment. Please check back later!</p>
             <button
               onClick={loadProfiles}
-              className="bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
             >
               Refresh
             </button>
@@ -516,7 +516,7 @@ function DashboardContent() {
             <p className="text-gray-600 mb-6">You've seen all available profiles. Check back later for new matches!</p>
             <button
               onClick={loadProfiles}
-              className="bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
             >
               Refresh
             </button>
@@ -532,10 +532,11 @@ function DashboardContent() {
             href: '/matches', 
             icon: 'ri-chat-3-line', 
             label: 'Matches',
+            activeIcon: 'ri-chat-3-fill',
             ...(matchesCount > 0 && { badge: matchesCount })
           },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
+          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
         ]}
       />
 

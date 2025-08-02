@@ -1251,7 +1251,7 @@ function ProfileContent() {
             uploadedImageUrl = uploadResult.imageUrl;
             console.log('✅ Image uploaded to B2:', uploadedImageUrl);
             ToastService.dismiss(loadingToast);
-            ToastService.info('✅ Your profile picture is being verified. It will be visible once approved.');
+            ToastService.profilePictureVerificationPending();
           } else {
             throw new Error(uploadResult.error || 'Failed to upload image');
           }
@@ -1369,14 +1369,14 @@ function ProfileContent() {
         if (uploadedImageUrl) {
           // Add a delay to simulate verification process
           setTimeout(() => {
-            ToastService.imageUploadSuccess();
+            ToastService.profilePictureUploaded();
             setUploadMessage('');
-          }, 2000);
+          }, 500);
         }
         
         // Show appropriate success message based on backend completeness
         if (backendCompleteness >= 100) {
-          ToastService.success('🎉 Profile saved successfully! You can now use Discover and Matches.');
+          ToastService.profileSaved();
         } else {
           ToastService.info(`Profile saved successfully! (${backendCompleteness}% complete) Please complete all required fields to access all features.`);
         }
@@ -1488,6 +1488,11 @@ function ProfileContent() {
       }));
       
       setUploadMessage('Image selected! Click "Save Changes" to upload');
+      
+      // Show toast notification for image selection
+      setTimeout(() => {
+        ToastService.profilePictureUploaded();
+      }, 500);
       
       // Clear the success message after a short delay
       setTimeout(() => {
@@ -3316,10 +3321,11 @@ function ProfileContent() {
             href: '/matches', 
             icon: 'ri-chat-3-line', 
             label: 'Matches',
+            activeIcon: 'ri-chat-3-fill',
             ...(matchesCount > 0 && { badge: matchesCount })
           },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
+          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
         ]}
       />
 

@@ -45,7 +45,7 @@ export default function RootLayout({
           reverseOrder={false}
           toastOptions={{
                         // Default options for all types
-                        duration: 4000,
+                        duration: 3000,
                         style: {
                           background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)',
                           color: '#1f2937',
@@ -59,9 +59,11 @@ export default function RootLayout({
                           backdropFilter: 'blur(10px)',
                           maxWidth: '400px',
                           minWidth: '300px',
+                          cursor: 'pointer',
+                          userSelect: 'none',
                         },
                         success: {
-                          duration: 5000,
+                          duration: 4000,
                           style: {
                             background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
                             color: '#065f46',
@@ -74,7 +76,7 @@ export default function RootLayout({
                           },
                         },
                         error: {
-                          duration: 6000,
+                          duration: 5000,
                           style: {
                             background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
                             color: '#991b1b',
@@ -108,6 +110,9 @@ export default function RootLayout({
                       }}
                       // Custom gutter for spacing between toasts
                       gutter={12}
+                      // Enable swipe to dismiss
+                      swipeDirection="x"
+                      swipeThreshold={50}
                     />
       </body>
     </html>

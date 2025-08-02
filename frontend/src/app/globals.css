@@ -534,7 +534,7 @@ body {
   font-style: normal;
 }
 
-/* Specific icon fallbacks with better styling */
+/* Essential Remix icon fallbacks - only for icons actually used in the codebase */
 .ri-heart-line:before,
 .ri-heart-fill:before {
   content: "♡" !important;
@@ -550,63 +550,6 @@ body {
   content: "📷" !important;
 }
 
-.ri-upload-line:before {
-  content: "⬆️" !important;
-}
-
-.ri-settings-line:before {
-  content: "⚙️" !important;
-}
-
-.ri-user-line:before {
-  content: "👤" !important;
-}
-
-.ri-message-line:before {
-  content: "💬" !important;
-}
-
-.ri-search-line:before {
-  content: "🔍" !important;
-}
-
-.ri-filter-line:before {
-  content: "🔽" !important;
-}
-
-/* Fallback mode when CDN fails */
-html[data-icons-fallback="true"] [class*="ri-"]:before {
-  display: inline-block;
-  text-align: center;
-  width: 1em;
-  height: 1em;
-  line-height: 1;
-}
-
-.ri-user-line:before {
-  content: "👤" !important;
-}
-
-.ri-settings-line:before {
-  content: "⚙" !important;
-}
-
-.ri-chat-3-line:before {
-  content: "💬" !important;
-}
-
-.ri-filter-3-line:before {
-  content: "⚒" !important;
-}
-
-.ri-information-line:before {
-  content: "ℹ" !important;
-}
-
-.ri-arrow-up-line:before {
-  content: "↑" !important;
-}
-
 .ri-briefcase-line:before {
   content: "💼" !important;
 }
@@ -617,10 +560,6 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
 
 .ri-error-warning-line:before {
   content: "⚠" !important;
-}
-
-.ri-camera-line:before {
-  content: "📷" !important;
 }
 
 .ri-mail-line:before {
@@ -649,6 +588,236 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
 
 .ri-lock-line:before {
   content: "🔒" !important;
+}
+
+.ri-filter-3-line:before {
+  content: "⚒" !important;
+}
+
+.ri-information-line:before {
+  content: "ℹ" !important;
+}
+
+.ri-check-line:before {
+  content: "✓" !important;
+}
+
+.ri-user-heart-line:before {
+  content: "💕" !important;
+}
+
+.ri-group-line:before {
+  content: "👥" !important;
+}
+
+.ri-user-settings-line:before {
+  content: "⚙️" !important;
+}
+
+.ri-dashboard-line:before {
+  content: "📊" !important;
+}
+
+.ri-user-add-line:before {
+  content: "👤" !important;
+}
+
+.ri-compass-line:before {
+  content: "🔍" !important;
+}
+
+.ri-time-line:before {
+  content: "⏰" !important;
+}
+
+.ri-pause-circle-line:before {
+  content: "⏸️" !important;
+}
+
+.ri-play-circle-line:before {
+  content: "▶️" !important;
+}
+
+.ri-mail-send-line:before {
+  content: "📤" !important;
+}
+
+.ri-user-list-line:before {
+  content: "📋" !important;
+}
+
+.ri-mail-list-line:before {
+  content: "📧" !important;
+}
+
+.ri-login-box-line:before {
+  content: "🔐" !important;
+}
+
+.ri-logout-box-r-line:before {
+  content: "🚪" !important;
+}
+
+.ri-arrow-up-s-line:before {
+  content: "↑" !important;
+}
+
+.ri-arrow-down-s-line:before {
+  content: "↓" !important;
+}
+
+.ri-pause-line:before {
+  content: "⏸️" !important;
+}
+
+.ri-heart-pulse-line:before {
+  content: "💓" !important;
+}
+
+.ri-code-s-slash-line:before {
+  content: "💻" !important;
+}
+
+.ri-book-open-line:before {
+  content: "📖" !important;
+}
+
+.ri-scales-3-line:before {
+  content: "⚖️" !important;
+}
+
+.ri-calculator-line:before {
+  content: "🧮" !important;
+}
+
+.ri-palette-line:before {
+  content: "🎨" !important;
+}
+
+/* Additional fallbacks for icons used in the codebase */
+.ri-article-line:before {
+  content: "📄" !important;
+}
+
+.ri-bank-line:before {
+  content: "🏦" !important;
+}
+
+.ri-bar-chart-line:before {
+  content: "📊" !important;
+}
+
+.ri-computer-line:before {
+  content: "💻" !important;
+}
+
+.ri-graduation-cap-line:before {
+  content: "🎓" !important;
+}
+
+.ri-restaurant-line:before {
+  content: "🍽️" !important;
+}
+
+.ri-steering-line:before {
+  content: "🚗" !important;
+}
+
+.ri-shield-star-line:before {
+  content: "⭐" !important;
+}
+
+.ri-flight-takeoff-line:before {
+  content: "✈️" !important;
+}
+
+.ri-building-2-line:before {
+  content: "🏢" !important;
+}
+
+.ri-microscope-line:before {
+  content: "🔬" !important;
+}
+
+.ri-medicine-bottle-line:before {
+  content: "💊" !important;
+}
+
+.ri-tooth-line:before {
+  content: "🦷" !important;
+}
+
+.ri-music-2-line:before {
+  content: "🎵" !important;
+}
+
+.ri-movie-line:before {
+  content: "🎬" !important;
+}
+
+.ri-quill-pen-line:before {
+  content: "✒️" !important;
+}
+
+.ri-t-shirt-line:before {
+  content: "👕" !important;
+}
+
+.ri-run-line:before {
+  content: "🏃" !important;
+}
+
+.ri-user-voice-line:before {
+  content: "🎤" !important;
+}
+
+.ri-team-line:before {
+  content: "👥" !important;
+}
+
+.ri-home-line:before {
+  content: "🏠" !important;
+}
+
+.ri-store-line:before {
+  content: "🏪" !important;
+}
+
+.ri-hotel-line:before {
+  content: "🏨" !important;
+}
+
+.ri-government-line:before {
+  content: "🏛️" !important;
+}
+
+.ri-user-star-line:before {
+  content: "⭐" !important;
+}
+
+.ri-user-search-line:before {
+  content: "🔍" !important;
+}
+
+.ri-user-unfollow-line:before {
+  content: "❌" !important;
+}
+
+.ri-send-plane-fill:before {
+  content: "📤" !important;
+}
+
+.ri-check-double-line:before {
+  content: "✓✓" !important;
+}
+
+/* Fallback mode when CDN fails */
+html[data-icons-fallback="true"] [class*="ri-"]:before {
+  display: inline-block;
+  text-align: center;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
 }
 
 /* Advanced Keyframe Animations */
@@ -1688,4 +1857,123 @@ html {
 .text-smooth:hover {
   transform: translateY(-1px);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Pulse animations for indicators */
+.pulse-indicator {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.pulse-badge {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Bottom Navigation Icon Styles */
+.nav-icon {
+  color: #ef4444; /* rose-500 */
+  transition: all 0.3s ease;
+}
+
+.nav-icon.active {
+  color: #ef4444; /* rose-500 */
+}
+
+/* Ensure Remix Icons have proper styling for navigation */
+[class*="ri-"] {
+  color: inherit;
+}
+
+/* Specific styling for navigation icons */
+.nav-icon [class*="ri-"] {
+  color: #ef4444 !important; /* rose-500 */
+  transition: all 0.3s ease;
+}
+
+/* Ensure outline icons have transparent fill by default */
+.nav-icon [class*="-line"] {
+  fill: transparent !important;
+}
+
+/* Ensure filled icons have solid fill when active */
+.nav-icon.active [class*="-fill"] {
+  fill: #ef4444 !important; /* rose-500 */
+}
+
+/* Hover effects for better visual feedback */
+.nav-icon:hover [class*="ri-"] {
+  transform: scale(1.05);
+}
+
+/* Custom SVG icon styling for navigation */
+.nav-icon img {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
+}
+
+.nav-icon.active img {
+  transform: scale(1.1);
+}
+
+.nav-icon:hover img {
+  transform: scale(1.05);
+}
+
+/* Enhanced Toast Styles for Swipe-to-Dismiss */
+.toast-animation {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.toast-animation:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(236, 72, 153, 0.2), 0 8px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Swipe animation indicators */
+.toast-animation[data-swipe="move"] {
+  transform: translateX(var(--radix-toast-swipe-move-x));
+}
+
+.toast-animation[data-swipe="cancel"] {
+  transform: translateX(0);
+  transition: transform 0.2s ease-out;
+}
+
+.toast-animation[data-swipe="end"] {
+  animation: slideOut 0.3s ease-in;
+}
+
+@keyframes slideOut {
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Toast interaction hints */
+.toast-animation::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.toast-animation:hover::before {
+  opacity: 1;
 }
