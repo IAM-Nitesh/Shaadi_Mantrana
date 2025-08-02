@@ -47,24 +47,7 @@ export default function PageLoadingIndicator() {
           exit={{ opacity: 0, y: 50 }} // Reduced movement for smoother feel
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }} // Faster, optimized easing
         >
-          {/* Loading dots above progress bar */}
-          <div className="flex justify-center items-center py-2 bg-white/80 backdrop-blur-sm border-t border-gray-200/50 mx-4 rounded-t-xl shadow-lg mb-0 w-full max-w-md">
-            <div className="flex space-x-1">
-              {[0, 1, 2].map((index) => (
-                <motion.div
-                  key={index}
-                  className="w-2 h-2 bg-rose-500 rounded-full"
-                  animate={isPageDataLoaded ? { scale: 1, opacity: 0.5 } : { scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                  transition={isPageDataLoaded ? { duration: 0.15 } : { // Faster transition when data is loaded
-                    duration: 1.2, // Reduced from 1.5s for faster animation
-                    repeat: Infinity,
-                    delay: index * 0.15, // Reduced delay for faster sequence
-                    ease: "easeInOut",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+          {/* Loading indicator removed */}
           {/* Progress bar just above nav icons */}
           <div className="h-1 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 shadow-lg mx-4 rounded-full overflow-hidden w-full max-w-md">
             <motion.div

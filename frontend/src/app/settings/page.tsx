@@ -19,6 +19,8 @@ function SettingsContent() {
   const { user, isAuthenticated, logout } = useServerAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
+  // Commented out for future release
+  /*
   const [notifications, setNotifications] = useState({
     newMatches: true,
     messages: true,
@@ -31,6 +33,7 @@ function SettingsContent() {
     shareProfile: false,
     ageVisible: true
   });
+  */
 
   // Add state to control logout animation overlay
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
@@ -53,7 +56,8 @@ function SettingsContent() {
     return unsubscribe;
   }, []);
 
-  // Save settings to localStorage whenever they change
+  // Save settings to localStorage whenever they change - Commented out for future release
+  /*
   useEffect(() => {
     localStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);
@@ -61,6 +65,7 @@ function SettingsContent() {
   useEffect(() => {
     localStorage.setItem('privacy', JSON.stringify(privacy));
   }, [privacy]);
+  */
 
   const handleLogout = () => {
     // Show custom confirmation modal with enhanced GSAP animation
@@ -390,6 +395,8 @@ function SettingsContent() {
     }, "-=0.2");
   };
 
+  // Commented out for future release
+  /*
   const updateNotificationSetting = (key: string, value: boolean) => {
     setNotifications(prev => ({
       ...prev,
@@ -413,6 +420,7 @@ function SettingsContent() {
     
     // Apply the setting to the app functionality
   };
+  */
 
   // Show loading screen only during logout process, not for authentication check
   // The ServerAuthGuard will handle authentication loading
@@ -595,7 +603,8 @@ function SettingsContent() {
               </div>
             </div>
 
-            {/* Notifications */}
+            {/* Notifications - Commented out for future release */}
+            {/* 
             <div className="bg-white rounded-xl shadow-sm">
               <div className="p-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-800">Notifications</h2>
@@ -643,8 +652,10 @@ function SettingsContent() {
                 </div>
               </div>
             </div>
+            */}
 
-            {/* Privacy */}
+            {/* Privacy - Commented out for future release */}
+            {/* 
             <div className="bg-white rounded-xl shadow-sm">
               <div className="p-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-800">Privacy</h2>
@@ -692,6 +703,7 @@ function SettingsContent() {
                 </div>
               </div>
             </div>
+            */}
 
             {/* Support */}
             <div className="bg-white rounded-xl shadow-sm">
@@ -783,10 +795,11 @@ function SettingsContent() {
                 href: '/matches', 
                 icon: 'ri-chat-3-line', 
                 label: 'Matches',
+                activeIcon: 'ri-chat-3-fill',
                 ...(matchesCount > 0 && { badge: matchesCount })
               },
-              { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
-              { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+              { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
+              { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
             ]}
           />
         </div>
