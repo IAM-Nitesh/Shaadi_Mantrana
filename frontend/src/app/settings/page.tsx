@@ -4,17 +4,19 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
-import { AuthService } from '../../services/auth-service';
+import ServerAuthGuard from '../../components/ServerAuthGuard';
+import ToastService from '../../services/toastService';
 import StandardHeader from '../../components/StandardHeader';
-import ModernNavigation from '../../components/ModernNavigation';
+import SmoothNavigation from '../../components/SmoothNavigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import { gsap } from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import { useServerAuth } from '../../hooks/useServerAuth';
 
-export default function Settings() {
+function SettingsContent() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isAuthenticated, logout } = useServerAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const [notifications, setNotifications] = useState({
@@ -36,24 +38,8 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
 
-  // Check authentication on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuthenticated = await AuthService.isAuthenticated();
-        setIsAuthenticated(isAuthenticated);
-        
-        if (!isAuthenticated) {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        router.push('/');
-      }
-    };
-    
-    checkAuth();
-  }, [router]);
+  // Authentication is now handled by ServerAuthGuard
+  // No need for local authentication state management
 
   // Subscribe to matches count updates
   useEffect(() => {
@@ -157,15 +143,16 @@ export default function Settings() {
     }, "-=0.3");
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     try {
-      // Use AuthService to handle logout
-      const result = AuthService.logout();
+      // Hide confirmation modal first
+      setShowLogoutConfirm(false);
       
-      if (result.success) {
-        // Hide confirmation modal first
-        setShowLogoutConfirm(false);
-        
+      // Use server-side logout
+      await logout();
+      
+      // If we reach here, logout was successful
+      // The logout function handles state updates internally
         // Create an enhanced GSAP logout animation sequence with heart animations
         const tl = gsap.timeline();
         
@@ -333,25 +320,6 @@ export default function Settings() {
             window.location.href = '/';
           }
         });
-        
-      } else {
-        // Enhanced error handling with GSAP animation
-        setShowLogoutConfirm(false);
-        gsap.to('.settings-container', {
-          keyframes: {
-            "0%": { x: 0 },
-            "25%": { x: -10 },
-            "50%": { x: 10 },
-            "75%": { x: -5 },
-            "100%": { x: 0 }
-          },
-          duration: 0.5,
-          ease: "power2.out",
-          onComplete: () => {
-            alert('⚠️ There was an issue logging out. Please try again.');
-          }
-        });
-      }
     } catch (error) {
       console.error('Error during logout:', error);
       
@@ -368,7 +336,7 @@ export default function Settings() {
         duration: 0.5,
         ease: "power2.out",
         onComplete: () => {
-          alert('⚠️ There was an issue logging out. Please try again.');
+          ToastService.error('⚠️ There was an issue logging out. Please try again.');
         }
       });
     }
@@ -446,20 +414,10 @@ export default function Settings() {
     // Apply the setting to the app functionality
   };
 
-  // Show loading screen while checking authentication
+  // Show loading screen only during logout process, not for authentication check
+  // The ServerAuthGuard will handle authentication loading
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <HeartbeatLoader 
-            size="lg" 
-            text="Logging Out" 
-            className="mb-4"
-          />
-          <p className="text-gray-600">Please wait while we log you out...</p>
-        </div>
-      </div>
-    );
+    return null; // Let ServerAuthGuard handle the loading state
   }
 
   return (
@@ -571,7 +529,7 @@ export default function Settings() {
                   Shaadi
                 </span>
                 <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent ml-2">
-                  Mantra
+                  Mantrana
                 </span>
               </h1>
               <p className="text-slate-600 text-sm">
@@ -583,7 +541,7 @@ export default function Settings() {
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               {/* Brand Logo */}
               <div className="logout-checkmark">
-                <img src="/icon.svg" alt="Shaadi Mantra" className="w-20 h-20 heartbeat-animation" />
+                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-20 h-20 heartbeat-animation" />
               </div>
             </div>
             
@@ -591,7 +549,7 @@ export default function Settings() {
             <div className="mb-6">
               <h2 className="logout-title text-xl font-bold text-slate-800 mb-2">Successfully Logged Out!</h2>
               <p className="logout-subtitle text-slate-600 text-sm">
-                Thank you for using Shaadi Mantra. We hope you found your perfect match!
+                Thank you for using Shaadi Mantrana. We hope you found your perfect match!
               </p>
             </div>
             
@@ -611,19 +569,14 @@ export default function Settings() {
       {!showLogoutAnimation && (
         <div className="settings-container">
           {/* Header */}
-          <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200">
-                  <CustomIcon name="ri-arrow-left-line" />
-                </Link>
-                <h1 className="text-xl font-bold text-gray-800">Settings</h1>
-              </div>
-            </div>
-          </div>
+          <StandardHeader 
+            title="Settings"
+            showBackButton={true}
+            backHref="/dashboard"
+          />
 
           {/* Content */}
-          <div className="pt-16 pb-24 px-4 space-y-4">
+          <div className="pt-20 pb-24 px-4 space-y-4">
             {/* Account Settings */}
             <div className="bg-white rounded-xl shadow-sm transform hover:scale-105 transition-all duration-200">
               <div className="p-4 border-b border-gray-100">
@@ -823,7 +776,7 @@ export default function Settings() {
           </div>
 
           {/* Modern Bottom Navigation */}
-          <ModernNavigation 
+          <SmoothNavigation 
             items={[
               { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
               { 
@@ -839,5 +792,13 @@ export default function Settings() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Settings() {
+  return (
+    <ServerAuthGuard requireAuth={true}>
+      <SettingsContent />
+    </ServerAuthGuard>
   );
 }

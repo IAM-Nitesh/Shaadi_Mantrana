@@ -1,0 +1,33 @@
+{
+  "name": "shaadi-mantra-api-testing",
+  "version": "1.0.0",
+  "description": "Comprehensive API testing suite for Shaadi Mantra backend",
+  "main": "api_testing_runner.js",
+  "scripts": {
+    "test": "node api_testing_runner.js",
+    "test:security": "node -e \"require('./api_testing_runner.js').runSecurityTests()\"",
+    "test:performance": "node -e \"require('./api_testing_runner.js').runPerformanceTests()\"",
+    "test:cleanup": "node -e \"require('./api_testing_runner.js').runCleanup()\"",
+    "postman:import": "echo 'Import the Postman collection manually'",
+    "report": "node -e \"console.log(JSON.stringify(require('./test_report.json'), null, 2))\""
+  },
+  "keywords": [
+    "api",
+    "testing",
+    "security",
+    "performance",
+    "postman",
+    "shaadi-mantra"
+  ],
+  "author": "Shaadi Mantra Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "newman": "^5.3.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 

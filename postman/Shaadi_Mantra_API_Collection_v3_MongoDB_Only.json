@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Shaadi Mantra API Collection - MongoDB Only",
-    "description": "Complete API collection for testing Shaadi Mantra backend endpoints in MongoDB mode (Development and Production)",
+    "name": "Shaadi Mantrana API Collection - MongoDB Only",
+    "description": "Complete API collection for testing Shaadi Mantrana backend endpoints in MongoDB mode (Development and Production)",
     "version": "3.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

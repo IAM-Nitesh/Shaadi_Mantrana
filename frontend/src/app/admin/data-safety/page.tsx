@@ -172,8 +172,8 @@ export default function DataSafety() {
             <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mx-auto mb-4" />
             <h3 className="font-semibold text-gray-800 mb-3 text-lg">Admin Support</h3>
             <p className="text-sm text-gray-600 mb-4">For admin access and technical support</p>
-            <a href="mailto:shaadimantra.help@gmail.com" className="text-blue-600 hover:text-blue-700 font-medium">
-              shaadimantra.help@gmail.com
+            <a href="mailto:shaadimantrana.help@gmail.com" className="text-blue-600 hover:text-blue-700 font-medium">
+              shaadimantrana.help@gmail.com
             </a>
           </div>
         </div>

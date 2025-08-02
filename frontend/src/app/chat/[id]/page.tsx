@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatComponent from './ChatComponent';
-import { AuthService } from '../../../services/auth-service';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import CustomIcon from '../../../components/CustomIcon';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 
@@ -19,48 +19,39 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check authentication
-    if (!AuthService.isAuthenticated()) {
-      router.push('/');
-      return;
-    }
-
-    // Check for incomplete profile
-    async function checkOnboarding() {
-      let isFirstLogin = false;
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('isFirstLogin');
-        if (stored !== null) {
-          isFirstLogin = stored === 'true';
-        } else {
-          // Fallback: fetch profile
-          const { ProfileService } = await import('../../../services/profile-service');
-          const userProfile = await ProfileService.getUserProfile();
-          isFirstLogin = !!userProfile?.isFirstLogin;
+    // Check authentication using server-side auth
+    const checkAuth = async () => {
+      try {
+        const authStatus = await ServerAuthService.checkAuthStatus();
+        if (!authStatus.authenticated) {
+          router.push('/');
+          return;
         }
-      }
-      
-      // Check profile completion
-      const profileCompletion = localStorage.getItem('profileCompletion');
-      const completion = profileCompletion ? parseInt(profileCompletion) : 0;
-      
-      // Allow access if profile completion is 100% or higher
-      if (isFirstLogin && completion < 100) {
-        router.replace('/profile');
+
+        // Check for incomplete profile using server data
+        const user = authStatus.user;
+        if (user?.isFirstLogin && (user?.profileCompleteness || 0) < 100) {
+          router.replace('/profile');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        router.push('/');
         return;
       }
-    }
+    };
     
-    checkOnboarding();
+    checkAuth();
 
     async function loadMatch() {
       try {
         // Fetch connection and other user's profile from MongoDB
+        const token = await ServerAuthService.getBearerToken();
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/connections/${id}`,
           {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
@@ -74,12 +65,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         const data = await response.json();
         
         // Get the other user's profile from the connection
-        // Extract current user ID from JWT token
-        const token = localStorage.getItem('authToken');
+        // Extract current user ID from server auth
+        const authToken = await ServerAuthService.getBearerToken();
         let currentUserId = null;
-        if (token) {
+        if (authToken) {
           try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const payload = JSON.parse(atob(authToken.split('.')[1]));
             currentUserId = payload.userId || payload._id || payload.id;
           } catch (e) {
             console.error('Error parsing JWT token:', e);
@@ -115,7 +106,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <HeartbeatLoader 
-            size="lg" 
+            logoSize="xxxxl"
+            textSize="xl"
             text="Loading Chat" 
             className="mb-4"
           />

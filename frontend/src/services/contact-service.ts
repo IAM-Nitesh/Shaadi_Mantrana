@@ -8,8 +8,8 @@ export class ContactService {
   
   // Decode and transform contact information
   private static decodeEmail(): string {
-    // Direct decode for shaadimantra.help@gmail.com
-    return 'shaadimantra.help@gmail.com';
+    // Direct decode for shaadimantrana.help@gmail.com
+    return 'shaadimantrana.help@gmail.com';
   }
   
   private static decodePhone(): string {

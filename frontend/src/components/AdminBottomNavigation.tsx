@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { AuthService } from '../services/auth-service';
+import { ServerAuthService } from '../services/server-auth-service';
 import { gsap } from 'gsap';
+import ToastService from '../services/toastService';
 
 export default function AdminBottomNavigation() {
   const pathname = usePathname();
@@ -15,10 +16,10 @@ export default function AdminBottomNavigation() {
     return null;
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      // Use AuthService to handle logout
-      const result = AuthService.logout();
+      // Use ServerAuthService to handle logout
+      const result = await ServerAuthService.logout();
       
       if (result.success) {
         // Create an enhanced GSAP logout animation sequence with heart animations
@@ -202,7 +203,7 @@ export default function AdminBottomNavigation() {
           duration: 0.5,
           ease: "power2.out",
           onComplete: () => {
-            alert('⚠️ There was an issue logging out. Please try again.');
+            ToastService.error('⚠️ There was an issue logging out. Please try again.');
           }
         });
       }
@@ -221,7 +222,7 @@ export default function AdminBottomNavigation() {
         duration: 0.5,
         ease: "power2.out",
         onComplete: () => {
-          alert('⚠️ There was an issue logging out. Please try again.');
+          ToastService.error('⚠️ There was an issue logging out. Please try again.');
         }
       });
     }
@@ -371,7 +372,7 @@ export default function AdminBottomNavigation() {
                   Shaadi
                 </span>
                 <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent ml-2">
-                  Mantra
+                  Mantrana
                 </span>
               </h1>
               <p className="text-slate-600 text-sm">
@@ -382,7 +383,7 @@ export default function AdminBottomNavigation() {
             {/* Success Circle */}
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               <div className="logout-checkmark">
-                <img src="/icon.svg" alt="Shaadi Mantra" className="w-20 h-20 heartbeat-animation" />
+                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-20 h-20 heartbeat-animation" />
               </div>
             </div>
             
@@ -390,7 +391,7 @@ export default function AdminBottomNavigation() {
             <div className="mb-6">
               <h2 className="logout-title text-xl font-bold text-slate-800 mb-2">Successfully Logged Out!</h2>
               <p className="logout-subtitle text-slate-600 text-sm">
-                Thank you for using Shaadi Mantra. We hope you found your perfect match!
+                Thank you for using Shaadi Mantrana. We hope you found your perfect match!
               </p>
             </div>
             

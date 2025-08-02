@@ -4,20 +4,18 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { AuthService } from '../services/auth-service';
-import configService from '../services/configService';
+import { ServerAuthService } from '../services/server-auth-service';
+import { config as configService } from '../services/configService';
 import { gsap } from 'gsap';
 import HeartbeatLoader from '../components/HeartbeatLoader';
+import ToastService from '../services/toastService';
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [errorId, setErrorId] = useState(0); // Add unique ID for error messages to prevent duplicates
   const [lastError, setLastError] = useState(''); // Track last error to prevent duplicates
-  const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null); // Timeout for auto-clearing errors
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
   const [isRouterReady, setIsRouterReady] = useState(false);
@@ -33,8 +31,8 @@ export default function Home() {
 
   const isApprovedEmail = async (email: string) => {
     try {
-      // Use the backend URL directly since this is a client-side call
-      const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500';
+      // Use the backend URL from config service
+      const backendUrl = configService.apiBaseUrl;
       const response = await fetch(`${backendUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email.trim().toLowerCase())}`);
       const data = await response.json();
       return data.preapproved;
@@ -46,51 +44,36 @@ export default function Home() {
 
   // Helper function to set error with unique ID to prevent duplicates
   const setErrorWithId = (message: string) => {
-    // Clear any existing timeout
-    if (errorTimeout) {
-      clearTimeout(errorTimeout);
-    }
-    
-    // Only set error if it's different from the last error to prevent duplicates
+    // Only show toast if it's different from the last error to prevent duplicates
     if (message !== lastError) {
-      const newErrorId = errorId + 1;
-      setErrorId(newErrorId);
-      setError(message);
+      ToastService.error(message);
       setLastError(message);
-      
-      // Auto-clear error after 5 seconds
-      const timeout = setTimeout(() => {
-        clearError();
-      }, 5000);
-      setErrorTimeout(timeout);
     }
   };
 
   // Helper function to clear error
   const clearError = () => {
-    // Clear any existing timeout
-    if (errorTimeout) {
-      clearTimeout(errorTimeout);
-      setErrorTimeout(null);
-    }
-    setError('');
-    setErrorId(0);
     setLastError('');
   };
 
   useEffect(() => {
     const timer = setTimeout(() => setIsRouterReady(true), 100);
+    
+    // Check for error parameter in URL
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      if (error === 'not_approved') {
+        setErrorWithId('Your account has been paused. Please contact the admin for re-approval.');
+        // Clear the error parameter from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+    
     return () => clearTimeout(timer);
   }, []);
 
-  // Cleanup error timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (errorTimeout) {
-        clearTimeout(errorTimeout);
-      }
-    };
-  }, [errorTimeout]);
+
 
   // Countdown timer effect
   useEffect(() => {
@@ -107,148 +90,98 @@ export default function Home() {
   // GSAP animations on component mount
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof gsap !== 'undefined') {
-      // Clear any existing animations
-      gsap.killTweensOf("*");
-      
-      // Initial setup - hide elements
-      gsap.set([logoRef.current, cardRef.current, featuresRef.current], { 
-        opacity: 0, 
-        y: 30,
-        scale: 0.95
-      });
-      
-      // Background hearts floating animation
-      const heartsContainer = heartsRef.current;
-      if (heartsContainer && heartsContainer.children) {
-        Array.from(heartsContainer.children).forEach((heart, index) => {
-          const heartElement = heart as HTMLElement;
-          gsap.set(heartElement, { 
-            y: window.innerHeight + 50, 
-            opacity: 0, 
-            rotation: 0, 
-            scale: 0.5,
-            x: gsap.utils.random(-50, 50)
-          });
-          
-          // Heart floating animation with better performance
-          gsap.to(heartElement, {
-            y: -100,
-            opacity: 0.8,
-            rotation: gsap.utils.random(180, 360),
-            scale: gsap.utils.random(0.8, 1.2),
-            duration: gsap.utils.random(10, 15),
-            delay: index * 1.5,
-            ease: "none",
-            repeat: -1,
-            repeatDelay: gsap.utils.random(3, 8),
-            onRepeat: () => {
-              gsap.set(heartElement, { 
-                y: window.innerHeight + 50, 
-                opacity: 0, 
-                rotation: 0, 
-                scale: 0.5,
-                x: gsap.utils.random(-50, 50)
-              });
-            }
-          });
-          
-          // Horizontal floating motion
-          gsap.to(heartElement, {
-            x: `+=${gsap.utils.random(-40, 40)}`,
-            duration: gsap.utils.random(3, 5),
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1
-          });
+      try {
+        // Clear any existing animations
+        gsap.killTweensOf("*");
+        
+        // Initial setup - hide elements
+        gsap.set([logoRef.current, cardRef.current, featuresRef.current], { 
+          opacity: 0, 
+          y: 30,
+          scale: 0.95
         });
-      }
+        
+        // Simple entrance animation
+        const tl = gsap.timeline({ delay: 0.3 });
+        
+        // Background entrance
+        tl.fromTo(backgroundRef.current, {
+          opacity: 0
+        }, {
+          opacity: 1,
+          duration: 0.5,
+          ease: "power2.out"
+        })
+        // Logo entrance
+        .to(logoRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.8,
+          ease: "back.out(1.2)",
+        }, "-=0.2")
+        // Card entrance
+        .to(cardRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.8,
+          ease: "back.out(1.2)",
+        }, "-=0.4")
+        // Features entrance
+        .to(featuresRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          ease: "back.out(1.2)",
+        }, "-=0.6");
 
-      // Main entrance animation timeline
-      const tl = gsap.timeline({ delay: 0.5 });
-      
-      // Background entrance
-      tl.fromTo(backgroundRef.current, {
-        opacity: 0
-      }, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      })
-      // Logo entrance with smooth bounce
-      .to(logoRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 1,
-        ease: "back.out(1.2)",
-      }, "-=0.4")
-      // Card entrance with smooth elastic effect
-      .to(cardRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        ease: "power3.out",
-      }, "-=0.6")
-      // Features entrance
-      .to(featuresRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.6,
-        ease: "power2.out",
-      }, "-=0.4");
-
-      // Enhanced card hover animations
-      const card = cardRef.current;
-      if (card) {
-        const handleMouseEnter = () => {
-          gsap.to(card, {
-            scale: 1.02,
-            y: -5,
-            duration: 0.3,
-            ease: "power2.out"
+        // Simple background hearts (reduced complexity)
+        const heartsContainer = heartsRef.current;
+        if (heartsContainer && heartsContainer.children) {
+          Array.from(heartsContainer.children).forEach((heart, index) => {
+            const heartElement = heart as HTMLElement;
+            gsap.set(heartElement, { 
+              y: window.innerHeight + 50, 
+              opacity: 0, 
+              scale: 0.5
+            });
+            
+            // Simple floating animation
+            gsap.to(heartElement, {
+              y: -100,
+              opacity: 0.6,
+              scale: 1,
+              duration: 8,
+              delay: index * 2,
+              ease: "none",
+              repeat: -1,
+              repeatDelay: 5,
+              onRepeat: () => {
+                gsap.set(heartElement, { 
+                  y: window.innerHeight + 50, 
+                  opacity: 0, 
+                  scale: 0.5
+                });
+              }
+            });
           });
-        };
-        
-        const handleMouseLeave = () => {
-          gsap.to(card, {
-            scale: 1,
-            y: 0,
-            duration: 0.3,
-            ease: "power2.out"
-          });
-        };
-        
-        card.addEventListener('mouseenter', handleMouseEnter);
-        card.addEventListener('mouseleave', handleMouseLeave);
-        
-        // Cleanup function
-        return () => {
-          if (card) {
-            card.removeEventListener('mouseenter', handleMouseEnter);
-            card.removeEventListener('mouseleave', handleMouseLeave);
-          }
-          gsap.killTweensOf("*");
-        };
+        }
+      } catch (error) {
+        console.error('GSAP animation error:', error);
+        // Fallback: show elements without animation
+        gsap.set([logoRef.current, cardRef.current, featuresRef.current], { 
+          opacity: 1, 
+          y: 0,
+          scale: 1
+        });
       }
     }
   }, []);
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    if (isRouterReady) {
-      if (AuthService.isAuthenticated()) {
-        // Check if user is admin and redirect accordingly
-        if (AuthService.isAdmin()) {
-          router.push('/admin/dashboard');
-        } else {
-          // User is already logged in, redirect to dashboard
-          router.push('/dashboard');
-        }
-      }
-    }
-  }, [isRouterReady, router]);
+  // Check if user is already authenticated - removed for server-side auth
+  // Authentication will be handled by ServerAuthGuard components
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -264,7 +197,22 @@ export default function Home() {
 
   const sendOtpToBackend = async (email: string) => {
     try {
-      return await AuthService.sendOTP(email);
+      // Use the backend URL from config service
+      const backendUrl = configService.apiBaseUrl;
+      const response = await fetch(`${backendUrl}/api/auth/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || 'Failed to send OTP');
+      }
+
+      return await response.json();
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new Error(error.message || 'Failed to send OTP');
@@ -518,20 +466,8 @@ export default function Home() {
   };
 
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
-    const data = await AuthService.verifyOTP(email, otpCode);
-    // Backend returns token in data.session.accessToken format
-    const token = data.session?.accessToken || data.token;
-    if (token) {
-      localStorage.setItem('authToken', token);
-    }
-    
-    // Store user data including role for role-based routing
-    if (data.user) {
-      localStorage.setItem('userRole', data.user.role || 'user');
-      localStorage.setItem('userEmail', data.user.email);
-    }
-    
-    return data;
+    const result = await ServerAuthService.verifyOTP(email, otpCode);
+    return result;
   };
 
   const handleVerifyOtp = async () => {
@@ -561,82 +497,51 @@ export default function Home() {
       const cleanEmail = email.trim().toLowerCase();
       const result = await verifyOtpWithBackend(cleanEmail, otp);
       
-      // Success animation before redirect
-      gsap.timeline()
-        .to(cardRef.current, {
-          scale: 1.05,
-          duration: 0.3,
-          ease: "power2.out"
-        })
-        .to(cardRef.current, {
-          scale: 1,
-          duration: 0.2,
-          ease: "power2.out"
-        })
-        .to('.success-checkmark', {
-          scale: 1.2,
-          rotation: 360,
-          duration: 0.5,
-          ease: "back.out(1.7)"
-        }, "-=0.3");
-      
-      // Check user role from backend response and redirect accordingly
-      if (isRouterReady && router) {
-        if (result.user?.role === 'admin') {
-          await router.push('/admin/dashboard');
-        } else {
-          // Check if user is first-time user and redirect to profile instead of dashboard
-          const isFirstLogin = result.user?.isFirstLogin || false;
-          if (isFirstLogin) {
-            console.log('🎯 First-time user detected, redirecting to /profile');
-            await router.push('/profile');
-          } else {
-            await router.push('/dashboard');
-          }
-        }
+      // Check if OTP verification was successful
+      if (result.success && result.redirectTo) {
+        // Success animation before redirect
+        gsap.timeline()
+          .to(cardRef.current, {
+            scale: 1.05,
+            duration: 0.3,
+            ease: "power2.out"
+          })
+          .to(cardRef.current, {
+            scale: 1,
+            duration: 0.2,
+            ease: "power2.out"
+          });
+        
+        // Server-side redirection
+        console.log('🚀 Server-side redirect to:', result.redirectTo);
+        window.location.href = result.redirectTo;
+        return;
       } else {
-        if (result.user?.role === 'admin') {
-          window.location.href = '/admin/dashboard';
-        } else {
-          // Check if user is first-time user and redirect to profile instead of dashboard
-          const isFirstLogin = result.user?.isFirstLogin || false;
-          if (isFirstLogin) {
-            console.log('🎯 First-time user detected, redirecting to /profile');
-            window.location.href = '/profile';
-          } else {
-            window.location.href = '/dashboard';
-          }
-        }
+        // Handle OTP verification failure
+        console.error('❌ OTP verification failed:', result.error);
+        setErrorWithId(result.error || 'Invalid OTP. Please try again.');
       }
     } catch (error: unknown) {
-      console.log('🔍 Error caught in handleVerifyOtp:', error);
+      console.error('❌ OTP verification error:', error);
       
-      let errorMessage = 'Invalid OTP';
+      let message = 'Failed to verify OTP';
       if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.message.includes('403')) {
+          // Handle specific error messages from backend
+          if (error.message.includes('paused') || error.message.includes('not approved')) {
+            message = 'Your account has been paused. Please contact the admin for re-approval.';
+          } else {
+            message = error.message;
+          }
+        } else if (error.message.includes('429')) {
+          message = 'Too many verification attempts. Please try again later.';
+        } else if (error.message.includes('network')) {
+          message = 'Network error. Please check your connection and try again.';
+        } else {
+          message = error.message;
+        }
       }
-      
-      setErrorWithId(errorMessage);
-      // Error shake animation
-      if (cardRef.current) {
-        gsap.to(cardRef.current, {
-          keyframes: {
-            "0%": { x: 0 },
-            "10%": { x: -10 },
-            "20%": { x: 10 },
-            "30%": { x: -8 },
-            "40%": { x: 8 },
-            "50%": { x: -6 },
-            "60%": { x: 6 },
-            "70%": { x: -4 },
-            "80%": { x: 4 },
-            "90%": { x: -2 },
-            "100%": { x: 0 }
-          },
-          duration: 0.6,
-          ease: "power2.out"
-        });
-      }
+      setErrorWithId(message);
     } finally {
       setIsLoading(false);
     }
@@ -712,7 +617,7 @@ export default function Home() {
               Shaadi
             </span>
             <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent ml-2">
-              Mantra
+              Mantrana
             </span>
           </h1>
           <p className="text-slate-600 text-base md:text-lg">
@@ -743,19 +648,6 @@ export default function Home() {
                   )}
                 </p>
               </div>
-
-              {error && (
-                <div className="mb-4 bg-red-50 border-2 border-red-200 rounded-xl p-3">
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0 animate-pulse">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <p className="text-red-700 text-sm font-medium">{error}</p>
-                  </div>
-                </div>
-              )}
 
               {!showOtp ? (
                 <div className="email-form space-y-4">
@@ -791,12 +683,12 @@ export default function Home() {
                   <button
                     onClick={handleSendOtp}
                     disabled={isLoading}
-                    className="send-otp-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-bold py-3 px-6 rounded-xl hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl relative overflow-hidden group text-sm"
+                    className="send-otp-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-bold py-4 px-6 rounded-xl hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl relative overflow-hidden group min-h-[56px] flex items-center justify-center"
                   >
                     <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                     {isLoading ? (
                       <div className="flex items-center justify-center">
-                        <HeartbeatLoader size="sm" showText={false} className="mr-2" />
+                        <HeartbeatLoader size="md" showText={false} className="mr-2" />
                         <span>Sending code...</span>
                       </div>
                     ) : (
@@ -873,7 +765,7 @@ export default function Home() {
                           setCountdown(0);
                           setCanResend(true);
                           setOtp('');
-                          setError('');
+
                         })
                         
                         // Phase 4: Animate in email form
@@ -920,26 +812,7 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Error Display - Above OTP inputs */}
-                  {error && (
-                    <div className="error-message bg-red-50 border-2 border-red-200 rounded-xl p-4 animate-fade-in mb-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <p className="text-red-700 text-sm font-medium">{error}</p>
-                        </div>
-                        {/* Auto-clear indicator */}
-                        <div className="flex items-center text-red-500 text-xs">
-                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1"></div>
-                          <span>Auto-clear in 5s</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Six Individual OTP Input Boxes */}
                   <div className="otp-inputs">
@@ -1055,11 +928,11 @@ export default function Home() {
                       <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                       {isLoading ? (
                         <div className="flex items-center justify-center">
-                          <HeartbeatLoader size="sm" showText={false} className="mr-2" />
+                          <HeartbeatLoader size="md" showText={false} className="mr-2" />
                           <span>Verifying...</span>
                         </div>
                       ) : (
-                        <span className="relative z-10">Verify Code</span>
+                        <span className="relative z-10">Verify Verification Code</span>
                       )}
                     </button>
 

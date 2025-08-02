@@ -1,6 +1,6 @@
 // Matching Service - Handles discovery, likes, and matches
-import { API_CONFIG } from './auth-service';
-import configService from './configService';
+import { config as configService } from './configService';
+import { getBearerToken, isAuthenticated } from './auth-utils';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -155,8 +155,13 @@ export interface DiscoveryProfile {
     name: string;
     age?: number;
     profession?: string;
+    occupation?: string;
     images?: string[];
     about?: string;
+    education?: string;
+    nativePlace?: string;
+    currentResidence?: string;
+    interests?: string[];
   };
   verification?: {
     isVerified: boolean;
@@ -207,7 +212,7 @@ export class MatchingService {
     dailyLikeCount: number;
     remainingLikes: number;
   }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No profiles available.');
@@ -220,9 +225,21 @@ export class MatchingService {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
-        // console.warn('No auth token found, returning empty discovery data');
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        // console.warn('User not authenticated, returning empty discovery data');
+        return {
+          profiles: [],
+          dailyLimitReached: false,
+          dailyLikeCount: 0,
+          remainingLikes: 0
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         return {
           profiles: [],
           dailyLimitReached: false,
@@ -234,7 +251,7 @@ export class MatchingService {
       const response = await fetch(`${apiBaseUrl}/api/matching/discovery?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -266,6 +283,19 @@ export class MatchingService {
       }
 
       const data = await response.json();
+      
+      // Debug: Log the raw data received from backend
+      console.log('🔍 MatchingService: Raw backend response:', {
+        profilesCount: data.profiles?.length || 0,
+        firstProfile: data.profiles?.[0] ? {
+          id: data.profiles[0]._id,
+          name: data.profiles[0].profile?.name,
+          interests: data.profiles[0].profile?.interests,
+          interestsType: typeof data.profiles[0].profile?.interests,
+          interestsLength: data.profiles[0].profile?.interests?.length
+        } : null
+      });
+      
       return {
         profiles: data.profiles || [],
         dailyLimitReached: data.dailyLimitReached || false,
@@ -286,7 +316,7 @@ export class MatchingService {
 
   // Like a profile (swipe right)
   static async likeProfile(targetUserId: string, type: 'like' | 'super_like' = 'like'): Promise<LikeResponse> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. Like not recorded.');
@@ -300,15 +330,22 @@ export class MatchingService {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        throw new Error('Authentication required');
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('Authentication required');
       }
 
       const response = await fetch(`${apiBaseUrl}/api/matching/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId, type }),
@@ -331,7 +368,7 @@ export class MatchingService {
 
   // Pass on a profile (swipe left)
   static async passProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. Pass not recorded.');
@@ -339,10 +376,22 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        throw new Error('Authentication required');
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/pass`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId }),
@@ -362,7 +411,7 @@ export class MatchingService {
 
   // Unmatch from a profile
   static async unmatchProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. Unmatch not recorded.');
@@ -370,10 +419,22 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        throw new Error('Authentication required');
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/unmatch`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId }),
@@ -397,7 +458,7 @@ export class MatchingService {
     totalLikes: number;
     mutualMatches: number;
   }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No liked profiles available.');
@@ -409,15 +470,42 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return {
+          likedProfiles: [],
+          totalLikes: 0,
+          mutualMatches: 0
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return {
+          likedProfiles: [],
+          totalLikes: 0,
+          mutualMatches: 0
+        };
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/liked`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          return {
+            likedProfiles: [],
+            totalLikes: 0,
+            mutualMatches: 0
+          };
+        }
         throw new Error(`Failed to fetch liked profiles: ${response.statusText}`);
       }
 
@@ -442,7 +530,7 @@ export class MatchingService {
     matches: MutualMatch[];
     totalMatches: number;
   }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No mutual matches available.');
@@ -453,15 +541,39 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return {
+          matches: [],
+          totalMatches: 0
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return {
+          matches: [],
+          totalMatches: 0
+        };
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/matches`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          return {
+            matches: [],
+            totalMatches: 0
+          };
+        }
         throw new Error(`Failed to fetch mutual matches: ${response.statusText}`);
       }
 
@@ -481,7 +593,7 @@ export class MatchingService {
 
   // Get daily like statistics
   static async getDailyLikeStats(date?: string): Promise<DailyLikeStats> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No stats available.');
@@ -494,6 +606,28 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return {
+          dailyLikeCount: 0,
+          canLikeToday: true,
+          remainingLikes: 5,
+          dailyLimit: 5
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return {
+          dailyLikeCount: 0,
+          canLikeToday: true,
+          remainingLikes: 5,
+          dailyLimit: 5
+        };
+      }
+
       const url = date 
         ? `${apiBaseUrl}/api/matching/stats?date=${date}`
         : `${apiBaseUrl}/api/matching/stats`;
@@ -501,12 +635,20 @@ export class MatchingService {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          return {
+            dailyLikeCount: 0,
+            canLikeToday: true,
+            remainingLikes: 5,
+            dailyLimit: 5
+          };
+        }
         throw new Error(`Failed to fetch daily like stats: ${response.statusText}`);
       }
 
@@ -541,8 +683,9 @@ export class MatchingService {
     console.log('🔄 Fetching fresh matches data...');
 
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('No authentication token found');
       }
 
@@ -553,14 +696,14 @@ export class MatchingService {
         fetch(`${this.baseUrl}/api/matching/matches`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${bearerToken}`,
             'Content-Type': 'application/json',
           },
         }),
         fetch(`${this.baseUrl}/api/matching/liked`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${bearerToken}`,
             'Content-Type': 'application/json',
           },
         })
@@ -680,15 +823,16 @@ export class MatchingService {
     }
 
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('No authentication token found');
       }
 
       const response = await fetch(`${this.baseUrl}/api/chat/${connectionId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });

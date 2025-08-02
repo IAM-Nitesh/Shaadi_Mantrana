@@ -106,7 +106,7 @@ class MatchingController {
       
       // Get profiles that match the criteria
       const profiles = await User.find(queryFilters)
-        .select('profile.name profile.dateOfBirth profile.profession profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation verification.isVerified profileCompleted')
+        .select('profile.name profile.dateOfBirth profile.profession profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation profile.interests verification.isVerified profileCompleted')
         .limit(limit)
         .skip((page - 1) * limit)
         .lean();
@@ -139,6 +139,24 @@ class MatchingController {
       // Log found profiles for debugging
       profilesWithAge.forEach((profile, index) => {
         console.log(`👤 Profile ${index + 1}: ${profile.profile?.name} (${profile.profile?.gender}, ${profile.profile?.age} years)`);
+        console.log(`🎯 Profile ${index + 1} interests:`, profile.profile?.interests);
+        console.log(`🎯 Profile ${index + 1} profession:`, profile.profile?.profession);
+        console.log(`🎯 Profile ${index + 1} occupation:`, profile.profile?.occupation);
+        console.log(`🎯 Profile ${index + 1} currentResidence:`, profile.profile?.currentResidence);
+        console.log(`🎯 Profile ${index + 1} nativePlace:`, profile.profile?.nativePlace);
+        
+        // Special debug for the specific user
+        if (profile._id.toString() === '688bb32be0ec0285ce006276') {
+          console.log('🎯 SPECIAL DEBUG - User nitesh:', {
+            id: profile._id,
+            name: profile.profile?.name,
+            interests: profile.profile?.interests,
+            interestsType: typeof profile.profile?.interests,
+            interestsLength: profile.profile?.interests?.length,
+            isArray: Array.isArray(profile.profile?.interests),
+            fullProfile: JSON.stringify(profile.profile, null, 2)
+          });
+        }
       });
       
       // Handle case when no profiles are found

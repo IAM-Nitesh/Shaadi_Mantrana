@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../../services/auth-service';
 import CustomIcon from '../../../components/CustomIcon';
+import AdminRouteGuard from '../../../components/AdminRouteGuard';
+import ToastService from '../../../services/toastService';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
 
@@ -31,7 +33,7 @@ export default function EmailInvitations() {
 
   const fetchInvitations = async () => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         router.push('/');
         return;
@@ -70,7 +72,7 @@ export default function EmailInvitations() {
 
     try {
       setSendingInvitation(true);
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       
       console.log('Sending invitation to:', newEmail.trim());
       console.log('Using token:', token ? 'Token exists' : 'No token');
@@ -108,7 +110,7 @@ export default function EmailInvitations() {
   const resendInvitation = async (invitationId: string) => {
     try {
       setResendingInvitation(invitationId);
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       
       const response = await fetch(`/api/admin/invitations/${invitationId}/resend`, {
         method: 'POST',
@@ -176,7 +178,8 @@ export default function EmailInvitations() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
         <HeartbeatLoader 
-          size="xxl" 
+          logoSize="xxxxl"
+          textSize="xl"
           text="Loading invitations..." 
           showText={true}
         />
