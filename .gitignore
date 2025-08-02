@@ -32,10 +32,12 @@ capacitor-cordova-android-plugins/build/
 *.ipa
 
 # Environment variables (track only .env.example or .env.template)
-# .env
-# .env.*
-# frontend/.env*
-# backend/.env*
+.env
+.env.*
+frontend/.env*
+backend/.env*
+!.env.example
+!.env.template
 
 # Logs
 *.log
@@ -57,6 +59,34 @@ test-results/
 playwright-report/
 *.test.js
 *.spec.js
+
+# API Testing and Test Reports
+postman/test_report.json
+postman/security_performance_report.json
+postman/*_report.json
+postman/test-results/
+postman/coverage/
+postman/.nyc_output/
+postman/node_modules/
+postman/package-lock.json
+postman/yarn.lock
+postman/.env
+postman/.env.*
+
+# Keep important testing files (explicitly allow)
+!postman/api_testing_runner.js
+!postman/security_performance_test.js
+!postman/package.json
+!postman/README.md
+!postman/Shaadi_Mantra_API_Collection_v4_Comprehensive_Testing.json
+
+# Keep important configuration files
+!backend/package.json
+!backend/package-lock.json
+!frontend/package.json
+!frontend/package-lock.json
+!package.json
+!package-lock.json
 
 # IDE and Editor files
 .vscode/
@@ -145,6 +175,14 @@ SECURITY_*.md
 *_REPORT.md
 *_STATUS.md
 
+# Testing Documentation (keep main guides, ignore generated reports)
+postman/COMPREHENSIVE_TESTING_SUMMARY.md
+postman/*_SUMMARY.md
+postman/*_REPORT.md
+!postman/README.md
+!docs/API_TESTING_GUIDE.md
+!postman/Shaadi_Mantra_API_Collection_v4_Comprehensive_Testing.json
+
 # Capacitor
 android/app/src/main/assets/public
 ios/public
@@ -157,23 +195,38 @@ package-lock.json
 yarn.lock
 
 # --- Local Testing and Utility Scripts ---
-backend/scripts/*
-!backend/scripts/README.md
-scripts/*
-!scripts/README.md
+# Keep important backend scripts, ignore temporary test files
+backend/scripts/test_*.js
+backend/scripts/*_test.js
+backend/scripts/temp_*.js
+backend/scripts/debug_*.js
+backend/scripts/check_*.js
+backend/scripts/cleanup_*.js
+backend/scripts/migrate_*.js
+backend/scripts/fix_*.js
+backend/scripts/remove_*.js
+backend/scripts/update_*.js
+backend/scripts/create_*.js
+backend/scripts/add_*.js
+backend/scripts/drop_*.js
+backend/scripts/initialize_*.js
+backend/scripts/quick_*.js
 
-# --- Build, Cache, and Temp Artifacts (additional) ---
-frontend/.next/
-frontend/dist/
-frontend/out/
+# Keep important utility scripts
+!backend/scripts/README.md
+!backend/scripts/simple-add-admin.js
+!backend/scripts/add-admin-email.js
+!backend/scripts/create-admin.js
+!backend/scripts/check-database.js
+!backend/scripts/initialize-collections.js
+
+# --- Build, Cache, and Temp Artifacts ---
 frontend/.cache/
 frontend/tmp/
 frontend/temp/
 frontend/test/
 frontend/__tests__/
 frontend/__mocks__/
-backend/.next/
-backend/dist/
 backend/.cache/
 backend/tmp/
 backend/temp/
@@ -192,33 +245,7 @@ android/app/src/main/assets/www/cache/
 android/app/src/main/assets/www/server/
 android/app/src/main/assets/www/static/
 
-# --- Allow .gitkeep or README.md in ignored folders ---
-!backend/scripts/.gitkeep
-!scripts/.gitkeep
-!backend/scripts/README.md
-!scripts/README.md
-!frontend/.next/.gitkeep
-!frontend/dist/.gitkeep
-!frontend/out/.gitkeep
-!frontend/.cache/.gitkeep
-!frontend/tmp/.gitkeep
-!frontend/temp/.gitkeep
-!frontend/test/.gitkeep
-!frontend/__tests__/.gitkeep
-!frontend/__mocks__/.gitkeep
-!backend/.next/.gitkeep
-!backend/dist/.gitkeep
-!backend/.cache/.gitkeep
-!backend/tmp/.gitkeep
-!backend/temp/.gitkeep
-!backend/test/.gitkeep
-!backend/__tests__/.gitkeep
-!backend/__mocks__/.gitkeep
-!__tests__/.gitkeep
-!__mocks__/.gitkeep
-test/.gitkeep
-tmp/.gitkeep
-temp/.gitkeep
-.cache/.gitkeep
+# --- Allow .gitkeep files in ignored folders ---
+!**/.gitkeep
 
 # --- End custom additions ---

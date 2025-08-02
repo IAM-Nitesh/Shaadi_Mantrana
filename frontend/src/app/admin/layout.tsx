@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { AuthService } from '../../services/auth-service';
+import { ServerAuthService } from '../../services/server-auth-service';
 import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
 import { gsap } from 'gsap';
@@ -30,15 +30,15 @@ export default function AdminLayout({
         return;
       }
 
-      // Check if user is authenticated using existing auth system
-      if (!AuthService.isAuthenticated()) {
+      // Check if user is authenticated using server-side auth
+      const authStatus = await ServerAuthService.checkAuthStatus();
+      if (!authStatus.authenticated) {
         router.replace('/'); // Redirect to main app login
         return;
       }
 
-      // Verify admin access using existing profile endpoint
-      const hasAdminAccess = await AuthService.verifyAdminAccess();
-      if (!hasAdminAccess) {
+      // Verify admin access
+      if (authStatus.user?.role !== 'admin') {
         router.replace('/'); // Redirect to main app if not admin
         return;
       }

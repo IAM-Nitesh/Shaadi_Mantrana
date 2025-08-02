@@ -117,7 +117,7 @@ export default function Help() {
               <button
                 onClick={() => ContactService.handleEmailContact(
                   'Data Deletion Request',
-                  'I would like to request deletion of all my personal data from Shaadi Mantra app.\n\nPlease confirm that you will:\n1. Delete my profile and all personal information\n2. Remove all my photos and documents\n3. Delete all my messages and conversations\n4. Remove my account from the matching system\n5. Delete all activity logs and preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]\nReason for deletion: [Optional]'
+                  'I would like to request deletion of all my personal data from Shaadi Mantrana app.\n\nPlease confirm that you will:\n1. Delete my profile and all personal information\n2. Remove all my photos and documents\n3. Delete all my messages and conversations\n4. Remove my account from the matching system\n5. Delete all activity logs and preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]\nReason for deletion: [Optional]'
                 )}
                 className="inline-block bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200"
               >
@@ -140,7 +140,7 @@ export default function Help() {
             <button
               onClick={() => ContactService.handleEmailContact(
                 'Data Export Request',
-                'I would like to request an export of all my personal data from Shaadi Mantra app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]'
+                'I would like to request an export of all my personal data from Shaadi Mantrana app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]'
               )}
               className="inline-block bg-white border-2 border-rose-500 text-rose-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-50 transition-all duration-200 shadow-lg"
             >
@@ -162,7 +162,7 @@ export default function Help() {
                     Shaadi
                   </span>
                   <span className="bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 bg-clip-text text-transparent ml-1">
-                    Mantra
+                    Mantrana
                   </span>
                 </h3>
                 <div className="flex items-center justify-center space-x-1 mt-0.5">

@@ -7,19 +7,19 @@ import SwipeCard from './SwipeCard';
 import FilterModal, { FilterState } from './FilterModal';
 import { ProfileService, Profile } from '../../services/profile-service';
 import { MatchingService, type DiscoveryProfile } from '../../services/matching-service';
-import { AuthService } from '../../services/auth-service';
 import { matchesCountService } from '../../services/matches-count-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import CustomIcon from '../../components/CustomIcon';
-import ModernNavigation from '../../components/ModernNavigation';
+import SmoothNavigation from '../../components/SmoothNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import MatchAnimation from '../../components/MatchAnimation';
 import StandardHeader from '../../components/StandardHeader';
+import ServerAuthGuard from '../../components/ServerAuthGuard';
 
 import { gsap } from 'gsap';
 import { AnimatePresence, motion } from 'framer-motion';
 
-export default function Dashboard() {
+function DashboardContent() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,7 +29,6 @@ export default function Dashboard() {
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     ageRange: [18, 40],
     selectedProfessions: [],
@@ -37,8 +36,8 @@ export default function Dashboard() {
     selectedState: ''
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [profileCompletion, setProfileCompletion] = useState(0);
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [profileCompleteness, setProfileCompleteness] = useState(0);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [matchName, setMatchName] = useState('');
   const [matchesCount, setMatchesCount] = useState(0);
@@ -63,22 +62,7 @@ export default function Dashboard() {
 
   // Move loadProfiles above useEffect hooks
   const loadProfiles = useCallback(async () => {
-    // Check authentication before making API calls
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) {
-      console.log('🚫 Dashboard: No auth token found, skipping profile load');
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
-    
-    if (!AuthService.isAuthenticated()) {
-      console.log('🚫 Dashboard: User not authenticated, skipping profile load');
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
-
+    // Authentication is already checked in the main useEffect, so we can proceed directly
     setLoading(true);
     setError('');
     
@@ -86,6 +70,34 @@ export default function Dashboard() {
       console.log('🔄 Dashboard: Loading discovery profiles...');
       const discoveryData = await MatchingService.getDiscoveryProfiles();
       console.log('✅ Dashboard: Discovery profiles loaded:', discoveryData);
+      
+      // Debug: Log the first profile structure
+      if (discoveryData.profiles.length > 0) {
+        console.log('🔍 Dashboard: First profile structure:', {
+          id: discoveryData.profiles[0]._id,
+          name: discoveryData.profiles[0].profile?.name,
+          profession: discoveryData.profiles[0].profile?.profession,
+          occupation: discoveryData.profiles[0].profile?.occupation,
+          currentResidence: discoveryData.profiles[0].profile?.currentResidence,
+          nativePlace: discoveryData.profiles[0].profile?.nativePlace,
+          education: discoveryData.profiles[0].profile?.education,
+          interests: discoveryData.profiles[0].profile?.interests,
+          interestsType: typeof discoveryData.profiles[0].profile?.interests,
+          interestsLength: discoveryData.profiles[0].profile?.interests?.length,
+          about: discoveryData.profiles[0].profile?.about
+        });
+        
+        // Log all profiles interests
+        discoveryData.profiles.forEach((profile, index) => {
+          console.log(`🎯 Profile ${index + 1} interests:`, {
+            name: profile.profile?.name,
+            interests: profile.profile?.interests,
+            type: typeof profile.profile?.interests,
+            length: profile.profile?.interests?.length
+          });
+        });
+      }
+      
       setProfiles(discoveryData.profiles);
       setDailyLikeCount(discoveryData.dailyLikeCount);
       setRemainingLikes(discoveryData.remainingLikes);
@@ -107,8 +119,7 @@ export default function Dashboard() {
       console.error('❌ Dashboard: Error loading profiles:', err);
       if (err instanceof Error) {
         if (err.message.includes('Authentication failed') || err.message.includes('401')) {
-          console.log('🚫 Dashboard: Authentication failed, clearing token and redirecting to home');
-          localStorage.removeItem('authToken');
+          console.log('🚫 Dashboard: Authentication failed, redirecting to home');
           router.push('/');
           return;
         }
@@ -139,76 +150,18 @@ export default function Dashboard() {
     }
   }, [router]);
 
-  // Check authentication on component mount and load profiles
+  // Load profiles on component mount
   useEffect(() => {
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) {
-      console.log('🚫 Dashboard: No auth token found, redirecting to home');
-      router.push('/');
-      return;
-    }
-    
-    // Check if user is admin and redirect to admin dashboard
-    if (AuthService.isAdmin()) {
-      console.log('👑 Dashboard: Admin user detected, redirecting to admin dashboard');
-      router.push('/admin/dashboard');
-      return;
-    }
-    
-    // Check if user is authenticated
-    if (!AuthService.isAuthenticated()) {
-      console.log('🚫 Dashboard: User not authenticated, redirecting to home');
-      router.push('/');
-      return;
-    }
-
-    // Check profile completion immediately before loading dashboard content
-    const checkProfileCompletion = async () => {
-      try {
-        const userProfile = await ProfileService.getUserProfile();
-        if (userProfile) {
-          // Update profile completion using ProfileService (backend authority)
-          ProfileService.updateProfileCompletion(userProfile);
-          
-          // Get completion from ProfileService (backend authority)
-          const completion = ProfileService.getProfileCompletion();
-          const isFirstLogin = userProfile.isFirstLogin || completion < 100;
-
-          // If profile is incomplete, redirect immediately to prevent flash
-          if (isFirstLogin && completion < 100) {
-            console.log('🚫 Dashboard: User has incomplete profile, redirecting to /profile immediately');
-            console.log('📊 Profile completion:', completion, 'isFirstLogin:', userProfile.isFirstLogin);
-            window.location.href = '/profile';
-            return;
-          }
-
-          // Store completion status
-          localStorage.setItem('profileCompletion', completion.toString());
-          localStorage.setItem('isFirstTimeUser', isFirstLogin.toString());
-        }
-      } catch (error) {
-        console.error('Error checking profile completion:', error);
-        // On error, redirect to profile to be safe
-        window.location.href = '/profile';
-        return;
-      }
-    };
-
-    // Check profile completion first
-    checkProfileCompletion().then(() => {
-      // Only proceed with dashboard loading if profile is complete
-      console.log('✅ Dashboard: User authenticated and profile complete, loading profiles...');
-      setIsAuthenticated(true);
-      loadProfiles();
-    });
-  }, [router, loadProfiles]);
+    console.log('✅ Dashboard: User authenticated and profile complete, loading profiles...');
+    loadProfiles();
+  }, []);
 
   // Reload profiles when filters change
   useEffect(() => {
     if (profiles.length > 0) {
       loadProfiles();
     }
-  }, [filters, profiles.length, loadProfiles]);
+  }, [filters, profiles.length]); // Removed loadProfiles from dependencies
 
   // GSAP animations on component mount and data load
   useEffect(() => {
@@ -406,12 +359,6 @@ export default function Dashboard() {
   }, [showFilter]);
 
   const handleSwipe = async (direction: 'left' | 'right') => {
-    // Check authentication before making API calls
-    if (!AuthService.isAuthenticated()) {
-      console.log('🚫 Dashboard: User not authenticated, cannot record swipe');
-      return;
-    }
-
     if (currentIndex >= profiles.length) return;
 
     const currentProfile = profiles[currentIndex];
@@ -470,25 +417,10 @@ export default function Dashboard() {
                           filters.selectedState !== '' ||
                           filters.ageRange[0] !== 18 || 
                           filters.ageRange[1] !== 40;
-  // Show loading screen while checking authentication
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <HeartbeatLoader 
-            size="lg" 
-            text="Checking Authentication" 
-            className="mb-4"
-          />
-          <p className="text-slate-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <>
-
       
     <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden page-wrapper">
       {/* Background Pattern with enhanced animations */}
@@ -500,16 +432,6 @@ export default function Dashboard() {
         showFilter={true}
         onFilterClick={() => setShowFilter(true)}
         hasActiveFilters={!!filters.selectedCountry || !!filters.selectedState || filters.selectedProfessions.length > 0}
-        rightElement={
-          <div className="flex items-center space-x-2">
-            <Link 
-              href="/admin/login" 
-              className="text-xs text-gray-500 hover:text-blue-600 transition-colors duration-200 px-2 py-1 rounded hover:bg-blue-50"
-            >
-              Admin
-            </Link>
-          </div>
-        }
       />
 
       {/* Main Content */}
@@ -518,7 +440,8 @@ export default function Dashboard() {
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <HeartbeatLoader 
-              size="lg" 
+              logoSize="xxxxl"
+              textSize="xl"
               text="Finding Your Perfect Matches" 
               className="mb-4"
             />
@@ -602,7 +525,7 @@ export default function Dashboard() {
       </div>
 
       {/* Modern Bottom Navigation */}
-      <ModernNavigation 
+      <SmoothNavigation 
         items={[
           { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
           { 
@@ -615,19 +538,6 @@ export default function Dashboard() {
           { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
         ]}
       />
-
-      {/* Admin Button for Admin Users */}
-      {AuthService.isAdmin() && (
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            onClick={() => router.push('/admin')}
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-purple-600 transition-colors flex items-center space-x-2"
-          >
-            <CustomIcon name="ri-shield-user-line" size={16} />
-            <span className="text-sm font-medium">Admin</span>
-          </button>
-        </div>
-      )}
 
       {/* Filter Modal */}
       {showFilter && (
@@ -649,5 +559,15 @@ export default function Dashboard() {
       {/* Removed onboarding overlay/modal and message from dashboard */}
     </div>
     </>
+  );
+}
+
+export default function Dashboard() {
+  console.log('🔍 Dashboard: Component called');
+  
+  return (
+    <ServerAuthGuard requireAuth={true} requireCompleteProfile={true}>
+      <DashboardContent />
+    </ServerAuthGuard>
   );
 }

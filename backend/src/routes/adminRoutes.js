@@ -3,7 +3,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { User, PreapprovedEmail, Invitation } = require('../models');
+const { User, Invitation } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const InviteEmailService = require('../services/inviteEmailService');
@@ -31,96 +31,34 @@ const adminMiddleware = async (req, res, next) => {
 // Get all users (admin only)
 router.get('/users', authenticateToken, adminMiddleware, async (req, res) => {
   try {
-    const users = await User.find({ role: { $ne: 'admin' } }, {
-      _id: 1,
-      email: 1,
-      'profile.name': 1,
-      'profile.firstName': 1,
-      'profile.lastName': 1,
-      'profile.profileCompleteness': 1,
-      'profile.images': 1,
-      role: 1,
-      status: 1,
-      createdAt: 1,
-      isFirstLogin: 1,
-      lastActive: 1,
-      userUuid: 1,
-      profileCompleted: 1
-    }).sort({ createdAt: -1 });
-
-    // Get preapproved data for all users
-    const userEmails = users.map(user => user.email);
-    const preapprovedUsers = await PreapprovedEmail.find({ email: { $in: userEmails } });
-    
-    // Create a map for quick lookup
-    const preapprovedMap = {};
-    preapprovedUsers.forEach(preapproved => {
-      preapprovedMap[preapproved.email] = preapproved;
-    });
-
-    // Transform the data to include first and last name and preapproved status
-    const transformedUsers = users.map(user => {
-      const fullName = user.profile?.name || '';
-      const nameParts = fullName.split(' ');
-      const firstName = user.profile?.firstName || nameParts[0] || '';
-      const lastName = user.profile?.lastName || nameParts.slice(1).join(' ') || '';
-      
-      const preapproved = preapprovedMap[user.email];
-
-      // Debug: Log the profile completeness for each user
-      console.log(`🔍 User ${user.email}: profileCompleteness = ${user.profile?.profileCompleteness}, raw profile =`, user.profile);
-
+    // Get all users from User collection
+    const allUsers = await User.find({});
+    const transformedUsers = allUsers.map(user => {
       return {
         _id: user._id,
         email: user.email,
-        firstName: firstName,
-        lastName: lastName,
-        fullName: fullName,
+        firstName: user.profile?.name?.split(' ')[0] || '',
+        lastName: user.profile?.name?.split(' ').slice(1).join(' ') || '',
+        fullName: user.profile?.name || '',
         role: user.role,
         status: user.status,
         createdAt: user.createdAt,
         lastActive: user.lastActive,
-        approvedByAdmin: preapproved ? preapproved.approvedByAdmin : false,
+        approvedByAdmin: user.isApprovedByAdmin,
         userUuid: user.userUuid,
-        profileCompleted: user.profileCompleted || false,
-        profile: {
-          name: user.profile?.name,
-          profileCompleteness: user.profile?.profileCompleteness || 0,
-          images: user.profile?.images
-        }
+        isPending: false,
+        profileCompleted: user.profileCompleted,
+        profileCompleteness: user.profile?.profileCompleteness || 0,
+        isFirstLogin: user.isFirstLogin,
+        addedAt: user.addedAt,
+        addedBy: user.addedBy,
+        verification: user.verification
       };
     });
 
-    // Get preapproved emails that haven't been converted to users yet
-    const allPreapprovedEmails = await PreapprovedEmail.find({});
-    const userEmailSet = new Set(userEmails);
-    const pendingPreapproved = allPreapprovedEmails.filter(preapproved => 
-      !userEmailSet.has(preapproved.email)
-    );
-
-    // Add pending preapproved emails as "virtual users"
-    const pendingUsers = pendingPreapproved.map(preapproved => ({
-      _id: `pending_${preapproved._id}`,
-      email: preapproved.email,
-      firstName: '',
-      lastName: '',
-      fullName: '',
-      role: 'pending',
-      status: 'pending',
-      createdAt: preapproved.addedAt || preapproved.createdAt,
-      lastActive: null,
-      approvedByAdmin: preapproved.approvedByAdmin,
-      userUuid: preapproved.uuid,
-      isPending: true,
-      profileCompleted: false
-    }));
-
-    // Combine actual users with pending preapproved emails
-    const allUsers = [...transformedUsers, ...pendingUsers];
-
     res.status(200).json({
       success: true,
-      users: allUsers
+      users: transformedUsers
     });
   } catch (error) {
     console.error('❌ Get users error:', error);
@@ -156,80 +94,44 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if email already exists in preapproved collection
-    let existingPreapproved = await PreapprovedEmail.findOne({ email: normalizedEmail });
-    
-    if (existingPreapproved) {
-      return res.status(409).json({
-        success: false,
-        error: 'Email already approved by admin'
-      });
-    }
-
-    // Create entry in preapproved collection
-    const newPreapproved = new PreapprovedEmail({
-      email: normalizedEmail,
-      uuid: userUuid,
-      isFirstLogin: true,
-      approvedByAdmin: true,
-      addedBy: req.user.userId
-    });
-
-    await newPreapproved.save();
-
-    // Create entry in invitations collection (optional - don't fail if this fails)
-    let invitationCreated = false;
-    try {
-      // Check if invitation already exists for this UUID
-      const existingInvitation = await Invitation.findOne({ uuid: userUuid });
-      if (!existingInvitation) {
-        const newInvitation = new Invitation({
-          uuid: userUuid,
-          email: normalizedEmail,
-          invitationId: invitationId,
-          sentBy: req.user.userId
-        });
-
-        await newInvitation.save();
-        invitationCreated = true;
-        console.log(`✅ Invitation record created for ${normalizedEmail}`);
-      } else {
-        console.log(`ℹ️  Invitation already exists for UUID: ${userUuid}`);
-      }
-    } catch (invitationError) {
-      console.error('❌ Failed to create invitation record:', invitationError);
-      // Don't fail the user creation if invitation creation fails
-      // The invitation is optional for user creation
-    }
-
-    // Create new user with the same UUID
+    // Create new user directly in User collection with proper fields
     const newUser = new User({
       email: normalizedEmail,
       userUuid: userUuid,
+      role: 'user',
+      status: 'invited',
+      isApprovedByAdmin: true, // Admin-created users are approved by default
+      isFirstLogin: true,
+      hasSeenOnboardingMessage: false, // New users haven't seen onboarding
+      profileCompleted: false,
+      addedAt: new Date(),
+      addedBy: req.user.userId,
+      verification: {
+        isVerified: false,
+        approvalType: 'admin'
+      },
       profile: {
+        profileCompleteness: 0,
         location: "India",
-        profileCompleteness: 17,  // Set correct value for new users
-        // Initialize all dropdown fields as undefined (empty)
-        gender: undefined,
-        maritalStatus: undefined,
-        manglik: undefined,
-        complexion: undefined,
-        eatingHabit: undefined,
-        smokingHabit: undefined,
-        drinkingHabit: undefined,
-        settleAbroad: undefined,
-        // Initialize other profile fields as empty
+        // Initialize all profile fields as empty
         name: '',
+        gender: undefined,
         nativePlace: '',
         currentResidence: '',
+        maritalStatus: undefined,
+        manglik: undefined,
         dateOfBirth: '',
         timeOfBirth: '',
         placeOfBirth: '',
         height: '',
         weight: '',
+        complexion: undefined,
         education: '',
         occupation: '',
         annualIncome: '',
+        eatingHabit: undefined,
+        smokingHabit: undefined,
+        drinkingHabit: undefined,
         father: '',
         mother: '',
         brothers: '',
@@ -239,6 +141,7 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
         grandfatherGotra: '',
         grandmotherGotra: '',
         specificRequirements: '',
+        settleAbroad: undefined,
         about: '',
         interests: [],
         images: []
@@ -261,34 +164,39 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
         },
         profession: [],
         education: []
-      },
-      isFirstLogin: true,
-      role: 'user', // Default role
-      status: 'active'
+      }
     });
 
     await newUser.save();
 
-    // Send invitation email to the new user
-    let emailResult = null;
-    try {
-      emailResult = await InviteEmailService.sendInviteEmail(normalizedEmail, userUuid);
-      console.log(`✅ Invitation email sent to ${normalizedEmail}`);
-    } catch (emailError) {
-      console.error(`❌ Failed to send invitation email to ${normalizedEmail}:`, emailError);
-      // Don't fail the user creation if email fails
-    }
+    // Create invitation record
+    const invitation = new Invitation({
+      email: normalizedEmail,
+      uuid: userUuid,
+      invitationId,
+      status: 'sent',
+      sentDate: new Date(),
+      count: 1,
+      sentBy: req.user.userId
+    });
+
+    await invitation.save();
+
+    console.log(`✅ New user created by admin: ${normalizedEmail} (UUID: ${userUuid})`);
 
     res.status(201).json({
       success: true,
-      message: 'User added successfully with empty profile. Invitation email sent.',
-      email: normalizedEmail,
-      userId: newUser._id,
-      uuid: userUuid,
-      invitationId: invitationId,
-      invitationCreated: invitationCreated,
-      emailSent: !!emailResult?.success,
-      inviteLink: emailResult?.inviteLink || null
+      message: 'User created successfully',
+      user: {
+        _id: newUser._id,
+        email: newUser.email,
+        userUuid: newUser.userUuid,
+        role: newUser.role,
+        status: newUser.status,
+        isApprovedByAdmin: newUser.isApprovedByAdmin,
+        isFirstLogin: newUser.isFirstLogin,
+        profileCompleteness: newUser.profile?.profileCompleteness || 0
+      }
     });
 
   } catch (error) {
@@ -365,15 +273,15 @@ router.get('/stats', authenticateToken, adminMiddleware, async (req, res) => {
     const adminEmails = await User.find({ role: 'admin' }, { email: 1 });
     const adminEmailList = adminEmails.map(user => user.email);
     
-    const totalPreapproved = await PreapprovedEmail.countDocuments({ 
+    const totalPreapproved = await User.countDocuments({ 
       email: { $nin: adminEmailList } 
     });
-    const approvedUsers = await PreapprovedEmail.countDocuments({ 
-      approvedByAdmin: true,
+    const approvedUsers = await User.countDocuments({ 
+      isApprovedByAdmin: true,
       email: { $nin: adminEmailList }
     });
-    const pausedUsers = await PreapprovedEmail.countDocuments({ 
-      approvedByAdmin: false,
+    const pausedUsers = await User.countDocuments({ 
+      isApprovedByAdmin: false,
       email: { $nin: adminEmailList }
     });
 
@@ -531,11 +439,13 @@ async function calculateStorageStats() {
     const mongoSizeBytes = estimateDatabaseSize(users);
     const mongoSizeFormatted = formatBytes(mongoSizeBytes);
 
-    // Get real user statistics
+    // Get real user statistics based on new role-based authentication
     const totalUsers = users.length;
-    const activeUsers = users.filter(user => user.status === 'active').length;
-    const pausedUsers = users.filter(user => user.status === 'paused').length;
-    const invitedUsers = users.filter(user => user.role === 'pending').length;
+    const activeUsers = users.filter(user => user.status === 'active' && user.isApprovedByAdmin === true).length;
+    const pausedUsers = users.filter(user => user.status === 'paused' || user.isApprovedByAdmin === false).length;
+    const invitedUsers = users.filter(user => user.status === 'invited' || (user.profile?.profileCompleteness || 0) < 100).length;
+    const adminUsers = users.filter(user => user.role === 'admin').length;
+    const approvedUsers = users.filter(user => user.isApprovedByAdmin === true).length;
 
     console.log('📊 Real-time stats:', {
       totalUsers,
@@ -556,6 +466,12 @@ async function calculateStorageStats() {
       profilesWithImages,
       profilesWithoutImages,
       recentActivity,
+      // User statistics based on new role-based authentication
+      activeUsers,
+      pausedUsers,
+      invitedUsers,
+      adminUsers,
+      approvedUsers,
       // B2 Cloud Storage stats
       b2Usage: formatBytes(b2Stats.totalSizeBytes),
       b2Total: '10 GB', // Default B2 bucket size
@@ -685,23 +601,53 @@ const sendInvitationEmail = async (userId, adminUserId) => {
   await invitation.save();
 
   // Create or update entry in preapproved collection
-  let preapprovedEntry = await PreapprovedEmail.findOne({ email: user.email });
+  let preapprovedEntry = await User.findOne({ email: user.email });
   if (!preapprovedEntry) {
-    // Create new preapproved entry
-    preapprovedEntry = new PreapprovedEmail({
+    // Create new user entry with approval
+    preapprovedEntry = new User({
       email: user.email,
-      uuid: user.userUuid,
-      approvedByAdmin: true,
+      userUuid: user.userUuid,
+      isApprovedByAdmin: true,
       addedBy: adminUserId,
-      addedAt: new Date()
+      addedAt: new Date(),
+      role: 'user',
+      status: 'invited',
+      isFirstLogin: true,
+      hasSeenOnboardingMessage: false, // New users haven't seen onboarding
+      profileCompleted: false,
+      profile: {
+        location: "India",
+        profileCompleteness: 0,
+        interests: [],
+        images: []
+      },
+      preferences: {
+        ageRange: {
+          min: 18,
+          max: 50
+        },
+        location: [
+          "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+          "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+          "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+          "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+          "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+          "Uttar Pradesh", "Uttarakhand", "West Bengal",
+          "Andaman and Nicobar Islands", "Chandigarh",
+          "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+          "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+        ],
+        profession: [],
+        education: []
+      }
     });
     await preapprovedEntry.save();
-    console.log(`✅ Preapproved entry created for ${user.email}`);
+    console.log(`✅ User entry created for ${user.email}`);
   } else {
-    // Update existing preapproved entry to ensure it's approved
-    preapprovedEntry.approvedByAdmin = true;
+    // Update existing user entry to ensure it's approved
+    preapprovedEntry.isApprovedByAdmin = true;
     await preapprovedEntry.save();
-    console.log(`✅ Preapproved entry updated for ${user.email}`);
+    console.log(`✅ User entry updated for ${user.email}`);
   }
 
   // Send invitation email using user's UUID
@@ -749,7 +695,7 @@ router.post('/users/:userId/invite', authenticateToken, adminMiddleware, async (
 router.patch('/users/:userId/resume', authenticateToken, adminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { isApprovedByAdmin } = req.body;
+    const { approvedByAdmin } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -767,13 +713,20 @@ router.patch('/users/:userId/resume', authenticateToken, adminMiddleware, async 
       });
     }
 
-    // Update user status and approval
+    // Update user status and approval with all relevant fields
     user.status = 'active';
-    user.isApprovedByAdmin = isApprovedByAdmin !== undefined ? isApprovedByAdmin : true;
+    user.isApprovedByAdmin = approvedByAdmin !== undefined ? approvedByAdmin : true;
     user.lastActive = new Date();
+    
+    // Update verification status if user was paused
+    if (user.verification) {
+      user.verification.isVerified = true;
+      user.verification.verifiedAt = new Date();
+    }
+    
     await user.save();
 
-    console.log(`✅ User ${user.email} resumed successfully`);
+    console.log(`✅ User ${user.email} resumed successfully with status: active, approved: ${user.isApprovedByAdmin}`);
 
     res.status(200).json({
       success: true,
@@ -782,7 +735,10 @@ router.patch('/users/:userId/resume', authenticateToken, adminMiddleware, async 
         _id: user._id,
         email: user.email,
         status: user.status,
-        isApprovedByAdmin: user.isApprovedByAdmin
+        isApprovedByAdmin: user.isApprovedByAdmin,
+        role: user.role,
+        profileCompleteness: user.profile?.profileCompleteness || 0,
+        isFirstLogin: user.isFirstLogin
       }
     });
 
@@ -799,7 +755,7 @@ router.patch('/users/:userId/resume', authenticateToken, adminMiddleware, async 
 router.patch('/users/:userId/pause', authenticateToken, adminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { isApprovedByAdmin } = req.body;
+    const { approvedByAdmin } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -817,13 +773,19 @@ router.patch('/users/:userId/pause', authenticateToken, adminMiddleware, async (
       });
     }
 
-    // Update user status and approval
+    // Update user status and approval with all relevant fields
     user.status = 'paused';
-    user.isApprovedByAdmin = isApprovedByAdmin !== undefined ? isApprovedByAdmin : false;
+    user.isApprovedByAdmin = approvedByAdmin !== undefined ? approvedByAdmin : false;
     user.lastActive = new Date();
+    
+    // Update verification status to reflect paused state
+    if (user.verification) {
+      user.verification.isVerified = false;
+    }
+    
     await user.save();
 
-    console.log(`✅ User ${user.email} paused successfully`);
+    console.log(`✅ User ${user.email} paused successfully with status: paused, approved: ${user.isApprovedByAdmin}`);
 
     res.status(200).json({
       success: true,
@@ -832,7 +794,10 @@ router.patch('/users/:userId/pause', authenticateToken, adminMiddleware, async (
         _id: user._id,
         email: user.email,
         status: user.status,
-        isApprovedByAdmin: user.isApprovedByAdmin
+        isApprovedByAdmin: user.isApprovedByAdmin,
+        role: user.role,
+        profileCompleteness: user.profile?.profileCompleteness || 0,
+        isFirstLogin: user.isFirstLogin
       }
     });
 
@@ -990,23 +955,53 @@ router.post('/users/send-bulk-invites', authenticateToken, adminMiddleware, asyn
       await invitation.save();
       
       // Create or update entry in preapproved collection
-      let preapprovedEntry = await PreapprovedEmail.findOne({ email: user.email });
+      let preapprovedEntry = await User.findOne({ email: user.email });
       if (!preapprovedEntry) {
-        // Create new preapproved entry
-        preapprovedEntry = new PreapprovedEmail({
+        // Create new user entry with approval
+        preapprovedEntry = new User({
           email: user.email,
-          uuid: user.userUuid,
-          approvedByAdmin: true,
-          addedBy: req.user.userId,
-          addedAt: new Date()
+          userUuid: user.userUuid,
+                isApprovedByAdmin: true,
+      addedBy: req.user.userId,
+      addedAt: new Date(),
+      role: 'user',
+      status: 'invited',
+      isFirstLogin: true,
+      hasSeenOnboardingMessage: false, // New users haven't seen onboarding
+      profileCompleted: false,
+          profile: {
+            location: "India",
+            profileCompleteness: 0,
+            interests: [],
+            images: []
+          },
+          preferences: {
+            ageRange: {
+              min: 18,
+              max: 50
+            },
+            location: [
+              "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+              "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+              "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+              "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+              "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+              "Uttar Pradesh", "Uttarakhand", "West Bengal",
+              "Andaman and Nicobar Islands", "Chandigarh",
+              "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+              "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+            ],
+            profession: [],
+            education: []
+          }
         });
         await preapprovedEntry.save();
-        console.log(`✅ Preapproved entry created for ${user.email}`);
+        console.log(`✅ User entry created for ${user.email}`);
       } else {
-        // Update existing preapproved entry to ensure it's approved
-        preapprovedEntry.approvedByAdmin = true;
+        // Update existing user entry to ensure it's approved
+        preapprovedEntry.isApprovedByAdmin = true;
         await preapprovedEntry.save();
-        console.log(`✅ Preapproved entry updated for ${user.email}`);
+        console.log(`✅ User entry updated for ${user.email}`);
       }
       
       usersWithUuid.push({
@@ -1159,7 +1154,10 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
       role: 'user',
       status: 'active',
       isFirstLogin: true,
+      hasSeenOnboardingMessage: false, // New users haven't seen onboarding
       isApprovedByAdmin: true,
+      addedAt: new Date(),
+      addedBy: req.user.userId,
       profile: {
         name: `${firstName || ''} ${lastName || ''}`.trim() || undefined,
         firstName: firstName || undefined,
@@ -1198,17 +1196,8 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
     await invitation.save();
     console.log(`✅ Invitation record created for ${email}`);
 
-    // Create preapproved email entry
-    const preapprovedEmail = new PreapprovedEmail({
-      email,
-      uuid: userUuid,
-      approvedByAdmin: true,
-      addedBy: req.user.userId, // Use the admin user's ObjectId
-      addedAt: new Date()
-    });
-
-    await preapprovedEmail.save();
-    console.log(`✅ Preapproved email entry created for ${email}`);
+    // User already has admin tracking fields set during creation
+    console.log(`✅ User created with admin tracking for ${email}`);
 
     // Send invitation email using the invitation service
     try {

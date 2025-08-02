@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../../services/auth-service';
 import CustomIcon from '../../../components/CustomIcon';
+import AdminRouteGuard from '../../../components/AdminRouteGuard';
+import ToastService from '../../../services/toastService';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
 
@@ -33,7 +35,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         console.log('🔍 Dashboard: No auth token found');
         router.push('/');
@@ -129,7 +131,8 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
         <HeartbeatLoader 
-          size="xxl" 
+          logoSize="xxxxl"
+          textSize="xl"
           text="Loading admin dashboard..." 
           showText={true}
         />

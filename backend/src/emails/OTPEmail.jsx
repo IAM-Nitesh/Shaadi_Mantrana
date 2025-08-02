@@ -15,7 +15,7 @@ const OTPEmail = ({ otp, userEmail }) => {
   return (
     <Html lang="en">
       <Head>
-        <title>Verify Your Shaadi Mantra Account</title>
+        <title>Verify Your Shaadi Mantrana Account</title>
         <style>
           {`
             @keyframes glow { 
@@ -66,7 +66,7 @@ const OTPEmail = ({ otp, userEmail }) => {
               <Heading style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '16px', fontSize: '16px' }}>How to verify:</Heading>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '18px', marginTop: '2px' }}>✨</span>
-                <Text style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, margin: 0 }}>Open the Shaadi Mantra mobile app</Text>
+                <Text style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, margin: 0 }}>Open the Shaadi Mantrana mobile app</Text>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '18px', marginTop: '2px' }}>✨</span>
@@ -106,8 +106,8 @@ const OTPEmail = ({ otp, userEmail }) => {
           <Hr style={{ border: 'none', borderTop: '1px solid #e5e7eb' }} />
           <Section style={{ textAlign: 'center', padding: '20px' }}>
             <Text style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>Didn't request this code? You can safely ignore this email.</Text>
-            <Text style={{ fontSize: '14px', color: '#6b7280' }}>Need help? Contact us at <span style={{ color: '#f43f5e', fontWeight: '600' }}>support@shaadimantra.com</span></Text>
-            <Text style={{ fontSize: '12px', color: '#9ca3af', marginTop: '12px' }}>© 2025 Shaadi Mantra. All rights reserved.</Text>
+            <Text style={{ fontSize: '14px', color: '#6b7280' }}>Need help? Contact us at <span style={{ color: '#f43f5e', fontWeight: '600' }}>shaadimantrana.help@gmail.com</span></Text>
+            <Text style={{ fontSize: '12px', color: '#9ca3af', marginTop: '12px' }}>© 2025 Shaadi Mantrana. All rights reserved.</Text>
           </Section>
         </Container>
       </Body>

@@ -14,11 +14,13 @@ interface SwipeCardProps {
       name: string;
       age?: number;
       profession?: string;
+      occupation?: string;
       images?: string;
       about?: string;
       education?: string;
+      nativePlace?: string;
+      currentResidence?: string;
       interests?: string[];
-      location?: string;
     };
     verification?: {
       isVerified: boolean;
@@ -65,6 +67,19 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
     };
 
     fetchSignedUrl();
+    
+    // Debug: Log profile data received by SwipeCard
+    console.log('🎯 SwipeCard received profile:', {
+      id: profile._id,
+      name: profile.profile?.name,
+      interests: profile.profile?.interests,
+      interestsType: typeof profile.profile?.interests,
+      interestsLength: profile.profile?.interests?.length,
+      profession: profile.profile?.profession,
+      occupation: profile.profile?.occupation,
+      currentResidence: profile.profile?.currentResidence,
+      nativePlace: profile.profile?.nativePlace
+    });
   }, [profile._id, profile.profile.images]);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -186,8 +201,14 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
               layout="fill"
               objectFit="cover"
               objectPosition="top"
+              quality={95} // High quality for better visual appeal
+              priority={true} // Priority loading for better performance
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
               onError={handleImageError}
               onLoad={handleImageLoad}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="swipe-card-image" // Apply CSS optimizations
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
@@ -219,11 +240,11 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">
               <i className="ri-briefcase-line"></i>
-              <span>{profile.profile.profession || 'Not specified'}</span>
+              <span>{profile.profile.profession || profile.profile.occupation || 'Not specified'}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90 mt-1">
               <i className="ri-map-pin-line"></i>
-              <span>{profile.profile.location || 'Location not specified'}</span>
+              <span>{profile.profile.currentResidence || profile.profile.nativePlace || 'Location not specified'}</span>
             </div>
           </div>
         </div>
@@ -244,18 +265,27 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
             <div>
               <h4 className="font-semibold text-gray-800 mb-2">Interests</h4>
               <div className="flex flex-wrap gap-2">
-                {profile.profile.interests && profile.profile.interests.length > 0 ? (
-                  profile.profile.interests.map((interest, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
-                    >
-                      {interest}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-gray-500 text-sm">No interests specified</span>
-                )}
+                {(() => {
+                  console.log('🎯 SwipeCard interests rendering:', {
+                    interests: profile.profile.interests,
+                    type: typeof profile.profile.interests,
+                    length: profile.profile.interests?.length,
+                    isArray: Array.isArray(profile.profile.interests)
+                  });
+                  
+                  if (profile.profile.interests && profile.profile.interests.length > 0) {
+                    return profile.profile.interests.map((interest, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                      >
+                        {interest}
+                      </span>
+                    ));
+                  } else {
+                    return <span className="text-gray-500 text-sm">No interests specified</span>;
+                  }
+                })()}
               </div>
             </div>
           </div>

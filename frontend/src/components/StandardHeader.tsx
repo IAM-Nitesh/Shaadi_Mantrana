@@ -59,7 +59,7 @@ export default function StandardHeader({
                   Shaadi
                 </span>
                 <span className="bg-gradient-to-br from-rose-600 via-pink-600 to-rose-700 bg-clip-text text-transparent font-light ml-1 letter-spacing-wide">
-                  Mantra
+                  Mantrana
                 </span>
               </h1>
               <div className="flex items-center justify-start space-x-1 mt-1">
