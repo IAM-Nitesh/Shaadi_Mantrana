@@ -15,7 +15,7 @@ interface SwipeCardProps {
       age?: number;
       profession?: string;
       occupation?: string;
-      images?: string;
+      images?: string | string[]; // Handle both string and array cases
       about?: string;
       education?: string;
       nativePlace?: string;
@@ -54,15 +54,40 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   // Fetch signed URL for profile image when profile changes
   useEffect(() => {
     const fetchSignedUrl = async () => {
-      if (profile.profile.images && profile._id) {
+      // Reset states for new profile
+      setIsLoadingImage(true);
+      setImageError(false);
+      setImageLoaded(false);
+      setSignedImageUrl(null);
+      
+      // Handle both array and string cases for images
+      const images = profile.profile.images;
+      const hasImages = images && (
+        (Array.isArray(images) && images.length > 0 && images[0]) ||
+        (typeof images === 'string' && images.trim().length > 0)
+      );
+      
+      if (hasImages && profile._id) {
         try {
+          console.log('🖼️ Fetching signed URL for profile:', profile._id);
           const signedUrl = await ImageUploadService.getUserProfilePictureSignedUrlCached(profile._id);
           if (signedUrl) {
+            console.log('✅ Signed URL fetched successfully for profile:', profile._id);
             setSignedImageUrl(signedUrl);
+          } else {
+            console.log('❌ No signed URL returned for profile:', profile._id);
+            setImageError(true);
+            setIsLoadingImage(false);
           }
         } catch (error) {
-          console.error('Failed to fetch signed URL for user:', profile._id, error);
+          console.error('❌ Failed to fetch signed URL for user:', profile._id, error);
+          setImageError(true);
+          setIsLoadingImage(false);
         }
+      } else {
+        console.log('ℹ️ No images field or profile ID for profile:', profile._id);
+        setImageError(true);
+        setIsLoadingImage(false);
       }
     };
 
@@ -72,6 +97,10 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
     console.log('🎯 SwipeCard received profile:', {
       id: profile._id,
       name: profile.profile?.name,
+      hasImages: !!profile.profile?.images,
+      images: profile.profile?.images,
+      imagesType: typeof profile.profile?.images,
+      isArray: Array.isArray(profile.profile?.images),
       interests: profile.profile?.interests,
       interestsType: typeof profile.profile?.interests,
       interestsLength: profile.profile?.interests?.length,
@@ -88,20 +117,36 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(true);
 
-  // Get the profile image, or use a default
-  const profileImage = profile.profile.images || '';
+  // Get the profile image, handling both array and string cases
+  const getProfileImage = () => {
+    const images = profile.profile.images;
+    if (!images) return '';
+    
+    if (Array.isArray(images)) {
+      return images.length > 0 ? images[0] : '';
+    } else if (typeof images === 'string') {
+      return images;
+    }
+    
+    return '';
+  };
+
+  const profileImage = getProfileImage();
 
   const handleImageError = () => {
     console.log('🖼️ Image failed to load, showing fallback');
     setImageError(true);
     setImageLoaded(false);
+    setIsLoadingImage(false);
   };
 
   const handleImageLoad = () => {
     console.log('🖼️ Image loaded successfully');
     setImageLoaded(true);
     setImageError(false);
+    setIsLoadingImage(false);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -194,28 +239,46 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       >
         {/* Main Image */}
         <div className="relative h-96">
-          {!imageError && (signedImageUrl || profileImage) ? (
+          {isLoadingImage && !signedImageUrl ? (
+            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+              <div className="text-center text-rose-600">
+                <div className="text-6xl mb-4">👤</div>
+                <p className="text-lg font-medium">Loading profile photo...</p>
+                <div className="mt-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mx-auto"></div>
+                </div>
+              </div>
+            </div>
+          ) : imageError && !signedImageUrl && !profileImage ? (
+            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+              <div className="text-center text-rose-600">
+                <div className="text-6xl mb-4">👤</div>
+                <p className="text-lg font-medium">Photo unavailable</p>
+                <p className="text-sm opacity-75">Could not load profile picture.</p>
+              </div>
+            </div>
+          ) : signedImageUrl || profileImage ? (
             <Image
               src={signedImageUrl || profileImage}
               alt={`${profile.profile.name || 'Profile'}`}
               layout="fill"
               objectFit="cover"
               objectPosition="top"
-              quality={95} // High quality for better visual appeal
+              quality={100} // Increased from 95 to 100 for maximum quality
               priority={true} // Priority loading for better performance
               placeholder="blur"
               blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
               onError={handleImageError}
               onLoad={handleImageLoad}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="swipe-card-image" // Apply CSS optimizations
+              className="swipe-card-image profile-image-optimized profile-image-maximum-quality" // Apply enhanced optimized CSS classes
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
               <div className="text-center text-rose-600">
                 <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">{profile.profile.name || 'Profile'}</p>
-                <p className="text-sm opacity-75">Photo unavailable</p>
+                <p className="text-lg font-medium">No profile photo</p>
+                <p className="text-sm opacity-75">User hasn't uploaded a photo yet.</p>
               </div>
             </div>
           )}

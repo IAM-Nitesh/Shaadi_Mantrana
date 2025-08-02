@@ -358,7 +358,7 @@ class AuthController {
             specificRequirements: '',
             about: '',
             interests: [],
-            images: []
+            images: null // Set to null instead of empty array
           },
           preferences: {
             location: [

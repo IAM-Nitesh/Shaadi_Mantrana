@@ -107,12 +107,27 @@ function DashboardContent() {
       // Batch load signed URLs for profile images
       if (discoveryData.profiles.length > 0) {
         const userIds = discoveryData.profiles
-          .filter(profile => profile.profile.images && profile.profile.images.length > 0)
+          .filter(profile => {
+            const images = profile.profile.images;
+            if (!images) return false;
+            
+            // Handle both array and string cases
+            if (Array.isArray(images)) {
+              return images.length > 0 && images[0] && images[0].trim().length > 0;
+            } else if (typeof images === 'string') {
+              return images.trim().length > 0;
+            }
+            
+            return false;
+          })
           .map(profile => profile._id);
         
         if (userIds.length > 0) {
+          console.log(`🖼️ Preloading signed URLs for ${userIds.length} profiles`);
           // Preload signed URLs in background for instant loading
           ImageUploadService.preloadSignedUrls(userIds);
+        } else {
+          console.log('ℹ️ No profiles with images found for preloading');
         }
       }
     } catch (err: unknown) {

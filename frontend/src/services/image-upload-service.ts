@@ -430,13 +430,8 @@ export class ImageUploadService {
         };
       }
 
-      // Compress image for optimal upload with improved quality
-      const compressionResult = await ImageCompression.compressProfilePicture(file, {
-        maxWidth: 1200, // Increased for better quality
-        maxHeight: 1200, // Increased for better quality
-        quality: 0.95, // Increased for better quality
-        format: 'jpeg'
-      });
+      // Compress image for optimal upload with device-optimized settings
+      const compressionResult = await ImageCompression.compressForDevice(file);
 
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
@@ -686,12 +681,29 @@ export class ImageUploadService {
       if (!response.ok) {
         const errorText = await response.text();
         console.log('❌ Response not OK:', errorText);
+        
+        // Handle specific error cases
+        if (response.status === 404) {
+          console.log('❌ Profile picture not found for user:', userId);
+        } else if (response.status === 401) {
+          console.log('❌ Unauthorized - token may be invalid');
+        } else if (response.status === 500) {
+          console.log('❌ Server error while fetching signed URL');
+        }
+        
         return null;
       }
 
       const result = await response.json();
       console.log('✅ Signed URL result:', result);
-      return result.data.url;
+      
+      if (result.success && result.data && result.data.url) {
+        console.log('✅ Valid signed URL received for user:', userId);
+        return result.data.url;
+      } else {
+        console.log('❌ Invalid response format:', result);
+        return null;
+      }
     } catch (error) {
       console.error('❌ Error getting signed URL:', error);
       return null;

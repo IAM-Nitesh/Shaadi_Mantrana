@@ -2025,3 +2025,75 @@ html {
   will-change: transform, opacity;
   transform: translateZ(0);
 }
+
+/* Profile Image Optimizations - Enhanced for Maximum Quality */
+.swipe-card-image {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated; /* Fallback for better sharpness */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
+  transition: opacity 0.3s ease-in-out;
+  /* Enhanced quality settings */
+  filter: contrast(1.05) brightness(1.02); /* Slight enhancement for clarity */
+  -webkit-filter: contrast(1.05) brightness(1.02);
+}
+
+.swipe-card-image:hover {
+  opacity: 0.95;
+  filter: contrast(1.08) brightness(1.03); /* Enhanced on hover */
+  -webkit-filter: contrast(1.08) brightness(1.03);
+}
+
+/* High-quality image rendering for profile pictures - Enhanced */
+.profile-image-optimized {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated; /* Fallback for better sharpness */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
+  /* Enhanced quality settings */
+  filter: contrast(1.05) brightness(1.02) saturate(1.02); /* Slight enhancement for clarity */
+  -webkit-filter: contrast(1.05) brightness(1.02) saturate(1.02);
+  /* Ensure maximum quality rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Additional high-quality image class for maximum sharpness */
+.profile-image-maximum-quality {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
+  /* Maximum quality enhancement */
+  filter: contrast(1.08) brightness(1.03) saturate(1.05) sharpness(1.02);
+  -webkit-filter: contrast(1.08) brightness(1.03) saturate(1.05);
+  /* Hardware acceleration */
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  /* Smooth rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent blur during scaling */
+  transform-origin: center;
+  -webkit-transform-origin: center;
+}
+
+/* Loading animation for profile images */
+.profile-image-loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

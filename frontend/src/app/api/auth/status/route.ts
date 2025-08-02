@@ -5,19 +5,22 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Auth Status API: Starting authentication status check...');
     
     const authToken = request.cookies.get('authToken')?.value;
+    const refreshToken = request.cookies.get('refreshToken')?.value;
+    
     console.log('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
     console.log('🔍 Auth Status API: Auth token length:', authToken?.length || 0);
     console.log('🔍 Auth Status API: Auth token preview:', authToken ? `${authToken.substring(0, 20)}...` : 'None');
+    console.log('🔍 Auth Status API: Refresh token found:', refreshToken ? 'Yes' : 'No');
 
     if (!authToken) {
-      console.log('❌ Auth Status API: No authentication token found');
+      console.log('ℹ️ Auth Status API: No authentication token found - returning graceful response');
       return NextResponse.json(
         { 
           authenticated: false, 
           redirectTo: '/',
           message: 'No authentication token found' 
         },
-        { status: 401 }
+        { status: 200 } // Changed from 401 to 200 to prevent blocking
       );
     }
 
@@ -64,22 +67,71 @@ export async function GET(request: NextRequest) {
           console.log('❌ Auth Status API: Could not read error response');
         }
         
-        // For debugging, let's try to parse the error response as JSON
-        try {
-          const errorJson = await response.json();
-          console.log('❌ Auth Status API: Backend error JSON:', errorJson);
-        } catch (e) {
-          console.log('❌ Auth Status API: Could not parse error as JSON');
+        // If it's a 401 error and we have a refresh token, try to refresh
+        if (response.status === 401 && refreshToken) {
+          console.log('🔄 Auth Status API: Token expired, attempting refresh...');
+          
+          try {
+            const refreshResponse = await fetch(`${backendUrl}/api/auth/refresh`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ refreshToken }),
+              signal: AbortSignal.timeout(5000), // 5 second timeout for refresh
+            });
+
+            if (refreshResponse.ok) {
+              const refreshResult = await refreshResponse.json();
+              console.log('✅ Auth Status API: Token refresh successful');
+              
+              // Set new cookies with the refreshed tokens
+              const successResponse = NextResponse.json({
+                authenticated: true,
+                user: refreshResult.user || null,
+                redirectTo: refreshResult.user ? determineRedirectPath(refreshResult.user) : '/'
+              });
+
+              // Set new auth token cookie
+              if (refreshResult.accessToken) {
+                successResponse.cookies.set('authToken', refreshResult.accessToken, {
+                  httpOnly: true,
+                  secure: process.env.NODE_ENV === 'production',
+                  sameSite: 'lax',
+                  maxAge: 60 * 60 * 24 * 7, // 7 days
+                  path: '/'
+                });
+              }
+
+              // Set new refresh token cookie if provided
+              if (refreshResult.refreshToken) {
+                successResponse.cookies.set('refreshToken', refreshResult.refreshToken, {
+                  httpOnly: true,
+                  secure: process.env.NODE_ENV === 'production',
+                  sameSite: 'lax',
+                  maxAge: 60 * 60 * 24 * 30, // 30 days
+                  path: '/'
+                });
+              }
+
+              return successResponse;
+            } else {
+              console.log('❌ Auth Status API: Token refresh failed, status:', refreshResponse.status);
+            }
+          } catch (refreshError) {
+            console.error('❌ Auth Status API: Token refresh error:', refreshError);
+          }
         }
         
-        // Clear invalid cookies
+        // Clear invalid cookies and return graceful response
         const errorResponse = NextResponse.json(
           { 
             authenticated: false, 
             redirectTo: '/',
             message: 'Invalid or expired token' 
           },
-          { status: 401 }
+          { status: 200 } // Changed from 401 to 200 to prevent blocking
         );
 
         errorResponse.cookies.delete('authToken');
@@ -123,7 +175,7 @@ export async function GET(request: NextRequest) {
           redirectTo: '/',
           message: 'Failed to get user profile' 
         },
-        { status: 401 }
+        { status: 200 } // Changed from 401 to 200 to prevent blocking
       );
 
     } catch (fetchError) {
@@ -137,7 +189,7 @@ export async function GET(request: NextRequest) {
             redirectTo: '/',
             message: 'Request timeout. Please try again.' 
           },
-          { status: 408 }
+          { status: 200 } // Changed from 408 to 200 to prevent blocking
         );
       }
       
@@ -152,26 +204,31 @@ export async function GET(request: NextRequest) {
             redirectTo: '/',
             message: 'Backend connection failed. Please check if the backend is running.' 
           },
-          { status: 503 }
+          { status: 200 } // Changed from 503 to 200 to prevent blocking
         );
       }
       
-      throw fetchError;
+      // Return graceful response for any other errors
+      return NextResponse.json(
+        { 
+          authenticated: false, 
+          redirectTo: '/',
+          message: 'Authentication service temporarily unavailable' 
+        },
+        { status: 200 } // Changed from throwing error to returning 200
+      );
     }
 
   } catch (error) {
     console.error('❌ Auth Status API: Error:', error);
     
     let message = 'Internal server error';
-    let status = 500;
     
     if (error instanceof Error) {
       if (error.message.includes('fetch')) {
         message = 'Unable to connect to authentication server';
-        status = 503;
       } else if (error.message.includes('timeout')) {
         message = 'Request timeout. Please try again.';
-        status = 408;
       } else {
         message = error.message;
       }
@@ -183,7 +240,7 @@ export async function GET(request: NextRequest) {
         redirectTo: '/',
         message 
       },
-      { status }
+      { status: 200 } // Changed from 500 to 200 to prevent blocking
     );
   }
 }

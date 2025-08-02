@@ -838,7 +838,7 @@ function AdminPageContent() {
       )}
 
       {/* Logout Animation Overlay */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
         
@@ -881,8 +881,8 @@ function AdminPageContent() {
         {/* Main Content */}
         <div className="relative z-10 text-center">
           {/* Brand Logo */}
-          <div className="logout-logo w-24 h-24 mx-auto mb-8">
-            <img src="/icon.svg" alt="Shaadi Mantrana" className="w-full h-full" />
+          <div className="logout-logo w-64 h-64 mx-auto mb-8">
+            <img src="/icon.svg" alt="Shaadi Mantrana" className="w-full h-full heartbeat-animation" />
           </div>
           
           {/* Loading Text */}

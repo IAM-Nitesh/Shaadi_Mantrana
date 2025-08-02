@@ -353,8 +353,8 @@ function MatchesContent() {
                                   alt={match.profile.profile.name}
                                   width={64}
                                   height={64}
-                                  quality={95} // High quality for better visual appeal
-                                  className="w-full h-full object-cover profile-image" // Apply CSS optimizations
+                                  quality={100} // Increased from 95 to 100 for maximum quality
+                                  className="w-full h-full object-cover profile-image profile-image-maximum-quality" // Apply enhanced CSS optimizations
                                 />
                               ) : (
                                 <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
@@ -414,8 +414,8 @@ function MatchesContent() {
                                   alt={likedProfile.profile.profile.name}
                                   width={64}
                                   height={64}
-                                  quality={95} // High quality for better visual appeal
-                                  className="w-full h-full object-cover profile-image" // Apply CSS optimizations
+                                  quality={100} // Increased from 95 to 100 for maximum quality
+                                  className="w-full h-full object-cover profile-image profile-image-maximum-quality" // Apply enhanced CSS optimizations
                                 />
                               ) : (
                                 <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />

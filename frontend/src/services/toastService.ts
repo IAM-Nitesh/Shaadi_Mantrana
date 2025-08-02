@@ -168,7 +168,7 @@ class ToastService {
   }
 
   static profilePictureVerificationPending() {
-    return toast.success('✅ Your profile picture is being verified. It will be visible once approved.', {
+    return toast.success('Your profile picture is being verified. It will be visible once approved.', {
       id: 'profile-picture-verification-pending',
       duration: 5000,
     });

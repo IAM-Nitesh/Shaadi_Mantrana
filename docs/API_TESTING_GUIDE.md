@@ -66,6 +66,17 @@ const BASE_URL = 'http://localhost:5500';
 const TEST_EMAIL = 'codebynitesh@gmail.com'; // Admin user
 ```
 
+## 🔧 Recent API Improvements
+
+### Auth Status API Optimization (Latest)
+- **Issue**: Auth status API was returning 401 errors for unauthenticated users, causing blocking
+- **Solution**: Modified to return 200 status with `authenticated: false` for graceful handling
+- **Benefits**: 
+  - Users are no longer blocked by 401 errors
+  - Reduced API call frequency with improved caching
+  - Better user experience for unauthenticated users
+- **Test Page**: `/test/auth-status-test` - Verify API behavior
+
 ## 🧪 Test Categories
 
 ### 1. Authentication Tests ✅
@@ -76,6 +87,7 @@ const TEST_EMAIL = 'codebynitesh@gmail.com'; // Admin user
 - **Session Refresh**: `POST /api/auth/refresh`
 - **Logout**: `POST /api/auth/logout`
 - **Preapproved Check**: `GET /api/auth/preapproved/check`
+- **Auth Status**: `GET /api/auth/status` (Frontend API - returns 200 for unauthenticated users)
 
 ### 2. Profile Management Tests ✅
 - **Get All Profiles**: `GET /api/profiles`
