@@ -42,9 +42,9 @@ class B2StorageService {
    */
   async processImage(imageBuffer, userId) {
     try {
-      // Process image with Sharp - improved quality settings
+      // Process image with Sharp - enhanced quality settings for sharper images
       const processedImage = await sharp(imageBuffer)
-        .resize(1200, 1200, { // Increased resolution for better quality
+        .resize(1200, 1200, { // Increased from 1000 for better quality
           fit: 'inside',
           withoutEnlargement: true
         })
@@ -52,7 +52,7 @@ class B2StorageService {
           quality: 95, // Increased from 85 to 95 for better quality
           progressive: true,
           mozjpeg: true,
-          chromaSubsampling: '4:4:4' // Better color quality
+          chromaSubsampling: '4:4:4' // Enhanced from 4:2:0 for better color quality
         })
         .toBuffer();
 

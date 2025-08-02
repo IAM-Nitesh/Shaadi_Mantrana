@@ -20,6 +20,21 @@ interface AuthStatus {
   message?: string;
 }
 
+// Cache for auth status to reduce API calls
+let authStatusCache: { data: AuthStatus | null; timestamp: number } | null = null;
+const AUTH_CACHE_DURATION = 30 * 1000; // 30 seconds cache
+
+// Helper function to check if cache is valid
+function isAuthCacheValid(): boolean {
+  if (!authStatusCache) return false;
+  return Date.now() - authStatusCache.timestamp < AUTH_CACHE_DURATION;
+}
+
+// Helper function to clear auth cache
+function clearAuthCache(): void {
+  authStatusCache = null;
+}
+
 // Get Bearer token for backend API calls
 export async function getBearerToken(): Promise<string | null> {
   try {
@@ -54,9 +69,16 @@ export async function getBearerToken(): Promise<string | null> {
   }
 }
 
-// Check if user is authenticated
+// Check if user is authenticated with caching
 export async function isAuthenticated(): Promise<boolean> {
   try {
+    // Check cache first
+    if (isAuthCacheValid() && authStatusCache?.data) {
+      console.log('✅ AuthUtils: Using cached auth status');
+      return authStatusCache.data.authenticated;
+    }
+
+    console.log('🔍 AuthUtils: Checking authentication status...');
     const response = await fetch('/api/auth/status', {
       method: 'GET',
       credentials: 'include',
@@ -66,20 +88,46 @@ export async function isAuthenticated(): Promise<boolean> {
     });
 
     if (!response.ok) {
+      console.log('❌ AuthUtils: Auth status check failed, status:', response.status);
+      // Cache the failed response to prevent repeated calls
+      authStatusCache = {
+        data: { authenticated: false, redirectTo: '/', message: 'Auth check failed' },
+        timestamp: Date.now()
+      };
       return false;
     }
 
-    const data = await response.json();
+    const data: AuthStatus = await response.json();
+    
+    // Cache the response
+    authStatusCache = {
+      data,
+      timestamp: Date.now()
+    };
+
+    console.log('✅ AuthUtils: Auth status cached:', data.authenticated);
     return data.authenticated === true;
   } catch (error) {
     console.error('❌ AuthUtils: Error checking authentication:', error);
+    // Cache the error response to prevent repeated calls
+    authStatusCache = {
+      data: { authenticated: false, redirectTo: '/', message: 'Auth check error' },
+      timestamp: Date.now()
+    };
     return false;
   }
 }
 
-// Get current user info
+// Get current user info with caching
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
+    // Check cache first
+    if (isAuthCacheValid() && authStatusCache?.data) {
+      console.log('✅ AuthUtils: Using cached user data');
+      return authStatusCache.data.user || null;
+    }
+
+    console.log('🔍 AuthUtils: Getting current user...');
     const response = await fetch('/api/auth/status', {
       method: 'GET',
       credentials: 'include',
@@ -89,15 +137,40 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     });
 
     if (!response.ok) {
+      console.log('❌ AuthUtils: Failed to get user data, status:', response.status);
+      // Cache the failed response
+      authStatusCache = {
+        data: { authenticated: false, redirectTo: '/', message: 'User data fetch failed' },
+        timestamp: Date.now()
+      };
       return null;
     }
 
-    const data = await response.json();
+    const data: AuthStatus = await response.json();
+    
+    // Cache the response
+    authStatusCache = {
+      data,
+      timestamp: Date.now()
+    };
+
+    console.log('✅ AuthUtils: User data cached');
     return data.user || null;
   } catch (error) {
     console.error('❌ AuthUtils: Error getting current user:', error);
+    // Cache the error response
+    authStatusCache = {
+      data: { authenticated: false, redirectTo: '/', message: 'User data error' },
+      timestamp: Date.now()
+    };
     return null;
   }
+}
+
+// Function to clear auth cache (useful for logout or when forcing refresh)
+export function clearAuthStatusCache(): void {
+  clearAuthCache();
+  console.log('🔍 AuthUtils: Auth status cache cleared');
 }
 
 // Check if user is admin

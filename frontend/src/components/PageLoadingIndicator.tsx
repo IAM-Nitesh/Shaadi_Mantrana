@@ -29,6 +29,14 @@ export default function PageLoadingIndicator() {
       return true;
     }
     
+    // Don't show when logout overlay is present
+    if (typeof document !== 'undefined') {
+      const logoutOverlay = document.querySelector('.logout-overlay');
+      if (logoutOverlay && logoutOverlay.classList.contains('flex')) {
+        return true;
+      }
+    }
+    
     return false;
   }, [pathname, isPageDataLoaded]);
 

@@ -1369,7 +1369,6 @@ function ProfileContent() {
         if (uploadedImageUrl) {
           // Add a delay to simulate verification process
           setTimeout(() => {
-            ToastService.profilePictureUploaded();
             setUploadMessage('');
           }, 500);
         }
@@ -1488,11 +1487,6 @@ function ProfileContent() {
       }));
       
       setUploadMessage('Image selected! Click "Save Changes" to upload');
-      
-      // Show toast notification for image selection
-      setTimeout(() => {
-        ToastService.profilePictureUploaded();
-      }, 500);
       
       // Clear the success message after a short delay
       setTimeout(() => {
