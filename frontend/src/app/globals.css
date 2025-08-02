@@ -1625,64 +1625,56 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   }
 }
 
-/* Ultra-Smooth Page Transitions */
+/* Simplified Page Transitions - Seamless Experience */
 .page-transition-enter {
   opacity: 0;
-  transform: translateY(20px) scale(0.98);
-  filter: blur(4px);
 }
 
 .page-transition-enter-active {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0px);
-  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: opacity 0.15s ease-out;
 }
 
 .page-transition-exit {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0px);
 }
 
 .page-transition-exit-active {
   opacity: 0;
-  transform: translateY(-20px) scale(0.98);
-  filter: blur(4px);
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: opacity 0.12s ease-in;
 }
 
-/* Enhanced Navigation Transitions */
+/* Simplified Navigation Transitions */
 .nav-item-enter {
   opacity: 0;
-  transform: translateY(10px) scale(0.95);
+  transform: translateY(2px); /* Minimal movement */
 }
 
 .nav-item-enter-active {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: translateY(0);
+  transition: all 0.15s ease-out;
 }
 
 .nav-item-exit {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
 .nav-item-exit-active {
   opacity: 0;
-  transform: translateY(-10px) scale(0.95);
-  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: translateY(-2px); /* Minimal movement */
+  transition: all 0.12s ease-in;
 }
 
-/* Smooth Loading Indicator */
+/* Simplified Loading Indicator */
 .loading-indicator {
   background: linear-gradient(90deg, 
     rgba(236, 72, 153, 0.1) 0%, 
     rgba(236, 72, 153, 0.3) 50%, 
     rgba(236, 72, 153, 0.1) 100%);
   background-size: 200% 100%;
-  animation: loading-shimmer 1.5s ease-in-out infinite;
+  animation: loading-shimmer 1s ease-in-out infinite; /* Faster, simpler animation */
 }
 
 @keyframes loading-shimmer {
@@ -1690,47 +1682,51 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   100% { background-position: 200% 0; }
 }
 
-/* Enhanced Hover Effects */
+/* Simplified Hover Effects */
 .hover-lift-ultra {
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
+  will-change: transform;
 }
 
 .hover-lift-ultra:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px); /* Minimal lift effect */
+  box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.15);
 }
 
-/* Smooth Button Transitions */
+/* Simplified Button Transitions */
 .btn-smooth {
-  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
+  will-change: transform, box-shadow;
 }
 
 .btn-smooth::before {
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.15s ease; /* Faster transition */
+  pointer-events: none;
 }
 
 .btn-smooth:hover::before {
-  left: 100%;
+  opacity: 1;
 }
 
 .btn-smooth:active {
-  transform: scale(0.98);
+  transform: translateY(1px); /* Minimal press effect */
+  transition: all 0.1s ease;
 }
 
-/* Enhanced Focus States */
+/* Simplified Focus States */
 .focus-smooth:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
-  transition: box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+  transition: box-shadow 0.12s ease; /* Faster focus transition */
 }
 
 /* Smooth Scroll Behavior */
@@ -1751,30 +1747,24 @@ html {
   }
 }
 
-/* Ultra-Smooth Animations */
+/* Simplified Animations */
 .animate-ultra-smooth {
-  animation: ultraSmooth 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
+  will-change: transform, opacity;
 }
 
 @keyframes ultraSmooth {
   0% {
     opacity: 0;
-    transform: translateY(30px) scale(0.9);
-    filter: blur(8px);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translateY(10px) scale(0.95);
-    filter: blur(4px);
+    transform: translateY(4px); /* Minimal movement */
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0px);
+    transform: translateY(0);
   }
 }
 
-/* Enhanced Page Loading States */
+/* Simplified Page Loading */
 .page-loading {
   position: relative;
   overflow: hidden;
@@ -1789,9 +1779,9 @@ html {
   height: 100%;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(255, 255, 255, 0.4) 50%, 
+    rgba(255, 255, 255, 0.3) 50%, 
     transparent 100%);
-  animation: pageLoadingShimmer 1.5s ease-in-out infinite;
+  animation: pageLoadingShimmer 1s ease-in-out infinite; /* Faster, simpler animation */
 }
 
 @keyframes pageLoadingShimmer {
@@ -1799,73 +1789,75 @@ html {
   100% { transform: translateX(100%); }
 }
 
-/* Smooth Navigation Bar */
+/* Simplified Navigation Bar */
 .nav-smooth {
   backdrop-filter: blur(20px);
   background: rgba(255, 255, 255, 0.8);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
+  will-change: background, box-shadow;
 }
 
 .nav-smooth.scrolled {
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
 }
 
-/* Enhanced Card Transitions */
+/* Simplified Card Transitions */
 .card-smooth {
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
   transform-origin: center;
+  will-change: transform, box-shadow;
 }
 
 .card-smooth:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px); /* Minimal lift effect */
+  box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.15);
 }
 
-/* Smooth Modal Transitions */
+/* Simplified Modal Transitions */
 .modal-smooth {
-  animation: modalSmooth 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  animation: modalSmooth 0.2s ease-out; /* Faster, simpler animation */
 }
 
 @keyframes modalSmooth {
   0% {
     opacity: 0;
-    transform: scale(0.8) translateY(-20px);
+    transform: scale(0.98); /* Minimal scale effect */
   }
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1);
   }
 }
 
-/* Enhanced Form Transitions */
+/* Simplified Form Transitions */
 .form-smooth {
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
 }
 
 .form-smooth:focus-within {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px); /* Minimal lift effect */
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
 }
 
-/* Ultra-Smooth Text Animations */
+/* Simplified Text Animations */
 .text-smooth {
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
 }
 
 .text-smooth:hover {
-  transform: translateY(-1px);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px); /* Minimal lift effect */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Pulse animations for indicators */
+/* Simplified Pulse Animations */
 .pulse-indicator {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse 1.2s ease-in-out infinite; /* Faster, simpler animation */
 }
 
 .pulse-badge {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse 1.2s ease-in-out infinite; /* Faster, simpler animation */
 }
 
 @keyframes pulse {
@@ -1873,14 +1865,15 @@ html {
     opacity: 1;
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.6; /* Less dramatic pulse */
   }
 }
 
-/* Bottom Navigation Icon Styles */
+/* Simplified Navigation Icons */
 .nav-icon {
   color: #ef4444; /* rose-500 */
-  transition: all 0.3s ease;
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
+  will-change: color, transform;
 }
 
 .nav-icon.active {
@@ -1890,12 +1883,20 @@ html {
 /* Ensure Remix Icons have proper styling for navigation */
 [class*="ri-"] {
   color: inherit;
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
 }
 
 /* Specific styling for navigation icons */
 .nav-icon [class*="ri-"] {
   color: #ef4444 !important; /* rose-500 */
-  transition: all 0.3s ease;
+  stroke: #ef4444; /* rose-500 */
+  fill: transparent;
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
+}
+
+.nav-icon.active [class*="ri-"] {
+  fill: #ef4444 !important; /* rose-500 */
+  stroke: #ef4444; /* rose-500 */
 }
 
 /* Ensure outline icons have transparent fill by default */
@@ -1908,49 +1909,50 @@ html {
   fill: #ef4444 !important; /* rose-500 */
 }
 
-/* Hover effects for better visual feedback */
+/* Simplified Hover Effects */
 .nav-icon:hover [class*="ri-"] {
-  transform: scale(1.05);
+  transform: scale(1.02); /* Minimal scale effect */
 }
 
 /* Custom SVG icon styling for navigation */
 .nav-icon img {
   width: 24px;
   height: 24px;
-  transition: all 0.3s ease;
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
 }
 
 .nav-icon.active img {
-  transform: scale(1.1);
+  transform: scale(1.02); /* Minimal scale effect */
 }
 
 .nav-icon:hover img {
-  transform: scale(1.05);
+  transform: scale(1.02); /* Minimal scale effect */
 }
 
-/* Enhanced Toast Styles for Swipe-to-Dismiss */
+/* Simplified Toast Animations */
 .toast-animation {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease-out; /* Faster, simpler transition */
   transform-origin: center;
+  will-change: transform, opacity, box-shadow;
 }
 
 .toast-animation:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 15px 35px rgba(236, 72, 153, 0.2), 0 8px 15px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px); /* Minimal lift effect */
+  box-shadow: 0 8px 25px -8px rgba(236, 72, 153, 0.15), 0 4px 8px -2px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Swipe animation indicators */
+/* Simplified Swipe Animation */
 .toast-animation[data-swipe="move"] {
   transform: translateX(var(--radix-toast-swipe-move-x));
 }
 
 .toast-animation[data-swipe="cancel"] {
   transform: translateX(0);
-  transition: transform 0.2s ease-out;
+  transition: transform 0.12s ease-out; /* Faster transition */
 }
 
 .toast-animation[data-swipe="end"] {
-  animation: slideOut 0.3s ease-in;
+  animation: slideOut 0.15s ease-in; /* Faster animation */
 }
 
 @keyframes slideOut {
@@ -1960,7 +1962,7 @@ html {
   }
 }
 
-/* Toast interaction hints */
+/* Simplified Toast Interaction Hints */
 .toast-animation::before {
   content: '';
   position: absolute;
@@ -1970,10 +1972,56 @@ html {
   bottom: 0;
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease; /* Faster transition */
   pointer-events: none;
 }
 
 .toast-animation:hover::before {
   opacity: 1;
+}
+
+/* Simplified Performance Optimizations for Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .page-transition,
+  .page-wrapper {
+    transition: none !important;
+  }
+  
+  .toast-animation,
+  .toast-animation[data-type="success"],
+  .toast-animation[data-type="error"],
+  .toast-animation[data-type="loading"] {
+    animation: none;
+    transition: opacity 0.12s ease; /* Faster transition */
+  }
+  
+  .toast-animation::before {
+    animation: none;
+  }
+  
+  .toast-animation svg {
+    animation: none;
+  }
+}
+
+/* Hardware Acceleration for Better Performance */
+.hardware-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Loading Fast Class for Performance */
+.loading-fast {
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
