@@ -79,7 +79,7 @@ class InvitationController {
           settleAbroad: undefined,
           about: '',
           interests: [],
-          images: []
+          images: null // Set to null instead of empty array
         },
         preferences: {
           location: [

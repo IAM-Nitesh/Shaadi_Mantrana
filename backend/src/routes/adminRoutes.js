@@ -144,7 +144,7 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
         settleAbroad: undefined,
         about: '',
         interests: [],
-        images: []
+        images: null // Set to null instead of empty array
       },
       preferences: {
         location: [
@@ -619,7 +619,7 @@ const sendInvitationEmail = async (userId, adminUserId) => {
         location: "India",
         profileCompleteness: 0,
         interests: [],
-        images: []
+        images: null // Set to null instead of empty array
       },
       preferences: {
         ageRange: {
@@ -973,7 +973,7 @@ router.post('/users/send-bulk-invites', authenticateToken, adminMiddleware, asyn
             location: "India",
             profileCompleteness: 0,
             interests: [],
-            images: []
+            images: null // Set to null instead of empty array
           },
           preferences: {
             ageRange: {

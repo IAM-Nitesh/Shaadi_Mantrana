@@ -189,11 +189,19 @@ const userSchema = new mongoose.Schema({
       trim: true,
       maxlength: 50
     }],
-    images: [{
-      type: String,
-      trim: true,
-      maxlength: 500
-    }],
+    images: {
+      type: mongoose.Schema.Types.Mixed, // Allow both string and array
+      validate: {
+        validator: function(value) {
+          // Allow string, array, or null/undefined
+          if (value === null || value === undefined) return true;
+          if (typeof value === 'string') return true;
+          if (Array.isArray(value)) return true;
+          return false;
+        },
+        message: 'Images must be a string, array, or null'
+      }
+    },
     
     profileCompleteness: {
       type: Number,

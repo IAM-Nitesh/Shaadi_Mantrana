@@ -1,6 +1,8 @@
 // Server-side Authentication Service
 // Uses HTTP-only cookies for security instead of localStorage
 
+import tokenRefreshService from './token-refresh-service';
+
 export interface AuthUser {
   role: string;
   email: string;
@@ -21,9 +23,37 @@ export interface AuthStatus {
 export class ServerAuthService {
   private static readonly MAX_RETRIES = 3;
   private static readonly RETRY_DELAY = 1000; // 1 second
+  private static isTokenRefreshServiceStarted = false;
 
-  // Helper method to add retry logic
-  private static async withRetry<T>(
+  // Initialize token refresh service
+  static initializeTokenRefresh(): void {
+    if (!this.isTokenRefreshServiceStarted) {
+      console.log('🔄 ServerAuthService: Initializing token refresh service');
+      tokenRefreshService.start(
+        (success) => {
+          if (success) {
+            console.log('✅ ServerAuthService: Token refresh successful');
+          } else {
+            console.log('❌ ServerAuthService: Token refresh failed');
+          }
+        },
+        () => {
+          console.log('⚠️ ServerAuthService: Token expired, user needs to re-authenticate');
+        }
+      );
+      this.isTokenRefreshServiceStarted = true;
+    }
+  }
+
+  // Stop token refresh service
+  static stopTokenRefresh(): void {
+    console.log('🔄 ServerAuthService: Stopping token refresh service');
+    tokenRefreshService.stop();
+    this.isTokenRefreshServiceStarted = false;
+  }
+
+  // Helper method to add retry logic with token refresh
+  private static async withRetryAndTokenRefresh<T>(
     operation: () => Promise<T>,
     maxRetries: number = this.MAX_RETRIES
   ): Promise<T> {
@@ -36,14 +66,26 @@ export class ServerAuthService {
         lastError = error as Error;
         console.warn(`ServerAuthService: Attempt ${attempt} failed:`, error);
         
-        // Don't retry on rate limiting or authentication errors
+        // Check if it's an authentication error that might be fixed by token refresh
         if (error instanceof Error) {
+          if (error.message.includes('401') || error.message.includes('Authentication failed')) {
+            console.log('🔄 ServerAuthService: Authentication error detected, attempting token refresh...');
+            
+            try {
+              const refreshSuccess = await tokenRefreshService.refreshToken();
+              if (refreshSuccess) {
+                console.log('✅ ServerAuthService: Token refresh successful, retrying operation...');
+                // Retry the operation with the new token
+                return await operation();
+              }
+            } catch (refreshError) {
+              console.error('❌ ServerAuthService: Token refresh failed:', refreshError);
+            }
+          }
+          
+          // Don't retry on rate limiting
           if (error.message.includes('429') || error.message.includes('Rate limit exceeded')) {
             console.log('ServerAuthService: Rate limit hit, not retrying');
-            throw lastError;
-          }
-          if (error.message.includes('401') || error.message.includes('Authentication failed')) {
-            console.log('ServerAuthService: Authentication failed, not retrying');
             throw lastError;
           }
         }
@@ -67,7 +109,7 @@ export class ServerAuthService {
     try {
       console.log('🔍 ServerAuthService: Starting OTP verification for:', email);
       
-      const result = await this.withRetry(async () => {
+      const result = await this.withRetryAndTokenRefresh(async () => {
         const response = await fetch('/api/auth/verify', {
           method: 'POST',
           headers: {
@@ -86,6 +128,9 @@ export class ServerAuthService {
       });
 
       console.log('✅ ServerAuthService: OTP verification successful:', result);
+      
+      // Initialize token refresh service after successful authentication
+      this.initializeTokenRefresh();
       
       return {
         success: true,
@@ -122,7 +167,7 @@ export class ServerAuthService {
     try {
       console.log('🔍 ServerAuthService: Checking authentication status...');
       
-      const result = await this.withRetry(async () => {
+      const result = await this.withRetryAndTokenRefresh(async () => {
         console.log('🔍 ServerAuthService: Making request to /api/auth/status...');
         
         const response = await fetch('/api/auth/status', {
@@ -158,6 +203,11 @@ export class ServerAuthService {
 
       console.log('✅ ServerAuthService: Auth status check successful:', result);
       
+      // Initialize token refresh service if user is authenticated
+      if (result.authenticated) {
+        this.initializeTokenRefresh();
+      }
+      
       return {
         authenticated: true,
         user: result.user,
@@ -191,7 +241,10 @@ export class ServerAuthService {
     try {
       console.log('🔍 ServerAuthService: Starting logout...');
       
-      const result = await this.withRetry(async () => {
+      // Stop token refresh service
+      this.stopTokenRefresh();
+      
+      const result = await this.withRetryAndTokenRefresh(async () => {
         const response = await fetch('/api/auth/logout', {
           method: 'POST',
           credentials: 'include', // Include cookies
