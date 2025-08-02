@@ -395,12 +395,7 @@ export default function AdminBottomNavigation() {
               </p>
             </div>
             
-            {/* Loading Dots */}
-            <div className="logout-dots flex justify-center space-x-1">
-              <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-              <span className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
-              <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
-            </div>
+            {/* Loading dots removed */}
             
             {/* Redirect Message */}
             <p className="text-slate-500 text-xs mt-4">

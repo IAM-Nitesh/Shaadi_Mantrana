@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import CustomIcon from './CustomIcon';
 import { usePathname } from 'next/navigation';
 
@@ -29,6 +30,7 @@ export default function StandardHeader({
   rightElement
 }: StandardHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <motion.div 
@@ -41,7 +43,15 @@ export default function StandardHeader({
         <div className="flex items-center space-x-3">
           {showBackButton && (
             <button
-              onClick={onBackClick}
+              onClick={() => {
+                if (onBackClick) {
+                  onBackClick();
+                } else if (backHref) {
+                  router.push(backHref);
+                } else {
+                  router.back();
+                }
+              }}
               className="w-10 h-10 flex items-center justify-center text-neutral-600 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:bg-gray-50 transition-colors duration-200 active:scale-95"
             >
               <CustomIcon name="ri-arrow-left-line" />
@@ -64,7 +74,6 @@ export default function StandardHeader({
               </h1>
               <div className="flex items-center justify-start space-x-1 mt-1">
                 <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-rose-400 rounded-full"></div>
-                <div className="w-1.5 h-1.5 bg-rose-500 rounded-full pulse-indicator"></div>
                 <div className="w-3 h-0.5 bg-gradient-to-r from-rose-400 to-gray-300 rounded-full"></div>
               </div>
             </div>
@@ -79,9 +88,7 @@ export default function StandardHeader({
             >
               <CustomIcon name="ri-filter-3-line" />
               {hasActiveFilters && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-white border border-rose-500 rounded-full pulse-badge flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-rose-500 rounded-full"></div>
-                </div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full pulse-badge"></div>
               )}
             </button>
           )}

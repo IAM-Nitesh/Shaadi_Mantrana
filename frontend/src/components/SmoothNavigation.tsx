@@ -97,11 +97,8 @@ export default function SmoothNavigation({ items, className = '' }: SmoothNaviga
       return `${baseClasses} text-gray-300 cursor-not-allowed opacity-50`;
     }
     
-    if (isActive) {
-      return `${baseClasses} text-rose-500`;
-    }
-    
-    return `${baseClasses} text-gray-400 hover:text-rose-500`;
+    // All icons should have red color by default and when active
+    return `${baseClasses} text-rose-500`;
   };
 
   const getIconClasses = (href: string) => {
@@ -139,6 +136,7 @@ export default function SmoothNavigation({ items, className = '' }: SmoothNaviga
       text-xs font-medium
       transition-all duration-300 ease-out
       transform
+      text-rose-500
     `;
     
     if (isDisabled) {
@@ -146,7 +144,7 @@ export default function SmoothNavigation({ items, className = '' }: SmoothNaviga
     }
     
     if (isActive) {
-      return `${baseClasses} scale-105`;
+      return `${baseClasses} scale-105 font-semibold`;
     }
     
     return `${baseClasses} group-hover:scale-105`;
@@ -194,7 +192,7 @@ export default function SmoothNavigation({ items, className = '' }: SmoothNaviga
 
               {/* Icon */}
               <motion.div
-                className={getIconClasses(item.href)}
+                className={`${getIconClasses(item.href)} nav-icon ${isActive ? 'active' : ''}`}
                 animate={{
                   y: isActive ? -1 : 0, // Reduced movement for smoother feel
                 }}
