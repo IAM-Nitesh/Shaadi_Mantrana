@@ -1,7 +1,7 @@
 {
   "name": "shaadi-mantra",
   "version": "1.0.0",
-  "description": "Shaadi Mantra - Full Stack Matrimonial Application",
+  "description": "Shaadi Mantrana - Full Stack Matrimonial Application",
   "private": true,
   "scripts": {
     "dev:backend": "cd backend && npx cross-env NODE_ENV=development PORT=5500 node start.js",
@@ -39,7 +39,7 @@
     "express",
     "mobile-app"
   ],
-  "author": "Shaadi Mantra Team",
+  "author": "Shaadi Mantrana Team",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",

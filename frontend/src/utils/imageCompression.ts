@@ -22,9 +22,9 @@ export interface CompressionResult {
 
 export class ImageCompression {
   private static readonly DEFAULT_OPTIONS: CompressionOptions = {
-    maxWidth: 1080,
-    maxHeight: 1080,
-    quality: 0.85,
+    maxWidth: 1200, // Increased from 1080 for better quality
+    maxHeight: 1200, // Increased from 1080 for better quality
+    quality: 0.95, // Increased from 0.85 to 0.95 for better quality
     format: 'jpeg',
     stripMetadata: true
   };

@@ -1236,3 +1236,456 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   transform: scale(0.95) translateY(-10px);
   transition: all 0.1s ease-in;
 }
+
+/* Custom Toast Animations and Styling */
+.toast-animation {
+  animation: toastSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transform-origin: top center;
+}
+
+@keyframes toastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  50% {
+    transform: translateY(5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Toast hover effects */
+.toast-animation:hover {
+  transform: translateY(-2px) scale(1.02);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom toast icon animations */
+.toast-animation svg {
+  animation: toastIconPulse 2s ease-in-out infinite;
+}
+
+@keyframes toastIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Success toast specific animations */
+.toast-animation[data-type="success"] {
+  animation: toastSuccessSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes toastSuccessSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9) rotate(-2deg);
+  }
+  60% {
+    transform: translateY(8px) scale(1.05) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* Error toast specific animations */
+.toast-animation[data-type="error"] {
+  animation: toastErrorSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes toastErrorSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9) rotate(2deg);
+  }
+  60% {
+    transform: translateY(8px) scale(1.05) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* Loading toast specific animations */
+.toast-animation[data-type="loading"] {
+  animation: toastLoadingSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes toastLoadingSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  60% {
+    transform: translateY(8px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Toast exit animations */
+.toast-animation[data-exit="true"] {
+  animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes toastSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}
+
+/* Toast progress bar animation */
+.toast-animation::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-600));
+  border-radius: 0 0 16px 16px;
+  animation: toastProgress 4s linear forwards;
+}
+
+@keyframes toastProgress {
+  0% {
+    width: 100%;
+  }
+  100% {
+    width: 0%;
+  }
+}
+
+/* Success toast progress bar */
+.toast-animation[data-type="success"]::before {
+  background: linear-gradient(90deg, #10b981, #059669);
+  animation-duration: 5s;
+}
+
+/* Error toast progress bar */
+.toast-animation[data-type="error"]::before {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  animation-duration: 6s;
+}
+
+/* Loading toast progress bar */
+.toast-animation[data-type="loading"]::before {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  animation: toastLoadingProgress 2s ease-in-out infinite;
+}
+
+@keyframes toastLoadingProgress {
+  0%, 100% {
+    width: 30%;
+  }
+  50% {
+    width: 70%;
+  }
+}
+
+/* Toast container animations */
+[data-sonner-toaster] {
+  animation: toastContainerFadeIn 0.3s ease-out;
+}
+
+@keyframes toastContainerFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsive toast adjustments */
+@media (max-width: 768px) {
+  .toast-animation {
+    max-width: calc(100vw - 32px) !important;
+    min-width: 280px !important;
+    margin: 0 16px;
+  }
+  
+  .toast-animation[data-type="success"],
+  .toast-animation[data-type="error"],
+  .toast-animation[data-type="loading"] {
+    animation-duration: 0.4s;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .toast-animation {
+    border-width: 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .toast-animation,
+  .toast-animation[data-type="success"],
+  .toast-animation[data-type="error"],
+  .toast-animation[data-type="loading"] {
+    animation: none;
+    transition: opacity 0.2s ease;
+  }
+  
+  .toast-animation::before {
+    animation: none;
+  }
+  
+  .toast-animation svg {
+    animation: none;
+  }
+}
+
+/* Ultra-Smooth Page Transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  filter: blur(4px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0px);
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0px);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.98);
+  filter: blur(4px);
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Enhanced Navigation Transitions */
+.nav-item-enter {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+}
+
+.nav-item-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.nav-item-exit {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.nav-item-exit-active {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Smooth Loading Indicator */
+.loading-indicator {
+  background: linear-gradient(90deg, 
+    rgba(236, 72, 153, 0.1) 0%, 
+    rgba(236, 72, 153, 0.3) 50%, 
+    rgba(236, 72, 153, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Enhanced Hover Effects */
+.hover-lift-ultra {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.hover-lift-ultra:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Smooth Button Transitions */
+.btn-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-smooth::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-smooth:hover::before {
+  left: 100%;
+}
+
+.btn-smooth:active {
+  transform: scale(0.98);
+}
+
+/* Enhanced Focus States */
+.focus-smooth:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Smooth Scroll Behavior */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+/* Enhanced Mobile Touch Feedback */
+@media (hover: none) and (pointer: coarse) {
+  .mobile-touch-feedback {
+    transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  
+  .mobile-touch-feedback:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+/* Ultra-Smooth Animations */
+.animate-ultra-smooth {
+  animation: ultraSmooth 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+@keyframes ultraSmooth {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(10px) scale(0.95);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Enhanced Page Loading States */
+.page-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.4) 50%, 
+    transparent 100%);
+  animation: pageLoadingShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes pageLoadingShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Smooth Navigation Bar */
+.nav-smooth {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.nav-smooth.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Card Transitions */
+.card-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-origin: center;
+}
+
+.card-smooth:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Smooth Modal Transitions */
+.modal-smooth {
+  animation: modalSmooth 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+@keyframes modalSmooth {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Enhanced Form Transitions */
+.form-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.form-smooth:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Ultra-Smooth Text Animations */
+.text-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.text-smooth:hover {
+  transform: translateY(-1px);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

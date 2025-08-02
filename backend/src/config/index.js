@@ -83,14 +83,12 @@ module.exports = {
   
   // Email configuration
   EMAIL: {
-    SERVICE: process.env.EMAIL_SERVICE || 'gmail',
     SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
-    SMTP_PORT: parseInt(process.env.SMTP_PORT) || 587,
-    SMTP_SECURE: process.env.SMTP_SECURE === 'true',
-    SMTP_USER: process.env.SMTP_USER || process.env.EMAIL_FROM,
-    SMTP_PASS: process.env.SMTP_PASS,
-    FROM_EMAIL: process.env.EMAIL_FROM || 'shaadimantra.help@gmail.com',
-    FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shaadi Mantra Support',
+    SMTP_PORT: process.env.SMTP_PORT || 587,
+    SMTP_USER: process.env.SMTP_USER || 'shaadimantrana.help@gmail.com',
+    SMTP_PASS: process.env.SMTP_PASS || 'xgemnazzfyyuxzvr',
+    FROM_EMAIL: process.env.EMAIL_FROM || 'shaadimantrana.help@gmail.com',
+    FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shaadi Mantrana Support',
     ENABLED: process.env.ENABLE_EMAIL === 'true'
   },
   

@@ -7,7 +7,7 @@
 
 const config = require('../src/config');
 
-console.log('🔧 ShaadiMantra Environment Configuration Check');
+console.log('🔧 ShaadiMantrana Environment Configuration Check');
 console.log('='.repeat(50));
 console.log(`Environment: ${config.NODE_ENV}`);
 console.log(`Port: ${config.PORT}`);

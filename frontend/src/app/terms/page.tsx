@@ -23,14 +23,14 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">1. Acceptance of Terms</h2>
               <p className="text-gray-600 leading-relaxed">
-                By accessing or using ShaadiMantra (&quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;), which form a legally binding agreement between you and ShaadiMantra under the Indian Contract Act, 1872. If you do not agree with these Terms, you may not use the Service. These Terms are subject to applicable Indian laws, including but not limited to the Information Technology Act, 2000 and rules framed thereunder.
+                By accessing or using ShaadiMantrana ("Service"), you agree to be bound by these Terms of Service ("Terms"), which form a legally binding agreement between you and ShaadiMantrana under the Indian Contract Act, 1872. If you do not agree with these Terms, you may not use the Service. These Terms are subject to applicable Indian laws, including but not limited to the Information Technology Act, 2000, and the Digital Personal Data Protection Act, 2023.
               </p>
             </div>
 
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">2. Service Description</h2>
               <p className="text-gray-600 leading-relaxed mb-3">
-                ShaadiMantra is a matrimonial platform designed to facilitate meaningful connections for marriage in compliance with Indian laws and cultural values. Our service includes:
+                ShaadiMantrana is a matrimonial platform designed to facilitate meaningful connections for marriage in compliance with Indian laws and cultural values. Our service includes:
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
                 <li>Profile creation and management for matrimonial purposes</li>
@@ -44,7 +44,7 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">3. Free Service Commitment</h2>
               <p className="text-gray-600 leading-relaxed mb-3">
-                ShaadiMantra is committed to providing a free matrimonial service to all users:
+                ShaadiMantrana is committed to providing a free matrimonial service to all users:
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
                 <li>No subscription fees, premium charges, or hidden costs</li>
@@ -58,7 +58,7 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">4. Eligibility and Registration</h2>
               <p className="text-gray-600 leading-relaxed mb-3">
-                To use ShaadiMantra, you must:
+                To use ShaadiMantrana, you must:
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
                 <li>Be at least 21 years of age for males and 18 for females, as per the legal marriageable age under the Hindu Marriage Act, 1955, or other applicable personal laws in India</li>
@@ -126,14 +126,14 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">9. Intellectual Property</h2>
               <p className="text-gray-600 leading-relaxed">
-                All content, features, and functionality of ShaadiMantra are protected under the Copyright Act, 1957 and other applicable Indian intellectual property laws. Users retain rights to their uploaded content but grant us a non-exclusive license to use it for platform operations and improvement, subject to privacy laws.
+                All content, features, and functionality of ShaadiMantrana are protected under the Copyright Act, 1957 and other applicable Indian intellectual property laws. Users retain rights to their uploaded content but grant us a non-exclusive license to use it for platform operations and improvement, subject to privacy laws.
               </p>
             </div>
 
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">10. Limitation of Liability</h2>
               <p className="text-gray-600 leading-relaxed">
-                ShaadiMantra provides the platform &quot;as is&quot; without warranties, subject to the Consumer Protection Act, 2019. We are not liable for user actions, meeting outcomes, or indirect damages. Our maximum liability is limited to the amount paid (zero for our free platform), as permitted under Indian law.
+                ShaadiMantrana provides the platform "as is" without warranties, subject to the Consumer Protection Act, 2019. We are not liable for user actions, meeting outcomes, or indirect damages. Our maximum liability is limited to the amount paid (zero for our free platform), as permitted under Indian law.
               </p>
             </div>
 
@@ -171,7 +171,7 @@ export default function Terms() {
                 For queries or grievances, contact our Grievance Officer as per the Information Technology Rules, 2021, through:
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>Support Email: <a href="mailto:shaadimantra.help@gmail.com" className="text-blue-600">shaadimantra.help@gmail.com</a></li>
+                <li>Support Email: <a href="mailto:shaadimantrana.help@gmail.com" className="text-blue-600">shaadimantrana.help@gmail.com</a></li>
                 <li>Admin Contact: +91 7086875013</li>
                 <li>In-app support section</li>
                 <li>Customer service channels within the platform</li>
@@ -186,7 +186,7 @@ export default function Terms() {
                 Last updated: July 2025
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                These Terms of Service are effective immediately and govern your use of ShaadiMantra in compliance with Indian laws.
+                These Terms of Service are effective immediately and govern your use of ShaadiMantrana in compliance with Indian laws.
               </p>
             </div>
           </div>

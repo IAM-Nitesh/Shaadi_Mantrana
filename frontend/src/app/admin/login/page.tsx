@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../../services/auth-service';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import CustomIcon from '../../../components/CustomIcon';
 import StandardHeader from '../../../components/StandardHeader';
 
@@ -13,12 +13,10 @@ export default function AdminLogin() {
     // Check if user is already authenticated and is admin
     const checkAdminAccess = async () => {
       try {
-        if (AuthService.isAuthenticated()) {
-          const hasAdminAccess = await AuthService.verifyAdminAccess();
-          if (hasAdminAccess) {
-            router.replace('/admin/dashboard');
-            return;
-          }
+        const authStatus = await ServerAuthService.checkAuthStatus();
+        if (authStatus.authenticated && authStatus.user?.role === 'admin') {
+          router.replace('/admin/dashboard');
+          return;
         }
       } catch (error) {
         console.error('Error checking admin access:', error);
@@ -44,7 +42,7 @@ export default function AdminLogin() {
             <CustomIcon name="ri-information-line" className="text-4xl text-blue-400 mb-4" />
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Login Required</h2>
             <p className="text-gray-600 mb-4">
-              Please login to your Shaadi Mantra account to access admin features.
+              Please login to your Shaadi Mantrana account to access admin features.
             </p>
             <p className="text-sm text-gray-500">
               Only users with administrator privileges can access the admin dashboard.
@@ -57,7 +55,7 @@ export default function AdminLogin() {
               className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200"
             >
               <CustomIcon name="ri-login-box-line" className="mr-2" />
-              Login to Shaadi Mantra
+              Login to Shaadi Mantrana
             </button>
             
             <button
