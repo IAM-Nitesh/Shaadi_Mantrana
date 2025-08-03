@@ -12,6 +12,7 @@ import { ServerAuthService } from '../../services/server-auth-service';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import HeartbeatLoader from '../../components/HeartbeatLoader';
 
 interface User {
   _id: string;
@@ -382,47 +383,21 @@ function AdminPageContent() {
 
   if (!isAuthenticated || !isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl font-semibold text-gray-800 mb-2">Loading Admin Panel...</div>
-          <p className="text-gray-600">Please wait while we verify your credentials</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <HeartbeatLoader 
+          logoSize="xxl"
+          textSize="lg"
+          text="Loading Admin Panel..."
+          showText={true}
+        />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      {/* Header */}
-      <div ref={headerRef} className="bg-white shadow-lg border-b border-rose-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              {/* Brand Logo with Heartbeat Animation */}
-              <div ref={logoRef} className="w-16 h-16 flex items-center justify-center">
-                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-12 h-12" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-600">Manage users and invitations</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleLogout}
-                className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 group"
-              >
-                <CustomIcon name="ri-logout-box-r-line" size={18} className="group-hover:rotate-12 transition-transform" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div ref={containerRef} className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-rose-100 admin-card-hover animate-slide-in-top">
@@ -502,8 +477,12 @@ function AdminPageContent() {
         <div ref={tableRef} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-rose-100 animate-slide-in-top" style={{ animationDelay: '0.4s' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
-              <div className="text-2xl font-semibold text-gray-800 mb-2">Loading Users...</div>
-              <p className="text-gray-600 mt-2">Please wait while we fetch the user data</p>
+              <HeartbeatLoader 
+                logoSize="xxl"
+                textSize="lg"
+                text="Loading Users..."
+                showText={true}
+              />
             </div>
           ) : users.length === 0 ? (
             <div className="p-12 text-center">

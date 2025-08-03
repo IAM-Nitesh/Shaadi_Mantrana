@@ -126,12 +126,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Error</h3>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
-          >
-            Try Again
-          </button>
+          <p className="text-sm text-gray-500">Pull down to refresh and try again.</p>
         </div>
       </div>
     );
