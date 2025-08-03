@@ -39,7 +39,7 @@ const NavigationItem = memo(({
     const baseClasses = `
       flex flex-col items-center justify-center
       relative overflow-hidden
-      mobile-touch-feedback
+      mobile-touch-feedback android-touch-target
       transition-all duration-150 ease-out
       group
       min-h-[64px] flex-1
@@ -83,17 +83,17 @@ const NavigationItem = memo(({
       onMouseLeave={() => onHover(null)}
       className={getNavItemClasses}
       disabled={isDisabled}
-      whileHover={{ scale: isDisabled ? 1 : 1.02 }} // Minimal scale effect
-      whileTap={{ scale: isDisabled ? 1 : 0.98 }} // Minimal press effect
-      transition={{ duration: 0.12 }} // Very fast transition
+      whileHover={{ scale: isDisabled ? 1 : 1.01 }} // Minimal scale effect
+      whileTap={{ scale: isDisabled ? 1 : 0.99 }} // Minimal press effect
+      transition={{ duration: 0.08 }} // Ultra-fast transition
     >
       {/* Icon */}
       <motion.div
         className={getIconClasses}
         animate={{
-          y: isActive ? -1 : 0, // Minimal movement
+          y: isActive ? -0.5 : 0, // Minimal movement
         }}
-        transition={{ duration: 0.12 }} // Very fast transition
+        transition={{ duration: 0.08 }} // Ultra-fast transition
       >
         <CustomIcon 
           name={isActive && item.activeIcon ? item.activeIcon : item.icon} 
@@ -105,9 +105,9 @@ const NavigationItem = memo(({
       <motion.span
         className={getLabelClasses}
         animate={{
-          y: isActive ? -1 : 0, // Minimal movement
+          y: isActive ? -0.5 : 0, // Minimal movement
         }}
-        transition={{ duration: 0.12 }} // Very fast transition
+        transition={{ duration: 0.08 }} // Ultra-fast transition
       >
         {item.label}
       </motion.span>
@@ -117,8 +117,8 @@ const NavigationItem = memo(({
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.15 }} // Fast badge animation
-          className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+          transition={{ duration: 0.08 }} // Ultra-fast badge animation
+          className="absolute -top-1 -right-1 text-red-500 text-xs font-bold"
         >
           {item.badge > 99 ? '99+' : item.badge}
         </motion.div>
@@ -178,7 +178,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
         }, 3000);
         
         // Redirect to profile page with optimized transition
-        console.log('🚫 Access denied: Profile incomplete or user in onboarding');
+  
         navigateTo('/profile', { immediate: true });
         return;
       }

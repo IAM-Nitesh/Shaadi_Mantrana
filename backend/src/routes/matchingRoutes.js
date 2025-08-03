@@ -27,4 +27,10 @@ router.get('/stats', matchingController.getDailyLikeStats.bind(matchingControlle
 // Unmatch from a profile
 router.post('/unmatch', matchingController.unmatchProfile.bind(matchingController));
 
+// Mark match toast as seen
+router.post('/mark-toast-seen', matchingController.markMatchToastSeen.bind(matchingController));
+
+// Mark match toast as seen when entering chat
+router.post('/mark-toast-seen-chat', matchingController.markToastSeenOnChatEntry.bind(matchingController));
+
 module.exports = router; 

@@ -176,10 +176,10 @@ export default function EmailInvitations() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 
-          logoSize="xxxxl"
-          textSize="xl"
+          logoSize="xxl"
+          textSize="lg"
           text="Loading invitations..." 
           showText={true}
         />
@@ -189,7 +189,7 @@ export default function EmailInvitations() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Invitations</h2>
@@ -206,54 +206,56 @@ export default function EmailInvitations() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-8 pt-4">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-            <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mr-3" />
-            Email Invitations
-          </h1>
-          <p className="text-gray-600">Send and manage email invitations to new users</p>
-        </div>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-8 pt-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
+          <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mr-3" />
+          Email Invitations
+        </h1>
+        <p className="text-gray-600">Send and manage email invitations to new users</p>
+      </div>
 
-        {/* Add New Invitation */}
-        <div className="invitation-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Send New Invitation
-          </h3>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="Enter email address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <button
-              onClick={sendNewInvitation}
-              disabled={!newEmail.trim() || sendingInvitation}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {sendingInvitation ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  Send Invitation
-                </>
-              )}
-            </button>
+      {/* Add New Invitation */}
+      <div className="invitation-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Send New Invitation
+        </h3>
+        
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="Enter email address"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
           </div>
+          <button
+            onClick={sendNewInvitation}
+            disabled={!newEmail.trim() || sendingInvitation}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {sendingInvitation ? (
+              <>
+                <div className="flex items-center justify-center mr-2">
+                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center animate-pulse">
+                    <span className="text-xs">💝</span>
+                  </div>
+                </div>
+                Sending...
+              </>
+            ) : (
+              <>
+                Send Invitation
+              </>
+            )}
+          </button>
         </div>
+      </div>
 
-        {/* Invitations List */}
-        <div className="invitation-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      {/* Invitations List */}
+      <div className="invitation-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center">
               <CustomIcon name="ri-mail-list-line" className="text-xl text-blue-500 mr-2" />
@@ -314,7 +316,6 @@ export default function EmailInvitations() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 } 

@@ -8,11 +8,11 @@ export default function Privacy() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">Privacy Policy</h1>
-          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600">
+        <div className="flex items-center">
+          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 mr-3">
             <CustomIcon name="ri-arrow-left-line" />
           </Link>
+          <h1 className="text-xl font-bold text-gray-800">Privacy Policy</h1>
         </div>
       </div>
 

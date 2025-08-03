@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SwipeCard from './SwipeCard';
@@ -12,9 +12,13 @@ import { ImageUploadService } from '../../services/image-upload-service';
 import CustomIcon from '../../components/CustomIcon';
 import SmoothNavigation from '../../components/SmoothNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
-import MatchAnimation from '../../components/MatchAnimation';
 import StandardHeader from '../../components/StandardHeader';
 import ServerAuthGuard from '../../components/ServerAuthGuard';
+import CelebratoryMatchToast from '../../components/CelebratoryMatchToast';
+import { DashboardSkeleton } from '../../components/SkeletonLoader';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import { useAndroidBackButton } from '../../hooks/useAndroidBackButton';
 
 import { gsap } from 'gsap';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -24,13 +28,14 @@ function DashboardContent() {
   const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showFilter, setShowFilter] = useState(false);
+  const [interactedProfiles, setInteractedProfiles] = useState<Set<string>>(new Set());
   const [dailyLikeCount, setDailyLikeCount] = useState(0);
   const [remainingLikes, setRemainingLikes] = useState(5);
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<FilterState>({
-    ageRange: [18, 40],
+    ageRange: [18, 70],
     selectedProfessions: [],
     selectedCountry: '',
     selectedState: ''
@@ -40,13 +45,40 @@ function DashboardContent() {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [matchName, setMatchName] = useState('');
+  const [connectionId, setConnectionId] = useState('');
   const [matchesCount, setMatchesCount] = useState(0);
+
+  // Enhanced mobile features
+  const { haptics } = useHapticFeedback();
+  const { goBack } = useAndroidBackButton({
+    onBack: () => {
+      if (showFilter) {
+        setShowFilter(false);
+        return true; // Prevent default back behavior
+      }
+      return false; // Allow default back behavior
+    }
+  });
+
+  // Pull-to-refresh functionality
+  const { containerRef: pullToRefreshRef, isRefreshing } = usePullToRefresh({
+    onRefresh: async () => {
+      haptics.light();
+      await loadProfiles();
+    },
+    enabled: true,
+  });
 
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
+
+  // Reset interacted profiles when profiles change
+  useEffect(() => {
+    setInteractedProfiles(new Set());
+  }, [profiles]);
 
   // Subscribe to matches count updates
   useEffect(() => {
@@ -67,36 +99,9 @@ function DashboardContent() {
     setError('');
     
     try {
-      console.log('🔄 Dashboard: Loading discovery profiles...');
       const discoveryData = await MatchingService.getDiscoveryProfiles();
-      console.log('✅ Dashboard: Discovery profiles loaded:', discoveryData);
       
-      // Debug: Log the first profile structure
-      if (discoveryData.profiles.length > 0) {
-        console.log('🔍 Dashboard: First profile structure:', {
-          id: discoveryData.profiles[0]._id,
-          name: discoveryData.profiles[0].profile?.name,
-          profession: discoveryData.profiles[0].profile?.profession,
-          occupation: discoveryData.profiles[0].profile?.occupation,
-          currentResidence: discoveryData.profiles[0].profile?.currentResidence,
-          nativePlace: discoveryData.profiles[0].profile?.nativePlace,
-          education: discoveryData.profiles[0].profile?.education,
-          interests: discoveryData.profiles[0].profile?.interests,
-          interestsType: typeof discoveryData.profiles[0].profile?.interests,
-          interestsLength: discoveryData.profiles[0].profile?.interests?.length,
-          about: discoveryData.profiles[0].profile?.about
-        });
-        
-        // Log all profiles interests
-        discoveryData.profiles.forEach((profile, index) => {
-          console.log(`🎯 Profile ${index + 1} interests:`, {
-            name: profile.profile?.name,
-            interests: profile.profile?.interests,
-            type: typeof profile.profile?.interests,
-            length: profile.profile?.interests?.length
-          });
-        });
-      }
+
       
       setProfiles(discoveryData.profiles);
       setDailyLikeCount(discoveryData.dailyLikeCount);
@@ -123,25 +128,19 @@ function DashboardContent() {
           .map(profile => profile._id);
         
         if (userIds.length > 0) {
-          console.log(`🖼️ Preloading signed URLs for ${userIds.length} profiles`);
           // Preload signed URLs in background for instant loading
           ImageUploadService.preloadSignedUrls(userIds);
-        } else {
-          console.log('ℹ️ No profiles with images found for preloading');
         }
       }
     } catch (err: unknown) {
-      console.error('❌ Dashboard: Error loading profiles:', err);
       if (err instanceof Error) {
         if (err.message.includes('Authentication failed') || err.message.includes('401')) {
-          console.log('🚫 Dashboard: Authentication failed, redirecting to home');
           router.push('/');
           return;
         }
         
         // Handle specific error cases
         if (err.message.includes('No profiles available')) {
-          console.log('📭 Dashboard: No profiles available, showing empty state');
           setProfiles([]);
           setError('');
           return;
@@ -157,7 +156,7 @@ function DashboardContent() {
         
         setError(err.message || 'Failed to load profiles');
       } else {
-        setError('Failed to load profiles');
+        setError('An unexpected error occurred');
       }
       // Don't throw the error to prevent app crashes
     } finally {
@@ -192,15 +191,15 @@ function DashboardContent() {
         y: 50 
       });
       
-      // Entrance animation timeline
-      const tl = gsap.timeline({ delay: 0.2 });
+      // Simplified entrance animation timeline
+      const tl = gsap.timeline({ delay: 0.1 });
       
       if (headerRef.current) {
         tl.to(headerRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-          ease: "back.out(1.4)"
+          duration: 0.3,
+          ease: "power2.out"
         });
       }
       
@@ -208,18 +207,18 @@ function DashboardContent() {
         tl.to(cardRef.current, {
           opacity: 1,
           y: 0,
-          duration: 1,
-          ease: "elastic.out(1, 0.8)"
-        }, "-=0.4");
+          duration: 0.4,
+          ease: "power2.out"
+        }, "-=0.2");
       }
       
       if (controlsRef.current) {
         tl.to(controlsRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.6,
+          duration: 0.3,
           ease: "power2.out"
-        }, "-=0.3");
+        }, "-=0.1");
       }
       
       // Animate action buttons if they exist
@@ -227,14 +226,14 @@ function DashboardContent() {
       if (actionButtons.length > 0) {
         tl.fromTo('.action-button', {
           scale: 0,
-          rotation: -180
+          rotation: -90
         }, {
           scale: 1,
           rotation: 0,
-          duration: 0.6,
-          ease: "back.out(1.7)",
-          stagger: 0.1
-        }, "-=0.2");
+          duration: 0.3,
+          ease: "power2.out",
+          stagger: 0.05
+        }, "-=0.1");
       }
 
       // Add hover animations to action buttons
@@ -243,10 +242,10 @@ function DashboardContent() {
         
         const handleMouseEnter = () => {
           gsap.to(element, {
-            scale: 1.1,
-            y: -5,
-            duration: 0.3,
-            ease: "back.out(1.7)"
+            scale: 1.05,
+            y: -2,
+            duration: 0.15,
+            ease: "power2.out"
           });
         };
         
@@ -254,7 +253,7 @@ function DashboardContent() {
           gsap.to(element, {
             scale: 1,
             y: 0,
-            duration: 0.3,
+            duration: 0.15,
             ease: "power2.out"
           });
         };
@@ -356,6 +355,16 @@ function DashboardContent() {
     }
   }, [loading, error]);
 
+  const handleKeepSwiping = useCallback(() => {
+    // Continue swiping - no action needed, just close the toast
+    console.log('User chose to keep swiping');
+  }, []);
+
+  const handleStartChat = useCallback(() => {
+    // Fallback navigation to matches page if no connectionId
+    router.push('/matches');
+  }, [router]);
+
   // GSAP animation for filter modal
   useEffect(() => {
     if (showFilter) {
@@ -378,31 +387,77 @@ function DashboardContent() {
 
     const currentProfile = profiles[currentIndex];
     
+    // Add haptic feedback
+    haptics.swipeLeft();
+    
+    // Check if profile has already been interacted with in this session
+    if (interactedProfiles.has(currentProfile._id)) {
+      console.log('Profile already interacted with in this session, moving to next profile');
+      setTimeout(() => {
+        setCurrentIndex(prev => prev + 1);
+      }, 300);
+      return;
+    }
+    
+    // Mark profile as interacted with
+    setInteractedProfiles(prev => new Set(prev).add(currentProfile._id));
+    
     try {
       if (direction === 'right') {
         // Like the profile
         const likeResponse = await MatchingService.likeProfile(currentProfile._id);
         console.log('Like response:', likeResponse);
         
-        if (likeResponse.isMutualMatch) {
-          // Show match notification
-          console.log('🎉 It\'s a match!');
-          setMatchName(currentProfile.profile.name || 'Someone');
-          setShowMatchAnimation(true);
+        // Check if profile was already liked
+        if (likeResponse.alreadyLiked) {
+          // Move to next profile without showing any error
+        } else if (likeResponse.isMutualMatch) {
+          // Show match notification only if shouldShowToast is true
+          if (likeResponse.shouldShowToast) {
+                    haptics.match(); // Add haptic feedback for matches
+        setMatchName(currentProfile.profile.name || 'Someone');
+        setConnectionId(likeResponse.connectionId || likeResponse.connection?._id || '');
+        setShowMatchAnimation(true);
+        
+        // Mark the match toast as seen for this user
+        try {
+          const result = await MatchingService.markMatchToastSeen(currentProfile._id);
+          if (!result.success) {
+            // Silently handle failure
+          }
+        } catch (error) {
+          // Don't block the UI if this fails
+        }
+                  }
           
           // Update matches count immediately for better UX
           matchesCountService.incrementCount();
         }
         
-        // Update daily like count
-        setDailyLikeCount(likeResponse.dailyLikeCount);
-        setRemainingLikes(likeResponse.remainingLikes);
+        // Update daily like count (only if not already liked)
+        if (!likeResponse.alreadyLiked) {
+          setDailyLikeCount(likeResponse.dailyLikeCount);
+          setRemainingLikes(likeResponse.remainingLikes);
+        }
       } else {
         // Pass on the profile
         await MatchingService.passProfile(currentProfile._id);
       }
     } catch (error) {
-      console.error('Error recording interaction:', error);
+      // Provide user feedback for specific errors
+      if (error instanceof Error) {
+        if (error.message.includes('Profile already liked')) {
+          // Profile already liked - just move to next profile without showing error
+        } else if (error.message.includes('Daily limit reached')) {
+          // Daily limit reached - show user feedback
+          // You could add a toast notification here if you have a toast system
+        } else if (error.message.includes('Authentication failed')) {
+          // Authentication error - redirect to login
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
       // Don't block the UI for interaction recording failures
       // Don't throw the error to prevent app crashes
     }
@@ -413,25 +468,54 @@ function DashboardContent() {
     }, 300);
   };
 
-  const handleApplyFilters = (newFilters: FilterState) => {
+  const handleApplyFilters = (newFilters: FilterState, callback?: () => void) => {
     setFilters(newFilters);
+    
+    // Execute callback after state update if provided
+    if (callback) {
+      // Use setTimeout to ensure state update is processed
+      setTimeout(callback, 50);
+    }
+    
     // Profiles will be reloaded automatically due to useEffect
   };
 
   // Filter profiles based on current filters (client-side backup)
   const filteredProfiles = profiles.filter(profile => {
+    // Age filter
     const ageInRange = profile.profile.age >= filters.ageRange[0] && profile.profile.age <= filters.ageRange[1];
+    
+    // Profession filter
     const professionMatch = filters.selectedProfessions.length === 0 || 
                            filters.selectedProfessions.includes(profile.profile.profession);
     
-    return ageInRange && professionMatch;
+    // Location filter
+    let locationMatch = true;
+    if (filters.selectedCountry || filters.selectedState) {
+      const profileLocation = profile.profile.currentResidence || profile.profile.nativePlace || '';
+      const profileLocationLower = profileLocation.toLowerCase();
+      
+      if (filters.selectedCountry && filters.selectedState) {
+        // Both country and state are selected
+        locationMatch = profileLocationLower.includes(filters.selectedCountry.toLowerCase()) ||
+                       profileLocationLower.includes(filters.selectedState.toLowerCase());
+      } else if (filters.selectedCountry) {
+        // Only country is selected
+        locationMatch = profileLocationLower.includes(filters.selectedCountry.toLowerCase());
+      } else if (filters.selectedState) {
+        // Only state is selected
+        locationMatch = profileLocationLower.includes(filters.selectedState.toLowerCase());
+      }
+    }
+    
+    return ageInRange && professionMatch && locationMatch;
   });
 
   const hasActiveFilters = filters.selectedProfessions.length > 0 || 
                           filters.selectedCountry !== '' || 
                           filters.selectedState !== '' ||
                           filters.ageRange[0] !== 18 || 
-                          filters.ageRange[1] !== 40;
+                          filters.ageRange[1] !== 70;
 
 
   return (
@@ -446,22 +530,13 @@ function DashboardContent() {
       <StandardHeader 
         showFilter={true}
         onFilterClick={() => setShowFilter(true)}
-        hasActiveFilters={!!filters.selectedCountry || !!filters.selectedState || filters.selectedProfessions.length > 0}
+        hasActiveFilters={hasActiveFilters}
       />
 
-      {/* Main Content */}
-            {/* Main Content with enhanced transitions */}
-      <div className="pt-20 pb-24 px-4 relative z-10">
+      {/* Main Content with Pull-to-Refresh */}
+      <div ref={pullToRefreshRef} className="pt-20 pb-24 px-4 relative z-10 android-scroll">
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <HeartbeatLoader 
-              logoSize="xxxxl"
-              textSize="xl"
-              text="Finding Your Perfect Matches" 
-              className="mb-4"
-            />
-            <p className="text-gray-600 mt-2">Please wait while we curate profiles for you...</p>
-          </div>
+          <DashboardSkeleton />
         ) : error ? (
           <div className="text-center py-20">
             <div className="error-container w-24 h-24 mx-auto mb-6 bg-red-100 border border-red-200 rounded-2xl flex items-center justify-center shadow-lg">
@@ -469,26 +544,24 @@ function DashboardContent() {
             </div>
             <h3 className="error-title text-xl font-semibold text-gray-800 mb-2">Unable to Load Profiles</h3>
             <p className="error-message text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={loadProfiles}
-              className="retry-button bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
-            >
-              Try Again
-            </button>
+            <p className="text-sm text-gray-500">Pull down to refresh and try again.</p>
+
           </div>
         ) : filteredProfiles.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
               <CustomIcon name="ri-user-line" className="text-6xl text-gray-400 animate-bounce" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No Profiles Found</h3>
-            <p className="text-gray-600 mb-6">There are no profiles available at the moment. Please check back later!</p>
-            <button
-              onClick={loadProfiles}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
-            >
-              Refresh
-            </button>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              {hasActiveFilters ? 'No Profiles Match Your Filters' : 'No Profiles Found'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {hasActiveFilters 
+                ? 'Try adjusting your filters to see more profiles.' 
+                : 'There are no profiles available at the moment. Pull down to refresh and check for new profiles!'
+              }
+            </p>
+
           </div>
         ) : currentIndex < filteredProfiles.length ? (
           <div ref={cardRef} className="max-w-sm mx-auto">
@@ -528,13 +601,8 @@ function DashboardContent() {
               <CustomIcon name="ri-check-circle-line" className="text-3xl text-green-500" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">No More Profiles</h3>
-            <p className="text-gray-600 mb-6">You've seen all available profiles. Check back later for new matches!</p>
-            <button
-              onClick={loadProfiles}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
-            >
-              Refresh
-            </button>
+            <p className="text-gray-600 mb-6">You've seen all available profiles. Pull down to refresh and check for new matches!</p>
+
           </div>
         )}
       </div>
@@ -565,10 +633,13 @@ function DashboardContent() {
       )}
 
       {/* Match Animation */}
-      <MatchAnimation
+      <CelebratoryMatchToast
         isVisible={showMatchAnimation}
         onClose={() => setShowMatchAnimation(false)}
+        onKeepSwiping={handleKeepSwiping}
+        onStartChat={handleStartChat}
         matchName={matchName}
+        connectionId={connectionId}
       />
 
       {/* Onboarding Animation/Modal */}
@@ -579,7 +650,7 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-  console.log('🔍 Dashboard: Component called');
+
   
   return (
     <ServerAuthGuard requireAuth={true} requireCompleteProfile={true}>

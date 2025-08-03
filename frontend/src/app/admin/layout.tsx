@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { ServerAuthService } from '../../services/server-auth-service';
 import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
+import HeartbeatLoader from '../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
 
 export default function AdminLayout({
@@ -61,10 +62,12 @@ export default function AdminLayout({
   if (isChecking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Checking admin access...</p>
-        </div>
+        <HeartbeatLoader 
+          logoSize="xxl"
+          textSize="lg"
+          text="Checking admin access..."
+          showText={true}
+        />
       </div>
     );
   }
@@ -72,11 +75,18 @@ export default function AdminLayout({
   // Only render children if authenticated or on login page
   if (isAuthenticated || pathname === '/admin/login') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col">
+        {/* Fixed Header - StandardHeader already has fixed positioning */}
         <StandardHeader showProfileLink={false} />
-        <main className="pb-20 pt-20 admin-content">
-          {children}
+        
+        {/* Scrollable Content Area */}
+        <main className="flex-1 pt-20 pb-20 overflow-y-auto">
+          <div className="admin-content relative">
+            {children}
+          </div>
         </main>
+        
+        {/* Fixed Footer - AdminBottomNavigation already has fixed positioning */}
         <AdminBottomNavigation />
       </div>
     );

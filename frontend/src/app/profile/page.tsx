@@ -299,7 +299,7 @@ function ProfileContent() {
   const [showFilter, setShowFilter] = useState(false);
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    ageRange: [18, 60],
+    ageRange: [18, 70],
     selectedProfessions: [],
     selectedCountry: '',
     selectedState: ''
@@ -333,23 +333,9 @@ function ProfileContent() {
   };
 
   const isFieldValid = (fieldName: string, value: any) => {
-    const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
-    if (!fieldConfig) return true;
-    
-    // Add debugging for specific problematic fields
-    if (fieldName === 'about' || fieldName === 'education' || fieldName === 'occupation' || fieldName === 'interests') {
-      const isValid = fieldConfig.validation(value);
-      console.log(`🔍 Validation debug for ${fieldName}:`, {
-        value,
-        trimmedValue: typeof value === 'string' ? (value ? value.trim() : 'undefined') : value,
-        trimmedLength: typeof value === 'string' ? (value ? value.trim().length : 'N/A') : 'N/A',
-        isValid,
-        validationRule: fieldConfig.validation.toString()
-      });
-      return isValid;
-    }
-    
-    return fieldConfig.validation(value);
+    const config = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
+    if (!config) return true;
+    return config.validation(value);
   };
 
   const shouldShowHint = (fieldName: string) => {
@@ -360,18 +346,6 @@ function ProfileContent() {
     // Only show hints after user has interacted with THIS specific field
     const hasUserInteracted = interactedFields[fieldName];
     const shouldShow = !isValid && fieldHints[fieldName] && hasUserInteracted;
-    
-    // Debug logging for problematic fields
-    if (fieldName === 'about' || fieldName === 'education' || fieldName === 'occupation' || fieldName === 'interests') {
-      console.log(`💡 Hint debug for ${fieldName}:`, {
-        value,
-        isValid,
-        fieldHints: fieldHints[fieldName],
-        hasUserInteracted,
-        shouldShow,
-        isEditing
-      });
-    }
     
     return shouldShow;
   };
@@ -385,17 +359,6 @@ function ProfileContent() {
     // Only show errors after user has interacted with THIS specific field
     const hasUserInteracted = interactedFields[fieldName];
     const shouldShow = !isValid && hasUserInteracted;
-    
-    // Debug logging for field-specific validation
-    if (fieldName === 'about' || fieldName === 'education' || fieldName === 'occupation' || fieldName === 'interests') {
-      console.log(`🚨 Error validation for ${fieldName}:`, {
-        value,
-        isValid,
-        hasUserInteracted,
-        shouldShow,
-        interactedFields: interactedFields[fieldName]
-      });
-    }
     
     return shouldShow;
   };
@@ -417,13 +380,6 @@ function ProfileContent() {
     // Only hide hint if field is valid, keep hint visible for invalid fields
     const value = profile[fieldName];
     const isValid = isFieldValid(fieldName, value);
-    
-    // Debug logging for field-specific blur
-    console.log(`👁️ Field blur for ${fieldName}:`, {
-      value,
-      isValid,
-      interactedFields: interactedFields[fieldName]
-    });
     
     if (isValid) {
       // Hide hint after a moment for valid fields
@@ -452,61 +408,22 @@ function ProfileContent() {
     }
   }, [profile]);
 
-  // Test validation with profile data (for debugging only)
-  useEffect(() => {
-    if (profile && isEditing) {
-      const problematicFields = ['about', 'education', 'occupation', 'interests'];
-      
-      // Test validation with actual data
-      console.log('🧪 Testing validation with profile data:', {
-        about: profile.about,
-        education: profile.education,
-        occupation: profile.occupation,
-        interests: profile.interests
-      });
-      
-      // Test with the exact data you provided
-      const testData = {
-        about: "sd    sdsds.     dsdsd shadbvdfhjbfjdf",
-        education: "saaaaasadfdvbv",
-        occupation: "asadfgfhgfdhj",
-        interests: ["reading", "yoga"]
-      };
-      
-      console.log('🧪 Testing with exact provided data:');
-      problematicFields.forEach(fieldName => {
-        const testValue = testData[fieldName as keyof typeof testData];
-        const testIsValid = isFieldValid(fieldName, testValue);
-        console.log(`🧪 Test validation for ${fieldName}:`, {
-          value: testValue,
-          isValid: testIsValid,
-          trimmedValue: typeof testValue === 'string' ? (testValue ? testValue.trim() : 'undefined') : testValue,
-          trimmedLength: typeof testValue === 'string' ? (testValue ? testValue.trim().length : 'N/A') : 'N/A'
-        });
-      });
-    }
-  }, [profile, isEditing]);
+
 
   // Real-time profile completeness tracking
   useEffect(() => {
     if (profile && isEditing) {
       // Recalculate completion percentage in real-time
       const currentCompleteness = calculateProfileCompletion(profile);
-      
-      console.log('📊 Real-time completeness update:', {
-        currentCompleteness,
-        backendCompleteness: profile.profileCompleteness
-      });
     }
   }, [profile, isEditing]);
 
   // Handle onboarding completion
   const handleOnboardingComplete = async () => {
     try {
-      console.log('✅ Onboarding message marked as seen');
       await ProfileService.updateOnboardingMessage(true);
     } catch (error) {
-      console.error('❌ Error updating onboarding message:', error);
+
     }
 
     // Update local state regardless of backend success
@@ -581,23 +498,11 @@ function ProfileContent() {
     ProfileService.getUserProfile().then((apiProfile) => {
       if (apiProfile) {
         // Use API profile directly from MongoDB
-        console.log('📋 API Profile from MongoDB:', apiProfile);
-        console.log('🎯 Dropdown values in loaded profile:', {
-          gender: apiProfile.gender,
-          maritalStatus: apiProfile.maritalStatus,
-          manglik: apiProfile.manglik,
-          complexion: apiProfile.complexion,
-          eatingHabit: apiProfile.eatingHabit,
-          smokingHabit: apiProfile.smokingHabit,
-          drinkingHabit: apiProfile.drinkingHabit,
-          settleAbroad: apiProfile.settleAbroad
-        });
+        
         setProfile(apiProfile);
         // Onboarding is handled by ServerAuthService.shouldShowOnboarding()
-        console.log('✅ Profile set successfully');
         
         // Profile completion is now handled by the backend
-        console.log('✅ Profile completion handled by backend');
         
         // User ID is now handled server-side
         
@@ -606,39 +511,27 @@ function ProfileContent() {
           try {
             await ProfileService.forceAuthRefresh();
           } catch (error) {
-            console.error('Failed to force auth refresh:', error);
+  
           }
         })();
         
         // Always fetch signed URL for profile image if it exists
         if (apiProfile.images) {
-          console.log('🔍 Profile image found:', apiProfile.images);
-          
-          // Always fetch signed URL, regardless of whether it's a direct B2 URL or not
-          console.log('🔄 Fetching signed URL for profile image...');
-          
           // Add a small delay to ensure the profile is fully loaded
           setTimeout(() => {
             ImageUploadService.getMyProfilePictureSignedUrl()
               .then((signedUrl) => {
                 if (signedUrl) {
                   setSignedImageUrl(signedUrl);
-                  console.log('✅ Signed URL fetched:', signedUrl);
-                } else {
-                  console.log('⚠️ No signed URL returned for profile image');
                 }
               })
               .catch((error) => {
-                console.error('Failed to fetch signed URL:', error);
+                // Silently handle error
               });
           }, 100);
-        } else {
-          console.log('ℹ️ No profile image found in profile data');
-          console.log('🔍 Profile structure:', apiProfile);
         }
       } else {
         // No profile found, create empty profile for new user
-        console.log('📋 No profile found, creating empty profile for new user');
         const emptyProfile = {
           email: '',
           role: 'user',
@@ -682,7 +575,7 @@ function ProfileContent() {
       }
       setLoadingProfile(false);
     }).catch((error) => {
-      console.error('Failed to load profile:', error);
+
       setLoadingProfile(false);
     });
   }, [isAuthenticated]);
@@ -2187,7 +2080,7 @@ function ProfileContent() {
                      newFilters.selectedCountry !== '' ||
                      newFilters.selectedState !== '' ||
                      newFilters.ageRange[0] !== 18 ||
-                     newFilters.ageRange[1] !== 60;
+                     newFilters.ageRange[1] !== 70;
     setHasActiveFilters(hasActive);
   };
 
@@ -2301,9 +2194,6 @@ function ProfileContent() {
       
       {/* Header */}
       <StandardHeader
-        showFilter={true}
-        onFilterClick={() => setShowFilter(true)}
-        hasActiveFilters={hasActiveFilters}
         showProfileLink={true}
       />
 
@@ -2314,9 +2204,6 @@ function ProfileContent() {
         {isProfileComplete && (
           <div className="mx-4 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <CustomIcon name="ri-check-circle-line" className="text-green-600 text-xl" />
-              </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-green-800 mb-1">
                   Profile Complete! 🎉
@@ -2414,10 +2301,9 @@ function ProfileContent() {
                   setFieldErrors({});
                   setIsEditing(true);
                 }}
-                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
               >
-                <CustomIcon name="ri-edit-line" className="text-sm" />
-                <span className="text-sm">Edit</span>
+                Edit
               </button>
             )}
           </div>

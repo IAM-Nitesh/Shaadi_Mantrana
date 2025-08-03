@@ -68,6 +68,22 @@ const TEST_EMAIL = 'codebynitesh@gmail.com'; // Admin user
 
 ## 🔧 Recent API Improvements
 
+### Match Toast Tracking System (Latest)
+- **Issue**: Match toast notifications were appearing multiple times for the same match
+- **Solution**: Implemented persistent toast tracking in the database with user-specific flags
+- **Features**:
+  - Database flag tracking (`toastSeen.userA`, `toastSeen.userB`) in DailyLike collection
+  - Toast shown only once per user per match
+  - Automatic marking as seen after displaying toast
+  - Migration script for existing mutual matches
+- **Endpoints**:
+  - `POST /api/matching/mark-toast-seen` - Mark match toast as seen
+  - Enhanced `POST /api/matching/like` - Returns `shouldShowToast` flag
+- **Benefits**: 
+  - Clean, non-redundant user experience
+  - Persistent tracking across sessions
+  - No repeated match notifications
+
 ### Auth Status API Optimization (Latest)
 - **Issue**: Auth status API was returning 401 errors for unauthenticated users, causing blocking
 - **Solution**: Modified to return 200 status with `authenticated: false` for graceful handling
@@ -76,6 +92,23 @@ const TEST_EMAIL = 'codebynitesh@gmail.com'; // Admin user
   - Reduced API call frequency with improved caching
   - Better user experience for unauthenticated users
 - **Test Page**: `/test/auth-status-test` - Verify API behavior
+
+### Authentication Token Fixes (Latest)
+- **Issue**: "Access token required" errors in chat and match toast operations
+- **Solution**: Enhanced authentication validation and proper Bearer token formatting
+- **Fixes Applied**:
+  - Added proper `Bearer` prefix to all Authorization headers
+  - Enhanced error handling in `markToastSeenOnChatEntry` and `markMatchToastSeen` methods
+  - Improved authentication checks with graceful fallbacks
+  - Non-blocking error handling for toast operations
+- **Methods Updated**:
+  - `MatchingService.markToastSeenOnChatEntry()` - Now returns success/failure instead of throwing errors
+  - `MatchingService.markMatchToastSeen()` - Enhanced authentication validation
+  - `MatchingService.unmatchProfile()` - Fixed Bearer token formatting
+- **Benefits**:
+  - No more blocking errors in chat initialization
+  - Graceful handling of authentication failures
+  - Better user experience with non-blocking operations
 
 ## 🧪 Test Categories
 
@@ -105,6 +138,7 @@ const TEST_EMAIL = 'codebynitesh@gmail.com'; // Admin user
 - **Get Matches**: `GET /api/matching/matches`
 - **Get Stats**: `GET /api/matching/stats`
 - **Unmatch**: `POST /api/matching/unmatch`
+- **Mark Match Toast Seen**: `POST /api/matching/mark-toast-seen`
 
 ### 4. Chat & Connections Tests ✅
 - **Get Connections**: `GET /api/connections`
