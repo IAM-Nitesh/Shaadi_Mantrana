@@ -1,74 +1,92 @@
 {
-  "name": "Shaadi Mantrana - Find Your Perfect Match",
-  "short_name": "Shaadi Mantrana",
-  "description": "Free matrimonial app for finding your perfect life partner. Secure, private, and authentic profiles with traditional Indian values.",
+  "name": "Shaadi Mantra",
+  "short_name": "Shaadi Mantra",
+  "description": "Find your perfect match with Shaadi Mantra",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#e11d48",
-  "orientation": "portrait",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
   "scope": "/",
+  "lang": "en",
+  "categories": ["dating", "social", "lifestyle"],
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "32x32",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192-modern.svg",
-      "sizes": "192x192",
+      "src": "/icon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512-modern.svg", 
+      "src": "/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-192-new.svg",
+      "src": "/icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
-    },
-    {
-      "src": "/icon-512-new.svg", 
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ],
-  "categories": ["social", "lifestyle", "dating"],
-  "keywords": ["matrimonial", "marriage", "shaadi", "wedding", "indian", "match", "bride", "groom"],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "640x1136",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Matrimonial profile browsing"
     }
   ],
   "shortcuts": [
     {
-      "name": "Browse Matches",
-      "short_name": "Matches",
-      "description": "Browse potential life partners",
-      "url": "/matches",
-      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+      "name": "Discover",
+      "short_name": "Discover",
+      "description": "Start discovering new profiles",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
-      "name": "My Profile",
-      "short_name": "Profile", 
-      "description": "Edit your matrimonial profile",
+      "name": "Matches",
+      "short_name": "Matches",
+      "description": "View your matches",
+      "url": "/matches",
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "short_name": "Profile",
+      "description": "Edit your profile",
       "url": "/profile",
-      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard - Discover new profiles"
+    },
+    {
+      "src": "/screenshots/matches.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Matches - View your connections"
     }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
-  "lang": "en",
-  "dir": "ltr"
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

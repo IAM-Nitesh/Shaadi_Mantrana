@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+
 // import NavigationGuard from '../components/NavigationGuard';
 import { Toaster } from 'react-hot-toast';
 import PageTransitionProvider from '../components/PageTransitionProvider';
@@ -8,12 +9,43 @@ import PageLoadingIndicator from '../components/PageLoadingIndicator';
 import LenisProvider from './LenisProvider';
 import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
 import PerformanceOptimizer from '../components/PerformanceOptimizer';
+import { PWAProvider } from '../components/PWAProvider';
+
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Shaadi Mantrana',
   description: 'Find your perfect match with Shaadi Mantrana',
+  manifest: '/manifest.json',
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Shaadi Mantra',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://shaadimantra.com',
+    title: 'Shaadi Mantra',
+    description: 'Find your perfect match with Shaadi Mantra',
+    siteName: 'Shaadi Mantra',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Shaadi Mantra',
+    description: 'Find your perfect match with Shaadi Mantra',
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+  maximumScale: 1.0,
+  userScalable: false,
+  viewportFit: 'cover' as const,
+  themeColor: '#667eea',
 };
 
 export default function RootLayout({
@@ -27,12 +59,14 @@ export default function RootLayout({
         <PerformanceOptimizer>
           <LenisProvider>
             <PageDataLoadingProvider>
-              <PageTransitionProvider>
-                <PageLoadingIndicator />
-                {/* <NavigationGuard> */}
-                  {children}
-                {/* </NavigationGuard> */}
-              </PageTransitionProvider>
+              <PWAProvider>
+                <PageTransitionProvider>
+                  <PageLoadingIndicator />
+                  {/* <NavigationGuard> */}
+                    {children}
+                  {/* </NavigationGuard> */}
+                </PageTransitionProvider>
+              </PWAProvider>
             </PageDataLoadingProvider>
           </LenisProvider>
         </PerformanceOptimizer>

@@ -29,11 +29,11 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
   const [previousPath, setPreviousPath] = useState('');
   const [currentPath, setCurrentPath] = useState(pathname);
 
-  // Simplified transition settings for seamless experience
+  // Ultra-fast transition settings for instant feel
   const transitionSettings = useMemo(() => ({
-    duration: 0.15, // Very fast for seamless feel
-    ease: [0.25, 0.46, 0.45, 0.94], // Smooth, natural easing
-    opacity: { duration: 0.12 }, // Fast opacity for instant feel
+    duration: 0.08, // Ultra-fast for instant feel
+    ease: [0.4, 0, 0.2, 1], // Optimized easing curve
+    opacity: { duration: 0.06 }, // Instant opacity
   }), []);
 
   useEffect(() => {
@@ -42,10 +42,10 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
       setCurrentPath(pathname);
       setTransitioning(true);
       
-      // Very short transition time for seamless experience
+      // Ultra-fast transition time for instant experience
       const timer = setTimeout(() => {
         setTransitioning(false);
-      }, 150); // Reduced to 150ms for instant feel
+      }, 80); // Reduced to 80ms for instant feel
       
       return () => clearTimeout(timer);
     }
@@ -63,11 +63,12 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={pathname}
-          initial={{ opacity: 0 }} // Simple fade in
+          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }} // Simple fade out
+          exit={{ opacity: 0 }}
           transition={transitionSettings}
-          className="min-h-screen"
+          className="min-h-screen hardware-accelerated"
+          style={{ willChange: 'opacity' }}
         >
           {children}
         </motion.div>

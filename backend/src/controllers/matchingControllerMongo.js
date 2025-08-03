@@ -1,4 +1,5 @@
 // MongoDB-integrated Matching Controller
+const mongoose = require('mongoose');
 const { User, Connection, DailyLike } = require('../models');
 
 class MatchingController {
@@ -275,13 +276,7 @@ class MatchingController {
         // Create mutual match
         isMutualMatch = true;
         
-        // Update both likes to mark as mutual match
-        await Promise.all([
-          DailyLike.updateOne({ _id: like._id }, { isMutualMatch: true }),
-          DailyLike.updateOne({ _id: mutualLike._id }, { isMutualMatch: true })
-        ]);
-        
-        // Create connection for mutual match
+        // Create connection for mutual match FIRST
         connection = new Connection({
           users: [userId, targetUserId],
           status: 'accepted',
@@ -294,16 +289,56 @@ class MatchingController {
           }
         });
         await connection.save();
+        
+        // Determine which user is userA and which is userB for toast tracking
+        const isCurrentUserA = like.userId.toString() === userId;
+        const toastSeen = {
+          userA: isCurrentUserA ? false : false, // Current user hasn't seen it yet
+          userB: isCurrentUserA ? false : false  // Other user hasn't seen it yet
+        };
+        
+        // Update both likes to mark as mutual match and initialize toast tracking
+        await Promise.all([
+          DailyLike.updateOne(
+            { _id: like._id }, 
+            { 
+              isMutualMatch: true,
+              toastSeen: toastSeen,
+              connectionId: connection._id
+            }
+          ),
+          DailyLike.updateOne(
+            { _id: mutualLike._id }, 
+            { 
+              isMutualMatch: true,
+              toastSeen: toastSeen,
+              connectionId: connection._id
+            }
+          )
+        ]);
+        
+        // Check if current user should see the toast
+        const shouldShowToast = isCurrentUserA ? !toastSeen.userA : !toastSeen.userB;
+        
+        res.status(200).json({
+          success: true,
+          like,
+          isMutualMatch,
+          connection,
+          dailyLikeCount: dailyLikeCount + 1,
+          remainingLikes: 4 - dailyLikeCount,
+          shouldShowToast: shouldShowToast
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          like,
+          isMutualMatch,
+          connection,
+          dailyLikeCount: dailyLikeCount + 1,
+          remainingLikes: 4 - dailyLikeCount
+        });
       }
-      
-      res.status(200).json({
-        success: true,
-        like,
-        isMutualMatch,
-        connection,
-        dailyLikeCount: dailyLikeCount + 1,
-        remainingLikes: 4 - dailyLikeCount
-      });
       
     } catch (error) {
       console.error('❌ Like profile error:', error);
@@ -335,6 +370,9 @@ class MatchingController {
           connectionId = connection?._id;
         }
         
+        // Construct location from available fields
+        const location = likedUser.profile?.currentResidence || likedUser.profile?.nativePlace || null;
+        
         return {
           likeId: like._id,
           profile: {
@@ -347,7 +385,9 @@ class MatchingController {
               about: likedUser.profile?.about || null,
               education: likedUser.profile?.education || null,
               interests: likedUser.profile?.interests || [],
-              location: likedUser.profile?.location || null
+              location: location, // Use constructed location
+              nativePlace: likedUser.profile?.nativePlace || null,
+              currentResidence: likedUser.profile?.currentResidence || null
             },
             verification: {
               isVerified: likedUser.verification?.isVerified || false
@@ -376,6 +416,244 @@ class MatchingController {
     }
   }
 
+  // Mark match toast as seen when entering chat
+  async markToastSeenOnChatEntry(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { connectionId } = req.body;
+      
+      console.log(`🎯 Marking toast as seen on chat entry - User: ${userId}, Connection: ${connectionId}`);
+      
+      if (!connectionId) {
+        return res.status(400).json({ success: false, error: 'Connection ID is required' });
+      }
+      
+      // First, verify the connection exists and user is part of it
+      const connection = await Connection.findById(connectionId);
+      if (!connection) {
+        console.log(`❌ Connection not found: ${connectionId}`);
+        return res.status(404).json({ success: false, error: 'Connection not found' });
+      }
+      
+      console.log(`✅ Connection found: ${connection._id}`);
+      console.log(`🔍 Connection users:`, connection.users.map(u => u.toString()));
+      console.log(`🔍 Current user: ${userId}`);
+      
+      // Check if user is part of this connection
+      const userInConnection = connection.users.some(user => user.toString() === userId);
+      if (!userInConnection) {
+        console.log(`❌ User ${userId} is not part of connection ${connectionId}`);
+        return res.status(403).json({ success: false, error: 'User not part of this connection' });
+      }
+      
+      console.log(`✅ User is part of connection`);
+      
+      // Find the mutual match for this connection
+      let mutualMatch = await DailyLike.findOne({
+        connectionId: connectionId,
+        isMutualMatch: true
+      });
+      
+      console.log(`🔍 Initial search result:`, mutualMatch ? 'Found' : 'Not found');
+      
+      // Debug: Check all DailyLike records for this connection
+      const allDailyLikes = await DailyLike.find({ connectionId: connectionId });
+      console.log(`🔍 All DailyLike records for connection ${connectionId}:`, allDailyLikes.length);
+      allDailyLikes.forEach((like, index) => {
+        console.log(`  ${index + 1}. User: ${like.userId}, Liked: ${like.likedProfileId}, Mutual: ${like.isMutualMatch}`);
+      });
+      
+      // If not found, try with ObjectId conversion
+      if (!mutualMatch) {
+        console.log(`🔍 Trying with ObjectId conversion...`);
+        try {
+          const objectIdConnectionId = new mongoose.Types.ObjectId(connectionId);
+          mutualMatch = await DailyLike.findOne({
+            connectionId: objectIdConnectionId,
+            isMutualMatch: true
+          });
+          console.log(`🔍 ObjectId search result:`, mutualMatch ? 'Found' : 'Not found');
+        } catch (error) {
+          console.log(`🔍 ObjectId conversion failed:`, error.message);
+        }
+      }
+      
+      // If not found by connectionId, try to find by user IDs
+      if (!mutualMatch) {
+        console.log(`🔍 No DailyLike found with connectionId ${connectionId}, searching by user IDs...`);
+        const otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
+        console.log(`🔍 Other user ID: ${otherUserId}`);
+        
+        // Search for mutual match using user IDs
+        mutualMatch = await DailyLike.findOne({
+          $or: [
+            { userId: userId, likedProfileId: otherUserId, isMutualMatch: true },
+            { userId: otherUserId, likedProfileId: userId, isMutualMatch: true }
+          ]
+        });
+        
+        console.log(`🔍 User ID search result:`, mutualMatch ? 'Found' : 'Not found');
+        
+        // If found, update it with the correct connectionId
+        if (mutualMatch) {
+          console.log(`🔧 Updating DailyLike ${mutualMatch._id} with connectionId ${connectionId}`);
+          await DailyLike.updateOne(
+            { _id: mutualMatch._id },
+            { $set: { connectionId: connectionId } }
+          );
+        }
+      }
+      
+      // If still not found, try a broader search
+      if (!mutualMatch) {
+        console.log(`🔍 Trying broader search for mutual match...`);
+        const otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
+        
+        // Search for any mutual match between these users
+        mutualMatch = await DailyLike.findOne({
+          $and: [
+            { isMutualMatch: true },
+            {
+              $or: [
+                { userId: userId, likedProfileId: otherUserId },
+                { userId: otherUserId, likedProfileId: userId }
+              ]
+            }
+          ]
+        });
+        
+        console.log(`🔍 Broader search result:`, mutualMatch ? 'Found' : 'Not found');
+        
+        // If found, update it with the correct connectionId
+        if (mutualMatch) {
+          console.log(`🔧 Updating DailyLike ${mutualMatch._id} with connectionId ${connectionId}`);
+          await DailyLike.updateOne(
+            { _id: mutualMatch._id },
+            { $set: { connectionId: connectionId } }
+          );
+        }
+      }
+      
+      if (!mutualMatch) {
+        console.log(`❌ No mutual match found for connection ${connectionId}`);
+        
+        // Final fallback: Try to create the missing DailyLike record
+        console.log(`🔧 Attempting to create missing DailyLike record...`);
+        const otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
+        
+        if (otherUserId) {
+          // Check if there are any likes between these users
+          const existingLikes = await DailyLike.find({
+            $or: [
+              { userId: userId, likedProfileId: otherUserId },
+              { userId: otherUserId, likedProfileId: userId }
+            ]
+          });
+          
+          console.log(`🔍 Found ${existingLikes.length} existing likes between users`);
+          
+          if (existingLikes.length >= 2) {
+            // Both users have liked each other, create the mutual match record
+            console.log(`🔧 Creating mutual match record...`);
+            
+            // Update both existing likes to mark as mutual match
+            await Promise.all(existingLikes.map(like => 
+              DailyLike.updateOne(
+                { _id: like._id },
+                { 
+                  $set: { 
+                    isMutualMatch: true,
+                    connectionId: connectionId,
+                    toastSeen: { userA: false, userB: false }
+                  }
+                }
+              )
+            ));
+            
+            // Now try to find the mutual match again
+            mutualMatch = await DailyLike.findOne({
+              connectionId: connectionId,
+              isMutualMatch: true
+            });
+            
+            console.log(`🔧 Mutual match created:`, mutualMatch ? 'Success' : 'Failed');
+          }
+        }
+        
+        if (!mutualMatch) {
+          return res.status(404).json({ success: false, error: 'Mutual match not found for this connection' });
+        }
+      }
+      
+      // Determine which user is userA and which is userB
+      const isUserA = mutualMatch.userId.toString() === userId;
+      const updateField = isUserA ? 'toastSeen.userA' : 'toastSeen.userB';
+      
+      // Mark the toast as seen for the current user
+      await DailyLike.updateOne(
+        { _id: mutualMatch._id },
+        { $set: { [updateField]: true } }
+      );
+      
+      console.log(`✅ Match toast marked as seen for user: ${userId} on connection: ${connectionId}`);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Match toast marked as seen'
+      });
+      
+    } catch (error) {
+      console.error('❌ Mark toast seen on chat entry error:', error);
+      res.status(500).json({ success: false, error: 'Failed to mark match toast as seen' });
+    }
+  }
+
+  // Mark match toast as seen
+  async markMatchToastSeen(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { targetUserId } = req.body;
+      
+      console.log(`🎯 Marking match toast as seen - User: ${userId}, Target: ${targetUserId}`);
+      
+      if (!targetUserId) {
+        return res.status(400).json({ success: false, error: 'Target user ID is required' });
+      }
+      
+      // Find the mutual match between these users
+      const mutualMatch = await DailyLike.findOne({
+        userId: { $in: [userId, targetUserId] },
+        likedProfileId: { $in: [userId, targetUserId] },
+        isMutualMatch: true
+      });
+      
+      if (!mutualMatch) {
+        return res.status(404).json({ success: false, error: 'Mutual match not found' });
+      }
+      
+      // Determine which user is userA and which is userB
+      const isUserA = mutualMatch.userId.toString() === userId;
+      const updateField = isUserA ? 'toastSeen.userA' : 'toastSeen.userB';
+      
+      // Mark the toast as seen for the current user
+      await DailyLike.updateOne(
+        { _id: mutualMatch._id },
+        { $set: { [updateField]: true } }
+      );
+      
+      console.log(`✅ Match toast marked as seen for user: ${userId}`);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Match toast marked as seen'
+      });
+      
+    } catch (error) {
+      console.error('❌ Mark match toast seen error:', error);
+      res.status(500).json({ success: false, error: 'Failed to mark match toast as seen' });
+    }
+  }
+
   // Get mutual matches (for Matches tab)
   async getMutualMatches(req, res) {
     try {
@@ -386,9 +664,31 @@ class MatchingController {
       
       const matches = connections.map(connection => {
         const otherUser = connection.users.find(u => u._id.toString() !== userId);
+        
+        // Construct location from available fields
+        const location = otherUser.profile?.currentResidence || otherUser.profile?.nativePlace || null;
+        
         return {
           connectionId: connection._id,
-          profile: otherUser,
+          profile: {
+            _id: otherUser._id,
+            profile: {
+              name: otherUser.profile?.name || 'Unknown',
+              age: otherUser.profile?.age || null,
+              profession: otherUser.profile?.profession || null,
+              images: otherUser.profile?.images || [],
+              about: otherUser.profile?.about || null,
+              education: otherUser.profile?.education || null,
+              interests: otherUser.profile?.interests || [],
+              location: location, // Use constructed location
+              nativePlace: otherUser.profile?.nativePlace || null,
+              currentResidence: otherUser.profile?.currentResidence || null
+            },
+            verification: {
+              isVerified: otherUser.verification?.isVerified || false
+            },
+            profileCompleted: otherUser.profileCompleted || false
+          },
           matchDate: connection.timestamps.responded,
           lastActivity: connection.timestamps.lastActivity
         };

@@ -40,13 +40,11 @@ export default function Help() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200">
-              <CustomIcon name="ri-arrow-left-line" />
-            </Link>
-            <h1 className="text-xl font-bold text-gray-800">Help & Support</h1>
-          </div>
+        <div className="flex items-center">
+          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 mr-3">
+            <CustomIcon name="ri-arrow-left-line" />
+          </Link>
+          <h1 className="text-xl font-bold text-gray-800">Help & Support</h1>
         </div>
       </div>
 
@@ -154,7 +152,7 @@ export default function Help() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3">
               <div className="w-8 h-8 bg-white border-2 border-rose-400 rounded-lg flex items-center justify-center shadow-sm">
-                <span className="text-sm">💝</span>
+                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-lg font-black tracking-tight">

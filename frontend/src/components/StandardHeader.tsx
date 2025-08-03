@@ -32,12 +32,15 @@ export default function StandardHeader({
   const pathname = usePathname();
   const router = useRouter();
 
+  // Automatically show filter icon only on dashboard page
+  const shouldShowFilter = pathname === '/dashboard' && showFilter;
+
   return (
     <motion.div 
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-xl z-40 px-4 py-3"
+      className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-xl z-50 px-4 py-3"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -81,7 +84,7 @@ export default function StandardHeader({
         </div>
         
         <div className="flex items-center space-x-4">
-          {showFilter && (
+          {shouldShowFilter && (
             <button
               onClick={onFilterClick}
               className="w-10 h-10 flex items-center justify-center text-neutral-600 relative bg-white border border-neutral-200 rounded-2xl shadow-sm hover-lift"
