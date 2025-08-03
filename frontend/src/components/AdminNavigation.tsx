@@ -42,7 +42,7 @@ export default function AdminNavigation() {
         setIsAdmin(userData.profile?.role === 'admin');
       }
     } catch (error) {
-      console.error('Error checking admin status:', error);
+
     } finally {
       setLoading(false);
     }

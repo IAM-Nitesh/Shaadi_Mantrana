@@ -161,6 +161,7 @@ export interface DiscoveryProfile {
     education?: string;
     nativePlace?: string;
     currentResidence?: string;
+    location?: string; // Add location field
     interests?: string[];
   };
   verification?: {
@@ -174,8 +175,12 @@ export interface LikeResponse {
   error?: string;
   isMutualMatch: boolean;
   connection?: any;
+  connectionId?: string;
   dailyLikeCount: number;
   remainingLikes: number;
+  alreadyLiked?: boolean;
+  message?: string;
+  shouldShowToast?: boolean;
 }
 
 export interface DailyLikeStats {
@@ -355,7 +360,22 @@ export class MatchingService {
         if (response.status === 401) {
           throw new Error('Authentication failed, please login again');
         }
+        
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        
+        // Handle specific error cases more gracefully
+        if (errorData.error && errorData.error.includes('Profile already liked')) {
+          // Return a special response for already liked profiles
+          return {
+            success: true,
+            isMutualMatch: false,
+            dailyLikeCount: 0,
+            remainingLikes: 0,
+            alreadyLiked: true,
+            message: 'Profile already liked'
+          };
+        }
+        
         throw new Error(errorData.error || 'Failed to like profile');
       }
 
@@ -411,45 +431,142 @@ export class MatchingService {
 
   // Unmatch from a profile
   static async unmatchProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
-    const apiBaseUrl = configService.apiBaseUrl;
-    
-    if (!apiBaseUrl) {
-      // console.warn('API_BASE_URL not configured. Unmatch not recorded.');
-      return { success: false, message: 'API not configured' };
-    }
-
     try {
-      // Check if user is authenticated using server-side auth
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        throw new Error('Authentication required');
+      if (!isAuthenticated()) {
+        throw new Error('User not authenticated');
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch(`${apiBaseUrl}/api/matching/unmatch`, {
+      const token = await getBearerToken();
+      const response = await fetch(`${this.baseUrl}/api/matching/unmatch`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ targetUserId }),
+        body: JSON.stringify({ targetUserId })
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || 'Failed to unmatch profile');
+        throw new Error(data.error || 'Failed to unmatch profile');
       }
 
-      return await response.json();
+      // Clear matches cache after unmatch
+      this.clearMatchesCache();
+
+      return data;
     } catch (error) {
-      // console.error('Error unmatching profile:', error);
+      console.error('Unmatch profile error:', error);
       throw error;
     }
+  }
+
+  // Mark match toast as seen
+  static async markMatchToastSeen(targetUserId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Check authentication first
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        console.warn('User not authenticated, skipping toast seen update');
+        return { success: false, message: 'User not authenticated' };
+      }
+
+      // Get Bearer token
+      const token = await getBearerToken();
+      if (!token) {
+        console.warn('No bearer token available, skipping toast seen update');
+        return { success: false, message: 'No access token available' };
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/matching/mark-toast-seen`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetUserId })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.warn('Failed to mark toast as seen:', data.error || response.statusText);
+        return { success: false, message: data.error || 'Failed to mark match toast as seen' };
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Mark match toast seen error:', error);
+      return { success: false, message: 'Failed to mark match toast as seen' };
+    }
+  }
+
+  // Mark match toast as seen when entering chat
+  static async markToastSeenOnChatEntry(connectionId: string): Promise<{ success: boolean; message: string }> {
+    const maxRetries = 3;
+    const retryDelay = 200; // 200ms delay between retries
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Check authentication first
+        const authenticated = await isAuthenticated();
+        if (!authenticated) {
+          console.warn('User not authenticated, skipping toast seen update');
+          return { success: false, message: 'User not authenticated' };
+        }
+
+        // Get Bearer token
+        const token = await getBearerToken();
+        if (!token) {
+          console.warn('No bearer token available, skipping toast seen update');
+          return { success: false, message: 'No access token available' };
+        }
+
+        const response = await fetch(`${this.baseUrl}/api/matching/mark-toast-seen-chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ connectionId })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          // If it's a 404 and we have more retries, try again
+          if (response.status === 404 && attempt < maxRetries) {
+            console.warn(`Attempt ${attempt}/${maxRetries}: Failed to mark toast as seen (404), retrying in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue;
+          }
+          
+          console.warn('Failed to mark toast as seen:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: data.error,
+            data: data,
+            attempt: attempt
+          });
+          return { success: false, message: data.error || `Failed to mark match toast as seen (${response.status})` };
+        }
+
+        return data;
+      } catch (error) {
+        console.error(`Mark toast seen on chat entry error (attempt ${attempt}):`, error);
+        
+        // If this is the last attempt, return error
+        if (attempt === maxRetries) {
+          return { success: false, message: 'Failed to mark match toast as seen' };
+        }
+        
+        // Otherwise, wait and retry
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+    
+    return { success: false, message: 'Failed to mark match toast as seen after all retries' };
   }
 
   // Get liked profiles (for Request tab)

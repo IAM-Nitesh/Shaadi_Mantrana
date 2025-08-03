@@ -34,6 +34,22 @@ const dailyLikeSchema = new mongoose.Schema({
   isMutualMatch: {
     type: Boolean,
     default: false
+  },
+  
+  // Toast tracking for match notifications - optimized
+  toastSeen: {
+    type: {
+      userA: { type: Boolean, default: false },
+      userB: { type: Boolean, default: false }
+    },
+    default: { userA: false, userB: false }
+  },
+  
+  // Reference to connection for easier querying
+  connectionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Connection',
+    required: false
   }
   
   // OPTIMIZED: Removed redundant createdAt field (timestamps provides this)

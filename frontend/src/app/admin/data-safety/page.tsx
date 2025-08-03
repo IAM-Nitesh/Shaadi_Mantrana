@@ -14,8 +14,7 @@ export default function DataSafety() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto px-6 py-8">
+    <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-10 pt-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-3 flex items-center">
@@ -178,6 +177,5 @@ export default function DataSafety() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

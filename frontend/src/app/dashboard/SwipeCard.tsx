@@ -4,8 +4,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Profile } from '../../services/profile-service';
-import Image from 'next/image';
 import { ImageUploadService } from '../../services/image-upload-service';
+import { SwipeCardImage } from '../../components/LazyImage';
 
 interface SwipeCardProps {
   profile: {
@@ -111,6 +111,26 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
     });
   }, [profile._id, profile.profile.images]);
 
+  // Cleanup effect to ensure proper state reset when profile changes
+  useEffect(() => {
+    setIsDragging(false);
+    setDragX(0);
+    setShowDetails(false);
+  }, [profile._id]);
+
+  // Fallback swipe handler for edge cases
+  const handleSwipeFallback = (direction: 'left' | 'right') => {
+    try {
+      // Add haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+      onSwipe(direction);
+    } catch (error) {
+      console.warn('Error in fallback swipe handler:', error);
+    }
+  };
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -150,14 +170,18 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     try {
       setIsDragging(true);
       const startX = e.clientX;
+      let currentDragX = 0;
       
       const handleMouseMove = (e: MouseEvent) => {
         try {
+          e.preventDefault();
           const currentX = e.clientX;
           const deltaX = currentX - startX;
+          currentDragX = deltaX;
           setDragX(deltaX);
         } catch (error) {
           console.warn('Error in handleMouseMove:', error);
@@ -167,8 +191,12 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       const handleMouseUp = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(dragX) > 100) {
-            onSwipe(dragX > 0 ? 'right' : 'left');
+          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
+            // Add haptic feedback for mobile
+            if ('vibrate' in navigator) {
+              navigator.vibrate(50);
+            }
+            onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
           document.removeEventListener('mousemove', handleMouseMove);
@@ -186,14 +214,18 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     try {
       setIsDragging(true);
       const startX = e.touches[0].clientX;
+      let currentDragX = 0;
       
       const handleTouchMove = (e: TouchEvent) => {
         try {
+          e.preventDefault();
           const currentX = e.touches[0].clientX;
           const deltaX = currentX - startX;
+          currentDragX = deltaX;
           setDragX(deltaX);
         } catch (error) {
           console.warn('Error in handleTouchMove:', error);
@@ -203,18 +235,22 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       const handleTouchEnd = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(dragX) > 100) {
-            onSwipe(dragX > 0 ? 'right' : 'left');
+          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
+            // Add haptic feedback for mobile
+            if ('vibrate' in navigator) {
+              navigator.vibrate(50);
+            }
+            onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
-          document.removeEventListener('touchmove', handleTouchMove);
+          document.removeEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
           document.removeEventListener('touchend', handleTouchEnd);
         } catch (error) {
           console.warn('Error in handleTouchEnd:', error);
         }
       };
       
-      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
       document.addEventListener('touchend', handleTouchEnd);
     } catch (error) {
       console.warn('Error in handleTouchStart:', error);
@@ -237,6 +273,25 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
+        {/* Swipe Direction Indicators */}
+        {isDragging && (
+          <>
+            {/* Like Indicator (Right Swipe) */}
+            {dragX > 50 && (
+              <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-10 transform rotate-12">
+                LIKE
+              </div>
+            )}
+            
+            {/* Pass Indicator (Left Swipe) */}
+            {dragX < -50 && (
+              <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-10 transform -rotate-12">
+                PASS
+              </div>
+            )}
+          </>
+        )}
+        
         {/* Main Image */}
         <div className="relative h-96">
           {isLoadingImage && !signedImageUrl ? (
@@ -258,20 +313,10 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
               </div>
             </div>
           ) : signedImageUrl || profileImage ? (
-            <Image
+            <SwipeCardImage
               src={signedImageUrl || profileImage}
               alt={`${profile.profile.name || 'Profile'}`}
-              layout="fill"
-              objectFit="cover"
-              objectPosition="top"
-              quality={100} // Increased from 95 to 100 for maximum quality
-              priority={true} // Priority loading for better performance
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-              onError={handleImageError}
-              onLoad={handleImageLoad}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="swipe-card-image profile-image-optimized profile-image-maximum-quality" // Apply enhanced optimized CSS classes
+              className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
@@ -329,12 +374,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
               <h4 className="font-semibold text-gray-800 mb-2">Interests</h4>
               <div className="flex flex-wrap gap-2">
                 {(() => {
-                  console.log('🎯 SwipeCard interests rendering:', {
-                    interests: profile.profile.interests,
-                    type: typeof profile.profile.interests,
-                    length: profile.profile.interests?.length,
-                    isArray: Array.isArray(profile.profile.interests)
-                  });
+
                   
                   if (profile.profile.interests && profile.profile.interests.length > 0) {
                     return profile.profile.interests.map((interest, index) => (

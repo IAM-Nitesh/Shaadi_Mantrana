@@ -129,10 +129,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 
-          logoSize="xxxxl"
-          textSize="xl"
+          logoSize="xxl"
+          textSize="lg"
           text="Loading admin dashboard..." 
           showText={true}
         />
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Dashboard</h2>
@@ -159,8 +159,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8 pt-4">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
@@ -256,6 +255,5 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 } 

@@ -181,7 +181,7 @@ export default function AdminBottomNavigation() {
         });
       }
     } catch (error) {
-      console.error('❌ Logout error:', error);
+
       
       // Error shake animation
       gsap.to('.admin-content', {

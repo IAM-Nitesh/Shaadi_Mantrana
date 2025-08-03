@@ -38,7 +38,7 @@ function clearAuthCache(): void {
 // Get Bearer token for backend API calls
 export async function getBearerToken(): Promise<string | null> {
   try {
-    console.log('🔍 AuthUtils: Getting Bearer token...');
+
     
     // Since we're using HTTP-only cookies, we need to make a server request
     // to get the token from the server side
@@ -50,21 +50,17 @@ export async function getBearerToken(): Promise<string | null> {
       },
     });
 
-    if (!response.ok) {
-      console.log('❌ AuthUtils: Failed to get Bearer token, status:', response.status);
+          if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      if (data.success && data.token) {
+        return data.token;
+      }
+
       return null;
-    }
-
-    const data = await response.json();
-    if (data.success && data.token) {
-      console.log('✅ AuthUtils: Bearer token retrieved successfully');
-      return data.token;
-    }
-
-    console.log('❌ AuthUtils: No token in response');
-    return null;
   } catch (error) {
-    console.error('❌ AuthUtils: Error getting Bearer token:', error);
     return null;
   }
 }
@@ -74,11 +70,8 @@ export async function isAuthenticated(): Promise<boolean> {
   try {
     // Check cache first
     if (isAuthCacheValid() && authStatusCache?.data) {
-      console.log('✅ AuthUtils: Using cached auth status');
       return authStatusCache.data.authenticated;
     }
-
-    console.log('🔍 AuthUtils: Checking authentication status...');
     const response = await fetch('/api/auth/status', {
       method: 'GET',
       credentials: 'include',
@@ -87,15 +80,14 @@ export async function isAuthenticated(): Promise<boolean> {
       },
     });
 
-    if (!response.ok) {
-      console.log('❌ AuthUtils: Auth status check failed, status:', response.status);
-      // Cache the failed response to prevent repeated calls
-      authStatusCache = {
-        data: { authenticated: false, redirectTo: '/', message: 'Auth check failed' },
-        timestamp: Date.now()
-      };
-      return false;
-    }
+          if (!response.ok) {
+        // Cache the failed response to prevent repeated calls
+        authStatusCache = {
+          data: { authenticated: false, redirectTo: '/', message: 'Auth check failed' },
+          timestamp: Date.now()
+        };
+        return false;
+      }
 
     const data: AuthStatus = await response.json();
     

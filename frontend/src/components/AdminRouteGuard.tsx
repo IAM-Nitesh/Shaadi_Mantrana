@@ -59,7 +59,7 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
           return;
         }
       } catch (error) {
-        console.error('❌ Error checking admin access:', error);
+  
         setError('Authentication failed');
         router.replace('/');
         return;

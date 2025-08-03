@@ -48,11 +48,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   const [showUnmatchMenu, setShowUnmatchMenu] = useState(false);
   const [isUnmatching, setIsUnmatching] = useState(false);
   
-  // Debug banner state changes
-  useEffect(() => {
-    console.log('🎬 Banner state changed:', showDisappearingBanner);
-  }, [showDisappearingBanner]);
-  
   // Fetch profile image for the match
   useEffect(() => {
     const fetchProfileImage = async () => {
@@ -72,11 +67,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
     fetchProfileImage();
   }, [match.otherUserId]);
-  
-  // Debug banner state changes
-  useEffect(() => {
-    console.log('🎬 Banner state changed:', showDisappearingBanner);
-  }, [showDisappearingBanner]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -131,6 +121,29 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           console.error('No current user ID found');
           return;
         }
+
+        // Mark match toast as seen when entering chat with retry mechanism
+        const markToastSeenWithRetry = async (retries = 3, delay = 200) => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const result = await MatchingService.markToastSeenOnChatEntry(connectionId);
+              if (result.success) {
+                return;
+              } else {
+                if (i < retries - 1) {
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                }
+              }
+            } catch (error) {
+              if (i < retries - 1) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+              }
+            }
+          }
+        };
+        
+        // Don't await this to avoid blocking chat initialization
+        markToastSeenWithRetry();
 
         // Fetch initial messages using the new caching system
         const data = await ChatService.getChatMessages(connectionId);
@@ -347,10 +360,10 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                   className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors duration-200"
                 >
                   <CustomIcon 
-                    name={isUnmatching ? "ri-loader-4-line" : "ri-user-unfollow-line"} 
-                    className={`text-lg ${isUnmatching ? 'animate-spin' : ''}`}
+                    name="ri-user-unfollow-line" 
+                    className="text-lg"
                   />
-                  <span>{isUnmatching ? 'Unmatching...' : 'Unmatch'}</span>
+                  <span>Unmatch</span>
                 </button>
               </motion.div>
             )}
@@ -367,11 +380,8 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className="fixed top-0 left-0 right-0 z-50"
-            onAnimationStart={() => console.log('🎬 Banner animation started')}
-            onAnimationComplete={() => console.log('🎬 Banner animation completed')}
           >
-            <div className="bg-gray-800/95 backdrop-blur-md text-white text-sm px-4 py-4 shadow-xl border-b border-gray-700/50 flex items-center justify-center gap-2">
-              <CustomIcon name="ri-time-line" className="text-gray-300 text-base" />
+            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm px-4 py-3 shadow-lg border-b border-pink-400/30 flex items-center justify-center">
               <span className="text-center font-medium">Messages in this chat are not saved. They'll be automatically deleted after 24 hours.</span>
             </div>
           </motion.div>
@@ -390,7 +400,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center justify-center h-full text-center"
           >
-            <CustomIcon name="ri-loader-4-line" className="text-5xl text-rose-500 animate-spin mb-4" />
             <p className="text-gray-600">Loading messages...</p>
           </motion.div>
         ) : messages.length === 0 ? (
@@ -432,9 +441,10 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                   exit={{ opacity: 0, y: -20, scale: 0.95 }}
                   transition={{ 
                     type: 'spring', 
-                    stiffness: 400, 
-                    damping: 30,
-                    delay: index === messages.length - 1 ? 0.1 : 0
+                    stiffness: 500, 
+                    damping: 35,
+                    duration: 0.2,
+                    delay: index === messages.length - 1 ? 0.05 : 0
                   }}
                   className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}
                 >
@@ -445,8 +455,8 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                           ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-br-md' 
                           : 'bg-white text-gray-800 rounded-bl-md border border-gray-100'
                       }`}
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ type: 'spring', stiffness: 400 }}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: 'spring', stiffness: 500, duration: 0.1 }}
                     >
                       <p className="text-sm leading-relaxed break-words">{msg.text}</p>
                       
@@ -470,8 +480,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       <motion.div 
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.2 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 35, duration: 0.15 }}
         className="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 z-20 shadow-2xl"
+        style={{ paddingBottom: 'calc(16px + var(--safe-area-inset-bottom))' }}
       >
         <div className="flex items-end space-x-3">
           <div className="flex-1 relative">
@@ -502,17 +513,15 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           <motion.button
             onClick={sendMessage}
             disabled={!message.trim() || isSending}
-            className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-14 h-14 bg-white border-2 border-gray-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-pink-300 hover:bg-pink-50 android-touch-target"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            animate={isSending ? { rotate: 360 } : {}}
-            transition={{ duration: 1, repeat: isSending ? Infinity : 0 }}
           >
-            {isSending ? (
-              <CustomIcon name="ri-loader-4-line" className="text-xl animate-spin" />
-            ) : (
-              <CustomIcon name="ri-send-plane-fill" className="text-xl" />
-            )}
+            <img 
+              src="/icon.svg" 
+              alt="Send" 
+              className="w-6 h-6 text-pink-500"
+            />
           </motion.button>
         </div>
         

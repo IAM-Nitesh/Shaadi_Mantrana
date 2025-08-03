@@ -13,6 +13,8 @@ import { gsap } from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import { useServerAuth } from '../../hooks/useServerAuth';
+import { ServerAuthService } from '../../services/server-auth-service';
+
 
 function SettingsContent() {
   const router = useRouter();
@@ -153,152 +155,156 @@ function SettingsContent() {
       // Hide confirmation modal first
       setShowLogoutConfirm(false);
       
-      // Use server-side logout
-      await logout();
+      // Use ServerAuthService directly (like admin logout) to prevent premature redirect
+      const result = await ServerAuthService.logout();
       
-      // If we reach here, logout was successful
-      // The logout function handles state updates internally
-      
-      // Create an enhanced GSAP logout animation sequence with heart animations
-      const tl = gsap.timeline();
-      
-      // Phase 1: Hide the page loading indicator immediately
-      tl.set('.fixed.left-0.right-0.z-\\[60\\]', {
-        display: 'none'
-      })
-      
-      // Phase 2: Fade out settings content with rotation
-      .to('.settings-container', {
-        opacity: 0,
-        scale: 0.95,
-        y: -20,
-        rotation: -1,
-        duration: 0.7,
-        ease: "power2.inOut"
-      })
-      
-      // Phase 3: Show logout overlay with entrance animation
-      .set('.logout-overlay', {
-        display: 'flex',
-        opacity: 0,
-        scale: 0.9,
-        zIndex: 9999 // Ensure it's above everything including PageLoadingIndicator
-      })
-      .to('.logout-overlay', {
-        opacity: 1,
-        scale: 1,
-        duration: 0.6,
-        ease: "back.out(1.2)"
-      })
-      
-      // Phase 4: Animate central success circle with bounce
-      .fromTo('.logout-circle', {
-        scale: 0,
-        rotation: -180,
-        opacity: 0
-      }, {
-        scale: 1,
-        rotation: 0,
-        opacity: 1,
-        duration: 1,
-        ease: "elastic.out(1, 0.6)"
-      }, "-=0.3")
-      
-      // Phase 5: Animate central heart icon
-      .fromTo('.logout-checkmark', {
-        scale: 0,
-        opacity: 0,
-        rotation: -90
-      }, {
-        scale: 1,
-        opacity: 1,
-        rotation: 0,
-        duration: 0.8,
-        ease: "back.out(2)"
-      }, "-=0.5")
-      
-      // Phase 6: Animate floating hearts with staggered entrance
-      .fromTo('.floating-heart', {
-        scale: 0,
-        opacity: 0,
-        y: 20,
-        rotation: -45
-      }, {
-        scale: 1,
-        opacity: 1,
-        y: 0,
-        rotation: 0,
-        duration: 0.6,
-        ease: "back.out(1.5)",
-        stagger: {
-          amount: 0.8,
-          from: "random"
-        }
-      }, "-=0.6")
-      
-      // Phase 7: Add floating animation to hearts
-      .to('.floating-heart', {
-        y: "-=10",
-        rotation: "+=15",
-        duration: 2,
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true,
-        stagger: {
-          amount: 1,
-          from: "random"
-        }
-      }, "-=0.3")
-      
-      // Phase 8: Animate text elements
-      .fromTo('.logout-title', {
-        y: 30,
-        opacity: 0,
-        scale: 0.9
-      }, {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 0.6,
-        ease: "power2.out"
-      }, "-=1.5")
-      
-      .fromTo('.logout-subtitle', {
-        y: 20,
-        opacity: 0
-      }, {
-        y: 0,
-        opacity: 1,
-        duration: 0.5,
-        ease: "power2.out"
-      }, "-=0.3")
-      
-      // Phase 9: Add particle floating animations
-      .to('.logout-circle .absolute.animate-bounce', {
-        y: "-=8",
-        x: "+=3",
-        duration: 1.5,
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true,
-        stagger: 0.3
-      }, "-=3")
-      
-      // Phase 10: Final exit and redirect
-      .to('.logout-overlay', {
-        opacity: 0,
-        scale: 1.05,
-        y: -30,
-        duration: 0.7,
-        delay: 1.5,
-        ease: "power2.in",
-        onComplete: () => {
-          // Force redirect to home page
-          window.location.href = '/';
-        }
-      });
+      if (result.success) {
+        // Create an enhanced GSAP logout animation sequence with heart animations
+        const tl = gsap.timeline();
+        
+        // Phase 1: Hide the page loading indicator immediately
+        tl.set('.fixed.left-0.right-0.z-\\[60\\]', {
+          display: 'none'
+        })
+        
+        // Phase 2: Fade out settings content with rotation
+        .to('.settings-container', {
+          opacity: 0,
+          scale: 0.95,
+          y: -20,
+          rotation: -1,
+          duration: 0.7,
+          ease: "power2.inOut"
+        })
+        
+        // Phase 3: Show logout overlay with entrance animation
+        .set('.logout-overlay', {
+          display: 'flex',
+          opacity: 0,
+          scale: 0.9,
+          zIndex: 9999 // Ensure it's above everything including PageLoadingIndicator
+        })
+        .to('.logout-overlay', {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "back.out(1.2)"
+        })
+        
+        // Phase 4: Animate central success circle with bounce
+        .fromTo('.logout-circle', {
+          scale: 0,
+          rotation: -180,
+          opacity: 0
+        }, {
+          scale: 1,
+          rotation: 0,
+          opacity: 1,
+          duration: 1,
+          ease: "elastic.out(1, 0.6)"
+        }, "-=0.3")
+        
+        // Phase 5: Animate central heart icon
+        .fromTo('.logout-checkmark', {
+          scale: 0,
+          opacity: 0,
+          rotation: -90
+        }, {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 0.8,
+          ease: "back.out(2)"
+        }, "-=0.5")
+        
+        // Phase 6: Animate floating hearts with staggered entrance
+        .fromTo('.floating-heart', {
+          scale: 0,
+          opacity: 0,
+          y: 20,
+          rotation: -45
+        }, {
+          scale: 1,
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 0.6,
+          ease: "back.out(1.5)",
+          stagger: {
+            amount: 0.8,
+            from: "random"
+          }
+        }, "-=0.6")
+        
+        // Phase 7: Add floating animation to hearts
+        .to('.floating-heart', {
+          y: "-=10",
+          rotation: "+=15",
+          duration: 2,
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true,
+          stagger: {
+            amount: 1,
+            from: "random"
+          }
+        }, "-=0.3")
+        
+        // Phase 8: Animate text elements
+        .fromTo('.logout-title', {
+          y: 30,
+          opacity: 0,
+          scale: 0.9
+        }, {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "power2.out"
+        }, "-=1.5")
+        
+        .fromTo('.logout-subtitle', {
+          y: 20,
+          opacity: 0
+        }, {
+          y: 0,
+          opacity: 1,
+          duration: 0.5,
+          ease: "power2.out"
+        }, "-=0.3")
+        
+        // Phase 9: Add particle floating animations
+        .to('.logout-circle .absolute.animate-bounce', {
+          y: "-=8",
+          x: "+=3",
+          duration: 1.5,
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true,
+          stagger: 0.3
+        }, "-=3")
+        
+        // Phase 10: Final exit and redirect
+        .to('.logout-overlay', {
+          opacity: 0,
+          scale: 1.05,
+          y: -30,
+          duration: 0.7,
+          delay: 1.5,
+          ease: "power2.in",
+          onComplete: () => {
+            // Force redirect to home page
+            window.location.href = '/';
+          }
+        });
+      } else {
+        // Handle logout failure
+        console.error('Logout failed:', result.message);
+        ToastService.error('Logout failed. Please try again.');
+      }
     } catch (error) {
       console.error('Error during logout:', error);
+      ToastService.error('An error occurred during logout. Please try again.');
     }
   };
 
@@ -557,6 +563,8 @@ function SettingsContent() {
                 </Link>
               </div>
             </div>
+
+
 
             {/* Notifications - Commented out for future release */}
             {/* 

@@ -61,8 +61,8 @@ const iconMap: Record<string, string> = {
   'ri-pause-circle-line': '/icons/arrow-right.svg',
   'ri-play-circle-line': '/icons/arrow-right.svg',
   'ri-user-add-line': '/icons/user.svg', // Using user icon as fallback for user-add
-  'ri-edit-line': '/icons/arrow-right.svg',
-  'ri-delete-bin-line': '/icons/arrow-right.svg',
+  'ri-edit-line': '/icons/settings-outline.svg',
+  'ri-delete-bin-line': '/icons/close.svg',
   'ri-check-line': '/icons/check-circle.svg',
   'ri-arrow-up-s-line': '/icons/arrow-right.svg',
   'ri-arrow-down-s-line': '/icons/arrow-right.svg',

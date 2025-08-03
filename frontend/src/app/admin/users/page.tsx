@@ -23,7 +23,6 @@ interface User {
   profileCompleteness?: number;
   profile: {
     name?: string;
-    profileCompleteness?: number;
     images?: string;
   };
   profileCompleted?: boolean;
@@ -62,6 +61,12 @@ export default function AdminUsers() {
     // Initialize cache cleanup for optimal performance
     ImageUploadService.initializeCacheCleanup();
     
+    // Set up automatic refresh every 5 minutes to ensure profile completeness is up-to-date
+    const autoRefreshInterval = setInterval(() => {
+      console.log('🔄 Auto-refreshing user data to ensure profile completeness is current...');
+      fetchUsers(true);
+    }, 5 * 60 * 1000); // 5 minutes
+    
     // Test ImageUploadService
     console.log('🔍 Testing ImageUploadService availability...');
     console.log('🔍 ImageUploadService:', ImageUploadService);
@@ -93,6 +98,11 @@ export default function AdminUsers() {
       console.error('❌ ImageUploadService.getUserProfilePictureSignedUrlCached is not available');
       console.error('❌ ImageUploadService:', ImageUploadService);
     }
+    
+    // Cleanup interval on component unmount
+    return () => {
+      clearInterval(autoRefreshInterval);
+    };
   }, []);
 
   // Close dropdown when clicking outside
@@ -109,7 +119,7 @@ export default function AdminUsers() {
     };
   }, [openDropdown]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (forceRefresh = false) => {
     try {
       const token = await ServerAuthService.getBearerToken();
       if (!token) {
@@ -118,11 +128,12 @@ export default function AdminUsers() {
         return;
       }
 
-      console.log('🔍 Users: Fetching users from /api/admin/users');
+      console.log('🔍 Users: Fetching users from /api/admin/users', forceRefresh ? '(force refresh)' : '');
 
       const response = await fetch('/api/admin/users', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': forceRefresh ? 'no-cache' : 'max-age=300' // 5 minutes cache unless force refresh
         }
       });
 
@@ -142,18 +153,17 @@ export default function AdminUsers() {
       if (data.users && data.users.length > 0) {
         console.log('🔍 Users: User details:');
         data.users.forEach((user: any, index: number) => {
-          console.log(`   ${index + 1}. ${user.email} - Role: ${user.role}, Status: ${user.status}, Approved: ${user.approvedByAdmin}, Profile Complete: ${user.profile?.profileCompleteness || 0}%`);
-          console.log(`   Raw profile data:`, user.profile);
+          console.log(`   ${index + 1}. ${user.email} - Role: ${user.role}, Status: ${user.status}, Approved: ${user.approvedByAdmin}, Profile Complete: ${user.profileCompleteness || 0}%`);
         });
       }
       
       // Debug: Check for invited users specifically
       const invitedUsers = data.users?.filter((user: any) => 
-        (user.profile?.profileCompleteness || 0) < 100
+        (user.profileCompleteness || 0) < 100
       ) || [];
       console.log('🔍 Invited users found:', invitedUsers.length);
       invitedUsers.forEach((user: any, index: number) => {
-        console.log(`   Invited ${index + 1}: ${user.email} - Profile: ${user.profile?.profileCompleteness || 0}%, Approved: ${user.approvedByAdmin}`);
+        console.log(`   Invited ${index + 1}: ${user.email} - Profile: ${user.profileCompleteness || 0}%, Approved: ${user.approvedByAdmin}`);
       });
       
       setUsers(data.users || []);
@@ -508,10 +518,10 @@ export default function AdminUsers() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 
-          logoSize="xxxxl"
-          textSize="xl"
+          logoSize="xxl"
+          textSize="lg"
           text="Loading users..." 
           showText={true}
         />
@@ -521,7 +531,7 @@ export default function AdminUsers() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Users</h2>
@@ -538,16 +548,14 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-8 pt-4">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-            <CustomIcon name="ri-user-settings-line" className="text-4xl text-blue-600 mr-3" />
-            User Management
-          </h1>
-          <p className="text-gray-600">Manage user accounts and monitor activity</p>
-        </div>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-8 pt-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
+          <CustomIcon name="ri-user-settings-line" className="text-4xl text-blue-600 mr-3" />
+          User Management
+        </h1>
+        <p className="text-gray-600">Manage user accounts and monitor activity</p>
+      </div>
 
         {/* Statistics Cards */}
         {stats && (
@@ -605,10 +613,22 @@ export default function AdminUsers() {
         {/* Users Table */}
         <div className="user-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-              <CustomIcon name="ri-user-list-line" className="text-xl text-blue-500 mr-2" />
-              User Accounts ({users.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                <CustomIcon name="ri-user-list-line" className="text-xl text-blue-500 mr-2" />
+                User Accounts ({users.length})
+              </h3>
+              <button
+                onClick={() => fetchUsers(true)}
+                disabled={loading}
+                className="flex items-center px-3 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              >
+                <CustomIcon name={loading ? "ri-loader-4-line" : "ri-refresh-line"} className={`mr-2 text-sm ${loading ? 'animate-spin' : ''}`} />
+                <span className="text-sm font-medium">
+                  {loading ? 'Refreshing...' : 'Refresh'}
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -685,7 +705,7 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {(() => {
-                        const profileCompleteness = user.profile?.profileCompleteness || 0;
+                        const profileCompleteness = user.profileCompleteness || 0;
                         const isApproved = user.approvedByAdmin;
                         const userStatus = user.status;
                         
@@ -714,7 +734,7 @@ export default function AdminUsers() {
                               {status}
                             </span>
                             {user.isUpdating && (
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                              <span className="text-xs animate-pulse">💝</span>
                             )}
                           </div>
                         );
@@ -725,11 +745,11 @@ export default function AdminUsers() {
                         <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
                           <div 
                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${user.profile?.profileCompleteness || 0}%` }}
+                            style={{ width: `${user.profileCompleteness || 0}%` }}
                           ></div>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {user.profile?.profileCompleteness || 0}%
+                          {user.profileCompleteness || 0}%
                         </span>
                       </div>
                     </td>
@@ -748,7 +768,7 @@ export default function AdminUsers() {
                             disabled={user.isUpdating}
                           >
                             {user.isUpdating ? (
-                              <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+                              <span className="text-sm animate-pulse">💝</span>
                             ) : (
                               <span className="text-lg font-bold">⋯</span>
                             )}
@@ -758,7 +778,7 @@ export default function AdminUsers() {
                             <div className="dropdown-container absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                               <div className="py-1">
                                 {(() => {
-                                  const profileCompleteness = user.profile?.profileCompleteness || 0;
+                                  const profileCompleteness = user.profileCompleteness || 0;
                                   const isApproved = user.approvedByAdmin;
                                   const userStatus = user.status;
                                   
@@ -772,7 +792,7 @@ export default function AdminUsers() {
                                           className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
-                                            <div className="w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            <span className="mr-2 animate-pulse">💝</span>
                                           ) : (
                                             <CustomIcon name="ri-pause-circle-line" className="mr-2" />
                                           )}
@@ -788,7 +808,7 @@ export default function AdminUsers() {
                                           className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
-                                            <div className="w-3 h-3 border border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            <span className="mr-2 animate-pulse">💝</span>
                                           ) : (
                                             <CustomIcon name="ri-play-circle-line" className="mr-2" />
                                           )}
@@ -804,7 +824,7 @@ export default function AdminUsers() {
                                           className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
-                                            <div className="w-3 h-3 border border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            <span className="mr-2 animate-pulse">💝</span>
                                           ) : (
                                             <CustomIcon name="ri-play-circle-line" className="mr-2" />
                                           )}
@@ -820,7 +840,7 @@ export default function AdminUsers() {
                                           className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
-                                            <div className="w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            <span className="mr-2 animate-pulse">💝</span>
                                           ) : (
                                             <CustomIcon name="ri-pause-circle-line" className="mr-2" />
                                           )}
@@ -863,7 +883,6 @@ export default function AdminUsers() {
             </div>
           )}
         </div>
-      </div>
       {/* Confirmation Dialog */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

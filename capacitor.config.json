@@ -1,11 +1,11 @@
 {
-  "appId": "com.shaadimantra.app",
+  "appId": "com.shaadimantrana.app",
   "appName": "Shaadi Mantrana",
   "webDir": "out",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
-    "hostname": "shaadi-mantra.local"
+    "hostname": "shaadi-mantrana.local"
   },
   "plugins": {
     "SplashScreen": {
