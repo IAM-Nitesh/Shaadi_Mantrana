@@ -433,20 +433,29 @@ export class MatchingService {
   }
 
   // Unmatch from a profile
-  static async unmatchProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
+  static async unmatchProfile(payload: string | { targetUserId?: string; connectionId?: string }): Promise<{ success: boolean; message: string }> {
     try {
       if (!isAuthenticated()) {
         throw new Error('User not authenticated');
       }
 
       const token = await getBearerToken();
+
+      const body: any = {};
+      if (typeof payload === 'string') {
+        body.targetUserId = payload;
+      } else if (payload && typeof payload === 'object') {
+        if (payload.targetUserId) body.targetUserId = payload.targetUserId;
+        if (payload.connectionId) body.connectionId = payload.connectionId;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/matching/unmatch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ targetUserId })
+        body: JSON.stringify(body)
       });
 
       const data = await response.json();
