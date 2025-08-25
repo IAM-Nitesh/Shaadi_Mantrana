@@ -1,7 +1,7 @@
 {
   "name": "shaadi-mantra",
   "version": "1.0.0",
-  "description": "Shaadi Mantra - Full Stack Matrimonial Application",
+  "description": "Shaadi Mantrana - Full Stack Matrimonial Application",
   "private": true,
   "scripts": {
     "dev:backend": "cd backend && npx cross-env NODE_ENV=development PORT=5500 node start.js",
@@ -21,6 +21,8 @@
     "emails:sync": "node scripts/manage-approved-emails.js sync"
   },
   "devDependencies": {
+    "@jridgewell/sourcemap-codec": "^1.5.5",
+    "@rollup/plugin-terser": "^0.4.4",
     "@types/nodemailer": "^6.4.17",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3"
@@ -39,7 +41,7 @@
     "express",
     "mobile-app"
   ],
-  "author": "Shaadi Mantra Team",
+  "author": "Shaadi Mantrana Team",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
@@ -64,6 +66,7 @@
     "framer-motion": "^12.23.9",
     "lucide-react": "^0.525.0",
     "multer": "^2.0.2",
+    "next": "^15.5.0",
     "nodemailer": "^7.0.5",
     "puppeteer": "^24.15.0",
     "react-chat-elements": "^12.0.18",

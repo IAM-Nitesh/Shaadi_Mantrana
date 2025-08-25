@@ -4,8 +4,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Profile } from '../../services/profile-service';
-import Image from 'next/image';
 import { ImageUploadService } from '../../services/image-upload-service';
+import { SwipeCardImage } from '../../components/LazyImage';
+import logger from '../../utils/logger';
 
 interface SwipeCardProps {
   profile: {
@@ -14,11 +15,13 @@ interface SwipeCardProps {
       name: string;
       age?: number;
       profession?: string;
-      images?: string;
+      occupation?: string;
+      images?: string | string[]; // Handle both string and array cases
       about?: string;
       education?: string;
+      nativePlace?: string;
+      currentResidence?: string;
       interests?: string[];
-      location?: string;
     };
     verification?: {
       isVerified: boolean;
@@ -52,20 +55,82 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   // Fetch signed URL for profile image when profile changes
   useEffect(() => {
     const fetchSignedUrl = async () => {
-      if (profile.profile.images && profile._id) {
+      // Reset states for new profile
+      setIsLoadingImage(true);
+      setImageError(false);
+      setImageLoaded(false);
+      setSignedImageUrl(null);
+      
+      // Handle both array and string cases for images
+      const images = profile.profile.images;
+      const hasImages = images && (
+        (Array.isArray(images) && images.length > 0 && images[0]) ||
+        (typeof images === 'string' && images.trim().length > 0)
+      );
+      
+      if (hasImages && profile._id) {
         try {
+          logger.debug('🖼️ Fetching signed URL for profile:', profile._id);
           const signedUrl = await ImageUploadService.getUserProfilePictureSignedUrlCached(profile._id);
           if (signedUrl) {
+            logger.debug('✅ Signed URL fetched successfully for profile:', profile._id);
             setSignedImageUrl(signedUrl);
+          } else {
+            logger.debug('❌ No signed URL returned for profile:', profile._id);
+            setImageError(true);
+            setIsLoadingImage(false);
           }
         } catch (error) {
-          console.error('Failed to fetch signed URL for user:', profile._id, error);
+          logger.error('❌ Failed to fetch signed URL for user:', profile._id, error);
+          setImageError(true);
+          setIsLoadingImage(false);
         }
+      } else {
+        logger.debug('ℹ️ No images field or profile ID for profile:', profile._id);
+        setImageError(true);
+        setIsLoadingImage(false);
       }
     };
 
     fetchSignedUrl();
+    
+    // Debug: Log profile data received by SwipeCard
+    logger.debug('🎯 SwipeCard received profile:', {
+      id: profile._id,
+      name: profile.profile?.name,
+      hasImages: !!profile.profile?.images,
+      images: profile.profile?.images,
+      imagesType: typeof profile.profile?.images,
+      isArray: Array.isArray(profile.profile?.images),
+      interests: profile.profile?.interests,
+      interestsType: typeof profile.profile?.interests,
+      interestsLength: profile.profile?.interests?.length,
+      profession: profile.profile?.profession,
+      occupation: profile.profile?.occupation,
+      currentResidence: profile.profile?.currentResidence,
+      nativePlace: profile.profile?.nativePlace
+    });
   }, [profile._id, profile.profile.images]);
+
+  // Cleanup effect to ensure proper state reset when profile changes
+  useEffect(() => {
+    setIsDragging(false);
+    setDragX(0);
+    setShowDetails(false);
+  }, [profile._id]);
+
+  // Fallback swipe handler for edge cases
+  const handleSwipeFallback = (direction: 'left' | 'right') => {
+    try {
+      // Add haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+      onSwipe(direction);
+    } catch (error) {
+      logger.warn('Error in fallback swipe handler:', error);
+    }
+  };
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragX, setDragX] = useState(0);
@@ -73,91 +138,123 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(true);
 
-  // Get the profile image, or use a default
-  const profileImage = profile.profile.images || '';
+  // Get the profile image, handling both array and string cases
+  const getProfileImage = () => {
+    const images = profile.profile.images;
+    if (!images) return '';
+    
+    if (Array.isArray(images)) {
+      return images.length > 0 ? images[0] : '';
+    } else if (typeof images === 'string') {
+      return images;
+    }
+    
+    return '';
+  };
+
+  const profileImage = getProfileImage();
 
   const handleImageError = () => {
-    console.log('🖼️ Image failed to load, showing fallback');
+    logger.debug('🖼️ Image failed to load, showing fallback');
     setImageError(true);
     setImageLoaded(false);
+    setIsLoadingImage(false);
   };
 
   const handleImageLoad = () => {
-    console.log('🖼️ Image loaded successfully');
+    logger.debug('🖼️ Image loaded successfully');
     setImageLoaded(true);
     setImageError(false);
+    setIsLoadingImage(false);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     try {
       setIsDragging(true);
       const startX = e.clientX;
+      let currentDragX = 0;
       
       const handleMouseMove = (e: MouseEvent) => {
         try {
+          e.preventDefault();
           const currentX = e.clientX;
           const deltaX = currentX - startX;
+          currentDragX = deltaX;
           setDragX(deltaX);
         } catch (error) {
-          console.warn('Error in handleMouseMove:', error);
+          logger.warn('Error in handleMouseMove:', error);
         }
       };
       
       const handleMouseUp = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(dragX) > 100) {
-            onSwipe(dragX > 0 ? 'right' : 'left');
+          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
+            // Add haptic feedback for mobile
+            if ('vibrate' in navigator) {
+              navigator.vibrate(50);
+            }
+            onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
         } catch (error) {
-          console.warn('Error in handleMouseUp:', error);
+          logger.warn('Error in handleMouseUp:', error);
         }
       };
       
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     } catch (error) {
-      console.warn('Error in handleMouseDown:', error);
+      logger.warn('Error in handleMouseDown:', error);
     }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     try {
       setIsDragging(true);
       const startX = e.touches[0].clientX;
+      let currentDragX = 0;
       
       const handleTouchMove = (e: TouchEvent) => {
         try {
+          e.preventDefault();
           const currentX = e.touches[0].clientX;
           const deltaX = currentX - startX;
+          currentDragX = deltaX;
           setDragX(deltaX);
         } catch (error) {
-          console.warn('Error in handleTouchMove:', error);
+          logger.warn('Error in handleTouchMove:', error);
         }
       };
       
       const handleTouchEnd = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(dragX) > 100) {
-            onSwipe(dragX > 0 ? 'right' : 'left');
+          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
+            // Add haptic feedback for mobile
+            if ('vibrate' in navigator) {
+              navigator.vibrate(50);
+            }
+            onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
-          document.removeEventListener('touchmove', handleTouchMove);
+          document.removeEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
           document.removeEventListener('touchend', handleTouchEnd);
         } catch (error) {
-          console.warn('Error in handleTouchEnd:', error);
+          logger.warn('Error in handleTouchEnd:', error);
         }
       };
       
-      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
       document.addEventListener('touchend', handleTouchEnd);
     } catch (error) {
-      console.warn('Error in handleTouchStart:', error);
+      logger.warn('Error in handleTouchStart:', error);
     }
   };
 
@@ -177,24 +274,57 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
+        {/* Swipe Direction Indicators */}
+        {isDragging && (
+          <>
+            {/* Like Indicator (Right Swipe) */}
+            {dragX > 50 && (
+              <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-10 transform rotate-12">
+                LIKE
+              </div>
+            )}
+            
+            {/* Pass Indicator (Left Swipe) */}
+            {dragX < -50 && (
+              <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-10 transform -rotate-12">
+                PASS
+              </div>
+            )}
+          </>
+        )}
+        
         {/* Main Image */}
         <div className="relative h-96">
-          {!imageError && (signedImageUrl || profileImage) ? (
-            <Image
+          {isLoadingImage && !signedImageUrl ? (
+            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+              <div className="text-center text-rose-600">
+                <div className="text-6xl mb-4">👤</div>
+                <p className="text-lg font-medium">Loading profile photo...</p>
+                <div className="mt-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mx-auto"></div>
+                </div>
+              </div>
+            </div>
+          ) : imageError && !signedImageUrl && !profileImage ? (
+            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+              <div className="text-center text-rose-600">
+                <div className="text-6xl mb-4">👤</div>
+                <p className="text-lg font-medium">Photo unavailable</p>
+                <p className="text-sm opacity-75">Could not load profile picture.</p>
+              </div>
+            </div>
+          ) : signedImageUrl || profileImage ? (
+            <SwipeCardImage
               src={signedImageUrl || profileImage}
               alt={`${profile.profile.name || 'Profile'}`}
-              layout="fill"
-              objectFit="cover"
-              objectPosition="top"
-              onError={handleImageError}
-              onLoad={handleImageLoad}
+              className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
               <div className="text-center text-rose-600">
                 <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">{profile.profile.name || 'Profile'}</p>
-                <p className="text-sm opacity-75">Photo unavailable</p>
+                <p className="text-lg font-medium">No profile photo</p>
+                <p className="text-sm opacity-75">User hasn't uploaded a photo yet.</p>
               </div>
             </div>
           )}
@@ -219,11 +349,11 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">
               <i className="ri-briefcase-line"></i>
-              <span>{profile.profile.profession || 'Not specified'}</span>
+              <span>{profile.profile.profession || profile.profile.occupation || 'Not specified'}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90 mt-1">
               <i className="ri-map-pin-line"></i>
-              <span>{profile.profile.location || 'Location not specified'}</span>
+              <span>{profile.profile.currentResidence || profile.profile.nativePlace || 'Location not specified'}</span>
             </div>
           </div>
         </div>
@@ -244,18 +374,22 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
             <div>
               <h4 className="font-semibold text-gray-800 mb-2">Interests</h4>
               <div className="flex flex-wrap gap-2">
-                {profile.profile.interests && profile.profile.interests.length > 0 ? (
-                  profile.profile.interests.map((interest, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
-                    >
-                      {interest}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-gray-500 text-sm">No interests specified</span>
-                )}
+                {(() => {
+
+                  
+                  if (profile.profile.interests && profile.profile.interests.length > 0) {
+                    return profile.profile.interests.map((interest, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                      >
+                        {interest}
+                      </span>
+                    ));
+                  } else {
+                    return <span className="text-gray-500 text-sm">No interests specified</span>;
+                  }
+                })()}
               </div>
             </div>
           </div>

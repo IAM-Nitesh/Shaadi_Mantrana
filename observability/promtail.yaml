@@ -1,0 +1,63 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: https://logs-prod-028.grafana.net/loki/api/v1/push
+    basic_auth:
+      username: ${GRAFANA_LOKI_USER}
+      password: ${GRAFANA_LOKI_PASSWORD}
+
+positions:
+  filename: /tmp/positions.yaml
+
+scrape_configs:
+  - job_name: shaadimantra-node-api
+    static_configs:
+      - targets: ['localhost']
+        labels:
+          job: shaadimantra-node-api
+          env: production
+          service: api
+          # Adjust path to where your node app writes logs
+          __path__: /var/log/shaadimantra/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            time: time
+            level: level
+            msg: msg
+            request_id: request_id
+            path: path
+            user_uuid: user_uuid
+      # NOTE: `user_uuid` is extracted into the JSON payload above but is NOT promoted to a Promtail label
+      # by default to avoid high-cardinality label explosion and unexpected Loki costs. If you decide to
+      # promote it to a label in production, make sure you understand user cardinality and cost impact.
+      - labels:
+          level:
+          path:
+          job:
+          env:
+
+  - job_name: shaadimantra-frontend-important
+    static_configs:
+      - targets: ['localhost']
+        labels:
+          job: shaadimantra-frontend-important
+          env: development
+          service: frontend
+          # Only scrape the warn+ JSON file written by the frontend (mounted at /var/log/frontend)
+          __path__: /var/log/frontend/tmp-logs/frontend-important.log
+    pipeline_stages:
+      - json:
+          expressions:
+            time: time
+            level: level
+            msg: msg
+            request_id: request_id
+            path: path
+      - labels:
+          level:
+          path:
+          job:
+          env:

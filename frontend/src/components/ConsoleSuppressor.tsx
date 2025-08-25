@@ -22,7 +22,7 @@ export default function ConsoleSuppressor() {
       console.warn = function(...args) {
         const message = args.join(' ');
         
-        // Suppress specific development warnings
+        // Suppress specific development warnings but allow our debug logs
         if (
           message.includes('Download the React DevTools') ||
           message.includes('[Fast Refresh]') ||
@@ -65,9 +65,15 @@ export default function ConsoleSuppressor() {
         originalError.apply(console, args);
       };
 
-      // Override console.log for HMR messages
+      // Override console.log for HMR messages but allow our debug logs
       console.log = function(...args) {
         const message = args.join(' ');
+        
+        // Allow our debug logs (they contain emojis)
+        if (message.includes('🔍') || message.includes('✅') || message.includes('❌') || message.includes('🔄')) {
+          originalLog.apply(console, args);
+          return;
+        }
         
         if (
           message.includes('[Fast Refresh]') ||

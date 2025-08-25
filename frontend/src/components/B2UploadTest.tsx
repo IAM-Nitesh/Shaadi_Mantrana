@@ -23,7 +23,7 @@ export default function B2UploadTest() {
       const url = await ImageCompression.createPreviewUrl(file);
       setPreviewUrl(url);
     } catch (error) {
-      console.error('Preview creation failed:', error);
+
     }
 
     // Validate file
@@ -55,7 +55,7 @@ export default function B2UploadTest() {
         setMessage(`❌ Upload failed: ${result.error}`);
       }
     } catch (error) {
-      console.error('Upload error:', error);
+
       setMessage('❌ Upload error occurred');
     } finally {
       setIsUploading(false);
@@ -83,7 +83,7 @@ export default function B2UploadTest() {
         setMessage('❌ Failed to delete image');
       }
     } catch (error) {
-      console.error('Delete error:', error);
+
       setMessage('❌ Delete error occurred');
     } finally {
       setIsUploading(false);

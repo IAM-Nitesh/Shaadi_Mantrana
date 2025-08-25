@@ -1,140 +1,231 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import logger from '../utils/logger';
+import { motion } from 'framer-motion';
+import CustomIcon from './CustomIcon';
 
-export default function ErrorBoundary() {
-  useEffect(() => {
-    // Handle unhandled promise rejections
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      // console.error('Unhandled Promise Rejection caught:', event.reason);
-      
-      // Handle different types of promise rejections
-      if (event.reason) {
-        // Handle Event objects (like DOM events that get rejected)
-        if (event.reason.constructor && event.reason.constructor.name === 'Event') {
-          // console.warn('DOM Event promise rejection - likely from async event handler or image loading');
-          
-          // Specifically handle CSS/link loading errors
-          if (event.reason.target && event.reason.target.tagName === 'LINK') {
-            const linkElement = event.reason.target as HTMLLinkElement;
-            // console.warn('CSS loading failed for:', linkElement.href);
-            
-            // Try to provide fallback or retry mechanism
-            if (linkElement.href.includes('remixicon')) {
-              // console.warn('Remix Icons CDN failed - fallback CSS should handle this');
-            }
-          }
-          
-          event.preventDefault();
-          return;
-        }
-        
-        // Handle empty objects from API calls
-        if (typeof event.reason === 'object' && Object.keys(event.reason).length === 0) {
-          // console.warn('Empty object promise rejection - likely from API call or async operation');
-          event.preventDefault();
-          return;
-        }
-        
-        // Handle specific DOM element errors
-        if (event.reason.target) {
-          if (event.reason.target.tagName === 'LINK') {
-            const linkElement = event.reason.target as HTMLLinkElement;
-            // console.warn('External CSS/Font loading error:', linkElement.href);
-            
-            // Handle CDN failures gracefully
-            if (linkElement.href.includes('cdnjs.cloudflare.com') || linkElement.href.includes('remixicon')) {
-              // console.warn('CDN resource failed to load - using fallback styles');
-            }
-          } else if (event.reason.target.tagName === 'IMG') {
-                          // console.warn('Image loading error:', event.reason.target.src);
-          }
-          event.preventDefault();
-          return;
-        }
-        
-        // Handle string errors that are actually Event objects
-        if (typeof event.reason === 'string' && event.reason.includes('[object Event]')) {
-          // console.warn('Event object converted to string - likely from async DOM operation');
-          event.preventDefault();
-          return;
-        }
-      }
-      
-      // Prevent the error from showing in the console as unhandled
-      event.preventDefault();
-      
-      // You can add more sophisticated error handling here
-      // For example, send to error tracking service
-      if (process.env.NODE_ENV === 'development') {
-        // console.warn('Promise rejection handled gracefully in development mode');
-      }
-    };
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+}
 
-    // Handle unhandled errors - enhanced for CSS loading
-    const handleError = (event: ErrorEvent) => {
-      // console.error('Unhandled Error caught:', event.error);
-      
-      // Check for specific error types
-      if (event.target && (event.target as HTMLLinkElement).tagName === 'LINK') {
-        const linkElement = event.target as HTMLLinkElement;
-        // console.warn('CSS/Font loading error from external source:', linkElement.href);
-        
-        // Handle Remix Icons CDN failure specifically
-        if (linkElement.href && linkElement.href.includes('remixicon')) {
-          // console.warn('Remix Icons CDN failed - fallback styles should be active');
-          
-          // Optionally try to load from a different CDN or local fallback
-          // This is handled by the fallback CSS we already have
-        }
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        // console.warn('Error handled gracefully in development mode');
-      }
-    };
+interface State {
+  hasError: boolean;
+  error?: Error;
+  errorInfo?: ErrorInfo;
+}
 
-    // Special handler for CSS loading errors
-    const handleCSSError = () => {
-      const linkElements = document.querySelectorAll('link[rel="stylesheet"]');
-      linkElements.forEach((link) => {
-        const linkElement = link as HTMLLinkElement;
-        
-        linkElement.addEventListener('error', (e) => {
-          // console.warn('CSS failed to load:', linkElement.href);
-          
-          if (linkElement.href.includes('remixicon')) {
-            // console.warn('Remix Icons CSS failed - fallback should be active');
-            // Mark that external icons failed so we can use fallbacks
-            document.documentElement.setAttribute('data-icons-fallback', 'true');
-          }
-          
-          // Prevent this from becoming an unhandled promise rejection
-          e.preventDefault();
-          e.stopPropagation();
-        });
-        
-        linkElement.addEventListener('load', () => {
-          if (linkElement.href.includes('remixicon')) {
-            document.documentElement.removeAttribute('data-icons-fallback');
-          }
-        });
-      });
-    };
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
+  };
 
-    // Add event listeners
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    window.addEventListener('error', handleError);
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  logger.error('ErrorBoundary caught an error:', error, errorInfo);
     
-    // Set up CSS error handling after a short delay to ensure DOM is ready
-    setTimeout(handleCSSError, 100);
+    this.setState({
+      error,
+      errorInfo,
+    });
 
-    // Cleanup
-    return () => {
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-      window.removeEventListener('error', handleError);
-    };
+    this.props.onError?.(error, errorInfo);
+  }
+
+  private handleRetry = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
+
+  private handleGoHome = () => {
+    window.location.href = '/';
+  };
+
+  public render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+          >
+            {/* Error Icon */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring' }}
+              className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+              <CustomIcon name="ri-error-warning-line" className="text-3xl text-red-500" />
+            </motion.div>
+
+            {/* Error Message */}
+            <motion.h2
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-2xl font-bold text-gray-800 mb-4"
+            >
+              Oops! Something went wrong
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-gray-600 mb-6"
+            >
+              We encountered an unexpected error. Don't worry, your data is safe.
+            </motion.p>
+
+            {/* Error Details (Development Only) */}
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <motion.details
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="mb-6 text-left"
+              >
+                <summary className="cursor-pointer text-sm text-gray-500 mb-2">
+                  Error Details (Development)
+                </summary>
+                <div className="bg-gray-100 rounded-lg p-3 text-xs font-mono text-gray-700 overflow-auto">
+                  <div className="mb-2">
+                    <strong>Error:</strong> {this.state.error.message}
+                  </div>
+                  {this.state.errorInfo && (
+                    <div>
+                      <strong>Stack:</strong>
+                      <pre className="whitespace-pre-wrap mt-1">
+                        {this.state.errorInfo.componentStack}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </motion.details>
+            )}
+
+            {/* Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="space-y-3"
+            >
+              <button
+                onClick={this.handleRetry}
+                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <CustomIcon name="ri-refresh-line" className="inline mr-2" />
+                Try Again
+              </button>
+
+              <button
+                onClick={this.handleGoHome}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+              >
+                <CustomIcon name="ri-home-line" className="inline mr-2" />
+                Go to Home
+              </button>
+            </motion.div>
+
+            {/* Contact Support */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="text-xs text-gray-500 mt-6"
+            >
+              If this problem persists, please contact our support team.
+            </motion.p>
+          </motion.div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Hook for functional components
+export function useErrorHandler() {
+  const [error, setError] = React.useState<Error | null>(null);
+
+  const handleError = React.useCallback((error: Error) => {
+    logger.error('Error caught by useErrorHandler:', error);
+    setError(error);
   }, []);
 
-  return null; // This component doesn't render anything
+  const clearError = React.useCallback(() => {
+    setError(null);
+  }, []);
+
+  return {
+    error,
+    handleError,
+    clearError,
+  };
+}
+
+// Error Alert Component
+export function ErrorAlert({
+  error,
+  onRetry,
+  onDismiss,
+  className = '',
+}: {
+  error: string;
+  onRetry?: () => void;
+  onDismiss?: () => void;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className={`bg-red-50 border border-red-200 rounded-xl p-4 ${className}`}
+    >
+      <div className="flex items-start">
+        <CustomIcon name="ri-error-warning-line" className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+        
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-red-800 mb-1">
+            Error
+          </h3>
+          <p className="text-sm text-red-700 mb-3">
+            {error}
+          </p>
+          
+          <div className="flex space-x-2">
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors"
+              >
+                Try Again
+              </button>
+            )}
+            {onDismiss && (
+              <button
+                onClick={onDismiss}
+                className="text-xs text-red-600 hover:text-red-800 transition-colors"
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
