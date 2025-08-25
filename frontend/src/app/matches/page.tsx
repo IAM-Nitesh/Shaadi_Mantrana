@@ -91,13 +91,27 @@ function MatchesContent() {
       
       // Show match celebration if user has matches and hasn't shown toast yet
       if (mutualMatchesData.matches.length > 0 && !hasShownMatchToast) {
-        setShowMatchCelebration(true);
-        setHasShownMatchToast(true);
-        
-        // Hide celebration after 3 seconds
-        setTimeout(() => {
-          setShowMatchCelebration(false);
-        }, 3000);
+        // Only show celebration if at least one match needs the toast
+        const matchesNeedingToast = mutualMatchesData.matches.filter((m: any) => m.shouldShowToast);
+        if (matchesNeedingToast.length > 0) {
+          setShowMatchCelebration(true);
+          setHasShownMatchToast(true);
+
+          // Mark toast as seen for each match that needed it (non-blocking)
+          (async () => {
+            try {
+              const ids = matchesNeedingToast.map((m: any) => m.profile?._id).filter(Boolean);
+              await Promise.allSettled(ids.map((id: string) => MatchingService.markMatchToastSeen(id)));
+            } catch (e) {
+              logger.warn('Failed to mark match toasts as seen', e);
+            }
+          })();
+
+          // Hide celebration after 3 seconds
+          setTimeout(() => {
+            setShowMatchCelebration(false);
+          }, 3000);
+        }
       }
       
       // Fetch profile images for all profiles
