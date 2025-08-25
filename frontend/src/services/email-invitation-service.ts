@@ -2,6 +2,7 @@
 // This service handles email invitation operations and uses the same API config as auth service
 
 import { config } from './configService';
+import logger from '../utils/logger';
 
 export const API_CONFIG = {
   API_BASE_URL: config.apiBaseUrl,
@@ -52,7 +53,7 @@ export class EmailInvitationService {
       
       return await response.json();
     } catch (error) {
-      console.error('EmailInvitationService.sendInvitation error:', error);
+      logger.error('EmailInvitationService.sendInvitation error:', error);
       throw error;
     }
   }
@@ -78,7 +79,7 @@ export class EmailInvitationService {
       const data = await response.json();
       return data.invitations || [];
     } catch (error) {
-      console.error('EmailInvitationService.getInvitations error:', error);
+      logger.error('EmailInvitationService.getInvitations error:', error);
       return [];
     }
   }
@@ -99,7 +100,7 @@ export class EmailInvitationService {
       
       return response.ok;
     } catch (error) {
-      console.error('EmailInvitationService.removeInvitation error:', error);
+      logger.error('EmailInvitationService.removeInvitation error:', error);
       return false;
     }
   }
@@ -142,7 +143,7 @@ export class EmailInvitationService {
       const data = await response.json();
       return data.preapproved || false;
     } catch (error) {
-      console.error('EmailInvitationService.checkEmailApproval error:', error);
+      logger.error('EmailInvitationService.checkEmailApproval error:', error);
       return false;
     }
   }
@@ -192,7 +193,7 @@ export class EmailInvitationService {
         profileCompleteness: 0,
       };
     } catch (error) {
-      console.error('EmailInvitationService.getUserApprovalStatus error:', error);
+      logger.error('EmailInvitationService.getUserApprovalStatus error:', error);
       return null;
     }
   }

@@ -147,9 +147,8 @@ export default function RootLayout({
                       }}
                       // Custom gutter for spacing between toasts
                       gutter={12}
-                      // Enable swipe to dismiss
-                      swipeDirection="x"
-                      swipeThreshold={50}
+                      // Note: react-hot-toast's current types may not include swipeDirection/swipeThreshold
+                      // We'll keep standard props only to satisfy TypeScript
                       />
       </body>
     </html>

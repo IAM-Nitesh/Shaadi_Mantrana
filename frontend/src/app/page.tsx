@@ -9,6 +9,7 @@ import { config as configService } from '../services/configService';
 import { gsap } from 'gsap';
 import HeartbeatLoader from '../components/HeartbeatLoader';
 import ToastService from '../services/toastService';
+import logger from '../utils/logger';
 
 export default function Home() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function Home() {
   const [showOtp, setShowOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastError, setLastError] = useState(''); // Track last error to prevent duplicates
+  const [disabledAfterFailure, setDisabledAfterFailure] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
   const [isRouterReady, setIsRouterReady] = useState(false);
@@ -37,7 +39,7 @@ export default function Home() {
       const data = await response.json();
       return data.preapproved;
     } catch (error) {
-      console.error('Error checking email approval:', error);
+      logger.error('Error checking email approval:', error);
       return false;
     }
   };
@@ -169,7 +171,7 @@ export default function Home() {
           });
         }
       } catch (error) {
-        console.error('GSAP animation error:', error);
+        logger.error('GSAP animation error:', error);
         // Fallback: show elements without animation
         gsap.set([logoRef.current, cardRef.current, featuresRef.current], { 
           opacity: 1, 
@@ -496,9 +498,19 @@ export default function Home() {
     try {
       const cleanEmail = email.trim().toLowerCase();
       const result = await verifyOtpWithBackend(cleanEmail, otp);
-      
-      // Check if OTP verification was successful
-      if (result.success && result.redirectTo) {
+
+  // debug logging intentionally removed (kept only essential error/warn logs)
+
+      // Defensive: ensure we have a result
+      if (!result) {
+        logger.error('❌ OTP verification failed: empty response from backend');
+        setErrorWithId('Invalid OTP. Please try again.');
+        return;
+      }
+
+  // Check if OTP verification was successful (accept boolean true or string 'true')
+  const successFlag = result && (result.success === true || String(result.success) === 'true');
+  if (successFlag) {
         // Success animation before redirect
         gsap.timeline()
           .to(cardRef.current, {
@@ -511,18 +523,37 @@ export default function Home() {
             duration: 0.2,
             ease: "power2.out"
           });
-        
-        // Server-side redirection
-        console.log('🚀 Server-side redirect to:', result.redirectTo);
-        window.location.href = result.redirectTo;
+        // Handle redirection
+        if (result.redirectTo) {
+          // Server-side redirection
+          logger.debug('🚀 Server-side redirect to:', result.redirectTo);
+          window.location.href = result.redirectTo;
+        } else {
+          // No redirect needed or redirectTo is null/undefined - default to dashboard
+          logger.debug('✅ Authentication successful - defaulting to dashboard');
+          window.location.href = '/dashboard';
+        }
         return;
+      }
+      // Handle OTP verification failure (only when success is falsey)
+      if (!successFlag) {
+        // Prefer explicit error from backend, otherwise dump the whole response for diagnosis
+        const errMsgRaw = result?.error || JSON.stringify(result) || 'Invalid OTP. Please try again.';
+        const isExpired = /expired|not found|not_found|notfound/i.test(errMsgRaw);
+        const displayMsg = isExpired ? 'OTP expired or already used — request a new code.' : errMsgRaw;
+        logger.error('❌ OTP verification failed:', displayMsg, 'rawResult:', result);
+  // Clear OTP input to encourage requesting/entering a fresh code
+  setOtp('');
+  setErrorWithId(displayMsg);
+  // Disable verify button briefly to prevent rapid retries
+  setDisabledAfterFailure(true);
+  setTimeout(() => setDisabledAfterFailure(false), 3000);
       } else {
-        // Handle OTP verification failure
-        console.error('❌ OTP verification failed:', result.error);
-        setErrorWithId(result.error || 'Invalid OTP. Please try again.');
+        // Unexpected: success was truthy but we reached failure branch
+        logger.warn('⚠️ handleVerifyOtp: unexpected control flow. result:', result);
       }
     } catch (error: unknown) {
-      console.error('❌ OTP verification error:', error);
+      logger.error('❌ OTP verification error:', error);
       
       let message = 'Failed to verify OTP';
       if (error instanceof Error) {
@@ -542,6 +573,9 @@ export default function Home() {
         }
       }
       setErrorWithId(message);
+  // disable briefly on unexpected error as well
+  setDisabledAfterFailure(true);
+  setTimeout(() => setDisabledAfterFailure(false), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -885,6 +919,13 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Inline error message near OTP inputs (more visible than toast) */}
+                  {lastError && (
+                    <div className="text-center text-sm text-red-600 mt-3 px-4" role="alert">
+                      {lastError}
+                    </div>
+                  )}
+
                   {/* Countdown Timer */}
                   {countdown > 0 && (
                     <div className="countdown-timer text-center">
@@ -903,7 +944,7 @@ export default function Home() {
                     {/* Submit Button - Always visible but disabled until 6 digits */}
                     <button
                       onClick={handleVerifyOtp}
-                      disabled={isLoading || otp.length !== 6}
+                      disabled={isLoading || otp.length !== 6 || disabledAfterFailure}
                       className="verify-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-bold py-4 px-6 rounded-xl hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl relative overflow-hidden group"
                       onMouseEnter={() => {
                         if (!isLoading && otp.length === 6) {

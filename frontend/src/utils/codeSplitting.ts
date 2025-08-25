@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic';
 import React from 'react';
+import logger from './logger';
 
 // Dynamic imports for code splitting
 export const DynamicDashboard = dynamic(() => import('../app/dashboard/page'), {
@@ -114,7 +115,7 @@ export function measureImportTime<T>(
     const loadTime = endTime - startTime;
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`${componentName} loaded in ${loadTime.toFixed(2)}ms`);
+      logger.debug(`${componentName} loaded in ${loadTime.toFixed(2)}ms`);
     }
     
     return result;

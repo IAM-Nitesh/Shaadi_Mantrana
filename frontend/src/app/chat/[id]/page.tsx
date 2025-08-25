@@ -8,6 +8,7 @@ import ChatComponent from './ChatComponent';
 import { ServerAuthService } from '../../../services/server-auth-service';
 import CustomIcon from '../../../components/CustomIcon';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
+import logger from '../../../utils/logger';
 
 // Chat page for matched profiles
 
@@ -35,7 +36,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           return;
         }
       } catch (error) {
-        console.error('Error checking authentication:', error);
+        logger.error('Error checking authentication:', error);
         router.push('/');
         return;
       }
@@ -73,7 +74,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             const payload = JSON.parse(atob(authToken.split('.')[1]));
             currentUserId = payload.userId || payload._id || payload.id;
           } catch (e) {
-            console.error('Error parsing JWT token:', e);
+            logger.error('Error parsing JWT token:', e);
           }
         }
         
@@ -91,7 +92,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           otherUserId: otherUser._id
         });
       } catch (error) {
-        console.error('Error loading match:', error);
+        logger.error('Error loading match:', error);
         setError('Failed to load match');
       } finally {
         setLoading(false);

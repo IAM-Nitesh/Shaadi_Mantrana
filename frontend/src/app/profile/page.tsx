@@ -24,6 +24,8 @@ import ToastService from '../../services/toastService';
 import { ServerAuthService } from '../../services/server-auth-service';
 import OnboardingOverlay from '../../components/OnboardingOverlay';
 import { useServerAuth } from '../../hooks/useServerAuth';
+import { OnboardingService } from '../../services/onboarding-service';
+import logger from '../../utils/logger';
 
 // Type definition for field configuration
 interface FieldConfig {
@@ -488,6 +490,20 @@ function ProfileContent() {
             // Authentication is handled by useServerAuth hook
   }, []);
 
+  // Handle onboarding message display (moved up to preserve hooks order)
+  useEffect(() => {
+    if (user) {
+      const shouldShow = OnboardingService.shouldShowOnboardingMessage(user);
+      setShowOnboarding(shouldShow);
+      logger.debug('🔍 Profile - Onboarding check (moved):', {
+        isFirstLogin: user.isFirstLogin,
+        hasSeenOnboardingMessage: user.hasSeenOnboardingMessage,
+        profileCompleteness: user.profileCompleteness,
+        shouldShowOnboarding: shouldShow
+      });
+    }
+  }, [user]);
+
   // Fetch profile from backend after authentication
   useEffect(() => {
     if (!isAuthenticated) {
@@ -664,7 +680,7 @@ function ProfileContent() {
   };
 
   // Debug logging for image completion
-  console.log('📊 Profile completion debug:', {
+  logger.debug('📊 Profile completion debug:', {
     hasExistingImage: !!profile?.images,
     hasTempImage: !!(tempImageFile || tempImageUrl),
     finalImagesValue: profile?.images,
@@ -683,16 +699,16 @@ function ProfileContent() {
         if (field === 'height') {
           // Check if height field exists in profile data first
           if (!value || value === '' || value === null || value === undefined) {
-            console.log('❌ Height field missing from profile data');
+            logger.debug('❌ Height field missing from profile data');
             return true; // Missing height field
           }
           // If height exists, also check if it's properly formatted
           const heightMatch = value.match(/(\d+)'(\d+)?/);
           if (!heightMatch) {
-            console.log('❌ Height field has invalid format:', value);
+            logger.debug('❌ Height field has invalid format:', value);
             return true; // Invalid height format
           }
-          console.log('✅ Height field is valid:', value);
+          logger.debug('✅ Height field is valid:', value);
           return false; // Height is valid
         }
         if (field === 'images') {
@@ -701,7 +717,7 @@ function ProfileContent() {
         return value === undefined || value === null || value === '' || (typeof value === 'string' && value.trim() === '');
       });
       
-      console.log('🔍 Missing fields detected:', missingFields);
+      logger.debug('🔍 Missing fields detected:', missingFields);
       
       // Set errors for missing fields and clear errors for valid fields
       setFieldErrors(prev => {
@@ -728,7 +744,7 @@ function ProfileContent() {
   useEffect(() => {
     if (profile && typeof window !== 'undefined') {
       // Profile completion is managed by the backend
-      console.log('✅ Profile completion managed by backend');
+      logger.debug('✅ Profile completion managed by backend');
     }
   }, [profile]);
 
@@ -776,7 +792,7 @@ function ProfileContent() {
     let interval: NodeJS.Timeout;
     if (showOnboarding) {
       // This useEffect is no longer needed as OnboardingOverlay handles its own timer
-      console.log('✅ Onboarding overlay is visible');
+      logger.debug('✅ Onboarding overlay is visible');
     }
     return () => {
       clearTimeout(timer);
@@ -787,7 +803,7 @@ function ProfileContent() {
   // Debug profile state changes
   useEffect(() => {
     if (profile) {
-      console.log('🔄 Profile state updated:', {
+      logger.debug('🔄 Profile state updated:', {
         gender: profile.gender,
         maritalStatus: profile.maritalStatus,
         manglik: profile.manglik,
@@ -799,7 +815,7 @@ function ProfileContent() {
       });
       
       // Log the specific fields that should be visible
-      console.log('🎯 Fields that should be visible in UI:', {
+      logger.debug('🎯 Fields that should be visible in UI:', {
         manglik: profile.manglik || 'Not specified',
         complexion: profile.complexion || 'Not specified', 
         eatingHabit: profile.eatingHabit || 'Not specified',
@@ -810,13 +826,13 @@ function ProfileContent() {
       
       // Also check the actual dropdown elements
       const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
-      console.log('🎯 Dropdown element values:');
+      logger.debug('🎯 Dropdown element values:');
       dropdownFields.forEach(field => {
         const el = document.querySelector(`[data-field="${field}"]`) as HTMLSelectElement;
         if (el) {
-          console.log(`  ${field} element value: "${el.value}"`);
+          logger.debug(`  ${field} element value: "${el.value}"`);
         } else {
-          console.log(`  ${field} element: not found`);
+          logger.debug(`  ${field} element: not found`);
         }
       });
     }
@@ -828,7 +844,7 @@ function ProfileContent() {
     let interval: NodeJS.Timeout;
     if (showOnboarding) {
       // This useEffect is no longer needed as OnboardingOverlay handles its own timer
-      console.log('✅ Onboarding overlay is visible');
+      logger.debug('✅ Onboarding overlay is visible');
     }
     return () => {
       clearTimeout(timer);
@@ -847,19 +863,19 @@ function ProfileContent() {
   ];
 
   const handleSave = async () => {
-    console.log('🔍 Starting validation...');
-    console.log('📋 Current profile data:', profile);
-    console.log('📋 Required fields:', requiredFields);
+    logger.debug('🔍 Starting validation...');
+    logger.debug('📋 Current profile data:', profile);
+    logger.debug('📋 Required fields:', requiredFields);
     
     // Debug dropdown values specifically
     const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
-    console.log('🎯 Dropdown field values:');
+    logger.debug('🎯 Dropdown field values:');
     dropdownFields.forEach(field => {
-      console.log(`  ${field}: "${profile[field]}" (type: ${typeof profile[field]})`);
+      logger.debug(`  ${field}: "${profile[field]}" (type: ${typeof profile[field]})`);
     });
     
     // Debug interests field specifically
-    console.log('🎯 Interests field:', {
+    logger.debug('🎯 Interests field:', {
       value: profile.interests,
       type: typeof profile.interests,
       isArray: Array.isArray(profile.interests),
@@ -884,14 +900,14 @@ function ProfileContent() {
         if (feetEl && inchesEl && feetEl.value && inchesEl.value && typeof feetEl.value === 'string' && feetEl.value.trim() !== '' && typeof inchesEl.value === 'string' && inchesEl.value.trim() !== '') {
           isEmpty = false;
           reason = 'valid height selection (both feet and inches)';
-          console.log(`  📏 Height: feet="${feetEl.value}", inches="${inchesEl.value}", isEmpty: false`);
+          logger.debug(`  📏 Height: feet="${feetEl.value}", inches="${inchesEl.value}", isEmpty: false`);
         } else {
           isEmpty = true;
           reason = 'missing height selection (feet or inches)';
-          console.log(`  ❌ Height: feet="${feetEl?.value || 'undefined'}", inches="${inchesEl?.value || 'undefined'}", isEmpty: true`);
+          logger.debug(`  ❌ Height: feet="${feetEl?.value || 'undefined'}", inches="${inchesEl?.value || 'undefined'}", isEmpty: true`);
         }
       } else {
-        console.log(`�� Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
+        logger.debug(`�� Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
         
         // Handle different data types
         if (fieldValue === null || fieldValue === undefined) {
@@ -903,16 +919,16 @@ function ProfileContent() {
               // Element has a value, so the field is valid
               isEmpty = false;
               reason = 'valid dropdown selection (from element)';
-              console.log(`  📝 Field "${field}" is dropdown, element value: "${el.value}", isEmpty: false`);
+              logger.debug(`  📝 Field "${field}" is dropdown, element value: "${el.value}", isEmpty: false`);
             } else {
               isEmpty = true;
               reason = 'null/undefined and no element value';
-              console.log(`  ❌ Field "${field}" is null/undefined and element has no value`);
+              logger.debug(`  ❌ Field "${field}" is null/undefined and element has no value`);
             }
           } else {
             isEmpty = true;
             reason = 'null/undefined';
-            console.log(`  ❌ Field "${field}" is null/undefined`);
+            logger.debug(`  ❌ Field "${field}" is null/undefined`);
           }
         } else if (typeof fieldValue === 'string') {
           // For dropdown fields, check if it's a valid selection (not empty string)
@@ -921,32 +937,32 @@ function ProfileContent() {
             // For dropdowns, any non-empty string is valid
             isEmpty = !fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '');
             reason = isEmpty ? 'empty dropdown selection' : 'valid dropdown selection';
-            console.log(`  📝 Field "${field}" is dropdown, value: "${fieldValue}", isEmpty: ${isEmpty}`);
+            logger.debug(`  📝 Field "${field}" is dropdown, value: "${fieldValue}", isEmpty: ${isEmpty}`);
           } else {
             isEmpty = !fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '');
             reason = isEmpty ? 'empty string after trim' : 'valid string';
-            console.log(`  📝 Field "${field}" is string, trimmed: "${fieldValue && typeof fieldValue === 'string' ? fieldValue.trim() : 'undefined'}", isEmpty: ${isEmpty}`);
+            logger.debug(`  📝 Field "${field}" is string, trimmed: "${fieldValue && typeof fieldValue === 'string' ? fieldValue.trim() : 'undefined'}", isEmpty: ${isEmpty}`);
           }
         } else if (typeof fieldValue === 'number') {
           isEmpty = fieldValue === 0 || isNaN(fieldValue);
           reason = isEmpty ? (fieldValue === 0 ? 'zero value' : 'NaN') : 'valid number';
-          console.log(`  🔢 Field "${field}" is number: ${fieldValue}, isEmpty: ${isEmpty}`);
+          logger.debug(`  🔢 Field "${field}" is number: ${fieldValue}, isEmpty: ${isEmpty}`);
         } else if (typeof fieldValue === 'boolean') {
           isEmpty = false; // Boolean values are always valid
           reason = 'boolean (always valid)';
-          console.log(`  ✅ Field "${field}" is boolean: ${fieldValue}, always valid`);
+          logger.debug(`  ✅ Field "${field}" is boolean: ${fieldValue}, always valid`);
         } else if (Array.isArray(fieldValue)) {
           isEmpty = fieldValue.length === 0;
           reason = isEmpty ? 'empty array' : `array with ${fieldValue.length} items`;
-          console.log(`  📋 Field "${field}" is array:`, fieldValue, `, isEmpty: ${isEmpty}`);
+          logger.debug(`  📋 Field "${field}" is array:`, fieldValue, `, isEmpty: ${isEmpty}`);
         } else if (fieldValue instanceof Date) {
           isEmpty = isNaN(fieldValue.getTime());
           reason = isEmpty ? 'invalid date' : 'valid date';
-          console.log(`  📅 Field "${field}" is Date:`, fieldValue, `, isEmpty: ${isEmpty}`);
+          logger.debug(`  📅 Field "${field}" is Date:`, fieldValue, `, isEmpty: ${isEmpty}`);
         } else {
           isEmpty = !fieldValue;
           reason = isEmpty ? 'falsy value' : 'truthy value';
-          console.log(`  ❓ Field "${field}" is other type:`, fieldValue, `, isEmpty: ${isEmpty}`);
+          logger.debug(`  ❓ Field "${field}" is other type:`, fieldValue, `, isEmpty: ${isEmpty}`);
         }
       }
       
@@ -959,15 +975,15 @@ function ProfileContent() {
       
       if (isEmpty) {
         errors[field] = true;
-        console.log(`❌ Field "${field}" is empty or invalid:`, fieldValue, `(type: ${typeof fieldValue}) - Reason: ${reason}`);
+        logger.debug(`❌ Field "${field}" is empty or invalid:`, fieldValue, `(type: ${typeof fieldValue}) - Reason: ${reason}`);
       } else {
-        console.log(`✅ Field "${field}" is valid:`, fieldValue, `(type: ${typeof fieldValue}) - Reason: ${reason}`);
+        logger.debug(`✅ Field "${field}" is valid:`, fieldValue, `(type: ${typeof fieldValue}) - Reason: ${reason}`);
       }
     });
     
-    console.log('🔍 Validation errors:', errors);
-    console.log('🔍 Validation details:', validationDetails);
-    console.log('📋 Profile data:', profile);
+    logger.debug('🔍 Validation errors:', errors);
+    logger.debug('🔍 Validation details:', validationDetails);
+    logger.debug('📋 Profile data:', profile);
     
     // Log which fields are missing data-field attributes
     const missingDataFields = requiredFields.filter(field => {
@@ -981,14 +997,14 @@ function ProfileContent() {
       return !el;
     });
     if (missingDataFields.length > 0) {
-      console.log('⚠️ Fields missing data-field attributes:', missingDataFields);
+      logger.debug('⚠️ Fields missing data-field attributes:', missingDataFields);
     }
     
     // Log which fields are failing validation
     const failingFields = Object.keys(errors);
-    console.log('❌ Fields failing validation:', failingFields);
+    logger.debug('❌ Fields failing validation:', failingFields);
     failingFields.forEach(field => {
-      console.log(`  ${field}: ${validationDetails[field]?.reason || 'unknown reason'}`);
+      logger.debug(`  ${field}: ${validationDetails[field]?.reason || 'unknown reason'}`);
     });
     
     // Don't set global field errors - let field-specific validation handle it
@@ -998,7 +1014,7 @@ function ProfileContent() {
       // Show error message
       ToastService.error('Please fill in all required fields marked in red.');
       
-      console.log('🎨 Applying error styling to fields:', Object.keys(errors));
+      logger.debug('🎨 Applying error styling to fields:', Object.keys(errors));
       
       // Add red border styling to all missing fields
       Object.keys(errors).forEach(fieldName => {
@@ -1007,30 +1023,30 @@ function ProfileContent() {
         // Special handling for height field
         if (fieldName === 'height') {
           el = document.querySelector(`[data-field="height-feet"]`) as HTMLElement;
-          console.log(`🎯 Height field - feet element:`, el);
+          logger.debug(`🎯 Height field - feet element:`, el);
           if (el) {
             el.classList.add('border-red-500', 'bg-red-50', 'animate-shake');
-            console.log(`✅ Applied red border to height-feet element`);
+            logger.debug(`✅ Applied red border to height-feet element`);
           }
         } else {
           el = document.querySelector(`[data-field="${fieldName}"]`) as HTMLElement;
-          console.log(`🎯 Field "${fieldName}" - element:`, el);
+          logger.debug(`🎯 Field "${fieldName}" - element:`, el);
         }
         
         if (el) {
           // Add red border and background to highlight missing fields
           el.classList.add('border-red-500', 'bg-red-50', 'animate-shake');
-          console.log(`✅ Applied red border to "${fieldName}" element`);
+          logger.debug(`✅ Applied red border to "${fieldName}" element`);
         } else {
-          console.log(`⚠️ Could not find element with data-field="${fieldName}"`);
+          logger.debug(`⚠️ Could not find element with data-field="${fieldName}"`);
           
           // Special handling for interests field if element not found
           if (fieldName === 'interests') {
             const interestsContainer = document.querySelector('[data-field="interests"]');
-            console.log(`🎯 Interests container:`, interestsContainer);
+            logger.debug(`🎯 Interests container:`, interestsContainer);
             if (interestsContainer) {
               interestsContainer.classList.add('border-red-500', 'bg-red-50', 'animate-shake');
-              console.log(`✅ Applied red border to interests container`);
+              logger.debug(`✅ Applied red border to interests container`);
             }
           }
         }
@@ -1038,7 +1054,7 @@ function ProfileContent() {
       
       // Animate first error field and scroll to it
       const firstError = Object.keys(errors)[0];
-      console.log('🎯 First error field:', firstError);
+      logger.debug('🎯 First error field:', firstError);
       let el: Element | null = null;
       
       if (firstError === 'height') {
@@ -1083,20 +1099,20 @@ function ProfileContent() {
       enumFields.forEach(field => {
         if (cleanProfile[field] === '' || cleanProfile[field] === null || cleanProfile[field] === undefined) {
           cleanProfile[field] = dropdownDefaults[field as keyof typeof dropdownDefaults];
-          console.log(`🎯 Set default value for ${field}: ${cleanProfile[field]}`);
+          logger.debug(`🎯 Set default value for ${field}: ${cleanProfile[field]}`);
         }
       });
       
       // Handle interests - ensure at least one interest is selected
       if (!cleanProfile.interests || cleanProfile.interests.length === 0) {
         cleanProfile.interests = ['Reading']; // Default interest
-        console.log('🎯 Set default interest: Reading');
+        logger.debug('🎯 Set default interest: Reading');
       }
       
       // Use backend calculation - let the backend calculate the completion
-      console.log(`📊 Profile completion will be calculated by backend`);
+      logger.debug(`📊 Profile completion will be calculated by backend`);
       
-      console.log('🧹 Cleaned profile data:', cleanProfile);
+      logger.debug('🧹 Cleaned profile data:', cleanProfile);
       
       // Prepare profile data for API
       const profileData = {
@@ -1106,14 +1122,14 @@ function ProfileContent() {
         isFirstLogin: false // Set to false when profile is complete
       };
 
-      console.log('📤 Sending profile data to backend:', profileData);
-      console.log('📸 Image status:', {
+      logger.debug('📤 Sending profile data to backend:', profileData);
+      logger.debug('📸 Image status:', {
         existingImage: profile.profile?.images || signedImageUrl,
         tempImageFile: tempImageFile ? 'exists' : 'none',
         tempImageUrl: tempImageUrl ? 'exists' : 'none',
         finalImages: profileData.images
       });
-      console.log('🎯 Dropdown values being sent:', {
+      logger.debug('🎯 Dropdown values being sent:', {
         gender: profileData.gender,
         maritalStatus: profileData.maritalStatus,
         manglik: profileData.manglik,
@@ -1142,14 +1158,14 @@ function ProfileContent() {
           const uploadResult = await ImageUploadService.uploadProfilePictureToB2(tempImageFile);
           if (uploadResult.success && uploadResult.imageUrl) {
             uploadedImageUrl = uploadResult.imageUrl;
-            console.log('✅ Image uploaded to B2:', uploadedImageUrl);
+            logger.debug('✅ Image uploaded to B2:', uploadedImageUrl);
             ToastService.dismiss(loadingToast);
             ToastService.profilePictureVerificationPending();
           } else {
             throw new Error(uploadResult.error || 'Failed to upload image');
           }
         } catch (uploadError) {
-          console.error('❌ Image upload failed:', uploadError);
+          logger.error('❌ Image upload failed:', uploadError);
           const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error';
           
           // Dismiss loading toast
@@ -1188,12 +1204,12 @@ function ProfileContent() {
 
       const result = await response.json();
       
-      console.log('📥 Backend response after save:', result);
+      logger.debug('📥 Backend response after save:', result);
       
       if (result.success) {
         // Get the updated profile completeness from backend
         const backendCompleteness = result.profileCompleteness || calculatedCompleteness;
-        console.log('📊 Backend calculated completeness:', backendCompleteness);
+        logger.debug('📊 Backend calculated completeness:', backendCompleteness);
         
         // Add a small delay to ensure backend has fully processed the update
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -1214,7 +1230,7 @@ function ProfileContent() {
           
           if (response.ok) {
             const data = await response.json();
-            console.log('📥 Raw backend response after refresh:', data);
+            logger.debug('📥 Raw backend response after refresh:', data);
             if (data.profile && data.profile.profile) {
               refreshedProfile = {
                 ...data.profile.profile,
@@ -1227,16 +1243,16 @@ function ProfileContent() {
                 lastActive: data.profile.lastActive || new Date().toISOString()
               };
               setProfile(refreshedProfile);
-              console.log('🔄 Profile refreshed from backend with cache-busting:', refreshedProfile);
-              console.log('📊 Refreshed profile completeness:', refreshedProfile.profileCompleteness);
+              logger.debug('🔄 Profile refreshed from backend with cache-busting:', refreshedProfile);
+              logger.debug('📊 Refreshed profile completeness:', refreshedProfile.profileCompleteness);
             } else {
-              console.error('❌ Invalid profile data structure in response:', data);
+              logger.error('❌ Invalid profile data structure in response:', data);
             }
           } else {
-            console.error('Failed to refresh profile:', response.status);
+            logger.error('Failed to refresh profile:', response.status);
           }
         } catch (refreshError) {
-          console.error('Error refreshing profile:', refreshError);
+          logger.error('Error refreshing profile:', refreshError);
           // Fallback to local update if refresh fails
           setProfile(prev => ({
             ...prev,
@@ -1307,6 +1323,15 @@ function ProfileContent() {
         
         // Redirect to dashboard after a short delay if profile is 100% complete
         if (backendCompleteness >= 100) {
+          // Mark user as not first login since profile is complete
+          try {
+            await OnboardingService.markProfileCompleted();
+            logger.debug('✅ User marked as not first login (profile complete)');
+          } catch (error) {
+            logger.error('Error marking profile as completed:', error);
+            // Continue with redirect even if flag update fails
+          }
+          
           setTimeout(() => {
             router.push('/dashboard');
           }, 1500);
@@ -1315,7 +1340,7 @@ function ProfileContent() {
         throw new Error(result.error || 'Failed to save profile');
       }
     } catch (error) {
-      console.error('Error saving profile:', error);
+      logger.error('Error saving profile:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save profile. Please try again.';
               ToastService.error(errorMessage);
     } finally {
@@ -1386,7 +1411,7 @@ function ProfileContent() {
         setUploadMessage('');
       }, 3000);
     } catch (error) {
-      console.error('Image validation error:', error);
+      logger.error('Image validation error:', error);
       setUploadMessage('❌ Error processing image. Please try again with a different photo.');
     } finally {
       setIsUploading(false);
@@ -1442,7 +1467,7 @@ function ProfileContent() {
         setUploadMessage('❌ Failed to delete profile picture');
       }
     } catch (error) {
-      console.error('Profile picture deletion error:', error);
+      logger.error('Profile picture deletion error:', error);
       setUploadMessage('❌ Error deleting profile picture. Please try again.');
     } finally {
       setIsUploading(false);
@@ -1846,7 +1871,7 @@ function ProfileContent() {
     
     // Debug logging for problematic fields
     if (fieldName === 'about' || fieldName === 'education' || fieldName === 'occupation' || fieldName === 'interests') {
-      console.log(`🎨 Border color debug for ${fieldName}:`, {
+      logger.debug(`🎨 Border color debug for ${fieldName}:`, {
         value,
         hasValue,
         isValid,
@@ -1974,7 +1999,7 @@ function ProfileContent() {
     }));
 
     // Debug logging for field-specific interactions
-    console.log(`🎯 Field interaction for ${fieldName}:`, {
+    logger.debug(`🎯 Field interaction for ${fieldName}:`, {
       value,
       fieldErrors: fieldErrors[fieldName],
       interactedFields: interactedFields[fieldName],
@@ -2016,7 +2041,7 @@ function ProfileContent() {
 
       // Trigger tilt animation if validation fails
       if (!isValid) {
-        console.log(`❌ ${fieldName}: ${validation.message}`);
+        logger.debug(`❌ ${fieldName}: ${validation.message}`);
         
         // Add tilt animation class
         setTiltAnimationFields(prev => ({
@@ -2047,7 +2072,7 @@ function ProfileContent() {
   // Parse height for dropdowns
   let feet = '';
   let inches = '';
-  console.log('🔍 Height parsing debug:', {
+  logger.debug('🔍 Height parsing debug:', {
     hasProfile: !!profile,
     hasHeightField: !!profile?.height,
     heightValue: profile?.height,
@@ -2059,12 +2084,12 @@ function ProfileContent() {
     if (match) {
       feet = match[1];
       inches = match[2] || '';
-      console.log('✅ Height parsed successfully:', { feet, inches });
+      logger.debug('✅ Height parsed successfully:', { feet, inches });
     } else {
-      console.log('❌ Height format not recognized:', profile.height);
+      logger.debug('❌ Height format not recognized:', profile.height);
     }
   } else {
-    console.log('❌ Height field missing or invalid');
+    logger.debug('❌ Height field missing or invalid');
   }
 
 
@@ -2089,7 +2114,7 @@ function ProfileContent() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        console.log('🔄 Profile: Loading user profile...');
+        logger.debug('🔄 Profile: Loading user profile...');
         
         // Load user profile
         const profileData = await ProfileService.getUserProfile();
@@ -2103,7 +2128,7 @@ function ProfileContent() {
           const profileCompletenessFromApi = profileData.profileCompleteness;
           const hasSeenOnboardingMessageFromApi = profileData.hasSeenOnboardingMessage;
           
-          console.log('🔍 Profile page onboarding check:', {
+          logger.debug('🔍 Profile page onboarding check:', {
             isFirstLogin: isFirstLoginFromApi,
             profileCompleteness: profileCompletenessFromApi,
             hasSeenOnboardingMessage: hasSeenOnboardingMessageFromApi,
@@ -2112,12 +2137,12 @@ function ProfileContent() {
           
           // Show onboarding overlay for first-time users who haven't seen the message
           if (isFirstLoginFromApi && !hasSeenOnboardingMessageFromApi) {
-            console.log('🎯 Showing onboarding overlay for first-time user');
+            logger.debug('🎯 Showing onboarding overlay for first-time user');
             setShowOnboarding(true);
             setHasSeenOnboarding(false);
           } else {
             // For all other cases, don't show onboarding
-            console.log('📝 User has seen onboarding or is returning user');
+            logger.debug('📝 User has seen onboarding or is returning user');
             setShowOnboarding(false);
             setHasSeenOnboarding(true);
             
@@ -2127,7 +2152,7 @@ function ProfileContent() {
             }
           }
         } else {
-          console.warn('⚠️ Profile data not available or incomplete', {
+          logger.warn('⚠️ Profile data not available or incomplete', {
             hasProfileData: !!profileData,
             profileDataKeys: profileData ? Object.keys(profileData) : 'null'
           });
@@ -2138,7 +2163,7 @@ function ProfileContent() {
           setIsEditing(true);
         }
       } catch (error) {
-        console.error('❌ Error loading profile:', error);
+        logger.error('❌ Error loading profile:', error);
         // Set a default empty profile to prevent errors
         setProfile({});
         setShowOnboarding(false);
@@ -2180,6 +2205,25 @@ function ProfileContent() {
     );
   }
 
+  // NOTE: onboarding effect moved earlier to preserve hook order and avoid React hooks ordering errors
+
+  // Handle onboarding message dismissal
+  const handleOnboardingDismiss = async () => {
+    try {
+      // Mark onboarding message as seen
+      await OnboardingService.markOnboardingMessageSeen();
+      
+      // Update local state
+      setShowOnboarding(false);
+      
+      logger.debug('✅ Onboarding message marked as seen');
+    } catch (error) {
+      logger.error('Error marking onboarding message as seen:', error);
+      // Still hide the message locally even if API call fails
+      setShowOnboarding(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden">
       {/* Background Pattern */}
@@ -2189,7 +2233,7 @@ function ProfileContent() {
       {/* Onboarding Overlay */}
       <OnboardingOverlay
         isVisible={showOnboarding}
-        onComplete={handleOnboardingComplete}
+        onComplete={handleOnboardingDismiss}
       />
       
       {/* Header */}
@@ -2231,7 +2275,7 @@ function ProfileContent() {
                     height={128}
                     className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
                     onError={(e) => {
-                      console.error('❌ Image failed to load:', e);
+                      logger.error('❌ Image failed to load:', e);
                     }}
                   />
 
@@ -2399,7 +2443,7 @@ function ProfileContent() {
                     <select
                       value={profile.gender || ""}
                       onChange={(e) => {
-                        console.log('🎯 Gender dropdown changed:', e.target.value);
+                        logger.debug('🎯 Gender dropdown changed:', e.target.value);
                         setProfile({...profile, gender: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('gender')}
@@ -2463,7 +2507,7 @@ function ProfileContent() {
                     <select
                       value={profile.maritalStatus || ""}
                       onChange={(e) => {
-                        console.log('🎯 Marital Status dropdown changed:', e.target.value);
+                        logger.debug('🎯 Marital Status dropdown changed:', e.target.value);
                         setProfile({...profile, maritalStatus: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('maritalStatus')}
@@ -2488,7 +2532,7 @@ function ProfileContent() {
                     <select
                       value={profile.manglik || ""}
                       onChange={(e) => {
-                        console.log('🎯 Manglik dropdown changed:', e.target.value);
+                        logger.debug('🎯 Manglik dropdown changed:', e.target.value);
                         setProfile({...profile, manglik: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('manglik')}
@@ -2695,7 +2739,7 @@ function ProfileContent() {
                     <select
                       value={profile.complexion || ""}
                       onChange={(e) => {
-                        console.log('🎯 Complexion dropdown changed:', e.target.value);
+                        logger.debug('🎯 Complexion dropdown changed:', e.target.value);
                         setProfile({...profile, complexion: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('complexion')}
@@ -2878,7 +2922,7 @@ function ProfileContent() {
                     <select
                       value={profile.eatingHabit || ""}
                       onChange={(e) => {
-                        console.log('🎯 Eating Habit dropdown changed:', e.target.value);
+                        logger.debug('🎯 Eating Habit dropdown changed:', e.target.value);
                         setProfile({...profile, eatingHabit: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('eatingHabit')}
@@ -2901,7 +2945,7 @@ function ProfileContent() {
                     <select
                       value={profile.smokingHabit || ""}
                       onChange={(e) => {
-                        console.log('🎯 Smoking Habit dropdown changed:', e.target.value);
+                        logger.debug('🎯 Smoking Habit dropdown changed:', e.target.value);
                         setProfile({...profile, smokingHabit: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('smokingHabit')}
@@ -2924,7 +2968,7 @@ function ProfileContent() {
                     <select
                       value={profile.drinkingHabit || ""}
                       onChange={(e) => {
-                        console.log('🎯 Drinking Habit dropdown changed:', e.target.value);
+                        logger.debug('🎯 Drinking Habit dropdown changed:', e.target.value);
                         setProfile({...profile, drinkingHabit: e.target.value});
                       }}
                       onFocus={() => handleFieldFocus('drinkingHabit')}
@@ -3052,7 +3096,7 @@ function ProfileContent() {
                   <select
                     value={profile.settleAbroad || ""}
                     onChange={(e) => {
-                      console.log('🎯 Settle Abroad dropdown changed:', e.target.value);
+                      logger.debug('🎯 Settle Abroad dropdown changed:', e.target.value);
                       setProfile({...profile, settleAbroad: e.target.value});
                     }}
                     onFocus={() => handleFieldFocus('settleAbroad')}
@@ -3221,7 +3265,7 @@ function ProfileContent() {
       {/* Onboarding Overlay */}
       <OnboardingOverlay
         isVisible={showOnboarding}
-        onComplete={handleOnboardingComplete}
+        onComplete={handleOnboardingDismiss}
       />
     </div>
   );

@@ -2,6 +2,9 @@
 // Uses HTTP-only cookies for security instead of localStorage
 
 import tokenRefreshService from './token-refresh-service';
+import logger from '../utils/logger';
+import { loggerForUser } from '../utils/pino-logger';
+import { getCurrentUser } from './auth-utils';
 
 export interface AuthUser {
   role: string;
@@ -28,17 +31,17 @@ export class ServerAuthService {
   // Initialize token refresh service
   static initializeTokenRefresh(): void {
     if (!this.isTokenRefreshServiceStarted) {
-      console.log('🔄 ServerAuthService: Initializing token refresh service');
+  logger.debug('🔄 ServerAuthService: Initializing token refresh service');
       tokenRefreshService.start(
         (success) => {
-          if (success) {
-            console.log('✅ ServerAuthService: Token refresh successful');
+            if (success) {
+            logger.info('✅ ServerAuthService: Token refresh successful');
           } else {
-            console.log('❌ ServerAuthService: Token refresh failed');
+            logger.warn('❌ ServerAuthService: Token refresh failed');
           }
         },
         () => {
-          console.log('⚠️ ServerAuthService: Token expired, user needs to re-authenticate');
+      logger.warn('⚠️ ServerAuthService: Token expired, user needs to re-authenticate');
         }
       );
       this.isTokenRefreshServiceStarted = true;
@@ -47,7 +50,7 @@ export class ServerAuthService {
 
   // Stop token refresh service
   static stopTokenRefresh(): void {
-    console.log('🔄 ServerAuthService: Stopping token refresh service');
+  logger.debug('🔄 ServerAuthService: Stopping token refresh service');
     tokenRefreshService.stop();
     this.isTokenRefreshServiceStarted = false;
   }
@@ -64,28 +67,28 @@ export class ServerAuthService {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        console.warn(`ServerAuthService: Attempt ${attempt} failed:`, error);
+  logger.warn(`ServerAuthService: Attempt ${attempt} failed:`, error);
         
         // Check if it's an authentication error that might be fixed by token refresh
         if (error instanceof Error) {
           if (error.message.includes('401') || error.message.includes('Authentication failed')) {
-            console.log('🔄 ServerAuthService: Authentication error detected, attempting token refresh...');
+            logger.debug('🔄 ServerAuthService: Authentication error detected, attempting token refresh...');
             
             try {
               const refreshSuccess = await tokenRefreshService.refreshToken();
               if (refreshSuccess) {
-                console.log('✅ ServerAuthService: Token refresh successful, retrying operation...');
+                logger.info('✅ ServerAuthService: Token refresh successful, retrying operation...');
                 // Retry the operation with the new token
                 return await operation();
               }
             } catch (refreshError) {
-              console.error('❌ ServerAuthService: Token refresh failed:', refreshError);
+              logger.error('❌ ServerAuthService: Token refresh failed:', refreshError);
             }
           }
           
           // Don't retry on rate limiting
           if (error.message.includes('429') || error.message.includes('Rate limit exceeded')) {
-            console.log('ServerAuthService: Rate limit hit, not retrying');
+            logger.warn('ServerAuthService: Rate limit hit, not retrying');
             throw lastError;
           }
         }
@@ -96,7 +99,7 @@ export class ServerAuthService {
         
         // Wait before retrying with exponential backoff
         const delay = this.RETRY_DELAY * Math.pow(2, attempt - 1);
-        console.log(`ServerAuthService: Waiting ${delay}ms before retry ${attempt + 1}`);
+  logger.debug(`ServerAuthService: Waiting ${delay}ms before retry ${attempt + 1}`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -107,7 +110,7 @@ export class ServerAuthService {
   // Verify OTP and get authentication status
   static async verifyOTP(email: string, otp: string): Promise<{ success: boolean; redirectTo: string; user?: AuthUser; error?: string }> {
     try {
-      console.log('🔍 ServerAuthService: Starting OTP verification for:', email);
+  logger.debug('🔍 ServerAuthService: Starting OTP verification for:', email);
       
       const result = await this.withRetryAndTokenRefresh(async () => {
         const response = await fetch('/api/auth/verify', {
@@ -127,7 +130,7 @@ export class ServerAuthService {
         return await response.json();
       });
 
-      console.log('✅ ServerAuthService: OTP verification successful:', result);
+  logger.info('✅ ServerAuthService: OTP verification successful:', result);
       
       // Initialize token refresh service after successful authentication
       this.initializeTokenRefresh();
@@ -138,8 +141,14 @@ export class ServerAuthService {
         user: result.user
       };
 
-    } catch (error) {
-      console.error('❌ ServerAuthService: OTP verification error:', error);
+      } catch (error) {
+  try {
+    const user = await getCurrentUser();
+    const log = loggerForUser(user?.userUuid);
+    log.error({ err: error }, '❌ ServerAuthService: OTP verification error:');
+  } catch (e) {
+    logger.error({ err: error }, '❌ ServerAuthService: OTP verification error:');
+  }
       
       let errorMessage = 'Network error. Please try again.';
       if (error instanceof Error) {
@@ -165,10 +174,10 @@ export class ServerAuthService {
   // Check current authentication status
   static async checkAuthStatus(): Promise<AuthStatus> {
     try {
-      console.log('🔍 ServerAuthService: Checking authentication status...');
+  logger.debug('🔍 ServerAuthService: Checking authentication status...');
       
       const result = await this.withRetryAndTokenRefresh(async () => {
-        console.log('🔍 ServerAuthService: Making request to /api/auth/status...');
+  logger.debug('🔍 ServerAuthService: Making request to /api/auth/status...');
         
         const response = await fetch('/api/auth/status', {
           method: 'GET',
@@ -177,18 +186,18 @@ export class ServerAuthService {
           signal: AbortSignal.timeout(10000) // 10 second timeout
         });
 
-        console.log('🔍 ServerAuthService: Response status:', response.status);
-        console.log('🔍 ServerAuthService: Response ok:', response.ok);
+  logger.debug('🔍 ServerAuthService: Response status:', response.status);
+  logger.debug('🔍 ServerAuthService: Response ok:', response.ok);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ message: response.statusText }));
-          console.log('❌ ServerAuthService: Response not ok, error:', errorData);
+          logger.error('❌ ServerAuthService: Response not ok, error:', errorData);
           
           // Handle rate limiting specifically
           if (response.status === 429) {
             const retryAfter = response.headers.get('retry-after');
             const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
-            console.log(`ServerAuthService: Rate limited, waiting ${waitTime}ms`);
+            logger.debug(`ServerAuthService: Rate limited, waiting ${waitTime}ms`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
             throw new Error('Rate limit exceeded. Please wait before trying again.');
           }
@@ -197,11 +206,11 @@ export class ServerAuthService {
         }
 
         const result = await response.json();
-        console.log('🔍 ServerAuthService: Response data:', result);
+  logger.debug('🔍 ServerAuthService: Response data:', result);
         return result;
       });
 
-      console.log('✅ ServerAuthService: Auth status check successful:', result);
+  logger.info('✅ ServerAuthService: Auth status check successful:', result);
       
       // Initialize token refresh service if user is authenticated
       if (result.authenticated) {
@@ -215,7 +224,13 @@ export class ServerAuthService {
       };
 
     } catch (error) {
-      console.error('❌ ServerAuthService: Auth status check error:', error);
+  try {
+    const user = await getCurrentUser();
+    const log = loggerForUser(user?.userUuid);
+    log.error({ err: error }, '❌ ServerAuthService: Auth status check error:');
+  } catch (e) {
+    logger.error({ err: error }, '❌ ServerAuthService: Auth status check error:');
+  }
       
       let message = 'Network error. Please try again.';
       if (error instanceof Error) {
@@ -239,7 +254,7 @@ export class ServerAuthService {
   // Logout user
   static async logout(): Promise<{ success: boolean; message: string }> {
     try {
-      console.log('🔍 ServerAuthService: Starting logout...');
+  logger.debug('🔍 ServerAuthService: Starting logout...');
       
       // Stop token refresh service
       this.stopTokenRefresh();
@@ -259,7 +274,7 @@ export class ServerAuthService {
         return await response.json();
       });
 
-      console.log('✅ ServerAuthService: Logout successful');
+  logger.info('✅ ServerAuthService: Logout successful');
       
       return {
         success: true,
@@ -267,7 +282,13 @@ export class ServerAuthService {
       };
 
     } catch (error) {
-      console.error('❌ ServerAuthService: Logout error:', error);
+  try {
+    const user = await getCurrentUser();
+    const log = loggerForUser(user?.userUuid);
+    log.error({ err: error }, '❌ ServerAuthService: Logout error:');
+  } catch (e) {
+    logger.error({ err: error }, '❌ ServerAuthService: Logout error:');
+  }
       
       let message = 'Network error during logout';
       if (error instanceof Error) {
@@ -298,7 +319,7 @@ export class ServerAuthService {
   // This method extracts the authToken from cookies and returns it as a Bearer token
   static async getBearerToken(): Promise<string | null> {
     try {
-      console.log('🔍 ServerAuthService: Getting Bearer token...');
+  logger.debug('🔍 ServerAuthService: Getting Bearer token...');
       
       // Since we're using HTTP-only cookies, we need to make a server request
       // to get the token from the server side
@@ -311,20 +332,20 @@ export class ServerAuthService {
       });
 
       if (!response.ok) {
-        console.log('❌ ServerAuthService: Failed to get Bearer token, status:', response.status);
+  logger.warn('❌ ServerAuthService: Failed to get Bearer token, status:', response.status);
         return null;
       }
 
       const data = await response.json();
       if (data.success && data.token) {
-        console.log('✅ ServerAuthService: Bearer token retrieved successfully');
+  logger.info('✅ ServerAuthService: Bearer token retrieved successfully');
         return data.token;
       }
 
-      console.log('❌ ServerAuthService: No token in response');
+  logger.warn('❌ ServerAuthService: No token in response');
       return null;
     } catch (error) {
-      console.error('❌ ServerAuthService: Error getting Bearer token:', error);
+  logger.error('❌ ServerAuthService: Error getting Bearer token:', error);
       return null;
     }
   }
@@ -380,7 +401,7 @@ export class ServerAuthService {
       }
       return null;
     } catch (error) {
-      console.error('Error getting auth token:', error);
+  logger.error('Error getting auth token:', error);
       return null;
     }
   }
@@ -391,7 +412,7 @@ export class ServerAuthService {
       const authStatus = await this.checkAuthStatus();
       return authStatus.authenticated;
     } catch (error) {
-      console.error('Error checking authentication:', error);
+  logger.error('Error checking authentication:', error);
       return false;
     }
   }

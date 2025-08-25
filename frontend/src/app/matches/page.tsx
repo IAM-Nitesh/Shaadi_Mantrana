@@ -21,6 +21,7 @@ import { MatchesListSkeleton } from '../../components/SkeletonLoader';
 import { ProfileImage } from '../../components/LazyImage';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import logger from '../../utils/logger';
 
 // Helper to decode JWT and get current user ID (for backward compatibility)
 function getCurrentUserId() {
@@ -155,58 +156,55 @@ function MatchesContent() {
         });
         setProfileImages(prev => new Map([...prev, ...newProfileImages]));
       } catch (error) {
-        console.warn('⚠️ Failed to load profile images:', error);
+        logger.warn('⚠️ Failed to load profile images:', error);
       }
     }
   };
 
   // Check onboarding completion
   useEffect(() => {
-    async function checkOnboarding() {
+    async function checkAccess() {
       try {
-        console.log('🔍 Matches: User data updated:', { user, profileCompleteness: user?.profileCompleteness, showProfileIncomplete });
+        logger.debug('🔍 Matches: Checking access control...');
         
         // Use server-side authentication data
         if (!user) {
-          console.log('🚫 No user data available - waiting for user data');
+          logger.debug('🚫 No user data available - waiting for user data');
           return; // Don't show popup yet, wait for user data
         }
 
-        // Check profile completion using MongoDB profileCompleteness flag
-        // The profileCompleteness is a direct property on the user object
+        // Access Control Logic: Only allow access if profileCompleteness is 100%
         const profileCompleteness = user.profileCompleteness || 0;
         
-        console.log('🔍 Matches: Profile completion check:', {
+        logger.debug('🔍 Matches: Access control check:', {
           profileCompleteness,
           userEmail: user.email,
           userRole: user.role,
-          isApproved: user.isApprovedByAdmin
+          isApproved: user.isApprovedByAdmin,
+          isFirstLogin: user.isFirstLogin
         });
         
         // Check if profile is complete (should be 100 for complete profiles)
         if (profileCompleteness < 100) {
-          console.log('🚫 Profile incomplete - showing popup');
-          console.log('📊 Completeness:', profileCompleteness);
-          setShowProfileIncomplete(true);
-          setLoading(false);
+          logger.debug('🚫 Access denied: Profile incomplete - redirecting to profile');
+          router.replace('/profile');
           return;
         } else {
-          console.log('✅ Profile complete - proceeding to matches');
+          logger.debug('✅ Access granted: Profile complete - proceeding to matches');
           setShowProfileIncomplete(false);
           setLoading(false);
         }
       } catch (error) {
-        console.error('Error checking onboarding:', error);
-        setShowProfileIncomplete(true);
-        setLoading(false);
+        logger.error('Error checking matches access:', error);
+        router.replace('/profile');
       }
     }
 
     // Only run check if user is available
     if (user) {
-      checkOnboarding();
+      checkAccess();
     }
-  }, [user]);
+  }, [user, router]);
 
   // GSAP animations - simplified to remove bounce effects
   useEffect(() => {
@@ -273,12 +271,12 @@ function MatchesContent() {
 
   const handleKeepSwiping = useCallback(() => {
     // Continue viewing matches - no action needed, just close the toast
-    console.log('User chose to continue viewing matches');
+    logger.debug('User chose to continue viewing matches');
   }, []);
 
   const handleStartChat = useCallback(() => {
     // Stay on matches page to start chatting
-    console.log('User chose to start chatting');
+    logger.debug('User chose to start chatting');
   }, []);
 
   // GSAP animation for filter modal
