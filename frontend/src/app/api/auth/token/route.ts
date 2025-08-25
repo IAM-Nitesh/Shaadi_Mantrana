@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
-    console.log('🔍 Token API: Starting token extraction...');
+    logger.debug('🔍 Token API: Starting token extraction...');
     
     // Get the authToken from cookies
     const authToken = request.cookies.get('authToken')?.value;
     
     if (!authToken) {
-      console.log('❌ Token API: No authToken cookie found');
+      logger.debug('❌ Token API: No authToken cookie found');
       return NextResponse.json(
         { success: false, error: 'No authentication token found' },
         { status: 401 }
       );
     }
 
-    console.log('✅ Token API: Token found, length:', authToken.length);
+    logger.debug('✅ Token API: Token found, length:', authToken.length);
     
     // Return the token for client-side use
     return NextResponse.json({
@@ -24,10 +26,12 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Token API: Error extracting token:', error);
+    logger.error('❌ Token API: Error extracting token:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to extract token' },
       { status: 500 }
     );
   }
-} 
+}
+
+export const GET = withRouteLogging(handleGet);

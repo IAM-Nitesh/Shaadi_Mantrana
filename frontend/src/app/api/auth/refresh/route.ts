@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
-    console.log('🔍 Token Refresh API: Starting token refresh...');
+    logger.debug('🔍 Token Refresh API: Starting token refresh...');
     
     const authToken = request.cookies.get('authToken')?.value;
     const refreshToken = request.cookies.get('refreshToken')?.value;
     
     if (!authToken) {
-      console.log('❌ Token Refresh API: No authToken cookie found');
+      logger.debug('❌ Token Refresh API: No authToken cookie found');
       return NextResponse.json(
         { success: false, error: 'No authentication token found' },
         { status: 401 }
@@ -16,14 +18,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!refreshToken) {
-      console.log('❌ Token Refresh API: No refreshToken cookie found');
+      logger.debug('❌ Token Refresh API: No refreshToken cookie found');
       return NextResponse.json(
         { success: false, error: 'No refresh token found' },
         { status: 401 }
       );
     }
 
-    console.log('🔍 Token Refresh API: Tokens found, attempting refresh...');
+    logger.debug('🔍 Token Refresh API: Tokens found, attempting refresh...');
 
     // Attempt to refresh token with backend
     const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
@@ -44,17 +46,17 @@ export async function POST(request: NextRequest) {
       });
 
       clearTimeout(timeoutId);
-      console.log('🔍 Token Refresh API: Backend response status:', response.status);
+      logger.debug('🔍 Token Refresh API: Backend response status:', response.status);
 
       if (!response.ok) {
-        console.log(`❌ Token Refresh API: Backend returned ${response.status}`);
+        logger.debug(`❌ Token Refresh API: Backend returned ${response.status}`);
         
         // Try to get error details
         try {
           const errorData = await response.text();
-          console.log('❌ Token Refresh API: Backend error response:', errorData);
+          logger.debug('❌ Token Refresh API: Backend error response:', errorData);
         } catch (e) {
-          console.log('❌ Token Refresh API: Could not read error response');
+          logger.debug('❌ Token Refresh API: Could not read error response');
         }
         
         // Clear invalid cookies
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
       }
 
       const result = await response.json();
-      console.log('✅ Token Refresh API: Token refresh successful');
+      logger.debug('✅ Token Refresh API: Token refresh successful');
 
       // Set new cookies with the refreshed tokens
       const successResponse = NextResponse.json({
@@ -107,19 +109,19 @@ export async function POST(request: NextRequest) {
       clearTimeout(timeoutId);
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error('❌ Token Refresh API: Request timeout');
+        logger.error('❌ Token Refresh API: Request timeout');
         return NextResponse.json(
           { success: false, error: 'Request timeout' },
           { status: 408 }
         );
       }
       
-      console.error('❌ Token Refresh API: Fetch error:', fetchError);
+      logger.error('❌ Token Refresh API: Fetch error:', fetchError);
       throw fetchError;
     }
 
   } catch (error) {
-    console.error('❌ Token Refresh API: Error:', error);
+    logger.error('❌ Token Refresh API: Error:', error);
     
     let message = 'Internal server error';
     let status = 500;
@@ -141,4 +143,6 @@ export async function POST(request: NextRequest) {
       { status }
     );
   }
-} 
+}
+
+export const POST = withRouteLogging(handlePost);

@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
-    console.log('🔍 Auth Verify API: Starting OTP verification...');
     
     const { email, otp } = await request.json();
 
     if (!email || !otp) {
-      console.log('❌ Auth Verify API: Missing email or OTP');
       return NextResponse.json(
         { success: false, error: 'Email and OTP are required' },
         { status: 400 }
       );
     }
-
-    console.log('🔍 Auth Verify API: Calling backend for verification...');
 
     // Call the backend API
     const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
@@ -38,7 +36,6 @@ export async function POST(request: NextRequest) {
       const result = await response.json();
 
       if (!response.ok) {
-        console.log(`❌ Auth Verify API: Backend returned ${response.status}:`, result.error);
         return NextResponse.json(
           { success: false, error: result.error || 'Authentication failed' },
           { status: response.status }
@@ -46,7 +43,6 @@ export async function POST(request: NextRequest) {
       }
 
       if (result.success && result.session) {
-        console.log('✅ Auth Verify API: Authentication successful, setting cookies...');
         
         // Set HTTP-only cookies for security
         const response = NextResponse.json({
@@ -83,18 +79,11 @@ export async function POST(request: NextRequest) {
           domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
         });
 
-        console.log('✅ Auth Verify API: Cookies set successfully');
-        console.log('🔍 Auth Verify API: Cookie details:', {
-          authToken: result.session.accessToken ? 'Set' : 'Not set',
-          refreshToken: result.session.refreshToken ? 'Set' : 'Not set',
-          sessionId: result.session.sessionId ? 'Set' : 'Not set'
-        });
         return response;
       }
 
-      console.log('❌ Auth Verify API: Authentication failed - no session returned');
       return NextResponse.json(
-        { success: false, error: 'Authentication failed' },
+        { success: false, error: 'Authentication failed - no session returned' },
         { status: 401 }
       );
 
@@ -102,7 +91,6 @@ export async function POST(request: NextRequest) {
       clearTimeout(timeoutId);
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error('❌ Auth Verify API: Request timeout');
         return NextResponse.json(
           { success: false, error: 'Request timeout. Please try again.' },
           { status: 408 }
@@ -113,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Auth Verify API: Error:', error);
+    logger.error('❌ Auth Verify API: Error:', error);
     
     let errorMessage = 'Internal server error';
     let statusCode = 500;
@@ -151,15 +139,34 @@ function determineRedirectPath(user: any): string {
     return '/?error=account_paused';
   }
 
-  // Check profile completion and first login status
+  // Get user flags
   const isFirstLogin = user.isFirstLogin;
   const profileCompleteness = user.profileCompleteness || 0;
+  const hasSeenOnboardingMessage = user.hasSeenOnboardingMessage;
+  const profileCompleted = user.profileCompleted;
 
-  // Case 1: First login or incomplete profile
-  if (isFirstLogin || profileCompleteness < 100) {
+  // Access Control Logic:
+  // Users should only access /dashboard and /matches if profileCompleteness is 100%
+  
+  // Case 1: First-time user (isFirstLogin = true)
+  if (isFirstLogin) {
+    // Always redirect to profile for first-time users
     return '/profile';
   }
 
-  // Case 3: Complete profile - go to dashboard
-  return '/dashboard';
-} 
+  // Case 2: Returning user with incomplete profile (profileCompleteness < 100%)
+  if (profileCompleteness < 100) {
+    return '/profile';
+  }
+
+  // Case 3: User with complete profile (profileCompleteness = 100%)
+  // Allow access to all pages - NO REDIRECT NEEDED
+  if (profileCompleteness >= 100) {
+    return null; // No redirect needed - user can access any page
+  }
+
+  // Default case: redirect to profile (safety fallback)
+  return '/profile';
+}
+
+export const POST = withRouteLogging(handlePost);

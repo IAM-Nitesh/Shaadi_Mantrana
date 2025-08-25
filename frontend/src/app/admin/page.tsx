@@ -13,6 +13,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import logger from '../../utils/logger';
 
 interface User {
   _id: string;
@@ -127,7 +128,7 @@ function AdminPageContent() {
     try {
       const authToken = await ServerAuthService.getBearerToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
       const response = await fetch('/api/admin/stats', {
@@ -141,7 +142,7 @@ function AdminPageContent() {
         setStats(data.stats);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      logger.error('Error fetching stats:', error);
     }
   };
 
@@ -149,7 +150,7 @@ function AdminPageContent() {
     try {
       const authToken = await ServerAuthService.getBearerToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
       const response = await fetch('/api/admin/users', {
@@ -163,7 +164,7 @@ function AdminPageContent() {
         setUsers(data.users || []);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
@@ -216,7 +217,7 @@ function AdminPageContent() {
     try {
       const authToken = await ServerAuthService.getBearerToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
       const response = await fetch('/api/admin/users', {
@@ -258,7 +259,7 @@ function AdminPageContent() {
     try {
       const authToken = await ServerAuthService.getBearerToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
       
@@ -296,7 +297,7 @@ function AdminPageContent() {
     try {
       const authToken = await ServerAuthService.getBearerToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
       const response = await fetch(`/api/admin/users/${userId}/resume`, {
@@ -331,7 +332,7 @@ function AdminPageContent() {
     try {
       const authToken = await ServerAuthService.getBearerToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
       const response = await fetch(`/api/admin/users/${userId}/invite`, {

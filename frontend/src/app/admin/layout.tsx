@@ -7,6 +7,7 @@ import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
+import logger from '../../utils/logger';
 
 export default function AdminLayout({
   children,
@@ -51,7 +52,7 @@ export default function AdminLayout({
         router.replace('/admin/dashboard');
       }
     } catch (error) {
-      console.error('Admin authentication check failed:', error);
+      logger.error('Admin authentication check failed:', error);
       router.replace('/'); // Redirect to main app on error
     } finally {
       setIsChecking(false);

@@ -141,13 +141,25 @@ const TEST_EMAIL = 'codebynitesh@gmail.com'; // Admin user
 - **Mark Match Toast Seen**: `POST /api/matching/mark-toast-seen`
 
 ### 4. Chat & Connections Tests ✅
-- **Get Connections**: `GET /api/connections`
-- **Get Connection by ID**: `GET /api/connections/:id`
+
+**Endpoints Tested:**
 - **Get Chat Messages**: `GET /api/chat/:connectionId`
 - **Send Message**: `POST /api/chat/:connectionId`
 - **Mark as Read**: `PUT /api/chat/:connectionId/read`
 
-### 5. File Upload Tests ✅
+### 5. Onboarding & Profile Flags Tests ✅
+
+**New Endpoints Added:**
+- **Update Onboarding Flag**: `PUT /api/profile/onboarding-flag`
+- **Update First Login Flag**: `PUT /api/profile/first-login-flag`
+
+**Access Control Logic:**
+- Users can only access `/dashboard` and `/matches` if `profileCompleteness` is 100%
+- First-time users (`isFirstLogin: true`) are always redirected to `/profile`
+- Onboarding message is shown only once per user (`hasSeenOnboardingMessage` flag)
+- Profile completion automatically updates `isFirstLogin` to `false` when reaching 100%
+
+### 6. File Upload Tests ✅
 - **Single Upload**: `POST /api/upload/single`
 - **Multiple Upload**: `POST /api/upload/multiple`
 - **Profile Picture**: `POST /api/upload/profile-picture`

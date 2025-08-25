@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ServerAuthService, type AuthUser } from '../services/server-auth-service';
+import logger from '../utils/logger';
 import tokenRefreshService from '../services/token-refresh-service';
 
 export interface UseServerAuthReturn {
@@ -27,13 +28,44 @@ function determineRedirectPath(user: AuthUser): string | null {
     return '/admin/dashboard';
   }
 
-  // For regular users, check profile completion
-  if (user.profileCompleteness < 100) {
+  // Get user flags
+  const isFirstLogin = user.isFirstLogin;
+  const profileCompleteness = user.profileCompleteness || 0;
+  const hasSeenOnboardingMessage = user.hasSeenOnboardingMessage;
+
+  logger.debug('🔍 useServerAuth - User flags:', {
+    isFirstLogin,
+    profileCompleteness,
+    hasSeenOnboardingMessage,
+    isApprovedByAdmin: user.isApprovedByAdmin
+  });
+
+  // Access Control Logic:
+  // Users should only access /dashboard and /matches if profileCompleteness is 100%
+  
+  // Case 1: First-time user (isFirstLogin = true)
+  if (isFirstLogin) {
+    // Always redirect to profile for first-time users
+    logger.debug('🔄 First-time user - redirecting to profile');
     return '/profile';
   }
 
-  // Fully authenticated user with complete profile
-  return null; // No redirect needed
+  // Case 2: Returning user with incomplete profile (profileCompleteness < 100%)
+  if (profileCompleteness < 100) {
+    logger.debug('🔄 Profile incomplete - redirecting to profile');
+    return '/profile';
+  }
+
+  // Case 3: User with complete profile (profileCompleteness = 100%)
+  // Allow access to all pages - NO REDIRECT NEEDED
+  if (profileCompleteness >= 100) {
+    logger.debug('✅ Profile complete - allowing access to all pages');
+    return null; // No redirect needed - user can access any page
+  }
+
+  // Default case: redirect to profile (safety fallback)
+  logger.debug('🔄 Default case - redirecting to profile');
+  return '/profile';
 }
 
 // Cache management utilities
@@ -64,7 +96,7 @@ function getCachedAuth(): AuthCache | null {
     localStorage.removeItem(CACHE_KEY);
     return null;
   } catch (error) {
-    console.error('Error reading auth cache:', error);
+    logger.error('Error reading auth cache:', error);
     localStorage.removeItem(CACHE_KEY);
     return null;
   }
@@ -79,7 +111,7 @@ function setCachedAuth(user: AuthUser, redirectTo: string | null): void {
     };
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch (error) {
-    console.error('Error setting auth cache:', error);
+    logger.error('Error setting auth cache:', error);
   }
 }
 
@@ -87,13 +119,12 @@ function clearCachedAuth(): void {
   try {
     localStorage.removeItem(CACHE_KEY);
   } catch (error) {
-    console.error('Error clearing auth cache:', error);
+    logger.error('Error clearing auth cache:', error);
   }
 }
 
 export function useServerAuth(): UseServerAuthReturn {
-  console.log('🔍 useServerAuth: Hook initialized');
-  
+  // Hook initialized - debug logs removed for production cleanliness
   // Check if we're on the client side
   const [isClient, setIsClient] = useState(false);
   
@@ -115,7 +146,7 @@ export function useServerAuth(): UseServerAuthReturn {
   const isCacheValid = useCallback(() => {
     const cached = getCachedAuth();
     const isValid = cached !== null;
-    console.log('🔍 useServerAuth: Cache validation:', {
+    logger.debug('🔍 useServerAuth: Cache validation:', {
       hasCachedAuth: cached !== null,
       cachedUser: cached?.user?.email,
       isValid
@@ -125,11 +156,11 @@ export function useServerAuth(): UseServerAuthReturn {
 
   // Check authentication status with persistent caching
   const checkAuth = useCallback(async (forceRefresh = false) => {
-    console.log('🔍 useServerAuth: Starting authentication check...');
+  logger.debug('🔍 useServerAuth: Starting authentication check...');
     
     // Prevent multiple simultaneous auth checks
     if (isAuthCheckInProgress.current) {
-      console.log('🔍 useServerAuth: Auth check already in progress, skipping');
+  logger.debug('🔍 useServerAuth: Auth check already in progress, skipping');
       return;
     }
     
@@ -137,7 +168,7 @@ export function useServerAuth(): UseServerAuthReturn {
     if (!forceRefresh && isCacheValid()) {
       const cached = getCachedAuth();
       if (cached) {
-        console.log('✅ useServerAuth: Using cached authentication');
+  logger.info('✅ useServerAuth: Using cached authentication');
         setUser(cached.user);
         setIsAuthenticated(true);
         setRedirectTo(cached.redirectTo);
@@ -150,7 +181,7 @@ export function useServerAuth(): UseServerAuthReturn {
     // Prevent too frequent requests - increased interval
     const now = Date.now();
     if (!forceRefresh && now - lastCheckTime < MIN_REQUEST_INTERVAL) { // 60 seconds minimum between requests
-      console.log('🔍 useServerAuth: Too soon since last check, using cache');
+  logger.debug('🔍 useServerAuth: Too soon since last check, using cache');
       const cached = getCachedAuth();
       if (cached) {
         setUser(cached.user);
@@ -168,24 +199,24 @@ export function useServerAuth(): UseServerAuthReturn {
     
     try {
       const response = await ServerAuthService.checkAuthStatus();
-      console.log('🔍 useServerAuth: Auth status response:', response);
+  logger.debug('🔍 useServerAuth: Auth status response:', response);
       
       if (response.authenticated && response.user) {
-        console.log('✅ useServerAuth: User authenticated:', response.user);
+  logger.info('✅ useServerAuth: User authenticated:', response.user);
         setUser(response.user);
         setIsAuthenticated(true);
         setError('');
         
         // Determine redirect path
         const redirectPath = response.redirectTo || determineRedirectPath(response.user);
-        console.log('🔍 useServerAuth: Redirect path:', redirectPath);
+  logger.debug('🔍 useServerAuth: Redirect path:', redirectPath);
         setRedirectTo(redirectPath);
         
         // Cache authentication persistently
         setCachedAuth(response.user, redirectPath);
         setLastCheckTime(Date.now());
       } else {
-        console.log('ℹ️ useServerAuth: User not authenticated - this is normal for unauthenticated users');
+  logger.info('ℹ️ useServerAuth: User not authenticated - this is normal for unauthenticated users');
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
@@ -193,7 +224,7 @@ export function useServerAuth(): UseServerAuthReturn {
         setError(''); // Clear any previous errors for unauthenticated state
       }
     } catch (error) {
-      console.error('❌ useServerAuth: Authentication check failed:', error);
+  logger.error('❌ useServerAuth: Authentication check failed:', error);
       setUser(null);
       setIsAuthenticated(false);
       clearCachedAuth();
@@ -207,13 +238,13 @@ export function useServerAuth(): UseServerAuthReturn {
 
   const logout = useCallback(async () => {
     try {
-      console.log('🔍 useServerAuth: Starting logout...');
+  logger.debug('🔍 useServerAuth: Starting logout...');
       setIsLoading(true);
       
       const result = await ServerAuthService.logout();
       
       if (result.success) {
-        console.log('✅ useServerAuth: Logout successful');
+  logger.info('✅ useServerAuth: Logout successful');
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
@@ -227,11 +258,11 @@ export function useServerAuth(): UseServerAuthReturn {
           clearAuthStatusCache();
         }
       } else {
-        console.log('❌ useServerAuth: Logout failed:', result.message);
+  logger.warn('❌ useServerAuth: Logout failed:', result.message);
         setError(result.message);
       }
     } catch (err) {
-      console.error('❌ useServerAuth: Logout error:', err);
+  logger.error('❌ useServerAuth: Logout error:', err);
       setError('Failed to logout');
     } finally {
       setIsLoading(false);
@@ -247,10 +278,10 @@ export function useServerAuth(): UseServerAuthReturn {
   useEffect(() => {
     if (!isClient) return;
     
-    console.log('🔍 useServerAuth: Initializing from cache...');
+  logger.debug('🔍 useServerAuth: Initializing from cache...');
     const cached = getCachedAuth();
     if (cached) {
-      console.log('✅ useServerAuth: Found valid cached authentication');
+  logger.info('✅ useServerAuth: Found valid cached authentication');
       setUser(cached.user);
       setIsAuthenticated(true);
       setRedirectTo(cached.redirectTo);
@@ -262,7 +293,7 @@ export function useServerAuth(): UseServerAuthReturn {
   useEffect(() => {
     if (!isClient) return;
     
-    console.log('🔍 useServerAuth: useEffect triggered');
+  logger.debug('🔍 useServerAuth: useEffect triggered');
     let mounted = true;
     let retryTimeout: NodeJS.Timeout;
     let authTimeout: NodeJS.Timeout;
@@ -273,17 +304,17 @@ export function useServerAuth(): UseServerAuthReturn {
       
       // Prevent multiple initial auth checks
       if (initialAuthCheckRef.current) {
-        console.log('🔍 useServerAuth: Initial auth check already performed, skipping');
+  logger.debug('🔍 useServerAuth: Initial auth check already performed, skipping');
         return;
       }
       
       try {
-        console.log('🔍 useServerAuth: Performing initial auth check...');
+  logger.debug('🔍 useServerAuth: Performing initial auth check...');
         initialAuthCheckRef.current = true;
         
         // Check if we have valid cached authentication first
         if (isCacheValid()) {
-          console.log('✅ useServerAuth: Using cached authentication, skipping server call');
+          logger.info('✅ useServerAuth: Using cached authentication, skipping server call');
           setIsLoading(false);
           return;
         }
@@ -297,12 +328,12 @@ export function useServerAuth(): UseServerAuthReturn {
         await Promise.race([authPromise, timeoutPromise]);
         clearTimeout(authTimeout);
       } catch (error) {
-        console.error('❌ useServerAuth: Initial auth check failed:', error);
+  logger.error('❌ useServerAuth: Initial auth check failed:', error);
         clearTimeout(authTimeout);
         
         // Retry logic for initial load with shorter delays
         if (mounted && retryCount < 1) { // Reduced retries
-          console.log(`🔄 useServerAuth: Retrying auth check (${retryCount + 1}/2)...`);
+          logger.debug(`🔄 useServerAuth: Retrying auth check (${retryCount + 1}/2)...`);
           retryTimeout = setTimeout(() => {
             if (mounted) {
               setRetryCount(prev => prev + 1);
@@ -310,7 +341,7 @@ export function useServerAuth(): UseServerAuthReturn {
             }
           }, 1000); // Shorter delay
         } else {
-          console.log('❌ useServerAuth: Max retries reached, giving up');
+          logger.warn('❌ useServerAuth: Max retries reached, giving up');
           setIsLoading(false);
         }
       }
@@ -319,7 +350,7 @@ export function useServerAuth(): UseServerAuthReturn {
     // Set a maximum wait time to prevent infinite loading
     maxWaitTimeout = setTimeout(() => {
       if (mounted && isLoading) {
-        console.log('⚠️ useServerAuth: Maximum wait time reached, stopping loading');
+  logger.warn('⚠️ useServerAuth: Maximum wait time reached, stopping loading');
         setIsLoading(false);
         setError('Authentication check timed out. Please refresh the page.');
       }
@@ -346,16 +377,16 @@ export function useServerAuth(): UseServerAuthReturn {
     if (!isClient) return;
 
     const handleTokenRefresh = (success: boolean) => {
-      console.log('🔄 useServerAuth: Token refresh event received:', success);
+  logger.debug('🔄 useServerAuth: Token refresh event received:', success);
       
       if (success) {
         // Token was refreshed successfully, clear cache and re-check auth
-        console.log('✅ useServerAuth: Token refreshed, re-checking authentication');
+  logger.info('✅ useServerAuth: Token refreshed, re-checking authentication');
         clearCachedAuth();
         checkAuth(true); // Force refresh to get updated user data
       } else {
         // Token refresh failed, user needs to re-authenticate
-        console.log('❌ useServerAuth: Token refresh failed, clearing authentication');
+  logger.warn('❌ useServerAuth: Token refresh failed, clearing authentication');
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
@@ -365,7 +396,7 @@ export function useServerAuth(): UseServerAuthReturn {
     };
 
     const handleTokenExpired = () => {
-      console.log('⚠️ useServerAuth: Token expired event received');
+  logger.warn('⚠️ useServerAuth: Token expired event received');
       setUser(null);
       setIsAuthenticated(false);
       clearCachedAuth();
@@ -375,20 +406,20 @@ export function useServerAuth(): UseServerAuthReturn {
 
     // Start token refresh service if user is authenticated
     if (isAuthenticated && user) {
-      console.log('🔄 useServerAuth: Starting token refresh service for authenticated user');
+  logger.debug('🔄 useServerAuth: Starting token refresh service for authenticated user');
       tokenRefreshService.start(handleTokenRefresh, handleTokenExpired);
     }
 
     // Cleanup function
     return () => {
-      console.log('🔄 useServerAuth: Cleaning up token refresh service');
+  logger.debug('🔄 useServerAuth: Cleaning up token refresh service');
       tokenRefreshService.stop();
     };
   }, [isClient, isAuthenticated, user, checkAuth]);
 
   // Add a method to clear cache for debugging/testing
   const clearCache = useCallback(() => {
-    console.log('🔍 useServerAuth: Clearing authentication cache');
+  logger.debug('🔍 useServerAuth: Clearing authentication cache');
     clearCachedAuth();
     setUser(null);
     setIsAuthenticated(false);
@@ -406,7 +437,7 @@ export function useServerAuth(): UseServerAuthReturn {
 
   // Add a method to force refresh authentication
   const forceRefresh = useCallback(async () => {
-    console.log('🔍 useServerAuth: Force refreshing authentication');
+  logger.debug('🔍 useServerAuth: Force refreshing authentication');
     clearCachedAuth();
     initialAuthCheckRef.current = false;
     

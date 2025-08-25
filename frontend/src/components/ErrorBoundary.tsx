@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import logger from '../utils/logger';
 import { motion } from 'framer-motion';
 import CustomIcon from './CustomIcon';
 
@@ -26,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  logger.error('ErrorBoundary caught an error:', error, errorInfo);
     
     this.setState({
       error,
@@ -160,7 +161,7 @@ export function useErrorHandler() {
   const [error, setError] = React.useState<Error | null>(null);
 
   const handleError = React.useCallback((error: Error) => {
-    console.error('Error caught by useErrorHandler:', error);
+    logger.error('Error caught by useErrorHandler:', error);
     setError(error);
   }, []);
 

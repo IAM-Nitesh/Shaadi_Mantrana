@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
-    console.log('🔍 Auth Status API: Starting authentication status check...');
+    logger.debug('🔍 Auth Status API: Starting authentication status check...');
     
     const authToken = request.cookies.get('authToken')?.value;
     const refreshToken = request.cookies.get('refreshToken')?.value;
     
-    console.log('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
-    console.log('🔍 Auth Status API: Auth token length:', authToken?.length || 0);
-    console.log('🔍 Auth Status API: Auth token preview:', authToken ? `${authToken.substring(0, 20)}...` : 'None');
-    console.log('🔍 Auth Status API: Refresh token found:', refreshToken ? 'Yes' : 'No');
+    logger.debug('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
+    logger.debug('🔍 Auth Status API: Auth token length:', authToken?.length || 0);
+    logger.debug('🔍 Auth Status API: Auth token preview:', authToken ? `${authToken.substring(0, 20)}...` : 'None');
+    logger.debug('🔍 Auth Status API: Refresh token found:', refreshToken ? 'Yes' : 'No');
 
     if (!authToken) {
-      console.log('ℹ️ Auth Status API: No authentication token found - returning graceful response');
+      logger.debug('ℹ️ Auth Status API: No authentication token found - returning graceful response');
       return NextResponse.json(
         { 
           authenticated: false, 
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Auth Status API: Token found, verifying with backend...');
+    logger.debug('🔍 Auth Status API: Token found, verifying with backend...');
 
     // Verify token with backend
     const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
@@ -34,10 +36,10 @@ export async function GET(request: NextRequest) {
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
     try {
-      console.log('🔍 Auth Status API: Making request to backend:', `${backendUrl}/api/auth/profile`);
-      console.log('🔍 Auth Status API: Authorization header:', `Bearer ${authToken.substring(0, 20)}...`);
-      console.log('🔍 Auth Status API: Full backend URL:', `${backendUrl}/api/auth/profile`);
-      console.log('🔍 Auth Status API: Environment check:', {
+      logger.debug('🔍 Auth Status API: Making request to backend:', `${backendUrl}/api/auth/profile`);
+      logger.debug('🔍 Auth Status API: Authorization header:', `Bearer ${authToken.substring(0, 20)}...`);
+      logger.debug('🔍 Auth Status API: Full backend URL:', `${backendUrl}/api/auth/profile`);
+      logger.debug('🔍 Auth Status API: Environment check:', {
         NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
         backendUrl,
         authTokenLength: authToken.length
@@ -53,23 +55,23 @@ export async function GET(request: NextRequest) {
       });
 
       clearTimeout(timeoutId);
-      console.log('🔍 Auth Status API: Backend response status:', response.status);
-      console.log('🔍 Auth Status API: Backend response headers:', Object.fromEntries(response.headers.entries()));
+      logger.debug('🔍 Auth Status API: Backend response status:', response.status);
+      logger.debug('🔍 Auth Status API: Backend response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        console.log(`❌ Auth Status API: Backend returned ${response.status}`);
+        logger.debug(`❌ Auth Status API: Backend returned ${response.status}`);
         
         // Try to get error details
         try {
           const errorData = await response.text();
-          console.log('❌ Auth Status API: Backend error response:', errorData);
+          logger.debug('❌ Auth Status API: Backend error response:', errorData);
         } catch (e) {
-          console.log('❌ Auth Status API: Could not read error response');
+          logger.debug('❌ Auth Status API: Could not read error response');
         }
         
         // If it's a 401 error and we have a refresh token, try to refresh
         if (response.status === 401 && refreshToken) {
-          console.log('🔄 Auth Status API: Token expired, attempting refresh...');
+          logger.debug('🔄 Auth Status API: Token expired, attempting refresh...');
           
           try {
             const refreshResponse = await fetch(`${backendUrl}/api/auth/refresh`, {
@@ -84,7 +86,7 @@ export async function GET(request: NextRequest) {
 
             if (refreshResponse.ok) {
               const refreshResult = await refreshResponse.json();
-              console.log('✅ Auth Status API: Token refresh successful');
+              logger.debug('✅ Auth Status API: Token refresh successful');
               
               // Set new cookies with the refreshed tokens
               const successResponse = NextResponse.json({
@@ -117,10 +119,10 @@ export async function GET(request: NextRequest) {
 
               return successResponse;
             } else {
-              console.log('❌ Auth Status API: Token refresh failed, status:', refreshResponse.status);
+              logger.debug('❌ Auth Status API: Token refresh failed, status:', refreshResponse.status);
             }
           } catch (refreshError) {
-            console.error('❌ Auth Status API: Token refresh error:', refreshError);
+            logger.error('❌ Auth Status API: Token refresh error:', refreshError);
           }
         }
         
@@ -142,11 +144,11 @@ export async function GET(request: NextRequest) {
       }
 
       const result = await response.json();
-      console.log('🔍 Auth Status API: Backend response:', result);
+      logger.debug('🔍 Auth Status API: Backend response:', result);
 
       if (result.success && result.user) {
         const user = result.user;
-        console.log('✅ Auth Status API: User authenticated successfully:', {
+        logger.debug('✅ Auth Status API: User authenticated successfully:', {
           email: user.email,
           role: user.role,
           isFirstLogin: user.isFirstLogin,
@@ -168,7 +170,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.log('❌ Auth Status API: Failed to get user profile from backend');
+      logger.debug('❌ Auth Status API: Failed to get user profile from backend');
       return NextResponse.json(
         { 
           authenticated: false, 
@@ -182,7 +184,7 @@ export async function GET(request: NextRequest) {
       clearTimeout(timeoutId);
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error('❌ Auth Status API: Request timeout');
+        logger.error('❌ Auth Status API: Request timeout');
         return NextResponse.json(
           { 
             authenticated: false, 
@@ -193,11 +195,11 @@ export async function GET(request: NextRequest) {
         );
       }
       
-      console.error('❌ Auth Status API: Fetch error:', fetchError);
+      logger.error('❌ Auth Status API: Fetch error:', fetchError);
       
       // For development, let's add a fallback mechanism
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 Auth Status API: Development mode - adding fallback response');
+        logger.debug('🔧 Auth Status API: Development mode - adding fallback response');
         return NextResponse.json(
           { 
             authenticated: false, 
@@ -220,7 +222,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Auth Status API: Error:', error);
+    logger.error('❌ Auth Status API: Error:', error);
     
     let message = 'Internal server error';
     
@@ -256,26 +258,46 @@ function determineRedirectPath(user: any): string | null {
     return '/?error=account_paused';
   }
 
-  // Check profile completion and first login status
+  // Get user flags
   const isFirstLogin = user.isFirstLogin;
   const profileCompleteness = user.profileCompleteness || 0;
   const hasSeenOnboardingMessage = user.hasSeenOnboardingMessage;
+  const profileCompleted = user.profileCompleted;
 
-  // Case 1: isFirstLogin = true, isApprovedByAdmin = true, profileCompleteness < 100
-  if (isFirstLogin && profileCompleteness < 100) {
+  logger.debug('🔍 Auth Status - User flags:', {
+    isFirstLogin,
+    profileCompleteness,
+    hasSeenOnboardingMessage,
+    profileCompleted,
+    isApprovedByAdmin: user.isApprovedByAdmin
+  });
+
+  // Access Control Logic:
+  // Users should only access /dashboard and /matches if profileCompleteness is 100%
+  
+  // Case 1: First-time user (isFirstLogin = true)
+  if (isFirstLogin) {
+    // Always redirect to profile for first-time users
+    logger.debug('🔄 First-time user - redirecting to profile');
     return '/profile';
   }
 
-  // Case 2: isFirstLogin = false, isApprovedByAdmin = true, profileCompleteness < 100
-  if (!isFirstLogin && profileCompleteness < 100) {
+  // Case 2: Returning user with incomplete profile (profileCompleteness < 100%)
+  if (profileCompleteness < 100) {
+    logger.debug('🔄 Profile incomplete - redirecting to profile');
     return '/profile';
   }
 
-  // Case 3: isFirstLogin = false, isApprovedByAdmin = true, profileCompleteness = 100
-  if (!isFirstLogin && profileCompleteness >= 100) {
-    return '/dashboard';
+  // Case 3: User with complete profile (profileCompleteness = 100%)
+  // Allow access to all pages - NO REDIRECT NEEDED
+  if (profileCompleteness >= 100) {
+    logger.debug('✅ Profile complete - allowing access to all pages');
+    return null; // No redirect needed - user can access any page
   }
 
-  // Default case: redirect to dashboard
-  return '/dashboard';
-} 
+  // Default case: redirect to profile (safety fallback)
+  logger.debug('🔄 Default case - redirecting to profile');
+  return '/profile';
+}
+
+export const GET = withRouteLogging(handleGet);

@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import { useServerAuth } from '../../hooks/useServerAuth';
 import { ServerAuthService } from '../../services/server-auth-service';
+import logger from '../../utils/logger';
 
 
 function SettingsContent() {
@@ -299,11 +300,11 @@ function SettingsContent() {
         });
       } else {
         // Handle logout failure
-        console.error('Logout failed:', result.message);
+        logger.error('Logout failed:', result.message);
         ToastService.error('Logout failed. Please try again.');
       }
     } catch (error) {
-      console.error('Error during logout:', error);
+      logger.error('Error during logout:', error);
       ToastService.error('An error occurred during logout. Please try again.');
     }
   };

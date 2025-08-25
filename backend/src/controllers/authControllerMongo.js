@@ -16,6 +16,12 @@ const sessions = new Map();
 // OTP store with expiration (use Redis in production)
 const otpStore = require('../utils/otpStorage');
 
+// Ensure otpStore is properly initialized
+if (!otpStore || typeof otpStore.size !== 'function') {
+  console.error('❌ OTP Storage not properly initialized!');
+  throw new Error('OTP Storage initialization failed');
+}
+
 // Simple rate limiting (use Redis in production)
 const rateLimitStore = new Map();
 

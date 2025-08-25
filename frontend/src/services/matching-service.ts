@@ -1,6 +1,9 @@
 // Matching Service - Handles discovery, likes, and matches
 import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
+import logger from '../utils/logger';
+import { loggerForUser } from '../utils/pino-logger';
+import { getCurrentUser } from './auth-utils';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -290,7 +293,7 @@ export class MatchingService {
       const data = await response.json();
       
       // Debug: Log the raw data received from backend
-      console.log('🔍 MatchingService: Raw backend response:', {
+      logger.debug('🔍 MatchingService: Raw backend response:', {
         profilesCount: data.profiles?.length || 0,
         firstProfile: data.profiles?.[0] ? {
           id: data.profiles[0]._id,
@@ -457,7 +460,13 @@ export class MatchingService {
 
       return data;
     } catch (error) {
-      console.error('Unmatch profile error:', error);
+      try {
+        const user = await getCurrentUser();
+        const log = loggerForUser(user?.userUuid);
+        log.error({ err: error }, 'Unmatch profile error:');
+      } catch (e) {
+        logger.error({ err: error }, 'Unmatch profile error:');
+      }
       throw error;
     }
   }
@@ -468,14 +477,14 @@ export class MatchingService {
       // Check authentication first
       const authenticated = await isAuthenticated();
       if (!authenticated) {
-        console.warn('User not authenticated, skipping toast seen update');
+  logger.warn('User not authenticated, skipping toast seen update');
         return { success: false, message: 'User not authenticated' };
       }
 
       // Get Bearer token
       const token = await getBearerToken();
       if (!token) {
-        console.warn('No bearer token available, skipping toast seen update');
+  logger.warn('No bearer token available, skipping toast seen update');
         return { success: false, message: 'No access token available' };
       }
 
@@ -491,13 +500,19 @@ export class MatchingService {
       const data = await response.json();
       
       if (!response.ok) {
-        console.warn('Failed to mark toast as seen:', data.error || response.statusText);
+        try {
+          const user = await getCurrentUser();
+          const log = loggerForUser(user?.userUuid);
+          log.warn({ err: data?.error || response.statusText }, 'Failed to mark toast as seen');
+        } catch (e) {
+          logger.warn({ err: data?.error || response.statusText }, 'Failed to mark toast as seen');
+        }
         return { success: false, message: data.error || 'Failed to mark match toast as seen' };
       }
 
       return data;
     } catch (error) {
-      console.error('Mark match toast seen error:', error);
+      logger.error('Mark match toast seen error:', error);
       return { success: false, message: 'Failed to mark match toast as seen' };
     }
   }
@@ -512,14 +527,14 @@ export class MatchingService {
         // Check authentication first
         const authenticated = await isAuthenticated();
         if (!authenticated) {
-          console.warn('User not authenticated, skipping toast seen update');
+          logger.warn('User not authenticated, skipping toast seen update');
           return { success: false, message: 'User not authenticated' };
         }
 
         // Get Bearer token
         const token = await getBearerToken();
         if (!token) {
-          console.warn('No bearer token available, skipping toast seen update');
+          logger.warn('No bearer token available, skipping toast seen update');
           return { success: false, message: 'No access token available' };
         }
 
@@ -537,12 +552,12 @@ export class MatchingService {
         if (!response.ok) {
           // If it's a 404 and we have more retries, try again
           if (response.status === 404 && attempt < maxRetries) {
-            console.warn(`Attempt ${attempt}/${maxRetries}: Failed to mark toast as seen (404), retrying in ${retryDelay}ms...`);
+            logger.warn(`Attempt ${attempt}/${maxRetries}: Failed to mark toast as seen (404), retrying in ${retryDelay}ms...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay));
             continue;
           }
           
-          console.warn('Failed to mark toast as seen:', {
+          logger.warn('Failed to mark toast as seen:', {
             status: response.status,
             statusText: response.statusText,
             error: data.error,
@@ -554,7 +569,7 @@ export class MatchingService {
 
         return data;
       } catch (error) {
-        console.error(`Mark toast seen on chat entry error (attempt ${attempt}):`, error);
+        logger.error(`Mark toast seen on chat entry error (attempt ${attempt}):`, error);
         
         // If this is the last attempt, return error
         if (attempt === maxRetries) {
@@ -788,7 +803,7 @@ export class MatchingService {
     const cacheKey = 'matches';
     
     // Temporarily disable cache for debugging
-    console.log('🔍 Cache disabled for debugging');
+    logger.debug('🔍 Cache disabled for debugging');
     
     // Check cache first
     // const cached = cacheManager.get(cacheKey, 'matches');
@@ -797,7 +812,7 @@ export class MatchingService {
     //   return cached;
     // }
 
-    console.log('🔄 Fetching fresh matches data...');
+    logger.debug('🔄 Fetching fresh matches data...');
 
     try {
       // Get Bearer token for backend API call
@@ -806,7 +821,7 @@ export class MatchingService {
         throw new Error('No authentication token found');
       }
 
-      console.log('🔗 Making API calls to fetch matches and likes...');
+      logger.debug('🔗 Making API calls to fetch matches and likes...');
 
       // Fetch both matches and likes in parallel
       const [matchesResponse, likesResponse] = await Promise.all([
@@ -826,7 +841,7 @@ export class MatchingService {
         })
       ]);
 
-      console.log('📡 API responses received:', {
+      logger.debug('📡 API responses received:', {
         matchesStatus: matchesResponse.status,
         likesStatus: likesResponse.status
       });
@@ -840,43 +855,43 @@ export class MatchingService {
         likesResponse.json()
       ]);
 
-      console.log('📊 Raw API data:', {
+      logger.debug('📊 Raw API data:', {
         matchesData,
         likesData
       });
 
       // Debug the structure of each response
       if (matchesData.success && matchesData.matches) {
-        console.log('📋 Matches API response structure:', {
+        logger.debug('📋 Matches API response structure:', {
           success: matchesData.success,
           matchesCount: matchesData.matches.length,
           firstMatch: matchesData.matches[0],
           pagination: matchesData.pagination
         });
       } else {
-        console.log('❌ Matches API response:', matchesData);
+        logger.debug('❌ Matches API response:', matchesData);
       }
 
       if (likesData.success && likesData.likedProfiles) {
-        console.log('📋 Likes API response structure:', {
+        logger.debug('📋 Likes API response structure:', {
           success: likesData.success,
           likesCount: likesData.likedProfiles.length,
           firstLike: likesData.likedProfiles[0],
           pagination: likesData.pagination
         });
       } else {
-        console.log('❌ Likes API response:', likesData);
+        logger.debug('❌ Likes API response:', likesData);
       }
       
       // Log the exact keys in the responses
-      console.log('🔑 Matches response keys:', Object.keys(matchesData));
-      console.log('🔑 Likes response keys:', Object.keys(likesData));
+      logger.debug('🔑 Matches response keys:', Object.keys(matchesData));
+      logger.debug('🔑 Likes response keys:', Object.keys(likesData));
 
       // Combine the data
       const combinedData = {
         success: true,
         mutualMatches: matchesData.success ? matchesData.matches.map((match: any) => {
-          console.log('🔄 Processing match:', match);
+          logger.debug('🔄 Processing match:', match);
           const transformedMatch = {
             connectionId: match.connectionId,
             profile: {
@@ -884,11 +899,11 @@ export class MatchingService {
               profile: match.profile.profile
             }
           };
-          console.log('✅ Transformed match:', transformedMatch);
+          logger.debug('✅ Transformed match:', transformedMatch);
           return transformedMatch;
         }) : [],
         likedProfiles: likesData.success ? likesData.likedProfiles.map((like: any) => {
-          console.log('🔄 Processing like:', like);
+          logger.debug('🔄 Processing like:', like);
           const transformedLike = {
             likeId: like.likeId,
             likeDate: like.likeDate,
@@ -900,15 +915,15 @@ export class MatchingService {
               profile: like.profile.profile
             }
           };
-          console.log('✅ Transformed like:', transformedLike);
+          logger.debug('✅ Transformed like:', transformedLike);
           return transformedLike;
         }) : []
       };
 
-      console.log('🎯 Combined data:', combinedData);
+      logger.debug('🎯 Combined data:', combinedData);
       
       // Test the final data structure
-      console.log('🧪 Final data test:', {
+      logger.debug('🧪 Final data test:', {
         success: combinedData.success,
         mutualMatchesCount: combinedData.mutualMatches.length,
         likedProfilesCount: combinedData.likedProfiles.length,
@@ -918,11 +933,11 @@ export class MatchingService {
       
       // Cache the result for 1 week
       // cacheManager.set(cacheKey, combinedData, 'matches');
-      console.log('💾 Cached matches data');
+      logger.debug('💾 Cached matches data');
       
       return combinedData;
     } catch (error) {
-      console.error('❌ Error fetching matches:', error);
+      logger.error('❌ Error fetching matches:', error);
       throw error;
     }
   }
@@ -965,7 +980,7 @@ export class MatchingService {
       
       return data;
     } catch (error) {
-      console.error('Error fetching chat messages:', error);
+      logger.error('Error fetching chat messages:', error);
       throw error;
     }
   }

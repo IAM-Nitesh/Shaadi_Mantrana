@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
-    console.log('🔍 Debug API: Checking cookies...');
+    logger.debug('🔍 Debug API: Checking cookies...');
     
     const cookies = request.cookies;
     const allCookies = cookies.getAll();
     
-    console.log('🔍 Debug API: All cookies:', allCookies);
+    logger.debug('🔍 Debug API: All cookies:', allCookies);
     
     const authToken = cookies.get('authToken')?.value;
     const refreshToken = cookies.get('refreshToken')?.value;
     const sessionId = cookies.get('sessionId')?.value;
     
-    console.log('🔍 Debug API: Auth token present:', !!authToken);
-    console.log('🔍 Debug API: Refresh token present:', !!refreshToken);
-    console.log('🔍 Debug API: Session ID present:', !!sessionId);
+    logger.debug('🔍 Debug API: Auth token present:', !!authToken);
+    logger.debug('🔍 Debug API: Refresh token present:', !!refreshToken);
+    logger.debug('🔍 Debug API: Session ID present:', !!sessionId);
     
     return NextResponse.json({
       success: true,
@@ -35,10 +37,12 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('❌ Debug API: Error:', error);
+    logger.error('❌ Debug API: Error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-} 
+}
+
+export const GET = withRouteLogging(handleGet);

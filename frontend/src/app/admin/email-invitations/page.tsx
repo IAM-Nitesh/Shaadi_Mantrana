@@ -8,6 +8,7 @@ import ToastService from '../../../services/toastService';
 import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
+import logger from '../../../utils/logger';
 
 interface Invitation {
   _id: string;
@@ -50,7 +51,7 @@ export default function EmailInvitations() {
       }
 
       const data = await response.json();
-      console.log('Received invitations data:', data.invitations);
+      logger.debug('Received invitations data:', data.invitations);
       setInvitations(data.invitations || []);
 
       // Animate content on load
@@ -60,7 +61,7 @@ export default function EmailInvitations() {
       );
 
     } catch (error) {
-      console.error('Error fetching invitations:', error);
+      logger.error('Error fetching invitations:', error);
       setError('Failed to load invitations');
     } finally {
       setLoading(false);
@@ -74,8 +75,8 @@ export default function EmailInvitations() {
       setSendingInvitation(true);
       const token = await ServerAuthService.getBearerToken();
       
-      console.log('Sending invitation to:', newEmail.trim());
-      console.log('Using token:', token ? 'Token exists' : 'No token');
+      logger.debug('Sending invitation to:', newEmail.trim());
+      logger.debug('Using token:', token ? 'Token exists' : 'No token');
       
       const response = await fetch('/api/admin/invitations', {
         method: 'POST',
@@ -86,21 +87,21 @@ export default function EmailInvitations() {
         body: JSON.stringify({ email: newEmail.trim() })
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      logger.debug('Response status:', response.status);
+      logger.debug('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('Success response:', responseData);
+        logger.debug('Success response:', responseData);
         setNewEmail('');
         await fetchInvitations();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Error response:', errorData);
+        logger.error('Error response:', errorData);
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to send invitation`);
       }
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      logger.error('Error sending invitation:', error);
       setError(`Failed to send invitation: ${error.message}`);
     } finally {
       setSendingInvitation(false);
@@ -130,7 +131,7 @@ export default function EmailInvitations() {
         throw new Error('Failed to resend invitation');
       }
     } catch (error) {
-      console.error('Error resending invitation:', error);
+      logger.error('Error resending invitation:', error);
       setError('Failed to resend invitation');
     } finally {
       setResendingInvitation(null);
@@ -156,7 +157,7 @@ export default function EmailInvitations() {
         minute: '2-digit'
       });
     } catch (error) {
-      console.error('Error formatting date:', dateString, error);
+      logger.error('Error formatting date:', dateString, error);
       return 'Invalid date';
     }
   };

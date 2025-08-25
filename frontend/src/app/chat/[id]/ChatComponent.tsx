@@ -12,6 +12,7 @@ import { ChatService } from '../../../services/chat-service';
 import { MatchingService } from '../../../services/matching-service';
 import ToastService from '../../../services/toastService';
 import { ServerAuthService } from '../../../services/server-auth-service';
+import logger from '../../../utils/logger';
 
 interface Match {
   name: string;
@@ -59,7 +60,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             setImageError(false);
           }
         } catch (error) {
-          console.error('Failed to fetch profile image for match:', match.otherUserId, error);
+          logger.error('Failed to fetch profile image for match:', match.otherUserId, error);
           setImageError(true);
         }
       }
@@ -80,7 +81,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         return payload.userId || payload._id || payload.id;
       } catch (e) {
-        console.error('Error parsing JWT token:', e);
+        logger.error('Error parsing JWT token:', e);
       }
     }
     return null;
@@ -88,9 +89,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
   // Hide disappearing banner after 5 seconds
   useEffect(() => {
-    console.log('🎬 Chat banner timer started - will hide in 5 seconds');
+    logger.debug('🎬 Chat banner timer started - will hide in 5 seconds');
     const timer = setTimeout(() => {
-      console.log('🎬 Hiding chat banner after 5 seconds');
+      logger.debug('🎬 Hiding chat banner after 5 seconds');
       setShowDisappearingBanner(false);
     }, 5000);
 
@@ -118,7 +119,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       try {
         const currentUserId = await getCurrentUserId();
         if (!currentUserId) {
-          console.error('No current user ID found');
+          logger.error('No current user ID found');
           return;
         }
 
@@ -152,7 +153,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         }
         setIsConnected(true);
       } catch (error) {
-        console.error('Failed to initialize chat:', error);
+        logger.error('Failed to initialize chat:', error);
         setConnectionError(true);
       }
     };
@@ -184,10 +185,10 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         
         setMessages(prev => [...prev, newMessage]);
       } else {
-        console.error('Failed to send message:', response.message);
+        logger.error('Failed to send message:', response.message);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
     } finally {
       setIsSending(false);
     }
@@ -209,7 +210,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               ToastService.success('Successfully unmatched!');
       router.push('/matches');
     } catch (error) {
-      console.error('Error unmatching:', error);
+      logger.error('Error unmatching:', error);
               ToastService.error('Failed to unmatch. Please try again.');
     } finally {
       setIsUnmatching(false);

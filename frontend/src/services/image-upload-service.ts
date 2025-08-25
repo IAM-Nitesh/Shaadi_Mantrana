@@ -5,6 +5,8 @@
 // Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
 import { config } from './configService';
 import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
+import logger from '../utils/logger';
+import { loggerForUser } from '../utils/pino-logger';
 
 export const API_CONFIG = {
   API_BASE_URL: config.apiBaseUrl,
@@ -172,7 +174,7 @@ export class ImageUploadService {
     
     // Development mode fallback
     if (process.env.NODE_ENV === 'development' && !apiBaseUrl) {
-      // console.log('Development mode: Image upload not configured');
+  // logger.debug('Development mode: Image upload not configured');
       return {
         success: false,
         error: 'Image upload not configured in development mode',
@@ -186,7 +188,7 @@ export class ImageUploadService {
     }
 
     if (!apiBaseUrl) {
-      // console.log('Production mode: Image upload not configured');
+  // logger.debug('Production mode: Image upload not configured');
       return {
         success: false,
         error: 'Image upload not configured',
@@ -221,9 +223,9 @@ export class ImageUploadService {
         throw new Error('Authentication required. Please log in first.');
       }
 
-      // console.log('API Base URL:', apiBaseUrl);
-      // console.log('Uploading to:', `${apiBaseUrl}/api/upload/single`);
-      // console.log('File details:', { name: file.name, size: file.size, type: file.type });
+  // logger.debug('API Base URL:', apiBaseUrl);
+  // logger.debug('Uploading to:', `${apiBaseUrl}/api/upload/single`);
+  // logger.debug('File details:', { name: file.name, size: file.size, type: file.type });
 
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
@@ -239,8 +241,8 @@ export class ImageUploadService {
         body: formData,
       });
 
-      // console.log('Upload response status:', response.status);
-      // console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
+  // logger.debug('Upload response status:', response.status);
+  // logger.debug('Upload response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -264,9 +266,9 @@ export class ImageUploadService {
       };
 
     } catch (error: unknown) {
-      // console.error('Error uploading image:', error);
-      // console.error('API Base URL:', apiBaseUrl);
-      // console.error('File details:', { name: file.name, size: file.size, type: file.type });
+  // logger.error('Error uploading image:', error);
+  // logger.error('API Base URL:', apiBaseUrl);
+  // logger.error('File details:', { name: file.name, size: file.size, type: file.type });
       return {
         success: false,
         error: (error as Error).message || 'Failed to upload image'
@@ -554,23 +556,29 @@ export class ImageUploadService {
     const apiBaseUrl = API_CONFIG.API_BASE_URL;
     
     if (!apiBaseUrl) {
-      console.log('❌ API_BASE_URL not configured');
+  logger.warn('❌ API_BASE_URL not configured');
       return null;
     }
 
     try {
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
-      console.log('🔍 Bearer token found:', bearerToken ? 'Yes' : 'No');
+  logger.debug('🔍 Bearer token found:', bearerToken ? 'Yes' : 'No');
       if (!bearerToken) {
-        console.log('❌ No bearer token found');
+        try {
+          const user = await getCurrentUser();
+          const log = loggerForUser(user?.userUuid);
+          log.warn('❌ No bearer token found');
+        } catch (e) {
+          logger.warn('❌ No bearer token found');
+        }
         return null;
       }
 
       // Get current user ID from server-side auth
       const user = await getCurrentUser();
       if (!user) {
-        console.log('❌ Could not determine current user ID');
+  logger.warn('❌ Could not determine current user ID');
         return null;
       }
       const userId = user.userUuid;
@@ -581,11 +589,11 @@ export class ImageUploadService {
       const now = Date.now();
       
       if (cached && cached.expiry > now) {
-        console.log('✅ Using cached signed URL');
+  logger.info('✅ Using cached signed URL');
         return cached.url;
       }
 
-      console.log(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
+  logger.debug(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
       
       const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`, {
         headers: {
@@ -593,16 +601,16 @@ export class ImageUploadService {
         },
       });
       
-      console.log(`🔍 Response status: ${response.status}`);
+  logger.debug(`🔍 Response status: ${response.status}`);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.log(`❌ Response not OK: ${errorText}`);
+  logger.error(`❌ Response not OK: ${errorText}`);
         return null;
       }
 
       const result = await response.json();
-      console.log(`✅ Signed URL result:`, result);
+  logger.info(`✅ Signed URL result:`, result);
       
       // Cache the signed URL
       if (result.data?.url) {
@@ -611,12 +619,12 @@ export class ImageUploadService {
           url: result.data.url,
           expiry: cacheExpiry
         });
-        console.log('💾 Cached signed URL for 5 minutes');
+  logger.info('💾 Cached signed URL for 5 minutes');
       }
       
       return result.data.url;
     } catch (error) {
-      console.error('❌ Error fetching signed URL:', error);
+  logger.error('❌ Error fetching signed URL:', error);
       return null;
     }
   }
@@ -634,7 +642,7 @@ export class ImageUploadService {
       }
       return null;
     } catch (error) {
-      console.log('❌ Could not get current user ID from server auth');
+  logger.warn('❌ Could not get current user ID from server auth');
       return null;
     }
   }
@@ -644,7 +652,7 @@ export class ImageUploadService {
    */
   static clearSignedUrlCache(): void {
     this.signedUrlCache.clear();
-    console.log('🗑️ Cleared signed URL cache');
+    logger.debug('🗑️ Cleared signed URL cache');
   }
 
   /**
@@ -654,20 +662,20 @@ export class ImageUploadService {
    * @returns Promise with signed URL
    */
   static async getUserProfilePictureSignedUrl(userId: string, expiry: number = 4200): Promise<string | null> {
-    console.log('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
+  logger.debug('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
     
     try {
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
-      console.log('🔍 Bearer token found:', !!bearerToken);
-      console.log('🔍 Bearer token length:', bearerToken?.length);
+  logger.debug('🔍 Bearer token found:', !!bearerToken);
+  logger.debug('🔍 Bearer token length:', bearerToken?.length);
       if (!bearerToken) {
-        console.log('❌ No bearer token found');
+    logger.warn('❌ No bearer token found');
         return null;
       }
 
       const url = `/api/upload/profile-picture/${userId}/url?expiry=${expiry}`;
-      console.log('🔍 Fetching signed URL from:', url);
+  logger.debug('🔍 Fetching signed URL from:', url);
       
       const response = await fetch(url, {
         headers: {
@@ -675,37 +683,37 @@ export class ImageUploadService {
         },
       });
       
-      console.log('🔍 Response status:', response.status);
-      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
+  logger.debug('🔍 Response status:', response.status);
+  logger.debug('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('❌ Response not OK:', errorText);
+  logger.error('❌ Response not OK:', errorText);
         
         // Handle specific error cases
         if (response.status === 404) {
-          console.log('❌ Profile picture not found for user:', userId);
+          logger.warn('❌ Profile picture not found for user:', userId);
         } else if (response.status === 401) {
-          console.log('❌ Unauthorized - token may be invalid');
+          logger.warn('❌ Unauthorized - token may be invalid');
         } else if (response.status === 500) {
-          console.log('❌ Server error while fetching signed URL');
+          logger.error('❌ Server error while fetching signed URL');
         }
         
         return null;
       }
 
       const result = await response.json();
-      console.log('✅ Signed URL result:', result);
+  logger.info('✅ Signed URL result:', result);
       
       if (result.success && result.data && result.data.url) {
-        console.log('✅ Valid signed URL received for user:', userId);
+  logger.info('✅ Valid signed URL received for user:', userId);
         return result.data.url;
       } else {
-        console.log('❌ Invalid response format:', result);
+  logger.warn('❌ Invalid response format:', result);
         return null;
       }
     } catch (error) {
-      console.error('❌ Error getting signed URL:', error);
+  logger.error('❌ Error getting signed URL:', error);
       return null;
     }
   }
@@ -846,7 +854,7 @@ export class ImageUploadService {
     }
 
     if (clearedCount > 0) {
-      console.log(`🗑️ Cleared ${clearedCount} expired cache entries`);
+  logger.info(`🗑️ Cleared ${clearedCount} expired cache entries`);
     }
   }
 

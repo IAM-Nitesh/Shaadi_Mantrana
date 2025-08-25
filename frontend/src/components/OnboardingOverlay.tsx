@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import logger from '../utils/logger';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomIcon from './CustomIcon';
 import Image from 'next/image';
@@ -21,12 +22,12 @@ export default function OnboardingOverlay({ isVisible, onComplete }: OnboardingO
       // Mark onboarding message as seen in backend
       const success = await ProfileService.updateOnboardingMessage(true);
       if (success) {
-        console.log('✅ Onboarding message marked as seen in backend');
+    logger.debug('✅ Onboarding message marked as seen in backend');
       } else {
-        console.warn('⚠️ Failed to update onboarding message in backend, but continuing');
+    logger.warn('⚠️ Failed to update onboarding message in backend, but continuing');
       }
     } catch (error) {
-      console.error('❌ Error updating onboarding message:', error);
+    logger.error('❌ Error updating onboarding message:', error);
     }
 
     // Call the original onComplete function

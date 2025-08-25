@@ -25,15 +25,23 @@ export function usePerformanceOptimization(options: PerformanceOptimizationOptio
     if (!enableScrollOptimization) return;
 
     // Add passive event listeners for better scroll performance
-    const addPassiveScrollListener = (element: Element) => {
-      element.addEventListener('scroll', () => {}, { passive: true });
-      element.addEventListener('touchstart', () => {}, { passive: true });
-      element.addEventListener('touchmove', () => {}, { passive: true });
+    const addPassiveScrollListener = (element: Element | Document | Window) => {
+      try {
+        // Some environments might pass Document or Window; guard accordingly
+        // @ts-ignore
+        element.addEventListener && element.addEventListener('scroll', () => {}, { passive: true });
+        // @ts-ignore
+        element.addEventListener && element.addEventListener('touchstart', () => {}, { passive: true });
+        // @ts-ignore
+        element.addEventListener && element.addEventListener('touchmove', () => {}, { passive: true });
+      } catch (_) {
+        // ignore if not supported
+      }
     };
 
-    // Apply to document and window
-    addPassiveScrollListener(document);
-    addPassiveScrollListener(window as any);
+    // Apply to document and window when available
+    if (typeof document !== 'undefined') addPassiveScrollListener(document);
+    if (typeof window !== 'undefined') addPassiveScrollListener(window);
   }, [enableScrollOptimization]);
 
   // Optimize image loading

@@ -448,6 +448,57 @@ class ProfileController {
     }
   }
 
+  // Update first login flag
+  async updateFirstLoginFlag(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { isFirstLogin } = req.body;
+
+      console.log(`🔄 Update first login flag - User: ${userId}, isFirstLogin: ${isFirstLogin}`);
+
+      // Validate input
+      if (typeof isFirstLogin !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: 'isFirstLogin must be a boolean'
+        });
+      }
+
+      // Update the flag in User collection
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          isFirstLogin: isFirstLogin,
+          lastActive: new Date()
+        },
+        { new: true }
+      );
+
+      if (!user) {
+        console.warn(`❌ User not found for first login flag update: ${req.user.userUuid} (${req.user.email})`);
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      console.log(`✅ First login flag updated for user: ${user.email} (${user.userUuid}) - isFirstLogin: ${isFirstLogin}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'First login flag updated successfully',
+        isFirstLogin: user.isFirstLogin
+      });
+
+    } catch (error) {
+      console.error('❌ Update first login flag error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update first login flag'
+      });
+    }
+  }
+
   // Get profiles for matching (discovery)
   async getProfiles(req, res) {
     try {

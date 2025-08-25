@@ -6,6 +6,7 @@ import { gsap } from 'gsap';
 import { Profile } from '../../services/profile-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import { SwipeCardImage } from '../../components/LazyImage';
+import logger from '../../utils/logger';
 
 interface SwipeCardProps {
   profile: {
@@ -69,23 +70,23 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       
       if (hasImages && profile._id) {
         try {
-          console.log('🖼️ Fetching signed URL for profile:', profile._id);
+          logger.debug('🖼️ Fetching signed URL for profile:', profile._id);
           const signedUrl = await ImageUploadService.getUserProfilePictureSignedUrlCached(profile._id);
           if (signedUrl) {
-            console.log('✅ Signed URL fetched successfully for profile:', profile._id);
+            logger.debug('✅ Signed URL fetched successfully for profile:', profile._id);
             setSignedImageUrl(signedUrl);
           } else {
-            console.log('❌ No signed URL returned for profile:', profile._id);
+            logger.debug('❌ No signed URL returned for profile:', profile._id);
             setImageError(true);
             setIsLoadingImage(false);
           }
         } catch (error) {
-          console.error('❌ Failed to fetch signed URL for user:', profile._id, error);
+          logger.error('❌ Failed to fetch signed URL for user:', profile._id, error);
           setImageError(true);
           setIsLoadingImage(false);
         }
       } else {
-        console.log('ℹ️ No images field or profile ID for profile:', profile._id);
+        logger.debug('ℹ️ No images field or profile ID for profile:', profile._id);
         setImageError(true);
         setIsLoadingImage(false);
       }
@@ -94,7 +95,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
     fetchSignedUrl();
     
     // Debug: Log profile data received by SwipeCard
-    console.log('🎯 SwipeCard received profile:', {
+    logger.debug('🎯 SwipeCard received profile:', {
       id: profile._id,
       name: profile.profile?.name,
       hasImages: !!profile.profile?.images,
@@ -127,7 +128,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       }
       onSwipe(direction);
     } catch (error) {
-      console.warn('Error in fallback swipe handler:', error);
+      logger.warn('Error in fallback swipe handler:', error);
     }
   };
 
@@ -156,14 +157,14 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   const profileImage = getProfileImage();
 
   const handleImageError = () => {
-    console.log('🖼️ Image failed to load, showing fallback');
+    logger.debug('🖼️ Image failed to load, showing fallback');
     setImageError(true);
     setImageLoaded(false);
     setIsLoadingImage(false);
   };
 
   const handleImageLoad = () => {
-    console.log('🖼️ Image loaded successfully');
+    logger.debug('🖼️ Image loaded successfully');
     setImageLoaded(true);
     setImageError(false);
     setIsLoadingImage(false);
@@ -184,7 +185,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           currentDragX = deltaX;
           setDragX(deltaX);
         } catch (error) {
-          console.warn('Error in handleMouseMove:', error);
+          logger.warn('Error in handleMouseMove:', error);
         }
       };
       
@@ -202,14 +203,14 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
         } catch (error) {
-          console.warn('Error in handleMouseUp:', error);
+          logger.warn('Error in handleMouseUp:', error);
         }
       };
       
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     } catch (error) {
-      console.warn('Error in handleMouseDown:', error);
+      logger.warn('Error in handleMouseDown:', error);
     }
   };
 
@@ -228,7 +229,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           currentDragX = deltaX;
           setDragX(deltaX);
         } catch (error) {
-          console.warn('Error in handleTouchMove:', error);
+          logger.warn('Error in handleTouchMove:', error);
         }
       };
       
@@ -246,14 +247,14 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           document.removeEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
           document.removeEventListener('touchend', handleTouchEnd);
         } catch (error) {
-          console.warn('Error in handleTouchEnd:', error);
+          logger.warn('Error in handleTouchEnd:', error);
         }
       };
       
       document.addEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
       document.addEventListener('touchend', handleTouchEnd);
     } catch (error) {
-      console.warn('Error in handleTouchStart:', error);
+      logger.warn('Error in handleTouchStart:', error);
     }
   };
 

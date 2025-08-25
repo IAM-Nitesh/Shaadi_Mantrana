@@ -19,9 +19,11 @@ import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useAndroidBackButton } from '../../hooks/useAndroidBackButton';
+import { ServerAuthService } from '../../services/server-auth-service';
 
 import { gsap } from 'gsap';
 import { AnimatePresence, motion } from 'framer-motion';
+import logger from '../../utils/logger';
 
 function DashboardContent() {
   const router = useRouter();
@@ -74,6 +76,43 @@ function DashboardContent() {
   const headerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
+
+  // Access Control: Check if user can access dashboard
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const authStatus = await ServerAuthService.checkAuthStatus();
+        if (!authStatus.authenticated) {
+          router.push('/');
+          return;
+        }
+
+        const user = authStatus.user;
+        if (!user) {
+          router.push('/');
+          return;
+        }
+
+        // Access Control Logic: Only allow access if profileCompleteness is 100%
+        if (user.profileCompleteness < 100) {
+          logger.debug('🚫 Access denied: Profile incomplete - redirecting to profile');
+          router.replace('/profile');
+          return;
+        }
+
+        // Set user state
+        setProfileCompleteness(user.profileCompleteness || 0);
+        setIsFirstLogin(user.isFirstLogin || false);
+
+        logger.debug('✅ Dashboard access granted - Profile complete');
+      } catch (error) {
+        logger.error('Error checking dashboard access:', error);
+        router.push('/');
+      }
+    };
+
+    checkAccess();
+  }, [router]);
 
   // Reset interacted profiles when profiles change
   useEffect(() => {
@@ -147,7 +186,7 @@ function DashboardContent() {
         }
         
         if (err.message.includes('Daily like limit reached')) {
-          console.log('🚫 Dashboard: Daily limit reached');
+          logger.debug('🚫 Dashboard: Daily limit reached');
           setProfiles([]);
           setDailyLimitReached(true);
           setError('');
@@ -166,7 +205,7 @@ function DashboardContent() {
 
   // Load profiles on component mount
   useEffect(() => {
-    console.log('✅ Dashboard: User authenticated and profile complete, loading profiles...');
+    logger.debug('✅ Dashboard: User authenticated and profile complete, loading profiles...');
     loadProfiles();
   }, []);
 
@@ -357,7 +396,7 @@ function DashboardContent() {
 
   const handleKeepSwiping = useCallback(() => {
     // Continue swiping - no action needed, just close the toast
-    console.log('User chose to keep swiping');
+    logger.debug('User chose to keep swiping');
   }, []);
 
   const handleStartChat = useCallback(() => {
@@ -392,7 +431,7 @@ function DashboardContent() {
     
     // Check if profile has already been interacted with in this session
     if (interactedProfiles.has(currentProfile._id)) {
-      console.log('Profile already interacted with in this session, moving to next profile');
+      logger.debug('Profile already interacted with in this session, moving to next profile');
       setTimeout(() => {
         setCurrentIndex(prev => prev + 1);
       }, 300);
@@ -406,7 +445,7 @@ function DashboardContent() {
       if (direction === 'right') {
         // Like the profile
         const likeResponse = await MatchingService.likeProfile(currentProfile._id);
-        console.log('Like response:', likeResponse);
+        logger.debug('Like response:', likeResponse);
         
         // Check if profile was already liked
         if (likeResponse.alreadyLiked) {

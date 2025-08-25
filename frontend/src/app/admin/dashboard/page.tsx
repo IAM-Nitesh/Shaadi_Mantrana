@@ -8,6 +8,7 @@ import ToastService from '../../../services/toastService';
 import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
+import logger from '../../../utils/logger';
 
 interface DashboardData {
   storageStats: {
@@ -37,12 +38,12 @@ export default function AdminDashboard() {
     try {
       const token = await ServerAuthService.getBearerToken();
       if (!token) {
-        console.log('🔍 Dashboard: No auth token found');
+        logger.debug('🔍 Dashboard: No auth token found');
         router.push('/');
         return;
       }
 
-      console.log('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
+      logger.debug('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
       
       // Fetch admin stats (includes storage stats)
       const statsResponse = await fetch('/api/admin/stats', {
@@ -51,16 +52,16 @@ export default function AdminDashboard() {
         }
       });
 
-      console.log('🔍 Dashboard: Response status:', statsResponse.status);
+      logger.debug('🔍 Dashboard: Response status:', statsResponse.status);
 
       if (!statsResponse.ok) {
         const errorText = await statsResponse.text();
-        console.error('🔍 Dashboard: API error response:', errorText);
+        logger.error('🔍 Dashboard: API error response:', errorText);
         throw new Error(`Failed to fetch dashboard data: ${statsResponse.status} ${errorText}`);
       }
 
       const data = await statsResponse.json();
-      console.log('🔍 Dashboard: Received data:', data);
+      logger.debug('🔍 Dashboard: Received data:', data);
       
       // Transform the data to match the expected format
       const dashboardData: DashboardData = {
@@ -77,7 +78,7 @@ export default function AdminDashboard() {
         }
       };
 
-      console.log('🔍 Dashboard: Transformed data:', dashboardData);
+      logger.debug('🔍 Dashboard: Transformed data:', dashboardData);
       setDashboardData(dashboardData);
       
       // Animate widgets on load
@@ -87,7 +88,7 @@ export default function AdminDashboard() {
       );
 
     } catch (error) {
-      console.error('❌ Dashboard: Error fetching dashboard data:', error);
+      logger.error('❌ Dashboard: Error fetching dashboard data:', error);
       setError(`Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);

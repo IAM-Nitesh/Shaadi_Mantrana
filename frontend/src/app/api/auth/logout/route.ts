@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const authToken = request.cookies.get('authToken')?.value;
 
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error:', error);
     
     // Still clear cookies even if there's an error
     const response = NextResponse.json({ 
@@ -45,4 +47,6 @@ export async function POST(request: NextRequest) {
 
     return response;
   }
-} 
+}
+
+export const POST = withRouteLogging(handlePost);

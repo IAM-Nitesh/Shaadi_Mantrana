@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '../../../../../../services/configService';
+import logger from '../../../../../../utils/logger';
+import { withRouteLogging } from '../../../../route-logger';
 
-export async function POST(
+async function handlePost(
   request: NextRequest,
   { params }: { params: { userId: string; action: string } }
 ) {
@@ -31,7 +33,7 @@ export async function POST(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`Admin user ${params.action} API error:`, error);
+    logger.error(`Admin user ${params.action} API error:`, error);
     return NextResponse.json(
       { error: `Failed to ${params.action} user` },
       { status: 500 }
@@ -39,7 +41,9 @@ export async function POST(
   }
 }
 
-export async function PATCH(
+export const POST = withRouteLogging(handlePost);
+
+async function handlePatch(
   request: NextRequest,
   { params }: { params: { userId: string; action: string } }
 ) {
@@ -69,10 +73,12 @@ export async function PATCH(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`Admin user ${params.action} API error:`, error);
+    logger.error(`Admin user ${params.action} API error:`, error);
     return NextResponse.json(
       { error: `Failed to ${params.action} user` },
       { status: 500 }
     );
   }
-} 
+}
+
+export const PATCH = withRouteLogging(handlePatch);

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Transition, Easing } from 'framer-motion';
 
 interface PageTransitionContextType {
   isTransitioning: boolean;
@@ -29,12 +30,16 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
   const [previousPath, setPreviousPath] = useState('');
   const [currentPath, setCurrentPath] = useState(pathname);
 
-  // Ultra-fast transition settings for instant feel
-  const transitionSettings = useMemo(() => ({
-    duration: 0.08, // Ultra-fast for instant feel
-    ease: [0.4, 0, 0.2, 1], // Optimized easing curve
-    opacity: { duration: 0.06 }, // Instant opacity
-  }), []);
+  // Ultra-fast transition settings for instant feel (typed)
+  const transitionSettings = useMemo(() => {
+    const easing: Easing = [0.4, 0, 0.2, 1]; // cubic-bezier
+    const t: Transition = {
+      duration: 0.08,
+      ease: easing,
+      opacity: { duration: 0.06 },
+    };
+    return t;
+  }, []);
 
   useEffect(() => {
     if (pathname !== currentPath) {

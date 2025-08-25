@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useServerAuth } from '../hooks/useServerAuth';
 import { ServerAuthService } from '../services/server-auth-service';
 import HeartbeatLoader from './HeartbeatLoader';
+import logger from '../utils/logger';
 
 interface ServerAuthGuardProps {
   children: React.ReactNode;
@@ -39,7 +40,7 @@ export default function ServerAuthGuard({
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (isLoading && !isAuthenticated) {
-        console.log('⏰ ServerAuthGuard: Authentication timeout reached');
+        logger.debug('⏰ ServerAuthGuard: Authentication timeout reached');
         setAuthTimeout(true);
       }
     }, 15000); // 15 seconds timeout
@@ -55,7 +56,7 @@ export default function ServerAuthGuard({
       try {
         await checkAuth();
       } catch (error) {
-        console.error('❌ ServerAuthGuard: Authentication check failed:', error);
+        logger.error('❌ ServerAuthGuard: Authentication check failed:', error);
         setShowFallback(true);
       }
     };
@@ -70,7 +71,7 @@ export default function ServerAuthGuard({
     if (!isClientInitialized || hasRedirected) return;
 
     if (redirectTo && redirectTo !== window.location.pathname) {
-      console.log(`🔄 ServerAuthGuard: Redirecting to ${redirectTo}`);
+      logger.debug(`🔄 ServerAuthGuard: Redirecting to ${redirectTo}`);
       setHasRedirected(true);
       router.push(redirectTo);
       return;
@@ -85,7 +86,7 @@ export default function ServerAuthGuard({
                          currentPath.startsWith('/settings');
       
       if (isUserRoute) {
-        console.log('🚫 ServerAuthGuard: Admin user trying to access user routes, redirecting to admin dashboard');
+        logger.debug('🚫 ServerAuthGuard: Admin user trying to access user routes, redirecting to admin dashboard');
         setHasRedirected(true);
         router.push('/admin/dashboard');
         return;
@@ -94,7 +95,7 @@ export default function ServerAuthGuard({
 
     // Handle onboarding message for users
     if (user && user.role === 'user' && !user.hasSeenOnboardingMessage && user.isFirstLogin) {
-      console.log('🎯 ServerAuthGuard: Showing onboarding message for first-time user');
+      logger.debug('🎯 ServerAuthGuard: Showing onboarding message for first-time user');
     }
 
   }, [isClientInitialized, isAuthenticated, user, redirectTo, requireAuth, requireAdmin, requireCompleteProfile, fallbackPath, router, hasRedirected, authTimeout]);

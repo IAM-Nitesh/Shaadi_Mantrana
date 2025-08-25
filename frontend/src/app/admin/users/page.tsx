@@ -10,6 +10,7 @@ import { gsap } from 'gsap';
 import Image from 'next/image';
 import { ImageUploadService } from '../../../services/image-upload-service';
 import ToastService from '../../../services/toastService';
+import logger from '../../../utils/logger';
 
 interface User {
   _id: string;
@@ -63,40 +64,40 @@ export default function AdminUsers() {
     
     // Set up automatic refresh every 5 minutes to ensure profile completeness is up-to-date
     const autoRefreshInterval = setInterval(() => {
-      console.log('🔄 Auto-refreshing user data to ensure profile completeness is current...');
+      logger.debug('🔄 Auto-refreshing user data to ensure profile completeness is current...');
       fetchUsers(true);
     }, 5 * 60 * 1000); // 5 minutes
     
     // Test ImageUploadService
-    console.log('🔍 Testing ImageUploadService availability...');
-    console.log('🔍 ImageUploadService:', ImageUploadService);
-    console.log('🔍 ImageUploadService.getUserProfilePictureSignedUrlCached:', ImageUploadService?.getUserProfilePictureSignedUrlCached);
+    logger.debug('🔍 Testing ImageUploadService availability...');
+    logger.debug('🔍 ImageUploadService:', ImageUploadService);
+    logger.debug('🔍 ImageUploadService.getUserProfilePictureSignedUrlCached:', ImageUploadService?.getUserProfilePictureSignedUrlCached);
     
     // Test a simple call
     if (ImageUploadService?.getUserProfilePictureSignedUrlCached) {
-      console.log('🔍 ImageUploadService.getUserProfilePictureSignedUrlCached is available, testing...');
+      logger.debug('🔍 ImageUploadService.getUserProfilePictureSignedUrlCached is available, testing...');
       
       // Test with a simple synchronous operation first
-      console.log('🔍 Testing ImageUploadService availability...');
-      console.log('🔍 ImageUploadService type:', typeof ImageUploadService);
-      console.log('🔍 getUserProfilePictureSignedUrlCached type:', typeof ImageUploadService.getUserProfilePictureSignedUrlCached);
+      logger.debug('🔍 Testing ImageUploadService availability...');
+      logger.debug('🔍 ImageUploadService type:', typeof ImageUploadService);
+      logger.debug('🔍 getUserProfilePictureSignedUrlCached type:', typeof ImageUploadService.getUserProfilePictureSignedUrlCached);
       
       // Test the actual call
       ImageUploadService.getUserProfilePictureSignedUrlCached('test-user-id')
         .then(result => {
-          console.log('🔍 Test call result:', result);
+          logger.debug('🔍 Test call result:', result);
         })
         .catch(error => {
-          console.error('❌ Test call error:', error);
-          console.error('❌ Error details:', {
+          logger.error('❌ Test call error:', error);
+          logger.error('❌ Error details:', {
             name: error?.name,
             message: error?.message,
             stack: error?.stack
           });
         });
     } else {
-      console.error('❌ ImageUploadService.getUserProfilePictureSignedUrlCached is not available');
-      console.error('❌ ImageUploadService:', ImageUploadService);
+      logger.error('❌ ImageUploadService.getUserProfilePictureSignedUrlCached is not available');
+      logger.error('❌ ImageUploadService:', ImageUploadService);
     }
     
     // Cleanup interval on component unmount
@@ -123,12 +124,12 @@ export default function AdminUsers() {
     try {
       const token = await ServerAuthService.getBearerToken();
       if (!token) {
-        console.log('🔍 Users: No auth token found');
+        logger.debug('🔍 Users: No auth token found');
         router.push('/');
         return;
       }
 
-      console.log('🔍 Users: Fetching users from /api/admin/users', forceRefresh ? '(force refresh)' : '');
+      logger.debug('🔍 Users: Fetching users from /api/admin/users', forceRefresh ? '(force refresh)' : '');
 
       const response = await fetch('/api/admin/users', {
         headers: {
@@ -137,23 +138,23 @@ export default function AdminUsers() {
         }
       });
 
-      console.log('🔍 Users: Response status:', response.status);
+      logger.debug('🔍 Users: Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🔍 Users: API error response:', errorText);
+        logger.error('🔍 Users: API error response:', errorText);
         throw new Error(`Failed to fetch users: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('🔍 Users: Received data:', data);
-      console.log('🔍 Users: Number of users:', data.users?.length || 0);
+      logger.debug('🔍 Users: Received data:', data);
+      logger.debug('🔍 Users: Number of users:', data.users?.length || 0);
       
       // Debug: Log each user's role and profile completeness
       if (data.users && data.users.length > 0) {
-        console.log('🔍 Users: User details:');
+        logger.debug('🔍 Users: User details:');
         data.users.forEach((user: any, index: number) => {
-          console.log(`   ${index + 1}. ${user.email} - Role: ${user.role}, Status: ${user.status}, Approved: ${user.approvedByAdmin}, Profile Complete: ${user.profileCompleteness || 0}%`);
+          logger.debug(`   ${index + 1}. ${user.email} - Role: ${user.role}, Status: ${user.status}, Approved: ${user.approvedByAdmin}, Profile Complete: ${user.profileCompleteness || 0}%`);
         });
       }
       
@@ -161,9 +162,9 @@ export default function AdminUsers() {
       const invitedUsers = data.users?.filter((user: any) => 
         (user.profileCompleteness || 0) < 100
       ) || [];
-      console.log('🔍 Invited users found:', invitedUsers.length);
+      logger.debug('🔍 Invited users found:', invitedUsers.length);
       invitedUsers.forEach((user: any, index: number) => {
-        console.log(`   Invited ${index + 1}: ${user.email} - Profile: ${user.profileCompleteness || 0}%, Approved: ${user.approvedByAdmin}`);
+        logger.debug(`   Invited ${index + 1}: ${user.email} - Profile: ${user.profileCompleteness || 0}%, Approved: ${user.approvedByAdmin}`);
       });
       
       setUsers(data.users || []);
@@ -174,60 +175,60 @@ export default function AdminUsers() {
       
       // Debug: Check admin authentication token
       const adminToken = await ServerAuthService.getBearerToken();
-      console.log('🔍 Admin auth token available:', !!adminToken);
-      console.log('🔍 Admin auth token length:', adminToken?.length);
-      console.log('🔍 Admin auth token preview:', adminToken?.substring(0, 20) + '...');
+      logger.debug('🔍 Admin auth token available:', !!adminToken);
+      logger.debug('🔍 Admin auth token length:', adminToken?.length);
+      logger.debug('🔍 Admin auth token preview:', adminToken?.substring(0, 20) + '...');
       
       // Use batch processing for better performance
       if (data.users && data.users.length > 0) {
         try {
-          console.log('🔍 Starting batch signed URL fetch for users...');
+          logger.debug('🔍 Starting batch signed URL fetch for users...');
           const userIds = data.users.map((user: any) => user._id);
-          console.log('🔍 User IDs to fetch:', userIds);
+          logger.debug('🔍 User IDs to fetch:', userIds);
           
           // Use the batch method for efficient fetching
           const batchResults = await ImageUploadService.getBatchSignedUrls(userIds);
-          console.log('🔍 Batch results size:', batchResults.size);
+          logger.debug('🔍 Batch results size:', batchResults.size);
           
           // Convert batch results to our map
           for (const [userId, signedUrl] of batchResults.entries()) {
             if (signedUrl) {
-              console.log(`✅ Got signed URL for ${userId}: ${signedUrl.substring(0, 50)}...`);
+              logger.debug(`✅ Got signed URL for ${userId}: ${signedUrl.substring(0, 50)}...`);
               newProfileImages.set(userId, signedUrl);
             } else {
-              console.log(`❌ No signed URL returned for ${userId}`);
+              logger.debug(`❌ No signed URL returned for ${userId}`);
             }
           }
         } catch (error) {
-          console.error('❌ Error in batch signed URL fetch:', error);
+          logger.error('❌ Error in batch signed URL fetch:', error);
           
           // Fallback to individual requests if batch fails
-          console.log('🔍 Falling back to individual requests...');
+          logger.debug('🔍 Falling back to individual requests...');
           for (const user of data.users || []) {
             try {
-              console.log(`🔍 Getting signed URL for user ${user._id} (${user.email})`);
-              console.log('🔍 About to call ImageUploadService.getUserProfilePictureSignedUrlCached...');
+              logger.debug(`🔍 Getting signed URL for user ${user._id} (${user.email})`);
+              logger.debug('🔍 About to call ImageUploadService.getUserProfilePictureSignedUrlCached...');
               const signedUrl = await getSignedUrlForUser(user._id, user.profile?.images || '');
-              console.log('🔍 getSignedUrlForUser returned:', signedUrl);
+              logger.debug('🔍 getSignedUrlForUser returned:', signedUrl);
               if (signedUrl) {
-                console.log(`✅ Got signed URL for ${user._id}: ${signedUrl.substring(0, 50)}...`);
+                logger.debug(`✅ Got signed URL for ${user._id}: ${signedUrl.substring(0, 50)}...`);
                 newProfileImages.set(user._id, signedUrl);
               } else {
-                console.log(`❌ No signed URL returned for ${user._id}`);
+                logger.debug(`❌ No signed URL returned for ${user._id}`);
               }
             } catch (error) {
-              console.error('Error getting signed URL for user:', user._id, error);
+              logger.error('Error getting signed URL for user:', user._id, error);
             }
           }
         }
       }
       
-      console.log('🔍 Final profile images map size:', newProfileImages.size);
-      console.log('🔍 Profile images keys:', Array.from(newProfileImages.keys()));
+      logger.debug('🔍 Final profile images map size:', newProfileImages.size);
+      logger.debug('🔍 Profile images keys:', Array.from(newProfileImages.keys()));
       
       // Log cache status for debugging
       const cacheStatus = ImageUploadService.getCacheStatus();
-      console.log('🔍 Cache status:', cacheStatus);
+      logger.debug('🔍 Cache status:', cacheStatus);
       
       setProfileImages(newProfileImages);
       setImagesLoading(false);
@@ -235,7 +236,7 @@ export default function AdminUsers() {
       // Preload signed URLs for better performance on subsequent visits
       if (data.users && data.users.length > 0) {
         const userIds = data.users.map((user: any) => user._id);
-        console.log('🔍 Preloading signed URLs for better performance...');
+        logger.debug('🔍 Preloading signed URLs for better performance...');
         ImageUploadService.preloadSignedUrls(userIds);
       }
       
@@ -261,7 +262,7 @@ export default function AdminUsers() {
       );
 
     } catch (error) {
-      console.error('❌ Users: Error fetching users:', error);
+      logger.error('❌ Users: Error fetching users:', error);
       setError(`Failed to load users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
@@ -325,7 +326,7 @@ export default function AdminUsers() {
       // Refetch users to update stats
       fetchUsers();
     } catch (error) {
-      console.error('Error resuming user:', error);
+      logger.error('Error resuming user:', error);
       
       // Reset loading state on error
       setUsers(prevUsers => 
@@ -398,7 +399,7 @@ export default function AdminUsers() {
       // Refetch users to update stats
       fetchUsers();
     } catch (error) {
-      console.error('Error pausing user:', error);
+      logger.error('Error pausing user:', error);
       
       // Reset loading state on error
       setUsers(prevUsers => 
@@ -436,12 +437,12 @@ export default function AdminUsers() {
       }
 
       const result = await response.json();
-      console.log('✅ Invitation resent successfully:', result);
+      logger.debug('✅ Invitation resent successfully:', result);
 
       // Refetch users to update any invitation-related data
       fetchUsers();
     } catch (error) {
-      console.error('Error resending invitation:', error);
+      logger.error('Error resending invitation:', error);
     }
   };
 
@@ -457,25 +458,25 @@ export default function AdminUsers() {
 
   const getSignedUrlForUser = async (userId: string, imagePath: string): Promise<string | null> => {
     try {
-      console.log(`🔍 getSignedUrlForUser called for userId: ${userId}, imagePath: ${imagePath}`);
-      console.log(`🔍 ImageUploadService available:`, !!ImageUploadService);
-      console.log(`🔍 ImageUploadService.getUserProfilePictureSignedUrlCached available:`, !!ImageUploadService?.getUserProfilePictureSignedUrlCached);
+      logger.debug(`🔍 getSignedUrlForUser called for userId: ${userId}, imagePath: ${imagePath}`);
+      logger.debug(`🔍 ImageUploadService available:`, !!ImageUploadService);
+      logger.debug(`🔍 ImageUploadService.getUserProfilePictureSignedUrlCached available:`, !!ImageUploadService?.getUserProfilePictureSignedUrlCached);
       
       if (!imagePath) {
-        console.log(`🔍 No imagePath provided for user ${userId}, but will still try to get signed URL`);
+        logger.debug(`🔍 No imagePath provided for user ${userId}, but will still try to get signed URL`);
       }
       
       // Use the cached version for faster loading
-      console.log(`🔍 Testing cached signed URL for user: ${userId}`);
-      console.log(`🔍 About to call ImageUploadService.getUserProfilePictureSignedUrlCached(${userId})`);
+      logger.debug(`🔍 Testing cached signed URL for user: ${userId}`);
+      logger.debug(`🔍 About to call ImageUploadService.getUserProfilePictureSignedUrlCached(${userId})`);
       
       try {
         const signedUrl = await ImageUploadService.getUserProfilePictureSignedUrlCached(userId);
-        console.log(`🔍 Cached result for user ${userId}:`, signedUrl);
+        logger.debug(`🔍 Cached result for user ${userId}:`, signedUrl);
         return signedUrl;
       } catch (error) {
-        console.error(`❌ Error calling ImageUploadService.getUserProfilePictureSignedUrlCached for user ${userId}:`, error);
-        console.error(`❌ Error details:`, {
+        logger.error(`❌ Error calling ImageUploadService.getUserProfilePictureSignedUrlCached for user ${userId}:`, error);
+        logger.error(`❌ Error details:`, {
           name: error?.name,
           message: error?.message,
           stack: error?.stack
@@ -483,7 +484,7 @@ export default function AdminUsers() {
         return null;
       }
     } catch (error) {
-      console.error('❌ Error getting signed URL for user:', userId, error);
+      logger.error('❌ Error getting signed URL for user:', userId, error);
       return null;
     }
   };
@@ -537,7 +538,7 @@ export default function AdminUsers() {
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Users</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={fetchUsers}
+            onClick={() => fetchUsers()}
             className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
           >
             Retry
@@ -663,9 +664,9 @@ export default function AdminUsers() {
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
                           {(() => {
                             const hasImage = profileImages.get(user._id);
-                            console.log(`🔍 User ${user._id} (${user.email}): hasImage = ${!!hasImage}`);
+                            logger.debug(`🔍 User ${user._id} (${user.email}): hasImage = ${!!hasImage}`);
                             if (hasImage) {
-                              console.log(`🔍 Image URL for ${user._id}: ${hasImage.substring(0, 50)}...`);
+                              logger.debug(`🔍 Image URL for ${user._id}: ${hasImage.substring(0, 50)}...`);
                             }
                             return hasImage ? (
                               <Image
@@ -675,7 +676,7 @@ export default function AdminUsers() {
                                 height={40}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  console.log(`❌ Image failed to load for user ${user._id}`);
+                                  logger.debug(`❌ Image failed to load for user ${user._id}`);
                                   // Fallback to initial if image fails to load
                                   const target = e.target as HTMLImageElement;
                                   target.style.display = 'none';
@@ -685,7 +686,7 @@ export default function AdminUsers() {
                                   }
                                 }}
                                 onLoad={() => {
-                                  console.log(`✅ Image loaded successfully for user ${user._id}`);
+                                  logger.debug(`✅ Image loaded successfully for user ${user._id}`);
                                 }}
                               />
                             ) : (

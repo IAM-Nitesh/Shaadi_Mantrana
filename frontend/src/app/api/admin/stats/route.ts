@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '../../../../services/configService';
+import logger from '../../../../utils/logger';
+import { withRouteLogging } from '../../route-logger';
 
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -24,10 +26,12 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Admin stats API error:', error);
+    logger.error('Admin stats API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch admin stats' },
       { status: 500 }
     );
   }
-} 
+}
+
+export const GET = withRouteLogging(handleGet);
