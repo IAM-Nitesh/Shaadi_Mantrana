@@ -43,7 +43,6 @@ async function handlePost(request: NextRequest) {
       }
 
       if (result.success && result.session) {
-        
         // Set HTTP-only cookies for security
         const response = NextResponse.json({
           success: true,
@@ -51,32 +50,27 @@ async function handlePost(request: NextRequest) {
           redirectTo: determineRedirectPath(result.user)
         });
 
-        // Set secure, HTTP-only cookies
-        response.cookies.set('authToken', result.session.accessToken, {
+        // Build cookie options and avoid forcing domain in non-production
+        const baseCookieOpts = {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
+          sameSite: 'lax' as const,
           path: '/',
-          domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
+        };
+
+        response.cookies.set('authToken', result.session.accessToken, {
+          ...baseCookieOpts,
+          maxAge: 60 * 60 * 24 * 7, // 7 days
         });
 
         response.cookies.set('refreshToken', result.session.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          ...baseCookieOpts,
           maxAge: 60 * 60 * 24 * 30, // 30 days
-          path: '/',
-          domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
         });
 
         response.cookies.set('sessionId', result.session.sessionId, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          ...baseCookieOpts,
           maxAge: 60 * 60 * 24 * 7, // 7 days
-          path: '/',
-          domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
         });
 
         return response;
@@ -162,7 +156,8 @@ function determineRedirectPath(user: any): string {
   // Case 3: User with complete profile (profileCompleteness = 100%)
   // Allow access to all pages - NO REDIRECT NEEDED
   if (profileCompleteness >= 100) {
-    return null; // No redirect needed - user can access any page
+    // No forced redirect is required; return dashboard as a safe explicit path
+    return '/dashboard';
   }
 
   // Default case: redirect to profile (safety fallback)

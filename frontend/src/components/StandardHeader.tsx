@@ -99,13 +99,14 @@ export default function StandardHeader({
           {rightElement}
           
           {showProfileLink && (
-            <button
-              onClick={() => router.push('/profile')}
+            // Use a plain anchor to avoid Next Link/runtime issues in the current dev bundle
+            <a
+              href="/profile"
               aria-label="Profile"
               className="w-10 h-10 flex items-center justify-center bg-white border-2 border-rose-500 rounded-2xl shadow-lg hover:bg-rose-50"
             >
               <CustomIcon name="ri-user-line" className="text-rose-500" />
-            </button>
+            </a>
           )}
         </div>
       </div>
