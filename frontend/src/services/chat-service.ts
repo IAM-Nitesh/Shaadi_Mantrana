@@ -26,6 +26,8 @@ export interface ChatConnection {
 
 export class ChatService {
   private static baseUrl = configService.apiBaseUrl;
+  private static socket: Socket | null = null;
+  private static messageListeners: Array<(msg: ChatMessage) => void> = [];
 
   /**
    * Get chat messages with caching for 1 day
@@ -80,6 +82,88 @@ export class ChatService {
   logger.error({ err: error }, 'Error sending message');
       }
       throw error;
+    }
+  }
+
+  // Initialize Socket.IO connection and join a room
+  static async initSocket(connectionId: string) {
+    try {
+      if (this.socket && this.socket.connected) {
+        // already connected
+        this.socket.emit('join_room', { connectionId });
+        return;
+      }
+      // Ensure we have freshest auth status when initializing sockets
+      try { (await import('./auth-utils')).clearAuthStatusCache(); } catch (e) { /* ignore */ }
+
+      const authenticated = await isAuthenticated();
+      if (!authenticated) throw new Error('User not authenticated');
+
+      // Attempt to get bearer token; if missing, clear cache once and retry (helps transient 401s)
+      let bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        if (process.env.NODE_ENV === 'development') logger.warn('🔁 ChatService: Bearer token missing, clearing auth cache and retrying');
+        try { (await import('./auth-utils')).clearAuthStatusCache(); } catch (e) { /* ignore */ }
+        bearerToken = await getBearerToken();
+      }
+      if (!bearerToken) throw new Error('No auth token');
+
+      // create socket with token in auth handshake
+      this.socket = io(this.baseUrl, {
+        auth: { token: bearerToken },
+        transports: ['websocket'],
+        reconnectionAttempts: 3
+      });
+
+      // Clear previous listeners just in case
+      this.socket.off('new_message');
+
+      this.socket.on('connect', () => {
+        // join the chat room
+        this.socket?.emit('join_room', { connectionId });
+      });
+
+      this.socket.on('authenticated', (data: any) => {
+        // optionally handle auth
+        // join room on successful authentication
+        this.socket?.emit('join_room', { connectionId });
+      });
+
+      this.socket.on('new_message', (msg: ChatMessage) => {
+        // notify all listeners
+        this.messageListeners.forEach(fn => {
+          try { fn(msg); } catch (e) { /* swallow */ }
+        });
+      });
+
+      this.socket.on('connect_error', (err) => {
+        logger.error('Socket connection error', err);
+      });
+
+    } catch (error) {
+      logger.error('Failed to initialize socket', error);
+      throw error;
+    }
+  }
+
+  static subscribeToMessages(fn: (msg: ChatMessage) => void) {
+    this.messageListeners.push(fn);
+    return () => this.unsubscribeFromMessages(fn);
+  }
+
+  static unsubscribeFromMessages(fn: (msg: ChatMessage) => void) {
+    this.messageListeners = this.messageListeners.filter(f => f !== fn);
+  }
+
+  static disconnectSocket() {
+    try {
+      if (this.socket) {
+        this.socket.disconnect();
+        this.socket = null;
+        this.messageListeners = [];
+      }
+    } catch (e) {
+      logger.error('Error disconnecting socket', e);
     }
   }
 
