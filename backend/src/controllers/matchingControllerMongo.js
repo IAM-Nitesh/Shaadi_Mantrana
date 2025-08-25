@@ -661,13 +661,37 @@ class MatchingController {
       
       // Get connections that are mutual matches
       const connections = await Connection.findMutualMatches(userId);
+      // Bulk fetch DailyLike entries for these connections to read toastSeen
+      const connectionIds = connections.map(c => c._id);
+      const dailyLikes = await DailyLike.find({ connectionId: { $in: connectionIds }, isMutualMatch: true });
+      const dailyLikeMap = new Map();
+      dailyLikes.forEach(dl => {
+        if (dl.connectionId) {
+          dailyLikeMap.set(dl.connectionId.toString(), dl);
+        }
+      });
       
-      const matches = connections.map(connection => {
+  const matches = connections.map(connection => {
         const otherUser = connection.users.find(u => u._id.toString() !== userId);
         
         // Construct location from available fields
         const location = otherUser.profile?.currentResidence || otherUser.profile?.nativePlace || null;
         
+        // Attach toastSeen info if available from DailyLike
+        const dl = dailyLikeMap.get(connection._id.toString());
+
+        let toastSeenMap = null;
+        let shouldShowToast = false;
+        if (dl) {
+          // dl.userId and dl.likedProfileId represent the two participants for the DailyLike
+          toastSeenMap = {};
+          toastSeenMap[dl.userId.toString()] = dl.toastSeen?.userA || false;
+          toastSeenMap[dl.likedProfileId.toString()] = dl.toastSeen?.userB || false;
+
+          const isCurrentUserA = dl.userId.toString() === userId;
+          shouldShowToast = isCurrentUserA ? !dl.toastSeen?.userA : !dl.toastSeen?.userB;
+        }
+
         return {
           connectionId: connection._id,
           profile: {
@@ -690,7 +714,9 @@ class MatchingController {
             profileCompleted: otherUser.profileCompleted || false
           },
           matchDate: connection.timestamps.responded,
-          lastActivity: connection.timestamps.lastActivity
+          lastActivity: connection.timestamps.lastActivity,
+          toastSeen: toastSeenMap,
+          shouldShowToast
         };
       });
       
@@ -761,41 +787,109 @@ class MatchingController {
   async unmatchProfile(req, res) {
     try {
       const userId = req.user.userId;
-      const { targetUserId } = req.body;
-      
-      console.log(`🚫 Unmatch request - User: ${userId}, Target: ${targetUserId}`);
-      
-      if (!targetUserId) {
-        return res.status(400).json({ success: false, error: 'Target user ID is required' });
+      const { targetUserId, connectionId: bodyConnectionId } = req.body;
+
+      console.log(`🚫 Unmatch request - User: ${userId}, Target: ${targetUserId || 'N/A'}, ConnectionId: ${bodyConnectionId || 'N/A'}`);
+
+      if (!targetUserId && !bodyConnectionId) {
+        return res.status(400).json({ success: false, error: 'Either targetUserId or connectionId is required' });
       }
-      
-      if (userId === targetUserId) {
+
+      // Prevent self-unmatch when targetUserId provided
+      if (targetUserId && userId === targetUserId) {
         return res.status(400).json({ success: false, error: 'Cannot unmatch from your own profile' });
       }
-      
-      // Find and delete the like records for both users
-      const [userLike, targetLike] = await Promise.all([
-        DailyLike.findOneAndDelete({ userId, likedProfileId: targetUserId }),
-        DailyLike.findOneAndDelete({ userId: targetUserId, likedProfileId: userId })
-      ]);
-      
-      console.log(`🗑️ Deleted likes - User like: ${userLike?._id}, Target like: ${targetLike?._id}`);
-      
-      // Find and delete the connection if it exists
-      const connection = await Connection.findOneAndDelete({
-        users: { $all: [userId, targetUserId] },
-        status: 'accepted'
-      });
-      
+
+      // Delete like records when we have a targetUserId
+      let userLike = null;
+      let targetLike = null;
+      if (targetUserId) {
+        [userLike, targetLike] = await Promise.all([
+          DailyLike.findOneAndDelete({ userId, likedProfileId: targetUserId }),
+          DailyLike.findOneAndDelete({ userId: targetUserId, likedProfileId: userId })
+        ]);
+
+        console.log(`🗑️ Deleted likes - User like: ${userLike?._id}, Target like: ${targetLike?._id}`);
+      }
+
+      // Resolve and delete the accepted connection
+      let connection = null;
+      if (bodyConnectionId) {
+        // Ensure connection exists and user is part of it
+        const existing = await Connection.findById(bodyConnectionId);
+        if (!existing) {
+          return res.status(404).json({ success: false, error: 'Connection not found' });
+        }
+        if (!existing.users.map(u => u.toString()).includes(userId.toString())) {
+          return res.status(403).json({ success: false, error: 'Not authorized to unmatch this connection' });
+        }
+
+        connection = await Connection.findByIdAndDelete(bodyConnectionId);
+      } else {
+        connection = await Connection.findOneAndDelete({
+          users: { $all: [userId, targetUserId] },
+          status: 'accepted'
+        });
+      }
+
       console.log(`🔗 Deleted connection: ${connection?._id}`);
-      
+
+      // Cascade-delete chat storage (ChatThread + legacy Message docs) if connection was removed
+      let deletedChat = false;
+      let deletedMessagesCount = 0;
+      try {
+        const ChatThread = require('../models/ChatThread');
+        const MessageModel = require('../models/Message');
+
+        if (connection && connection._id) {
+          const connIdStr = connection._id.toString();
+          const ctRes = await ChatThread.deleteOne({ connectionId: connIdStr });
+          const msgRes = await MessageModel.deleteMany({ connectionId: connIdStr });
+
+          deletedChat = !!(ctRes && (ctRes.deletedCount === 1 || ctRes.n === 1));
+          deletedMessagesCount = (msgRes && (msgRes.deletedCount || msgRes.n)) || 0;
+
+          console.log(`🗑️ Deleted chat storage for connection ${connIdStr} - chatDeleted: ${deletedChat}, messagesDeleted: ${deletedMessagesCount}`);
+
+          // Notify chat service (if running) to evict room / notify clients
+          try {
+            const chatService = require('../services/chatService');
+            if (chatService && chatService.io) {
+              // Emit an event so clients can react (close UI / redirect)
+              chatService.io.to(connIdStr).emit('force_unmatched', { connectionId: connIdStr });
+
+              // Remove in-memory chat history and make sockets leave the room
+              if (chatService.chatRooms && typeof chatService.chatRooms.delete === 'function') {
+                chatService.chatRooms.delete(connIdStr);
+              }
+
+              const room = chatService.io.sockets.adapter.rooms.get(connIdStr);
+              if (room && room.size) {
+                for (const socketId of room) {
+                  const s = chatService.io.sockets.sockets.get(socketId);
+                  if (s) {
+                    try { s.leave(connIdStr); } catch (e) { /* ignore */ }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to notify chatService after unmatch:', e.message);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to cascade-delete chat storage:', e.message);
+      }
+
       res.status(200).json({
         success: true,
         message: 'Successfully unmatched',
         deletedLikes: [userLike?._id, targetLike?._id].filter(Boolean),
-        deletedConnection: connection?._id
+        deletedConnection: connection?._id,
+        deletedChatThread: deletedChat,
+        deletedMessagesCount
       });
-      
+
     } catch (error) {
       console.error('❌ Unmatch profile error:', error);
       res.status(500).json({ success: false, error: 'Failed to unmatch profile' });

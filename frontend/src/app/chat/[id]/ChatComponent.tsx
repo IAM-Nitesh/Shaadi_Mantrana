@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { ChatMessage } from '../../../services/chat-service';
 import { ImageUploadService } from '../../../services/image-upload-service';
 import CustomIcon from '../../../components/CustomIcon';
@@ -150,15 +151,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         const data = await ChatService.getChatMessages(connectionId);
         if (data && data.success) {
           // Normalize incoming messages to ChatMessageUI shape and coerce timestamps to Date
-          const normalized = (data.messages || []).map((m: any) => {
+          const normalized: ChatMessageUI[] = (data.messages || []).map((m: any) => {
             const ts = m.timestamp ?? m.createdAt ?? m.time ?? null;
             let date: Date | null = null;
             if (ts != null) {
               try {
-                // Handle common wrapped forms (MongoDB extended JSON)
                 if (typeof ts === 'object' && ts !== null) {
                   if (ts.$date) {
-                    // { $date: '2025-08-25T...' } or { $date: { $numberLong: '...' } }
                     const raw = typeof ts.$date === 'object' && ts.$date.$numberLong ? Number(ts.$date.$numberLong) : ts.$date;
                     date = new Date(raw as any);
                   } else if (ts.$numberLong) {
@@ -169,9 +168,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 } else {
                   date = new Date(ts as any);
                 }
-                if (Number.isNaN(date.getTime())) {
-                  date = null;
-                }
+                if (Number.isNaN(date.getTime())) date = null;
               } catch (e) {
                 date = null;
               }
@@ -179,17 +176,16 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
             return {
               id: m.id || m._id || Date.now().toString(),
-              text: m.message ?? m.text ?? '',
-              timestamp: date,
-              isOwn: m.senderId === currentUserId,
-              status: m.status || 'sent'
+              text: m.message || m.text || '',
+              timestamp: date || new Date(),
+              isOwn: String(m.senderId || m.sender) === String(currentUserId),
+              status: (m as any).status || 'sent'
             } as ChatMessageUI;
           });
 
           setMessages(normalized);
         }
-        setIsConnected(true);
-        // Stop loading regardless of success so UI can render messages (or empty state)
+
         setLoading(false);
       } catch (error) {
         logger.error('Failed to initialize chat:', error);
@@ -270,25 +266,61 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   // Handle unmatch
   const handleUnmatch = async () => {
     if (!connectionId || isUnmatching) return;
-    
+
+    // Existing menu-driven flow kept for backward compatibility
     if (!confirm(`Are you sure you want to unmatch from ${match.name}? This action cannot be undone.`)) {
       return;
     }
 
+    await performUnmatch();
+  };
+
+  // Extracted unmatch operation so it can be triggered from different UI (menu or toast)
+  const performUnmatch = async () => {
+    if (!connectionId || isUnmatching) return;
+
     setIsUnmatching(true);
     try {
       await MatchingService.unmatchProfile(connectionId);
-      
+
       // Show success message and redirect
-              ToastService.success('Successfully unmatched!');
+      ToastService.success('Successfully unmatched!');
       router.push('/matches');
     } catch (error) {
       logger.error('Error unmatching:', error);
-              ToastService.error('Failed to unmatch. Please try again.');
+      ToastService.error('Failed to unmatch. Please try again.');
     } finally {
       setIsUnmatching(false);
       setShowUnmatchMenu(false);
     }
+  };
+
+  // Show an actionable toast confirmation (Yes / No) before performing unmatch
+  const showUnmatchToastConfirmation = () => {
+    if (!connectionId || isUnmatching) return;
+
+    toast((t) => (
+      <div className="p-2">
+        <div className="text-sm mb-3">Are you sure you want to unmatch {match.name}?</div>
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              await performUnmatch();
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1 bg-gray-100 rounded text-sm"
+          >
+            No
+          </button>
+        </div>
+      </div>
+    ), { duration: 10000 });
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -475,6 +507,19 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             </div>
           </div>
           
+          {/* Direct Unmatch button (top-right) */}
+          <div className="mr-2">
+            <button
+              onClick={showUnmatchToastConfirmation}
+              disabled={isUnmatching}
+              title="Unmatch"
+              aria-label="Unmatch"
+              className={`px-3 py-1 bg-red-600 text-white rounded-full text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              Unmatch
+            </button>
+          </div>
+
           {/* Unmatch Menu */}
           <div className="relative unmatch-menu">
             <button
@@ -527,10 +572,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         )}
       </AnimatePresence>
 
-      {/* Messages */}
-      <div 
-        className={`flex-1 pb-28 px-4 overflow-y-auto z-10 ${showDisappearingBanner ? 'pt-32' : 'pt-24'}`}
-        style={{ paddingTop: showDisappearingBanner ? '120px' : '96px' }}
+      {/* Messages - scrollable area between fixed header (top) and input (bottom) */}
+      <div
+        className="absolute left-0 right-0 z-10 overflow-y-auto px-4"
+        style={{
+          top: showDisappearingBanner ? '120px' : '96px',
+          bottom: '112px'
+        }}
       >
         {loading ? (
           <motion.div 
