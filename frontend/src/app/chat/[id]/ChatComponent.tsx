@@ -148,17 +148,90 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
         // Fetch initial messages using the new caching system
         const data = await ChatService.getChatMessages(connectionId);
-        if (data.success) {
-          setMessages(data.messages || []);
+        if (data && data.success) {
+          // Normalize incoming messages to ChatMessageUI shape and coerce timestamps to Date
+          const normalized = (data.messages || []).map((m: any) => {
+            const ts = m.timestamp ?? m.createdAt ?? m.time ?? null;
+            let date: Date | null = null;
+            if (ts != null) {
+              try {
+                // Handle common wrapped forms (MongoDB extended JSON)
+                if (typeof ts === 'object' && ts !== null) {
+                  if (ts.$date) {
+                    // { $date: '2025-08-25T...' } or { $date: { $numberLong: '...' } }
+                    const raw = typeof ts.$date === 'object' && ts.$date.$numberLong ? Number(ts.$date.$numberLong) : ts.$date;
+                    date = new Date(raw as any);
+                  } else if (ts.$numberLong) {
+                    date = new Date(Number(ts.$numberLong));
+                  } else if (ts.toString) {
+                    date = new Date(ts.toString());
+                  }
+                } else {
+                  date = new Date(ts as any);
+                }
+                if (Number.isNaN(date.getTime())) {
+                  date = null;
+                }
+              } catch (e) {
+                date = null;
+              }
+            }
+
+            return {
+              id: m.id || m._id || Date.now().toString(),
+              text: m.message ?? m.text ?? '',
+              timestamp: date,
+              isOwn: m.senderId === currentUserId,
+              status: m.status || 'sent'
+            } as ChatMessageUI;
+          });
+
+          setMessages(normalized);
         }
         setIsConnected(true);
+        // Stop loading regardless of success so UI can render messages (or empty state)
+        setLoading(false);
       } catch (error) {
         logger.error('Failed to initialize chat:', error);
         setConnectionError(true);
+        // Ensure loading state is cleared on error
+        setLoading(false);
       }
     };
 
-    initializeChat();
+    let unsubscribe: (() => void) | null = null;
+
+    (async () => {
+      await initializeChat();
+
+      // Initialize socket after loading messages
+      try {
+        await ChatService.initSocket(connectionId);
+
+        unsubscribe = ChatService.subscribeToMessages(async (msg) => {
+          try {
+            const incoming: ChatMessageUI = {
+              id: msg.id || Date.now().toString(),
+              text: msg.message,
+              timestamp: new Date(msg.timestamp),
+              isOwn: msg.senderId === (await getCurrentUserId()),
+              status: (msg as any).status || 'sent'
+            };
+            setMessages(prev => [...prev, incoming]);
+          } catch (e) {
+            logger.error('Error handling incoming socket message', e);
+          }
+        });
+      } catch (socketErr) {
+        logger.error('Socket init failed', socketErr);
+      }
+    })();
+
+    // cleanup on unmount
+    return () => {
+      if (unsubscribe) unsubscribe();
+      ChatService.disconnectSocket();
+    };
   }, [connectionId]);
 
   // Send message function
@@ -241,9 +314,74 @@ export default function ChatComponent({ match }: ChatComponentProps) {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatTime = (date: Date | string | number | null | undefined) => {
+  if (!date) return '';
+  // If value isn't a Date, attempt to coerce using the shared helper
+  let d: Date | null = date instanceof Date ? date : null;
+  if (!d) d = coerceTimestamp(date);
+  if (!d || Number.isNaN(d.getTime())) return '';
+
+    // If toLocaleTimeString is not available for this object, fall back safely
+    if (typeof (d as any).toLocaleTimeString !== 'function') {
+      try {
+        const iso = d.toISOString ? d.toISOString() : String(d);
+        const match = iso.match(/T?(\d{2}:\d{2})/);
+        return match ? match[1] : iso.slice(11,16);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    try {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      try {
+        return d.toTimeString().split(' ')[0].slice(0,5);
+      } catch (e2) {
+        return '';
+      }
+    }
   };
+
+  // Coerce any timestamp-like value into a Date or null at render time to avoid runtime errors
+  const coerceTimestamp = (val: any): Date | null => {
+    if (!val) return null;
+    try {
+      if (val instanceof Date) return val;
+      // Common server shapes
+      if (typeof val === 'object') {
+        if (val.$date) {
+          const raw = typeof val.$date === 'object' && val.$date.$numberLong ? Number(val.$date.$numberLong) : val.$date;
+          const d = new Date(raw as any);
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+        if (val.$numberLong) {
+          const d = new Date(Number(val.$numberLong));
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+        // If it's a plain object that serializes to ISO string
+        if (typeof val.toString === 'function') {
+          const maybe = new Date(val.toString());
+          return Number.isNaN(maybe.getTime()) ? null : maybe;
+        }
+        return null;
+      }
+
+      // numbers and strings
+      const d = new Date(val as any);
+      return Number.isNaN(d.getTime()) ? null : d;
+    } catch (e) {
+      // Log once to help debugging malformed payloads
+      try { console.error('coerceTimestamp failed for value:', val); } catch (err) {}
+      return null;
+    }
+  };
+
+  // Prepare a safely coerced messages array for rendering
+  const renderedMessages = messages.map(m => ({
+    ...m,
+    timestamp: coerceTimestamp(m.timestamp)
+  } as ChatMessageUI));
 
   const getStatusIcon = (status: ChatMessageUI['status']) => {
     switch (status) {
@@ -383,7 +521,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             className="fixed top-0 left-0 right-0 z-50"
           >
             <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm px-4 py-3 shadow-lg border-b border-pink-400/30 flex items-center justify-center">
-              <span className="text-center font-medium">Messages in this chat are not saved. They'll be automatically deleted after 24 hours.</span>
+              <span className="text-center font-medium">Messages disappear after 12 hours.</span>
             </div>
           </motion.div>
         )}
@@ -403,7 +541,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           >
             <p className="text-gray-600">Loading messages...</p>
           </motion.div>
-        ) : messages.length === 0 ? (
+  ) : renderedMessages.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -434,7 +572,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         ) : (
           <div className="space-y-3">
             <AnimatePresence initial={false}>
-              {messages.map((msg, index) => (
+              {renderedMessages.map((msg, index) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -445,7 +583,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                     stiffness: 500, 
                     damping: 35,
                     duration: 0.2,
-                    delay: index === messages.length - 1 ? 0.05 : 0
+                    delay: index === renderedMessages.length - 1 ? 0.05 : 0
                   }}
                   className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}
                 >

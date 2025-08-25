@@ -40,28 +40,56 @@ function clearAuthCache(): void {
 // Get Bearer token for backend API calls
 export async function getBearerToken(): Promise<string | null> {
   try {
-
-    
     // Since we're using HTTP-only cookies, we need to make a server request
-    // to get the token from the server side
-    const response = await fetch('/api/auth/token', {
-      method: 'GET',
-      credentials: 'include', // Include cookies
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-          if (!response.ok) {
+    // to get the token from the server side. Do a single retry on failure
+    // to handle transient cookie/cache issues.
+    async function fetchTokenOnce(): Promise<Response | null> {
+      try {
+        return await fetch('/api/auth/token', {
+          method: 'GET',
+          credentials: 'include', // Include cookies
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      } catch (err) {
+        logger.debug('🔍 AuthUtils: fetch /api/auth/token failed', err);
         return null;
       }
+    }
 
-      const data = await response.json();
-      if (data.success && data.token) {
-        return data.token;
+    let response = await fetchTokenOnce();
+
+    // If response is missing or not ok, attempt a cache-clear + retry (dev-friendly)
+    if (!response || !response.ok) {
+      // In dev, capture body for debugging
+      if (response && !response.ok && process.env.NODE_ENV === 'development') {
+        try {
+          const text = await response.text();
+          logger.warn('❌ AuthUtils: /api/auth/token non-ok response body:', text);
+        } catch (e) {
+          logger.warn('❌ AuthUtils: /api/auth/token non-ok and body unreadable');
+        }
       }
 
-      return null;
+      // Clear local auth cache then retry once
+      try {
+        clearAuthCache();
+      } catch (e) {
+        // ignore
+      }
+
+      response = await fetchTokenOnce();
+    }
+
+    if (!response || !response.ok) return null;
+
+    const data = await response.json();
+    if (data.success && data.token) {
+      return data.token;
+    }
+
+    return null;
   } catch (error) {
     return null;
   }

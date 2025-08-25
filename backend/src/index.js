@@ -19,16 +19,19 @@ const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+// Import configuration
+const config = require('./config');
 
 // Security middleware - Helmet
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  scriptSrc: ["'self'"],
+  imgSrc: ["'self'", "data:", "https:"],
+  // allow websocket/connect to configured frontend origins
+  connectSrc: ["'self'", ...(Array.isArray(config.SECURITY?.CORS_ORIGINS) ? config.SECURITY.CORS_ORIGINS : [config.SECURITY?.CORS_ORIGINS || 'http://localhost:3000'])],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -37,9 +40,6 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,
 }));
-
-// Import configuration
-const config = require('./config');
 
 // Rate limiting - more lenient for development
 const limiter = rateLimit({
@@ -88,6 +88,11 @@ const matchRoutes = require('./routes/matchRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+// Dev-only debug routes
+let debugRoutes = null;
+if (process.env.NODE_ENV !== 'production') {
+  debugRoutes = require('./routes/debugRoutes');
+}
 
 // API Routes with rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
@@ -99,6 +104,9 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/chat', chatRoutes);
+if (debugRoutes) {
+  app.use('/api/debug', debugRoutes);
+}
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
