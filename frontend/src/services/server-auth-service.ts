@@ -130,16 +130,15 @@ export class ServerAuthService {
         return await response.json();
       });
 
-  logger.info('✅ ServerAuthService: OTP verification successful:', result);
-      
+  logger.info('✅ ServerAuthService: OTP verification successful (raw):', result);
+
       // Initialize token refresh service after successful authentication
       this.initializeTokenRefresh();
-      
-      return {
-        success: true,
-        redirectTo: result.redirectTo,
-        user: result.user
-      };
+
+      // Return the raw backend result to the caller so the client receives
+      // exactly what the Next.js API returned. This avoids losing fields
+      // like `session` which can be needed by the caller for logic.
+      return result as any;
 
       } catch (error) {
   try {
