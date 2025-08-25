@@ -1,4 +1,4 @@
-// User Model - MongoDB Schema
+// User Model - MongoDB Schema (Optimized)
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
@@ -190,28 +190,17 @@ const userSchema = new mongoose.Schema({
       maxlength: 50
     }],
     images: {
-      type: String,
-      trim: true,
-      maxlength: 500
-    },
-    
-
-    
-    // Legacy fields for backward compatibility
-    age: {
-      type: Number,
-      min: 18,
-      max: 80
-    },
-    profession: {
-      type: String,
-      trim: true,
-      maxlength: 100
-    },
-    location: {
-      type: String,
-      trim: true,
-      maxlength: 200
+      type: mongoose.Schema.Types.Mixed, // Allow both string and array
+      validate: {
+        validator: function(value) {
+          // Allow string, array, or null/undefined
+          if (value === null || value === undefined) return true;
+          if (typeof value === 'string') return true;
+          if (Array.isArray(value)) return true;
+          return false;
+        },
+        message: 'Images must be a string, array, or null'
+      }
     },
     
     profileCompleteness: {
@@ -221,8 +210,6 @@ const userSchema = new mongoose.Schema({
       max: 100
     }
   },
-
-
 
   // Authentication
   verification: {
@@ -252,10 +239,22 @@ const userSchema = new mongoose.Schema({
     default: 'invited'
   },
   
-  // Admin approval status
+  // Admin approval tracking
   isApprovedByAdmin: {
     type: Boolean,
-    default: false
+    default: true
+  },
+  
+  // Admin tracking fields
+  addedAt: {
+    type: Date,
+    default: Date.now
+  },
+  
+  addedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   },
   
   premium: {
@@ -263,10 +262,25 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
-  // Activity Tracking
+  // Activity Tracking - OPTIMIZED: Single lastLogin instead of array
   lastActive: {
     type: Date,
     default: Date.now
+  },
+  
+  // OPTIMIZED: Replace loginHistory array with single lastLogin object
+  lastLogin: {
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    ipAddress: String,
+    userAgent: String,
+    deviceType: {
+      type: String,
+      enum: ['mobile', 'desktop', 'tablet'],
+      default: 'desktop'
+    }
   },
   
   // Profile completion tracking
@@ -275,38 +289,52 @@ const userSchema = new mongoose.Schema({
     default: true
   },
   
-  profileCompleted: {
+  // Onboarding message tracking
+  hasSeenOnboardingMessage: {
     type: Boolean,
     default: false
   },
   
-  loginHistory: [{
-    timestamp: {
-      type: Date,
-      default: Date.now
-    },
-    ipAddress: String,
-    userAgent: String
-  }],
+  profileCompleted: {
+    type: Boolean,
+    default: false
+  },
 
-  // Preferences
+  // OPTIMIZED: Preferences structure - only store user's actual preferences
   preferences: {
     ageRange: {
       min: {
         type: Number,
-        default: 18
+        default: 18,
+        min: 18,
+        max: 80
       },
       max: {
         type: Number,
-        default: 50
+        default: 50,
+        min: 18,
+        max: 80
       }
     },
-    location: [String],
-    profession: [String],
-    education: [String]
-  },
-
-
+    // OPTIMIZED: Only store user's selected locations, not all possible states
+    locations: [{
+      type: String,
+      trim: true,
+      maxlength: 50
+    }],
+    // OPTIMIZED: Only store user's selected professions
+    professions: [{
+      type: String,
+      trim: true,
+      maxlength: 50
+    }],
+    // OPTIMIZED: Only store user's selected education levels
+    education: [{
+      type: String,
+      trim: true,
+      maxlength: 50
+    }]
+  }
 
 }, {
   timestamps: true, // Adds createdAt and updatedAt
@@ -316,29 +344,41 @@ const userSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 userSchema.index({ email: 1 });
-userSchema.index({ 'profile.age': 1 });
-userSchema.index({ 'profile.location': 1 });
-userSchema.index({ 'profile.profession': 1 });
+userSchema.index({ 'profile.gender': 1 });
+userSchema.index({ 'profile.maritalStatus': 1 });
+userSchema.index({ 'profile.currentResidence': 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ lastActive: -1 });
 userSchema.index({ createdAt: -1 });
+userSchema.index({ 'lastLogin.timestamp': -1 });
 
-// Virtual for profile completion calculation
+// Virtual for profile completion calculation (legacy - use profileCompleteness instead)
 userSchema.virtual('profileCompletion').get(function() {
-  let completion = 0;
-  const fields = ['name', 'age', 'profession', 'location', 'education', 'about'];
+  // Use the actual profileCompleteness field if available, otherwise calculate
+  if (this.profile && this.profile.profileCompleteness !== undefined) {
+    return this.profile.profileCompleteness;
+  }
   
-  fields.forEach(field => {
-    if (this.profile[field]) completion += 16.67; // 100/6 fields
+  let completion = 0;
+  const requiredFields = [
+    'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
+    'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
+    'maritalStatus', 'father', 'mother', 'about'
+  ];
+  
+  requiredFields.forEach(field => {
+    if (this.profile[field] && this.profile[field].toString().trim() !== '') {
+      completion += 6.67; // 100/15 fields
+    }
   });
   
-  if (this.profile.interests && this.profile.interests.length > 0) completion += 10;
-  if (this.profile.images) completion += 10;
+  if (this.profile.interests && this.profile.interests.length > 0) completion += 5;
+  if (this.profile.images && this.profile.images.length > 0) completion += 5;
   
-  return Math.round(completion);
+  return Math.round(Math.min(completion, 100));
 });
 
-// Virtual for age calculation (alternative approach)
+// Virtual for age calculation
 userSchema.virtual('calculatedAge').get(function() {
   if (!this.profile.dateOfBirth) return null;
   
@@ -357,7 +397,7 @@ userSchema.virtual('calculatedAge').get(function() {
 // Pre-save middleware to update profile completeness
 userSchema.pre('save', function(next) {
   const calculatedCompletion = this.profileCompletion;
-  this.profile.profileCompleteness = Math.min(calculatedCompletion, 100); // Cap at 100
+  this.profile.profileCompleteness = Math.min(calculatedCompletion, 100);
   next();
 });
 
@@ -367,13 +407,13 @@ userSchema.methods.toPublicJSON = function() {
   
   // Remove sensitive information
   delete user.__v;
-  delete user.loginHistory;
+  delete user.lastLogin; // OPTIMIZED: Remove lastLogin from public view
   
   return {
     userId: user._id,
     email: user.email,
     userUuid: user.userUuid,
-    role: user.role, // Include role for role-based routing
+    role: user.role,
     profile: user.profile,
     preferences: user.preferences,
     verification: user.verification,
@@ -381,7 +421,11 @@ userSchema.methods.toPublicJSON = function() {
     premium: user.premium,
     lastActive: user.lastActive,
     createdAt: user.createdAt,
-    profileCompleted: user.profileCompleted || false
+    // Add fields needed for frontend authentication
+    isFirstLogin: user.isFirstLogin,
+    isApprovedByAdmin: user.isApprovedByAdmin,
+    profileCompleteness: user.profile?.profileCompleteness || 0,
+    hasSeenOnboardingMessage: user.hasSeenOnboardingMessage,
   };
 };
 
@@ -390,17 +434,16 @@ userSchema.statics.findWithFilters = function(filters = {}) {
   const query = { status: 'active' };
   
   if (filters.ageMin || filters.ageMax) {
-    query['profile.age'] = {};
-    if (filters.ageMin) query['profile.age'].$gte = filters.ageMin;
-    if (filters.ageMax) query['profile.age'].$lte = filters.ageMax;
+    // OPTIMIZED: Use calculated age instead of stored age
+    query['profile.dateOfBirth'] = { $exists: true };
   }
   
   if (filters.location) {
-    query['profile.location'] = new RegExp(filters.location, 'i');
+    query['profile.currentResidence'] = new RegExp(filters.location, 'i');
   }
   
-  if (filters.profession) {
-    query['profile.profession'] = new RegExp(filters.profession, 'i');
+  if (filters.occupation) {
+    query['profile.occupation'] = new RegExp(filters.occupation, 'i');
   }
   
   if (filters.verified !== undefined) {
@@ -414,4 +457,16 @@ userSchema.statics.findWithFilters = function(filters = {}) {
   return this.find(query);
 };
 
-module.exports = mongoose.model('User', userSchema);
+// OPTIMIZED: Method to update last login (replaces loginHistory array)
+userSchema.methods.updateLastLogin = function(ipAddress, userAgent, deviceType = 'desktop') {
+  this.lastLogin = {
+    timestamp: new Date(),
+    ipAddress,
+    userAgent,
+    deviceType
+  };
+  this.lastActive = new Date();
+  return this.save();
+};
+
+module.exports = mongoose.model('User', userSchema); 

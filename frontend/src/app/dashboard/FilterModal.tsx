@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import CustomIcon from '../../components/CustomIcon';
 
 interface FilterModalProps {
   onClose: () => void;
-  onApply: (filters: FilterState) => void;
+  onApply: (filters: FilterState, callback?: () => void) => void;
   currentFilters: FilterState;
 }
 
@@ -18,24 +19,24 @@ export interface FilterState {
 
 const countryStateData = {
   'India': [
-    // States (28)
-    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 
-    'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 
-    'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 
-    'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-    // Union Territories (8)
-    'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 
-    'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+    // States (28) - Alphabetically ordered
+    'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh', 
+    'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 
+    'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 
+    'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 
+    'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 
+    'West Bengal'
   ],
-  'USA': ['California', 'New York', 'Texas', 'Florida', 'Illinois', 'Pennsylvania', 'Ohio', 'Georgia', 'North Carolina', 'Michigan'],
-  'Canada': ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland', 'Prince Edward Island'],
-  'UK': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
-  'Australia': ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Northern Territory', 'Australian Capital Territory']
+  'USA': ['California', 'Florida', 'Georgia', 'Illinois', 'Michigan', 'New York', 'North Carolina', 'Ohio', 'Pennsylvania', 'Texas'],
+  'Canada': ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan'],
+  'UK': ['England', 'Northern Ireland', 'Scotland', 'Wales'],
+  'Australia': ['Australian Capital Territory', 'New South Wales', 'Northern Territory', 'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia']
 };
 
 export default function FilterModal({ onClose, onApply, currentFilters }: FilterModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  
   // GSAP modal entrance
   useEffect(() => {
     if (backdropRef.current) {
@@ -52,7 +53,22 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
         { y: 0, opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power3.out', delay: 0.05 }
       );
     }
-  }, []);
+    
+    // Add escape key handler
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscapeKey);
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [onClose]);
+
+  // Initialize state with current filters
   const [ageRange, setAgeRange] = useState<[number, number]>(currentFilters.ageRange);
   const [selectedProfessions, setSelectedProfessions] = useState<string[]>(currentFilters.selectedProfessions);
   const [selectedCountry, setSelectedCountry] = useState<string>(currentFilters.selectedCountry);
@@ -68,9 +84,12 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
 
   useEffect(() => {
     if (selectedCountry && countryStateData[selectedCountry as keyof typeof countryStateData]) {
-      setAvailableStates(countryStateData[selectedCountry as keyof typeof countryStateData]);
+      const states = countryStateData[selectedCountry as keyof typeof countryStateData];
+      // Sort states alphabetically
+      const sortedStates = [...states].sort();
+      setAvailableStates(sortedStates);
       // Reset state if it's not available in the new country
-      if (selectedState && !countryStateData[selectedCountry as keyof typeof countryStateData].includes(selectedState)) {
+      if (selectedState && !sortedStates.includes(selectedState)) {
         setSelectedState('');
       }
     } else {
@@ -88,22 +107,31 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
   };
 
   const handleMinAgeChange = (value: number) => {
-    if (value <= ageRange[1]) {
-      setAgeRange([value, ageRange[1]]);
-    }
+    setAgeRange(prev => [Math.min(value, prev[1] - 1), prev[1]]);
   };
 
   const handleMaxAgeChange = (value: number) => {
-    if (value >= ageRange[0]) {
-      setAgeRange([ageRange[0], value]);
-    }
+    setAgeRange(prev => [prev[0], Math.max(value, prev[0] + 1)]);
   };
 
   const clearAll = () => {
-    setAgeRange([18, 40]);
+    // Reset to default values
+    setAgeRange([18, 70]);
     setSelectedProfessions([]);
     setSelectedCountry('');
     setSelectedState('');
+    
+    // Also apply the cleared filters immediately to reset the dashboard
+    const clearedFilters: FilterState = {
+      ageRange: [18, 70],
+      selectedProfessions: [],
+      selectedCountry: '',
+      selectedState: ''
+    };
+    
+    onApply(clearedFilters, () => {
+      onClose();
+    });
   };
 
   const applyFilters = () => {
@@ -117,16 +145,58 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
     onClose();
   };
 
+  // Check if current modal state differs from the original currentFilters
+  const hasChanges = 
+    ageRange[0] !== currentFilters.ageRange[0] ||
+    ageRange[1] !== currentFilters.ageRange[1] ||
+    JSON.stringify(selectedProfessions.sort()) !== JSON.stringify(currentFilters.selectedProfessions.sort()) ||
+    selectedCountry !== currentFilters.selectedCountry ||
+    selectedState !== currentFilters.selectedState;
+
+  // Check if any filters are active (for visual feedback)
+  const hasActiveFilters = selectedProfessions.length > 0 || 
+                          selectedCountry !== '' || 
+                          selectedState !== '' ||
+                          ageRange[0] !== 18 || 
+                          ageRange[1] !== 70;
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]">
+    <div 
+      ref={backdropRef} 
+      className="fixed inset-0 z-[70] flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]"
+      onClick={handleBackdropClick}
+      style={{ pointerEvents: 'auto' }}
+    >
       <div
         ref={modalRef}
-        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none"
+        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none pb-8"
         style={{ boxShadow: '0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={applyFilters}
+              disabled={!hasChanges}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-md ${
+                hasChanges
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600 cursor-pointer'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+              }`}
+            >
+              <div className="flex items-center">
+                {hasChanges && <CustomIcon name="ri-arrow-right-line" className="mr-1 text-sm" />}
+                Apply
+              </div>
+            </button>
+            <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
+          </div>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-100/70 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
@@ -148,12 +218,12 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
               <input
                 type="range"
                 min="18"
-                max="40"
+                max="70"
                 value={ageRange[0]}
                 onChange={(e) => handleMinAgeChange(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-rose-400"
                 style={{
-                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[0] - 18) / 22) * 100}%, #e5e7eb ${((ageRange[0] - 18) / 22) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[0] - 18) / 52) * 100}%, #e5e7eb ${((ageRange[0] - 18) / 52) * 100}%, #e5e7eb 100%)`
                 }}
               />
             </div>
@@ -164,12 +234,12 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
               <input
                 type="range"
                 min="18"
-                max="40"
+                max="70"
                 value={ageRange[1]}
                 onChange={(e) => handleMaxAgeChange(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-rose-400"
                 style={{
-                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[1] - 18) / 22) * 100}%, #e5e7eb ${((ageRange[1] - 18) / 22) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[1] - 18) / 52) * 100}%, #e5e7eb ${((ageRange[1] - 18) / 52) * 100}%, #e5e7eb 100%)`
                 }}
               />
             </div>
@@ -242,18 +312,17 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
         </div>
 
         {/* Actions */}
-        <div className="flex space-x-3">
+        <div className="flex justify-center">
           <button
             onClick={clearAll}
-            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button hover:bg-gray-50 transition-all duration-200 shadow-sm hover:scale-105"
+            disabled={!hasActiveFilters}
+            className={`px-8 py-3 border rounded-xl font-medium transition-all duration-200 shadow-sm hover:scale-105 ${
+              hasActiveFilters
+                ? 'border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400'
+                : 'border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+            }`}
           >
-            Clear All
-          </button>
-          <button
-            onClick={applyFilters}
-            className="flex-1 py-3 bg-white/90 border-2 border-rose-500 text-rose-500 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
-          >
-            Apply Filters
+            Clear All Filters
           </button>
         </div>
       </div>

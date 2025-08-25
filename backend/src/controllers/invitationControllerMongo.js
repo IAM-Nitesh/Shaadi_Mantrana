@@ -1,24 +1,13 @@
 // MongoDB-integrated Invitation Controller
-const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
-const { Invitation, Preapproved } = require('../models');
-const { validateEmail, sanitizeInput } = require('../utils/security');
-
+const { Invitation, User } = require('../models');
+const { SecurityUtils } = require('../utils/security');
+const InviteEmailService = require('../services/inviteEmailService');
 
 class InvitationController {
-  // Create new invitation
-  async createInvitation(req, res) {
+  // Send invitation email
+  async sendInvitation(req, res) {
     try {
-      // Only admin can send invitations
-      if (!req.user || req.user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          error: 'Only admin can send invitations.'
-        });
-      }
-      const { email, type = 'email' } = req.body;
-      const userId = req.user?.userId;
-      const userEmail = req.user?.email;
+      const { email } = req.body;
 
       if (!email) {
         return res.status(400).json({
@@ -27,224 +16,140 @@ class InvitationController {
         });
       }
 
-      const sanitizedEmail = sanitizeInput(email);
-      if (!validateEmail(sanitizedEmail)) {
-        return res.status(400).json({
+      const sanitizedEmail = SecurityUtils.sanitizeInput(email);
+      const userUuid = SecurityUtils.generateUUID();
+      const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Check if email is already in User collection
+      const existingUser = await User.findOne({ email: sanitizedEmail });
+      if (existingUser) {
+        return res.status(409).json({
           success: false,
-          error: 'Invalid email format'
+          error: 'User with this email already exists'
         });
       }
 
-      // Check if email is already in preapproved collection
-      const existingPreapproved = await Preapproved.findOne({ email: sanitizedEmail });
-      if (existingPreapproved) {
-        return res.status(400).json({
-          success: false,
-          error: 'Email is already approved for registration'
-        });
-      }
-
-      // Check if invitation already exists
-      const existingInvitation = await Invitation.findOne({
+      // Create new user in User collection
+      const newUser = new User({
         email: sanitizedEmail,
-        status: { $in: ['pending', 'sent', 'delivered'] },
-        expiresAt: { $gt: new Date() }
+        userUuid: userUuid,
+        role: 'user',
+        status: 'invited',
+        isApprovedByAdmin: true, // Admin-created users are approved
+        isFirstLogin: true,
+        hasSeenOnboardingMessage: false, // New users haven't seen onboarding
+        profileCompleted: false,
+        addedAt: new Date(),
+        addedBy: req.user?.userId,
+        verification: {
+          isVerified: false,
+          approvalType: 'admin'
+        },
+        profile: {
+          profileCompleteness: 0,
+          location: "India",
+          // Initialize all profile fields as empty
+          name: '',
+          gender: undefined,
+          nativePlace: '',
+          currentResidence: '',
+          maritalStatus: undefined,
+          manglik: undefined,
+          dateOfBirth: '',
+          timeOfBirth: '',
+          placeOfBirth: '',
+          height: '',
+          weight: '',
+          complexion: undefined,
+          education: '',
+          occupation: '',
+          annualIncome: '',
+          eatingHabit: undefined,
+          smokingHabit: undefined,
+          drinkingHabit: undefined,
+          father: '',
+          mother: '',
+          brothers: '',
+          sisters: '',
+          fatherGotra: '',
+          motherGotra: '',
+          grandfatherGotra: '',
+          grandmotherGotra: '',
+          specificRequirements: '',
+          settleAbroad: undefined,
+          about: '',
+          interests: [],
+          images: null // Set to null instead of empty array
+        },
+        preferences: {
+          location: [
+            "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+            "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+            "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+            "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+            "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+            "Uttar Pradesh", "Uttarakhand", "West Bengal",
+            "Andaman and Nicobar Islands", "Chandigarh",
+            "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+            "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+          ],
+          ageRange: {
+            min: 18,
+            max: 50
+          },
+          profession: [],
+          education: []
+        }
       });
 
-      if (existingInvitation) {
-        return res.status(400).json({
-          success: false,
-          error: 'Active invitation already exists for this email',
-          invitation: {
-            id: existingInvitation._id,
-            status: existingInvitation.status,
-            expiresAt: existingInvitation.expiresAt
-          }
-        });
-      }
+      await newUser.save();
 
-      // Generate unique invitation ID
-      const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const userUuid = uuidv4();
-
-      // Create invitation
+      // Create invitation record
       const invitation = new Invitation({
-        uuid: userUuid,
         email: sanitizedEmail,
-        invitationId: invitationId,
-        sentBy: userId
+        uuid: userUuid,
+        invitationId,
+        status: 'sent',
+        sentDate: new Date(),
+        count: 1,
+        sentBy: req.user?.userId
       });
 
       await invitation.save();
 
-      // Add email to pre-approved list
-      const preapprovedEntry = new Preapproved({
-        email: sanitizedEmail,
-        uuid: userUuid,
-        isFirstLogin: true,
-        approvedByAdmin: true,
-        addedBy: userId
-      });
-      await preapprovedEntry.save();
+      // Send invitation email
+      const emailResult = await InviteEmailService.sendInviteEmail(sanitizedEmail, userUuid);
 
-      console.log(`✅ Invitation created: ${sanitizedEmail} - ID: ${invitationId}`);
+      console.log(`✅ Invitation sent successfully to ${sanitizedEmail}`);
 
       res.status(201).json({
         success: true,
-        message: 'Invitation created successfully',
-        invitation: {
-          id: invitation._id,
-          email: invitation.email,
-          invitationId: invitation.invitationId,
-          status: invitation.status,
-          createdAt: invitation.createdAt
-        }
+        message: 'Invitation sent successfully',
+        email: sanitizedEmail,
+        userUuid: userUuid,
+        invitationId: invitationId,
+        emailSent: emailResult.success,
+        inviteLink: emailResult.inviteLink,
+        messageId: emailResult.messageId
       });
 
     } catch (error) {
-      console.error('❌ Create invitation error:', error);
+      console.error('❌ Send invitation error:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to create invitation'
+        error: 'Failed to send invitation'
       });
     }
   }
 
-  // Get invitation details by code
-  async getInvitation(req, res) {
-    try {
-      const { code } = req.params;
-
-      if (!code) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invitation code is required'
-        });
-      }
-
-      const invitation = await Invitation.findOne({
-        invitationId: code
-      }).populate('sentBy', 'profile.name email');
-
-      if (!invitation) {
-        return res.status(404).json({
-          success: false,
-          error: 'Invitation not found'
-        });
-      }
-
-      // Check if invitation is expired
-      if (invitation.isExpired) {
-        await Invitation.findByIdAndUpdate(invitation._id, {
-          status: 'expired'
-        });
-
-        return res.status(400).json({
-          success: false,
-          error: 'Invitation has expired',
-          invitation: {
-            id: invitation._id,
-            status: 'expired',
-            expiresAt: invitation.expiresAt
-          }
-        });
-      }
-
-      // Mark as opened if not already
-      if (invitation.status === 'sent' || invitation.status === 'delivered') {
-        await invitation.markAsOpened({
-          ipAddress: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-                    req.connection?.remoteAddress,
-          userAgent: req.headers['user-agent']
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        invitation: {
-          id: invitation._id,
-          email: invitation.email,
-          invitationCode: invitation.invitationCode,
-          status: invitation.status,
-          type: invitation.type,
-          expiresAt: invitation.expiresAt,
-          daysUntilExpiry: invitation.daysUntilExpiry,
-          sentBy: invitation.sentBy,
-          createdAt: invitation.createdAt
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Get invitation error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to get invitation'
-      });
-    }
-  }
-
-  // Get all invitations (admin/user view)
+  // Get all invitations
   async getInvitations(req, res) {
     try {
-      const { page = 1, limit = 20, status, type } = req.query;
-      const userId = req.user?.userId;
-
-      // Convert page and limit to numbers
-      const pageNum = Math.max(1, parseInt(page));
-      const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-      const skip = (pageNum - 1) * limitNum;
-
-      // Build query
-      const query = {};
-      
-      // If regular user, only show their invitations
-      if (userId) {
-        query.sentBy = userId;
-      }
-
-      if (status) {
-        query.status = status;
-      }
-
-      if (type) {
-        query.type = type;
-      }
-
-      // Find invitations
-      const invitations = await Invitation.find(query)
-        .populate('sentBy', 'profile.name email')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean();
-
-      // Get total count
-      const totalCount = await Invitation.countDocuments(query);
-      const totalPages = Math.ceil(totalCount / limitNum);
-
-      // Get statistics
-      const stats = await Invitation.getStats();
+      const invitations = await Invitation.find({}).sort({ sentDate: -1 });
 
       res.status(200).json({
         success: true,
-        invitations: invitations.map(inv => ({
-          id: inv._id,
-          email: inv.email,
-          invitationId: inv.invitationId,
-          status: inv.status,
-          sentBy: inv.sentBy,
-          sentDate: inv.sentDate,
-          count: inv.count,
-          createdAt: inv.createdAt
-        })),
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          totalCount,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1
-        },
-        statistics: stats[0] || { totalInvitations: 0, statuses: [] }
+        invitations: invitations
       });
 
     } catch (error) {
@@ -256,14 +161,13 @@ class InvitationController {
     }
   }
 
-  // Resend invitation
-  async resendInvitation(req, res) {
+  // Remove invitation (when user registers)
+  async removeInvitation(req, res) {
     try {
-      const { id } = req.params;
-      const userId = req.user?.userId;
+      const { email } = req.params;
 
-      const invitation = await Invitation.findById(id);
-      
+      const invitation = await Invitation.findOneAndDelete({ email: invitation.email });
+
       if (!invitation) {
         return res.status(404).json({
           success: false,
@@ -271,129 +175,18 @@ class InvitationController {
         });
       }
 
-      // Check ownership (if not admin)
-      if (userId && invitation.sentBy.userId.toString() !== userId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied'
-        });
-      }
-
-      // Check if invitation can be resent
-      if (invitation.status === 'accepted') {
-        return res.status(400).json({
-          success: false,
-          error: 'Invitation has already been accepted'
-        });
-      }
-
-      if (invitation.attempts >= 5) {
-        return res.status(400).json({
-          success: false,
-          error: 'Maximum resend attempts reached'
-        });
-      }
-
-      if (invitation.isExpired) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invitation has expired'
-        });
-      }
-
-      // Update invitation for resending
-      invitation.status = 'pending';
-      invitation.attempts += 1;
-      invitation.lastAttemptAt = new Date();
-
-      await invitation.save();
-
-      // Here you would trigger the actual email sending
-      console.log(`📧 Resending invitation to ${invitation.email}: ${invitation.invitationCode}`);
+      console.log(`✅ Invitation removed for ${email}`);
 
       res.status(200).json({
         success: true,
-        message: 'Invitation resent successfully',
-        invitation: {
-          id: invitation._id,
-          email: invitation.email,
-          status: invitation.status,
-          attempts: invitation.attempts,
-          lastAttemptAt: invitation.lastAttemptAt
-        }
+        message: 'Invitation removed successfully'
       });
 
     } catch (error) {
-      console.error('❌ Resend invitation error:', error);
+      console.error('❌ Remove invitation error:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to resend invitation'
-      });
-    }
-  }
-
-  // Cancel invitation
-  async cancelInvitation(req, res) {
-    try {
-      const { id } = req.params;
-      const userId = req.user?.userId;
-
-      const invitation = await Invitation.findById(id);
-      
-      if (!invitation) {
-        return res.status(404).json({
-          success: false,
-          error: 'Invitation not found'
-        });
-      }
-
-      // Check ownership (if not admin)
-      if (userId && invitation.sentBy.userId.toString() !== userId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied'
-        });
-      }
-
-      // Check if invitation can be cancelled
-      if (invitation.status === 'accepted') {
-        return res.status(400).json({
-          success: false,
-          error: 'Cannot cancel accepted invitation'
-        });
-      }
-
-      if (invitation.status === 'cancelled') {
-        return res.status(400).json({
-          success: false,
-          error: 'Invitation is already cancelled'
-        });
-      }
-
-      // Cancel invitation
-      invitation.status = 'cancelled';
-      await invitation.save();
-
-      // Remove from pre-approved emails if it was added via invitation
-      await Preapproved.findOneAndDelete({ email: invitation.email });
-
-      console.log(`❌ Invitation cancelled: ${invitation.email}`);
-
-      res.status(200).json({
-        success: true,
-        message: 'Invitation cancelled successfully',
-        invitation: {
-          id: invitation._id,
-          email: invitation.email,
-          status: invitation.status
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Cancel invitation error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to cancel invitation'
+        error: 'Failed to remove invitation'
       });
     }
   }

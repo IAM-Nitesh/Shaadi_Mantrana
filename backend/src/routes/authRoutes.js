@@ -1,37 +1,47 @@
 const express = require('express');
 const router = express.Router();
-const { authController } = require('../config/controllers');
+const authController = require('../controllers/authControllerMongo');
 const { authenticateToken } = require('../middleware/auth');
-const { PreapprovedEmail } = require('../models');
 
-// Public authentication routes
-router.post('/send-otp', authController.sendOTP);
-router.post('/verify-otp', authController.verifyOTP);
-router.post('/refresh-token', authController.refreshSession || authController.refreshToken);
+// Health check endpoint
+router.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'auth-service',
+    version: '1.0.0'
+  });
+});
 
-// Protected routes (require JWT authentication)
-router.post('/logout', authenticateToken, authController.logout);
-router.get('/profile', authenticateToken, authController.getProfile);
+// OTP endpoints
+router.post('/send-otp', (req, res) => authController.sendOTP(req, res));
+router.post('/verify-otp', (req, res) => authController.verifyOTP(req, res));
+
+// Profile endpoints
+router.get('/profile', authenticateToken, (req, res) => authController.getProfile(req, res));
+
+// Session management
+router.post('/refresh', (req, res) => authController.refreshSession(req, res));
+router.post('/logout', authenticateToken, (req, res) => authController.logout(req, res));
 
 // Check if an email is preapproved
 router.get('/preapproved/check', async (req, res) => {
   const email = req.query.email?.toLowerCase().trim();
   if (!email) return res.status(400).json({ preapproved: false });
 
-  const { User, PreapprovedEmail } = require('../models');
+  const { User } = require('../models');
   const user = await User.findOne({ email });
-  const isAdmin = user && user.role === 'admin';
-
-  if (isAdmin) {
-    // Admins are always allowed
-    return res.json({ preapproved: true });
+  
+  if (user) {
+    // Check if user is admin or approved by admin
+    const isAdmin = user.role === 'admin';
+    const isApproved = user.isApprovedByAdmin;
+    
+    if (isAdmin || isApproved) {
+      return res.json({ preapproved: true });
+    }
   }
-
-  // For non-admins, check preapprovedemails
-  const preapproved = await PreapprovedEmail.findOne({ email });
-  if (preapproved && preapproved.approvedByAdmin) {
-    return res.json({ preapproved: true });
-  }
+  
   return res.json({ preapproved: false });
 });
 

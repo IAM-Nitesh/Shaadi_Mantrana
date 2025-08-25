@@ -1,5 +1,5 @@
 // MongoDB-integrated Profile Controller
-const { User, PreapprovedEmail } = require('../models');
+const { User } = require('../models');
 const { SecurityUtils } = require('../utils/security');
 
 class ProfileController {
@@ -31,9 +31,24 @@ class ProfileController {
         });
       }
 
-      // Get isFirstLogin from PreapprovedEmail collection
-      const preapproved = await PreapprovedEmail.findOne({ email: user.email });
-      const isFirstLogin = preapproved ? preapproved.isFirstLogin : true;
+      // Get isFirstLogin from user's own field
+      const isFirstLogin = user.isFirstLogin || true;
+      
+      // Debug: Check what profileCompleteness value is being returned
+      console.log(`🔍 Profile completeness debug for ${user.email}:`, {
+        userProfileCompleteness: user.profile.profileCompleteness,
+        userProfileKeys: Object.keys(user.profile || {}),
+        hasProfileCompleteness: 'profileCompleteness' in (user.profile || {}),
+        finalValue: user.profile.profileCompleteness || 0
+      });
+      
+      // Debug: Check the actual database document
+      console.log(`🔍 Database document debug for ${user.email}:`, {
+        userId: user._id,
+        profileCompleteness: user.profile?.profileCompleteness,
+        profileKeys: Object.keys(user.profile || {}),
+        fullProfile: user.profile
+      });
       
       console.log(`✅ Profile retrieved for user: ${userUuid} (${user.email})`);
       res.status(200).json({
@@ -41,7 +56,8 @@ class ProfileController {
         profile: {
           ...user.toPublicJSON(),
           isFirstLogin: isFirstLogin,
-          profileCompleteness: user.profile.profileCompleteness || 0
+          profileCompleteness: user.profile.profileCompleteness || 0,
+          hasSeenOnboardingMessage: user.hasSeenOnboardingMessage || false
         }
       });
 
@@ -134,7 +150,8 @@ class ProfileController {
           } else if (field === 'height') {
             // Enhanced height validation for feet and inches format
             const heightValue = updates[field];
-            const heightMatch = heightValue.match(/^(\d+)'(\d+)"?$/);
+            // Updated regex to handle potential extra quotes and be more flexible
+            const heightMatch = heightValue.match(/^(\d+)'(\d+)"*$/);
             
             if (heightMatch) {
               const feet = parseInt(heightMatch[1]);
@@ -143,7 +160,10 @@ class ProfileController {
               
               // Min 4 feet (48 inches), Max 8 feet (96 inches)
               if (totalInches >= 48 && totalInches <= 96) {
-                sanitizedUpdates[`profile.${field}`] = heightValue;
+                // Normalize the height format to ensure consistent storage
+                const normalizedHeight = `${feet}'${inches}"`;
+                sanitizedUpdates[`profile.${field}`] = normalizedHeight;
+                console.log(`✅ Height validated and normalized: ${heightValue} -> ${normalizedHeight}`);
               } else {
                 console.log(`❌ Height validation failed: ${heightValue} (${totalInches} inches)`);
               }
@@ -182,11 +202,11 @@ class ProfileController {
         }
       }
 
-      // Handle isFirstLogin flag separately - update in PreapprovedEmail collection
+      // Handle isFirstLogin flag separately - update in User collection
       if (updates.isFirstLogin !== undefined) {
-        // Update isFirstLogin in PreapprovedEmail collection instead of User
-        await PreapprovedEmail.findOneAndUpdate(
-          { email: req.user.email },
+        // Update isFirstLogin in User collection
+        await User.findByIdAndUpdate(
+          userId,
           { isFirstLogin: Boolean(updates.isFirstLogin) }
         );
         // Remove from sanitizedUpdates since we handle it separately
@@ -234,84 +254,156 @@ class ProfileController {
       console.log('🔍 Checking profile completion for user:', req.user.email);
       console.log('📋 Current profile data:', profile);
       
-      // Calculate profile completion percentage
+      // Calculate profile completion percentage using UPDATED profile data
       const calculateProfileCompletion = (profile) => {
         if (!profile) return 0;
 
         const requiredFields = [
           'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
           'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-          'maritalStatus', 'father', 'mother', 'about', 'images'
-        ];
-
-        const optionalFields = [
+          'maritalStatus', 'father', 'mother', 'about', 'images',
           'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
           'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
           'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
           'interests'
         ];
 
+        const optionalFields = [];
+
         let completedFields = 0;
         let totalWeight = 0;
 
-        // Check required fields (weight: 2x)
+        // Check all required fields (equal weight: 1x each)
+        const missingRequiredFields = [];
         requiredFields.forEach(field => {
-          totalWeight += 2;
+          totalWeight += 1;
           if (profile[field]) {
             if (field === 'images') {
               // Images field should have at least one image
               if (Array.isArray(profile[field]) && profile[field].length > 0) {
-                completedFields += 2;
+                completedFields += 1;
+              } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
+                completedFields += 1;
+              } else {
+                missingRequiredFields.push(field);
               }
-            } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
-              completedFields += 2;
-            } else if (typeof profile[field] === 'number' && profile[field] > 0) {
-              completedFields += 2;
-            }
-          }
-        });
-
-        // Check optional fields (weight: 1x)
-        optionalFields.forEach(field => {
-          totalWeight += 1;
-          if (profile[field]) {
-            if (field === 'interests') {
-              // Interests field should have at least one interest
+            } else if (field === 'interests') {
+              // Interests field should be an array with at least one item
               if (Array.isArray(profile[field]) && profile[field].length > 0) {
                 completedFields += 1;
+              } else {
+                missingRequiredFields.push(field);
               }
             } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
               completedFields += 1;
             } else if (typeof profile[field] === 'number' && profile[field] > 0) {
               completedFields += 1;
+            } else {
+              missingRequiredFields.push(field);
             }
+          } else {
+            missingRequiredFields.push(field);
           }
         });
+        
+        console.log(`🔍 Missing required fields:`, missingRequiredFields);
 
         // Calculate percentage (max 100%)
+        // Each field contributes equally to 100% completion
         const percentage = Math.min(100, Math.round((completedFields / totalWeight) * 100));
+        
+        // Debug logging for profile completion calculation
+        console.log(`📊 Profile completion calculation debug:`, {
+          completedFields,
+          totalWeight,
+          percentage,
+          totalRequiredFields: requiredFields.length,
+          requiredFields: requiredFields.length,
+          optionalFields: optionalFields.length,
+          requiredFieldsList: requiredFields,
+          completedRequiredFieldsList: requiredFields.filter(field => {
+            if (!profile[field]) return false;
+            if (field === 'images') {
+              return (Array.isArray(profile[field]) && profile[field].length > 0) || 
+                     (typeof profile[field] === 'string' && profile[field].trim() !== '');
+            }
+            if (field === 'interests') {
+              return Array.isArray(profile[field]) && profile[field].length > 0;
+            }
+            return typeof profile[field] === 'string' && profile[field].trim() !== '' || 
+                   (typeof profile[field] === 'number' && profile[field] > 0);
+          }),
+          profileValues: requiredFields.reduce((acc, field) => {
+            acc[field] = profile[field];
+            return acc;
+          }, {})
+        });
+        
         return percentage;
       };
 
+      // Calculate completion using UPDATED profile data
       const completion = calculateProfileCompletion(profile);
-      console.log(`📊 Profile completion: ${completion}%`);
+      console.log(`📊 Calculated profile completion: ${completion}%`);
       
-      // Save profile completeness to database
-      user.profile.profileCompleteness = completion;
-      await user.save();
-      console.log(`💾 Profile completeness saved to database: ${completion}%`);
+      // Update the profileCompleteness in the database with the correct value
+      console.log(`🔄 Attempting to update profileCompleteness to ${completion}% for user ${userId}`);
+      
+      try {
+        // Use findByIdAndUpdate with the correct nested field path
+        const updateResult = await User.findByIdAndUpdate(
+          userId,
+          { 
+            $set: { 'profile.profileCompleteness': completion },
+            lastActive: new Date()
+          },
+          { new: true, runValidators: true }
+        );
+        
+        if (!updateResult) {
+          console.error(`❌ Failed to update profileCompleteness for user ${userId}`);
+          throw new Error('Failed to update profile completeness');
+        }
+        
+        console.log(`✅ Database update result:`, {
+          userId: updateResult._id,
+          profileCompleteness: updateResult.profile?.profileCompleteness,
+          expectedValue: completion,
+          success: updateResult.profile?.profileCompleteness === completion
+        });
+        
+        // Verify the update worked by fetching the user again
+        const updatedUser = await User.findById(userId);
+        console.log(`🔍 Verification - Updated user profileCompleteness:`, {
+          userId: updatedUser._id,
+          profileCompleteness: updatedUser.profile?.profileCompleteness,
+          expectedValue: completion,
+          match: updatedUser.profile?.profileCompleteness === completion
+        });
+        
+        if (updatedUser.profile?.profileCompleteness !== completion) {
+          console.error(`❌ Database update verification failed: expected ${completion}, got ${updatedUser.profile?.profileCompleteness}`);
+          throw new Error('Database update verification failed');
+        }
+        
+        console.log(`💾 Profile completeness (${completion}%) updated in database`);
+        
+      } catch (error) {
+        console.error(`❌ Error updating profileCompleteness:`, error);
+        throw error;
+      }
       
       // Check if user should be marked as not first login (100% threshold)
       if (completion >= 100) {
         console.log('🎉 Profile is 100% complete! Updating user status...');
         
-        // Update isFirstLogin in PreapprovedEmail collection
-        const preapprovedUpdate = await PreapprovedEmail.findOneAndUpdate(
-          { email: req.user.email },
+        // Update isFirstLogin in User collection
+        const userUpdate = await User.findByIdAndUpdate(
+          userId,
           { isFirstLogin: false },
           { new: true }
         );
-        console.log('✅ PreapprovedEmail updated:', preapprovedUpdate ? 'success' : 'not found');
+        console.log('✅ User updated:', userUpdate ? 'success' : 'not found');
         
         // Update user status to active if profile is completed
         if (user.status === 'invited') {
@@ -352,6 +444,57 @@ class ProfileController {
       res.status(500).json({
         success: false,
         error: 'Failed to update profile'
+      });
+    }
+  }
+
+  // Update first login flag
+  async updateFirstLoginFlag(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { isFirstLogin } = req.body;
+
+      console.log(`🔄 Update first login flag - User: ${userId}, isFirstLogin: ${isFirstLogin}`);
+
+      // Validate input
+      if (typeof isFirstLogin !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: 'isFirstLogin must be a boolean'
+        });
+      }
+
+      // Update the flag in User collection
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          isFirstLogin: isFirstLogin,
+          lastActive: new Date()
+        },
+        { new: true }
+      );
+
+      if (!user) {
+        console.warn(`❌ User not found for first login flag update: ${req.user.userUuid} (${req.user.email})`);
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      console.log(`✅ First login flag updated for user: ${user.email} (${user.userUuid}) - isFirstLogin: ${isFirstLogin}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'First login flag updated successfully',
+        isFirstLogin: user.isFirstLogin
+      });
+
+    } catch (error) {
+      console.error('❌ Update first login flag error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update first login flag'
       });
     }
   }
@@ -443,7 +586,6 @@ class ProfileController {
         premium: profile.premium,
         lastActive: profile.lastActive,
         createdAt: profile.createdAt,
-
       }));
 
       res.status(200).json({
@@ -499,6 +641,54 @@ class ProfileController {
     } catch (error) {
       console.error('❌ Delete profile error:', error);
       res.status(500).json({ success: false, error: 'Failed to delete profile' });
+    }
+  }
+
+  // Update onboarding message flag
+  async updateOnboardingMessage(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { hasSeenOnboardingMessage } = req.body;
+
+      if (typeof hasSeenOnboardingMessage !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: 'hasSeenOnboardingMessage must be a boolean'
+        });
+      }
+
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { 
+          $set: { 
+            hasSeenOnboardingMessage: hasSeenOnboardingMessage,
+            lastActive: new Date()
+          }
+        },
+        { new: true }
+      );
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      console.log(`✅ Onboarding message flag updated for user: ${user.email} (${user.userUuid}) - hasSeenOnboardingMessage: ${hasSeenOnboardingMessage}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Onboarding message flag updated successfully',
+        hasSeenOnboardingMessage: user.hasSeenOnboardingMessage
+      });
+
+    } catch (error) {
+      console.error('❌ Update onboarding message error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update onboarding message flag'
+      });
     }
   }
 }
