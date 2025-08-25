@@ -16,7 +16,7 @@ All static data, demo references, and legacy code have been successfully removed
 #### **Port Configuration Updates:**
 ```javascript
 // OLD
-const apiBaseUrl = 'http://localhost:4500';
+const apiBaseUrl = 'http://localhost:5500';
 
 // NEW
 const apiBaseUrl = 'http://localhost:5500';
@@ -34,8 +34,8 @@ const apiBaseUrl = 'http://localhost:5500';
 #### **Port Configuration Updates:**
 ```typescript
 // OLD
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 4500 (dev), 5500 (prod)
-API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4500'
+// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:3500 (static), 5500 (dev), 5500 (prod)
+API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500'
 
 // NEW
 // Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
@@ -199,7 +199,7 @@ export interface LikeResponse {
 ### **Environment Variables:**
 ```bash
 # OLD
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4500
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5500
 
 # NEW
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5500

@@ -18,4 +18,13 @@ router.get('/uuid/:uuid', profileController.getProfileByUuid);
 // Soft delete user profile (authenticated)
 router.delete('/me', authenticateToken, profileController.deleteProfile);
 
+// Update onboarding message flag (authenticated)
+router.patch('/me/onboarding', authenticateToken, profileController.updateOnboardingMessage);
+
+// Update onboarding message flag
+router.put('/onboarding-flag', authenticateToken, profileController.updateOnboardingMessage.bind(profileController));
+
+// Update first login flag
+router.put('/first-login-flag', authenticateToken, profileController.updateFirstLoginFlag.bind(profileController));
+
 module.exports = router;

@@ -1,57 +1,75 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../services/auth-service';
 import { MatchingService, type LikedProfile, type MutualMatch } from '../../services/matching-service';
 import { matchesCountService } from '../../services/matches-count-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import CustomIcon from '../../components/CustomIcon';
 import { gsap } from 'gsap';
-import Image from 'next/image';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import StandardHeader from '../../components/StandardHeader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
-import configService from '../../services/configService';
-import ModernNavigation from '../../components/ModernNavigation';
+import { config as configService } from '../../services/configService';
+import SmoothNavigation from '../../components/SmoothNavigation';
+import { useServerAuth } from '../../hooks/useServerAuth';
+import ServerAuthGuard from '../../components/ServerAuthGuard';
+import ToastService from '../../services/toastService';
+import CelebratoryMatchToast from '../../components/CelebratoryMatchToast';
+import { MatchesListSkeleton } from '../../components/SkeletonLoader';
+import { ProfileImage } from '../../components/LazyImage';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+import logger from '../../utils/logger';
 
-// Helper to decode JWT and get current user ID
+// Helper to decode JWT and get current user ID (for backward compatibility)
 function getCurrentUserId() {
   try {
-    const token = localStorage.getItem('authToken');
-    if (!token) return null;
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.userId || payload._id || payload.id || null;
+    // This function is kept for backward compatibility but should be replaced
+    // with server-side authentication checks
+    return null;
   } catch {
     return null;
   }
 }
 
-export default function Matches() {
+function MatchesContent() {
   const router = useRouter();
+  const { user, isAuthenticated } = useServerAuth();
   const [activeTab, setActiveTab] = useState('matches');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [likedProfiles, setLikedProfiles] = useState<LikedProfile[]>([]);
   const [mutualMatches, setMutualMatches] = useState<MutualMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileIncomplete, setShowProfileIncomplete] = useState(false);
+  const [showMatchCelebration, setShowMatchCelebration] = useState(false);
+  const [hasShownMatchToast, setHasShownMatchToast] = useState(false);
+  
+
   const [profileImages, setProfileImages] = useState<Map<string, string>>(new Map());
   const [matchesCount, setMatchesCount] = useState(0);
   const [error, setError] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    ageRange: [18, 60],
+    ageRange: [18, 70],
     selectedProfessions: [],
     selectedCountry: '',
     selectedState: ''
   });
 
+  // Enhanced mobile features
+  const { haptics } = useHapticFeedback();
+  const { containerRef: pullToRefreshRef, isRefreshing } = usePullToRefresh({
+    onRefresh: async () => {
+      haptics.light();
+      await fetchMatches();
+    },
+    enabled: true,
+  });
+
   // GSAP refs for animations
-  const headerRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const fetchCalledRef = useRef(false);
 
   // Fetch matches with caching
@@ -71,6 +89,17 @@ export default function Matches() {
       // Update matches count with the actual count from server
       matchesCountService.setCount(mutualMatchesData.matches.length);
       
+      // Show match celebration if user has matches and hasn't shown toast yet
+      if (mutualMatchesData.matches.length > 0 && !hasShownMatchToast) {
+        setShowMatchCelebration(true);
+        setHasShownMatchToast(true);
+        
+        // Hide celebration after 3 seconds
+        setTimeout(() => {
+          setShowMatchCelebration(false);
+        }, 3000);
+      }
+      
       // Fetch profile images for all profiles
       const allProfiles = [
         ...mutualMatchesData.matches.map((match: any) => match.profile),
@@ -78,22 +107,14 @@ export default function Matches() {
       ];
       await fetchProfileImages(allProfiles);
       
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      setError('Failed to load matches. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+          } catch (error) {
+        setError('Failed to load matches. Please try again.');
+      } finally {
+        setLoading(false);
+      }
   }
 
   useEffect(() => {
-    if (!AuthService.isAuthenticated()) {
-      setLoading(false);
-      return;
-    }
-
-    setIsAuthenticated(true);
-
     // Clear cache to ensure fresh data
     MatchingService.clearMatchesCache();
     
@@ -113,7 +134,7 @@ export default function Matches() {
                      !!newFilters.selectedCountry ||
                      !!newFilters.selectedState ||
                      newFilters.ageRange[0] !== 18 ||
-                     newFilters.ageRange[1] !== 60;
+                     newFilters.ageRange[1] !== 70;
     
     setHasActiveFilters(hasActive);
   };
@@ -135,59 +156,62 @@ export default function Matches() {
         });
         setProfileImages(prev => new Map([...prev, ...newProfileImages]));
       } catch (error) {
-        console.warn('⚠️ Failed to load profile images:', error);
+        logger.warn('⚠️ Failed to load profile images:', error);
       }
     }
   };
 
   // Check onboarding completion
   useEffect(() => {
-    async function checkOnboarding() {
+    async function checkAccess() {
       try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          router.push('/');
-          return;
+        logger.debug('🔍 Matches: Checking access control...');
+        
+        // Use server-side authentication data
+        if (!user) {
+          logger.debug('🚫 No user data available - waiting for user data');
+          return; // Don't show popup yet, wait for user data
         }
 
-        const response = await fetch(`${configService.apiBaseUrl}/api/profiles/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        // Access Control Logic: Only allow access if profileCompleteness is 100%
+        const profileCompleteness = user.profileCompleteness || 0;
+        
+        logger.debug('🔍 Matches: Access control check:', {
+          profileCompleteness,
+          userEmail: user.email,
+          userRole: user.role,
+          isApproved: user.isApprovedByAdmin,
+          isFirstLogin: user.isFirstLogin
         });
-
-        if (response.ok) {
-          const profile = await response.json();
-          
-          // Check if profile is complete (100% required)
-          const completeness = profile.profileCompleteness || 0;
-          const hasProfilePicture = profile.profile?.images;
-          
-          if (completeness < 100 || !hasProfilePicture) {
-            setShowProfileIncomplete(true);
-            setLoading(false);
-            return;
-          }
+        
+        // Check if profile is complete (should be 100 for complete profiles)
+        if (profileCompleteness < 100) {
+          logger.debug('🚫 Access denied: Profile incomplete - redirecting to profile');
+          router.replace('/profile');
+          return;
+        } else {
+          logger.debug('✅ Access granted: Profile complete - proceeding to matches');
+          setShowProfileIncomplete(false);
+          setLoading(false);
         }
       } catch (error) {
-        console.error('Error checking onboarding:', error);
+        logger.error('Error checking matches access:', error);
+        router.replace('/profile');
       }
     }
 
-    checkOnboarding();
-  }, [router]);
+    // Only run check if user is available
+    if (user) {
+      checkAccess();
+    }
+  }, [user, router]);
 
-  // GSAP animations
+  // GSAP animations - simplified to remove bounce effects
   useEffect(() => {
-    if (headerRef.current && tabsRef.current) {
-      gsap.fromTo(headerRef.current, 
-        { y: -50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" }
-      );
-      
+    if (tabsRef.current) {
       gsap.fromTo(tabsRef.current,
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, delay: 0.2, ease: "power2.out" }
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }
       );
     }
   }, []);
@@ -204,25 +228,25 @@ export default function Matches() {
     return unsubscribe;
   }, []);
 
-  // Animate content when data loads
-  useEffect(() => {
-    if (contentRef.current && !loading) {
-      gsap.fromTo(contentRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-      );
-    }
-  }, [loading, mutualMatches, likedProfiles]);
+  // Remove content animation to prevent bounce effects
+  // useEffect(() => {
+  //   if (contentRef.current && !loading) {
+  //     gsap.fromTo(contentRef.current,
+  //       { opacity: 0, y: 20 },
+  //       { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+  //     );
+  //   }
+  // }, [loading, mutualMatches, likedProfiles]);
 
-  // Profile card hover animations
+  // Profile card hover animations - simplified
   useEffect(() => {
     const cards = document.querySelectorAll('.profile-card');
     
     cards.forEach(card => {
       const handleMouseEnter = () => {
         gsap.to(card, {
-          scale: 1.02,
-          duration: 0.2,
+          scale: 1.01, // Reduced scale for subtler effect
+          duration: 0.15, // Faster animation
           ease: "power2.out"
         });
       };
@@ -230,7 +254,7 @@ export default function Matches() {
       const handleMouseLeave = () => {
         gsap.to(card, {
           scale: 1,
-          duration: 0.2,
+          duration: 0.15, // Faster animation
           ease: "power2.out"
         });
       };
@@ -244,6 +268,18 @@ export default function Matches() {
       };
     });
   }, [mutualMatches, likedProfiles]);
+
+  const handleKeepSwiping = useCallback(() => {
+    // Continue viewing matches - no action needed, just close the toast
+    logger.debug('User chose to continue viewing matches');
+  }, []);
+
+  const handleStartChat = useCallback(() => {
+    // Stay on matches page to start chatting
+    logger.debug('User chose to start chatting');
+  }, []);
+
+  // GSAP animation for filter modal
 
   if (showProfileIncomplete) {
     return (
@@ -259,7 +295,7 @@ export default function Matches() {
           
           <Link 
             href="/profile"
-            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             <CustomIcon name="ri-user-settings-line" className="mr-2" />
             Complete Profile
@@ -273,221 +309,270 @@ export default function Matches() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <StandardHeader />
       
-      {/* Header */}
-      <div ref={headerRef} className="px-4 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Matches</h1>
-            <p className="text-gray-600">Connect with your matches</p>
+      {/* Main Content */}
+      <div className="pt-20 pb-24 px-4 relative z-10">
+        {/* Tabs */}
+        <div ref={tabsRef} className="mb-6">
+          <div className="flex bg-white rounded-2xl p-1 shadow-sm">
+            <button
+              onClick={() => setActiveTab('matches')}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                activeTab === 'matches'
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <CustomIcon name="ri-heart-fill" className="mr-2" />
+                Matches ({mutualMatches.length})
+              </div>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                activeTab === 'requests'
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <CustomIcon name="ri-user-add-line" className="mr-2" />
+                Likes ({likedProfiles.length})
+              </div>
+            </button>
           </div>
-          
-          <button
-            onClick={() => setShowFilter(true)}
-            className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 ${
-              hasActiveFilters 
-                ? 'bg-purple-100 text-purple-700 border-2 border-purple-300' 
-                : 'bg-white text-gray-600 border-2 border-gray-200 hover:border-purple-300'
-            }`}
-          >
-            <CustomIcon name="ri-filter-3-line" className="mr-2" />
-            Filter
-          </button>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div ref={tabsRef} className="px-4 mb-6">
-        <div className="flex bg-white rounded-2xl p-1 shadow-sm">
-          <button
-            onClick={() => setActiveTab('matches')}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === 'matches'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            <div className="flex items-center justify-center">
-              <CustomIcon name="ri-heart-fill" className="mr-2" />
-              Matches ({mutualMatches.length})
-            </div>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === 'requests'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            <div className="flex items-center justify-center">
-              <CustomIcon name="ri-user-add-line" className="mr-2" />
-              Requests ({likedProfiles.length})
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div ref={contentRef} className="px-4 pb-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <HeartbeatLoader />
-          </div>
-        ) : (
-          <>
-            {activeTab === 'matches' && (
-              <div className="space-y-4">
-                {mutualMatches.length === 0 ? (
-                  <div className="text-center py-12">
-                    <CustomIcon name="ri-heart-line" className="text-6xl text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Matches Yet</h3>
-                    <p className="text-gray-500 mb-6">Start swiping to find your perfect match!</p>
-                    <Link
-                      href="/dashboard"
-                      className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
-                    >
-                      <CustomIcon name="ri-compass-line" className="mr-2" />
-                      Start Discovering
-                    </Link>
-                  </div>
-                ) : (
-                  mutualMatches.map((match) => (
-                    <div key={match.connectionId} className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 cursor-pointer transition-all duration-200 hover:shadow-md">
-                      <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                            {profileImages.get(match.profile._id) ? (
-                              <Image
-                                src={profileImages.get(match.profile._id)!}
-                                alt={match.profile.profile.name}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
-                            )}
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                            <CustomIcon name="ri-check-line" className="text-white text-xs" />
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-800 mb-1">
-                            {match.profile.profile.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 mb-2">
-                            {(match.profile.profile as any).location || 'Location not specified'}
-                          </p>
-                        </div>
-                        
+        {/* Content with Pull-to-Refresh */}
+        <div ref={pullToRefreshRef} className="android-scroll">
+          {loading ? (
+            <MatchesListSkeleton />
+          ) : (
+            <>
+              {activeTab === 'matches' && (
+                <div className="space-y-4">
+                  {mutualMatches.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center">
+                        <CustomIcon name="ri-heart-line" className="text-4xl text-pink-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">No Matches Yet</h3>
+                      <p className="text-gray-600 mb-6">Start swiping to find your perfect match!</p>
+                      <Link
+                        href="/dashboard"
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        Start Discovering
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {mutualMatches.map((match, index) => (
                         <Link
+                          key={match.connectionId}
                           href={`/chat/${match.connectionId}`}
-                          className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
+                          className="profile-card bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-pink-200"
+                          style={{
+                            animationDelay: `${index * 100}ms`
+                          }}
                         >
-                          <CustomIcon name="ri-chat-3-line" className="text-xl" />
-                        </Link>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {activeTab === 'requests' && (
-              <div className="space-y-4">
-                {likedProfiles.length === 0 ? (
-                  <div className="text-center py-12">
-                    <CustomIcon name="ri-user-add-line" className="text-6xl text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Requests Yet</h3>
-                    <p className="text-gray-500 mb-6">Profiles you like will appear here</p>
-                    <Link
-                      href="/dashboard"
-                      className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
-                    >
-                      <CustomIcon name="ri-compass-line" className="mr-2" />
-                      Start Discovering
-                    </Link>
-                  </div>
-                ) : (
-                  likedProfiles.map((likedProfile) => (
-                    <div key={likedProfile.likeId} className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 cursor-pointer transition-all duration-200 hover:shadow-md">
-                      <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                            {profileImages.get(likedProfile.profile._id) ? (
-                              <Image
-                                src={profileImages.get(likedProfile.profile._id)!}
-                                alt={likedProfile.profile.profile.name}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
-                            )}
-                          </div>
-                          {likedProfile.isMutualMatch && (
-                            <div className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center">
-                              <CustomIcon name="ri-heart-fill" className="text-red-500 text-xs" />
+                          <div className="flex items-center space-x-4">
+                            <div className="relative">
+                              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden shadow-lg">
+                                {profileImages.get(match.profile._id) ? (
+                                  <ProfileImage
+                                    src={profileImages.get(match.profile._id)!}
+                                    alt={match.profile.profile.name}
+                                    size="lg"
+                                    className="w-full h-full"
+                                  />
+                                ) : (
+                                  <CustomIcon name="ri-user-line" className="text-3xl text-gray-400" />
+                                )}
+                              </div>
+                              <div className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center">
+                                <CustomIcon name="ri-heart-fill" className="text-red-500 text-xs" />
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-800 mb-1">
-                            {likedProfile.profile.profile.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 mb-2">
-                            {(likedProfile.profile.profile as any).location || 'Location not specified'}
-                          </p>
-                        </div>
-                        
-                        {likedProfile.isMutualMatch ? (
-                          <Link
-                            href={`/chat/${likedProfile.connectionId}`}
-                            className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
-                          >
-                            <CustomIcon name="ri-chat-3-line" className="text-xl" />
-                          </Link>
-                        ) : (
-                          <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                            <CustomIcon name="ri-time-line" className="text-gray-400 text-xl" />
+                            
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-800 mb-1">
+                                {match.profile.profile.name}
+                              </h3>
+                              {match.profile.profile.profession && (
+                                <p className="text-sm text-gray-500 mb-3">
+                                  {match.profile.profile.profession}
+                                </p>
+                              )}
+                              <div className="flex items-center text-xs text-gray-400">
+                                Matched on {new Date(match.matchDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-center w-14 h-14 text-pink-500">
+                              <CustomIcon name="ri-chat-3-line" className="text-xl" />
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        </Link>
+                      ))}
                     </div>
-                  ))
-                )}
-              </div>
-            )}
-          </>
-        )}
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'requests' && (
+                <div className="space-y-4">
+                  {likedProfiles.length === 0 ? (
+                    <div className="text-center py-12">
+                      <CustomIcon name="ri-user-add-line" className="text-6xl text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Likes Yet</h3>
+                      <p className="text-gray-500 mb-6">Profiles you like will appear here</p>
+                      <Link
+                        href="/dashboard"
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
+                      >
+                        Start Discovering
+                      </Link>
+                    </div>
+                  ) : (
+                    likedProfiles.map((likedProfile) => (
+                      likedProfile.isMutualMatch ? (
+                        <Link
+                          key={likedProfile.likeId}
+                          href={`/chat/${likedProfile.connectionId}`}
+                                                     className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer hover:border-pink-200"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                                {profileImages.get(likedProfile.profile._id) ? (
+                                  <ProfileImage
+                                    src={profileImages.get(likedProfile.profile._id)!}
+                                    alt={likedProfile.profile.profile.name}
+                                    size="md"
+                                    className="w-full h-full"
+                                  />
+                                ) : (
+                                  <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
+                                )}
+                              </div>
+                              <div className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center">
+                                <CustomIcon name="ri-heart-fill" className="text-red-500 text-xs" />
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-800 mb-1">
+                                {likedProfile.profile.profile.name}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                Liked on {likedProfile.likeDate ? new Date(likedProfile.likeDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                }) : 'Date not available'}
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center justify-center w-12 h-12 text-pink-500">
+                              <CustomIcon name="ri-chat-3-line" className="text-xl" />
+                            </div>
+                          </div>
+                        </Link>
+                      ) : (
+                        <div key={likedProfile.likeId} className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md">
+                          <div className="flex items-center space-x-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                                {profileImages.get(likedProfile.profile._id) ? (
+                                  <ProfileImage
+                                    src={profileImages.get(likedProfile.profile._id)!}
+                                    alt={likedProfile.profile.profile.name}
+                                    size="md"
+                                    className="w-full h-full"
+                                  />
+                                ) : (
+                                  <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-800 mb-1">
+                                {likedProfile.profile.profile.name}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                Liked on {likedProfile.likeDate ? new Date(likedProfile.likeDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                }) : 'Date not available'}
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                              <CustomIcon name="ri-heart-line" className="text-gray-400 text-xl" />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ))
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Filter Modal */}
-      <FilterModal
-        onClose={() => setShowFilter(false)}
-        onApply={handleApplyFilters}
-        currentFilters={filters}
-      />
+      {showFilter && (
+        <FilterModal
+          onClose={() => setShowFilter(false)}
+          onApply={handleApplyFilters}
+          currentFilters={filters}
+        />
+      )}
+
+      {/* Match Celebration Animation */}
+      {showMatchCelebration && (
+        <CelebratoryMatchToast
+          isVisible={showMatchCelebration}
+          onClose={() => setShowMatchCelebration(false)}
+          onKeepSwiping={handleKeepSwiping}
+          onStartChat={handleStartChat}
+          matchName={`${mutualMatches.length} new match${mutualMatches.length > 1 ? 'es' : ''}`}
+        />
+      )}
 
       {/* Modern Bottom Navigation */}
-      <ModernNavigation 
+      <SmoothNavigation 
         items={[
           { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
           { 
             href: '/matches', 
             icon: 'ri-chat-3-line', 
             label: 'Matches',
+            activeIcon: 'ri-chat-3-fill',
             ...(matchesCount > 0 && { badge: matchesCount })
           },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
+          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
         ]}
       />
     </div>
+  );
+}
+
+export default function Matches() {
+  return (
+    <ServerAuthGuard requireAuth={true} requireCompleteProfile={true}>
+      <MatchesContent />
+    </ServerAuthGuard>
   );
 }

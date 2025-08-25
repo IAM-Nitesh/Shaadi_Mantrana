@@ -8,13 +8,19 @@ const config = require('../config');
 
 const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
-const { User, PreapprovedEmail } = require('../models');
+const { User } = require('../models');
 
 // Session management
 const sessions = new Map();
 
 // OTP store with expiration (use Redis in production)
-const otpStore = new Map();
+const otpStore = require('../utils/otpStorage');
+
+// Ensure otpStore is properly initialized
+if (!otpStore || typeof otpStore.size !== 'function') {
+  console.error('❌ OTP Storage not properly initialized!');
+  throw new Error('OTP Storage initialization failed');
+}
 
 // Simple rate limiting (use Redis in production)
 const rateLimitStore = new Map();
@@ -68,7 +74,10 @@ const SecurityUtils = {
 
   // Store OTP with expiration
   storeOTP: (email, otp, clientInfo = {}) => {
-    const expirationTime = Date.now() + (10 * 60 * 1000); // 10 minutes
+    // Consistent 10-minute expiration for all environments
+    const expirationMinutes = 10;
+    const expirationTime = Date.now() + (expirationMinutes * 60 * 1000);
+    
     otpStore.set(email, {
       otp,
       expiresAt: expirationTime,
@@ -76,12 +85,13 @@ const SecurityUtils = {
       clientInfo,
       createdAt: Date.now()
     });
-    console.log('Storing OTP:', otp, 'for', email, 'Current store:', Array.from(otpStore.entries()));
+    console.log(`Storing OTP: ${otp} for ${email} (expires in ${expirationMinutes} minutes)`);
+    console.log(`Current store size: ${otpStore.size()}`);
   },
 
   // Verify OTP
   verifyOTP: (email, otp) => {
-    console.log('Verifying OTP for', email, 'Current store:', Array.from(otpStore.entries()));
+    console.log(`Verifying OTP for ${email}, Current store size: ${otpStore.size()}`);
     const stored = otpStore.get(email);
     if (!stored) {
       return { valid: false, reason: 'OTP not found or expired' };
@@ -99,6 +109,7 @@ const SecurityUtils = {
 
     if (stored.otp !== otp) {
       stored.attempts++;
+      otpStore.set(email, stored); // Update attempts count
       return { valid: false, reason: 'Invalid OTP' };
     }
 
@@ -166,24 +177,24 @@ class AuthController {
 
 
           // Check if email is approved by admin
-    const preapprovedUser = await PreapprovedEmail.findOne({ email: sanitizedEmail });
-      // Check if user is an admin (existing admin users should be able to login)
       const existingUser = await User.findOne({ email: sanitizedEmail });
       const isAdmin = existingUser && existingUser.role === 'admin';
       
-      if (!isAdmin && !preapprovedUser) {
+      if (!isAdmin && !existingUser) {
         return res.status(403).json({
           success: false,
           error: 'Email not approved for registration',
           message: 'This email is not approved by admin. Please contact support.'
         });
       }
+      
       // Admin users don't need to be in preapproved emails collection
       if (isAdmin) {
         console.log(`👑 Admin user ${sanitizedEmail} login attempt (bypassing preapproved check)`);
       }
-      // Check if preapproved user is paused (only for non-admin users)
-      if (!isAdmin && preapprovedUser && !preapprovedUser.approvedByAdmin) {
+      
+      // Check if user is paused (only for non-admin users)
+      if (existingUser && !isAdmin && existingUser.status === 'paused') {
         return res.status(403).json({
           success: false,
           error: 'Account is paused',
@@ -286,14 +297,13 @@ class AuthController {
 
       // Find or create user in MongoDB
       let user = await User.findOne({ email: sanitizedEmail });
-      const preapproved = await PreapprovedEmail.findOne({ email: sanitizedEmail });
       const isAdmin = user && user.role === 'admin';
       
       // Check if user is paused (for non-admin users)
       if (user && !isAdmin && user.status === 'paused') {
         return res.status(403).json({
           success: false,
-          error: 'Your account has been paused by admin. Please contact support to resume your account.'
+          error: 'Your account has been paused. Please contact the admin for re-approval.'
         });
       }
 
@@ -301,32 +311,27 @@ class AuthController {
       if (user && !isAdmin && user.isApprovedByAdmin === false) {
         return res.status(403).json({
           success: false,
-          error: 'Your account has been paused by admin. Please contact support to resume your account.'
+          error: 'Your account has been paused. Please contact the admin for re-approval.'
         });
       }
       
-      if (!isAdmin && !preapproved) {
-        return res.status(403).json({
-          success: false,
-          error: 'This email is not preapproved by admin. Please contact support.'
-        });
-      }
       if (!user) {
-        // Check for duplicate uuid for same email
-        const existingUserWithUuid = await User.findOne({ userUuid: preapproved?.uuid });
-        if (existingUserWithUuid && existingUserWithUuid.email !== sanitizedEmail) {
-          return res.status(409).json({
-            success: false,
-            error: 'A user with this UUID already exists for a different email. Please contact support.'
-          });
-        }
+        // Create new user
         const { v4: uuidv4 } = require('uuid');
         user = new User({
           email: sanitizedEmail,
-          userUuid: preapproved?.uuid || uuidv4(),
+          userUuid: uuidv4(),
+          isApprovedByAdmin: true, // Default to approved for new users
+          role: 'user',
+          status: 'invited',
+          isFirstLogin: true,
+          hasSeenOnboardingMessage: false, // New users haven't seen onboarding
+          profileCompleted: false,
+          addedAt: new Date(),
+          addedBy: null, // Direct OTP registration, not admin-invited
           profile: {
             location: "India",
-            profileCompleteness: 17,  // Set correct value for new users
+            profileCompleteness: 0,  // Start with 0 for new users
             // Initialize all dropdown fields as undefined (empty)
             gender: undefined,
             maritalStatus: undefined,
@@ -359,46 +364,19 @@ class AuthController {
             specificRequirements: '',
             about: '',
             interests: [],
-            images: []
+            images: null // Set to null instead of empty array
           },
           preferences: {
             location: [
-              "Andhra Pradesh",
-              "Arunachal Pradesh",
-              "Assam",
-              "Bihar",
-              "Chhattisgarh",
-              "Goa",
-              "Gujarat",
-              "Haryana",
-              "Himachal Pradesh",
-              "Jharkhand",
-              "Karnataka",
-              "Kerala",
-              "Madhya Pradesh",
-              "Maharashtra",
-              "Manipur",
-              "Meghalaya",
-              "Mizoram",
-              "Nagaland",
-              "Odisha",
-              "Punjab",
-              "Rajasthan",
-              "Sikkim",
-              "Tamil Nadu",
-              "Telangana",
-              "Tripura",
-              "Uttar Pradesh",
-              "Uttarakhand",
-              "West Bengal",
-              "Andaman and Nicobar Islands",
-              "Chandigarh",
-              "Dadra and Nagar Haveli and Daman and Diu",
-              "Delhi",
-              "Jammu and Kashmir",
-              "Ladakh",
-              "Lakshadweep",
-              "Puducherry"
+              "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+              "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+              "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+              "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+              "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+              "Uttar Pradesh", "Uttarakhand", "West Bengal",
+              "Andaman and Nicobar Islands", "Chandigarh",
+              "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+              "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
             ],
             ageRange: {
               min: 18,
@@ -407,12 +385,7 @@ class AuthController {
             profession: [],
             education: []
           },
-          verification: {
-            isVerified: true,
-            verifiedAt: new Date(),
-            approvalType: 'otp'
-          },
-          status: 'invited'
+          loginHistory: []
         });
         await user.save();
         console.log(`✅ New user created: ${sanitizedEmail} (UUID: ${user.userUuid})`);
@@ -464,8 +437,7 @@ class AuthController {
           "West Bengal",
           "Andaman and Nicobar Islands",
           "Chandigarh",
-          "Dadra and Nagar Haveli and Daman and Diu",
-          "Delhi",
+          "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
           "Jammu and Kashmir",
           "Ladakh",
           "Lakshadweep",
@@ -485,29 +457,31 @@ class AuthController {
       }
 
       // Create JWT session using the same system as the main auth controller
-      const sessionData = {
-        userId: user._id, // always use ObjectId
-        userUuid: user.userUuid, // use UUID for monitoring
-        email: user.email,
-        verified: true,
-        loginTime: new Date().toISOString(),
-        clientIP,
-        userAgent: req.headers['user-agent']
-      };
+      const session = JWTSessionManager.createSession(user);
 
-      const session = JWTSessionManager.createSession(sessionData);
-
-      res.status(200).json({
+      // Prepare response with user data for frontend redirection logic
+      const userData = user.toPublicJSON();
+      
+      // Add additional fields needed for frontend redirection logic
+      const responseData = {
         success: true,
         message: 'Authentication successful',
-        user: user.toPublicJSON(),
+        user: {
+          ...userData,
+          isFirstLogin: user.isFirstLogin,
+          isApprovedByAdmin: user.isApprovedByAdmin,
+          profileCompleteness: user.profile?.profileCompleteness || 0,
+          hasSeenOnboardingMessage: user.hasSeenOnboardingMessage || false
+        },
         session: {
           accessToken: session.accessToken,
           refreshToken: session.refreshToken,
           expiresIn: session.expiresIn,
           sessionId: session.sessionId
         }
-      });
+      };
+
+      res.status(200).json(responseData);
 
     } catch (error) {
       console.error('❌ Verify OTP error:', error);
@@ -549,16 +523,24 @@ class AuthController {
   // Get current user profile
   async getProfile(req, res) {
     try {
+      console.log('🔍 GetProfile: Starting profile request...');
+      console.log('🔍 GetProfile: req.user:', req.user);
+      
       const userId = req.user.userId;
+      console.log('🔍 GetProfile: userId:', userId);
       
       const user = await User.findById(userId);
+      console.log('🔍 GetProfile: User found:', user ? 'Yes' : 'No');
+      
       if (!user) {
+        console.log('❌ GetProfile: User not found');
         return res.status(404).json({
           success: false,
           error: 'User not found'
         });
       }
 
+      console.log('✅ GetProfile: User found, returning profile');
       res.status(200).json({
         success: true,
         user: user.toPublicJSON()

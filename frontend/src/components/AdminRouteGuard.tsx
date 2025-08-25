@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import HeartbeatLoader from './HeartbeatLoader';
-import configService from '../services/configService';
-import { AuthService } from '../services/auth-service';
+import { config as configService } from '../services/configService';
+import { ServerAuthService } from '../services/server-auth-service';
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
@@ -20,14 +20,15 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
-        // Check if user is authenticated
-        if (!AuthService.isAuthenticated()) {
+        // Check if user is authenticated using server-side auth
+        const authStatus = await ServerAuthService.checkAuthStatus();
+        if (!authStatus.authenticated) {
           setError('Authentication required');
           router.replace('/');
           return;
         }
 
-        const token = localStorage.getItem('authToken');
+        const token = await ServerAuthService.getBearerToken();
         if (!token) {
           setError('Authentication required');
           router.replace('/');
@@ -47,7 +48,6 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
           
           if (userRole === 'admin') {
             setIsAdmin(true);
-            localStorage.setItem('userRole', 'admin');
           } else {
             setError('Admin access required');
             router.replace('/');
@@ -59,7 +59,7 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
           return;
         }
       } catch (error) {
-        console.error('❌ Error checking admin access:', error);
+  
         setError('Authentication failed');
         router.replace('/');
         return;
@@ -77,7 +77,8 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <HeartbeatLoader 
-            size="xxl" 
+            logoSize="xxxxl"
+            textSize="xl"
             text="Verifying Admin Access" 
             className="mb-4"
           />

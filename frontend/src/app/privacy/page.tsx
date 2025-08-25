@@ -8,11 +8,11 @@ export default function Privacy() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">Privacy Policy</h1>
-          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600">
+        <div className="flex items-center">
+          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 mr-3">
             <CustomIcon name="ri-arrow-left-line" />
           </Link>
+          <h1 className="text-xl font-bold text-gray-800">Privacy Policy</h1>
         </div>
       </div>
 
@@ -23,7 +23,7 @@ export default function Privacy() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                ShaadiMantra (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to safeguarding your privacy in compliance with the Information Technology Act, 2000, and the Digital Personal Data Protection Act, 2023 (DPDP Act) of India. This Privacy Policy outlines how we collect, use, process, and protect your personal data on our matrimonial platform, ensuring transparency and adherence to Indian legal and regulatory standards.
+                ShaadiMantrana (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to safeguarding your privacy in compliance with the Information Technology Act, 2000, and the Digital Personal Data Protection Act, 2023 (DPDP Act) of India. This Privacy Policy outlines how we collect, use, process, and protect your personal data on our matrimonial platform, ensuring transparency and adherence to Indian legal and regulatory standards.
               </p>
             </div>
 
@@ -162,7 +162,7 @@ export default function Privacy() {
                 For privacy-related queries, concerns, or to exercise your rights under the DPDP Act, contact our Data Protection Officer:
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>Support Email: <a href="mailto:shaadimantra.help@gmail.com" className="text-blue-600">shaadimantra.help@gmail.com</a></li>
+                <li>Support Email: <a href="mailto:shaadimantrana.help@gmail.com" className="text-blue-600">shaadimantrana.help@gmail.com</a></li>
                 <li>Admin Contact: +91 7086875013</li>
                 <li>In-app support section</li>
                 <li>Customer service channels within the platform</li>
@@ -181,7 +181,7 @@ export default function Privacy() {
                 Last updated: July 2025
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                This Privacy Policy governs your use of ShaadiMantra and reflects our commitment to protecting your personal data in accordance with Indian laws.
+                This Privacy Policy governs your use of ShaadiMantrana and reflects our commitment to protecting your personal data in accordance with Indian laws.
               </p>
             </div>
           </div>

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { AuthService } from '../../services/auth-service';
+import { ServerAuthService } from '../../services/server-auth-service';
 import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
+import HeartbeatLoader from '../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
+import logger from '../../utils/logger';
 
 export default function AdminLayout({
   children,
@@ -30,15 +32,15 @@ export default function AdminLayout({
         return;
       }
 
-      // Check if user is authenticated using existing auth system
-      if (!AuthService.isAuthenticated()) {
+      // Check if user is authenticated using server-side auth
+      const authStatus = await ServerAuthService.checkAuthStatus();
+      if (!authStatus.authenticated) {
         router.replace('/'); // Redirect to main app login
         return;
       }
 
-      // Verify admin access using existing profile endpoint
-      const hasAdminAccess = await AuthService.verifyAdminAccess();
-      if (!hasAdminAccess) {
+      // Verify admin access
+      if (authStatus.user?.role !== 'admin') {
         router.replace('/'); // Redirect to main app if not admin
         return;
       }
@@ -50,7 +52,7 @@ export default function AdminLayout({
         router.replace('/admin/dashboard');
       }
     } catch (error) {
-      console.error('Admin authentication check failed:', error);
+      logger.error('Admin authentication check failed:', error);
       router.replace('/'); // Redirect to main app on error
     } finally {
       setIsChecking(false);
@@ -61,10 +63,12 @@ export default function AdminLayout({
   if (isChecking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Checking admin access...</p>
-        </div>
+        <HeartbeatLoader 
+          logoSize="xxl"
+          textSize="lg"
+          text="Checking admin access..."
+          showText={true}
+        />
       </div>
     );
   }
@@ -72,11 +76,18 @@ export default function AdminLayout({
   // Only render children if authenticated or on login page
   if (isAuthenticated || pathname === '/admin/login') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col">
+        {/* Fixed Header - StandardHeader already has fixed positioning */}
         <StandardHeader showProfileLink={false} />
-        <main className="pb-20 pt-20 admin-content">
-          {children}
+        
+        {/* Scrollable Content Area */}
+        <main className="flex-1 pt-20 pb-20 overflow-y-auto">
+          <div className="admin-content relative">
+            {children}
+          </div>
         </main>
+        
+        {/* Fixed Footer - AdminBottomNavigation already has fixed positioning */}
         <AdminBottomNavigation />
       </div>
     );
