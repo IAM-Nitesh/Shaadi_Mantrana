@@ -38,7 +38,7 @@ const NavigationItem = memo(({
   const getNavItemClasses = useMemo(() => {
     const baseClasses = `
       flex flex-col items-center justify-center
-      relative overflow-hidden
+      relative overflow-visible
       mobile-touch-feedback android-touch-target
       transition-all duration-150 ease-out
       group
@@ -118,9 +118,10 @@ const NavigationItem = memo(({
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.08 }} // Ultra-fast badge animation
-          className="absolute -top-1 -right-1 text-red-500 text-xs font-bold"
+          className="absolute -top-0 -right-1 flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-semibold leading-none shadow-sm border border-white/80"
+          aria-label={`You have ${item.badge} matches`}
         >
-          {item.badge > 99 ? '99+' : item.badge}
+          <span className="select-none">{item.badge > 99 ? '99+' : item.badge}</span>
         </motion.div>
       )}
     </motion.button>
