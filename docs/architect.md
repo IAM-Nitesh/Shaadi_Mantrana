@@ -154,7 +154,7 @@
 
 
 to be implemented
-logging 
+logging used loki and pro
  Logflare (for Cloudflare or Vercel)
  
 Notification 
