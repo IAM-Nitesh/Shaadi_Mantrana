@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ServerAuthService } from '../../../services/server-auth-service';
 import CustomIcon from '../../../components/CustomIcon';
+import logger from '../../../utils/logger';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function AdminLogin() {
           return;
         }
       } catch (error) {
-        console.error('Error checking admin access:', error);
+        logger.error('Error checking admin access:', error);
       }
     };
 

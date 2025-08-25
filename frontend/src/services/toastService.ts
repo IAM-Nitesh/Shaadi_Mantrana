@@ -8,11 +8,7 @@ class ToastService {
     });
   }
 
-  static profileSaved() {
-    return toast.success('✨ Profile saved successfully!', {
-      id: 'profile-saved',
-    });
-  }
+
 
   static profileComplete() {
     return toast.success('🎉 Profile 100% complete! You can now use all features.', {

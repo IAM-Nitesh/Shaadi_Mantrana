@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import logger from '../../../utils/logger';
+import { withRouteLogging } from '../route-logger';
 
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
-    console.log('🔍 Health Check API: Checking system health...');
+    logger.debug('🔍 Health Check API: Checking system health...');
     
     const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
     
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
       
       if (response.ok) {
         const backendHealth = await response.json();
-        console.log('✅ Health Check API: Backend is healthy');
+        logger.debug('✅ Health Check API: Backend is healthy');
         
         return NextResponse.json({
           status: 'healthy',
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
           backend: backendHealth
         });
       } else {
-        console.log(`⚠️ Health Check API: Backend returned ${response.status}`);
+        logger.debug(`⚠️ Health Check API: Backend returned ${response.status}`);
         return NextResponse.json({
           status: 'degraded',
           timestamp: new Date().toISOString(),
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
       clearTimeout(timeoutId);
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error('❌ Health Check API: Backend timeout');
+        logger.error('❌ Health Check API: Backend timeout');
         return NextResponse.json({
           status: 'unhealthy',
           timestamp: new Date().toISOString(),
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
         }, { status: 503 });
       }
       
-      console.error('❌ Health Check API: Backend connection error:', fetchError);
+      logger.error('❌ Health Check API: Backend connection error:', fetchError);
       return NextResponse.json({
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
@@ -81,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
     
   } catch (error) {
-    console.error('❌ Health Check API: Error:', error);
+    logger.error('❌ Health Check API: Error:', error);
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -94,4 +96,6 @@ export async function GET(request: NextRequest) {
       }
     }, { status: 500 });
   }
-} 
+}
+
+export const GET = withRouteLogging(handleGet);

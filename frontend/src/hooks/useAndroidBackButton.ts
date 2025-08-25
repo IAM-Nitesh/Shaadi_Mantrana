@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
+import logger from '../utils/logger';
 import { useRouter } from 'next/navigation';
 
 interface UseAndroidBackButtonOptions {
@@ -60,7 +61,7 @@ export function useAndroidBackButton(options: UseAndroidBackButtonOptions = {}) 
         router.push('/');
       }
     } catch (error) {
-      console.error('Android back button handler error:', error);
+      logger.error('Android back button handler error:', error);
       // Fallback to home
       router.push('/');
     } finally {

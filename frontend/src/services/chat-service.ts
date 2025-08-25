@@ -1,5 +1,8 @@
 // Chat Service - Socket.IO Client Integration
 import { io, Socket } from 'socket.io-client';
+import logger from '../utils/logger';
+import { loggerForUser } from '../utils/pino-logger';
+import { getCurrentUser } from './auth-utils';
 import { config as configService } from './configService';
 import { MatchingService } from './matching-service';
 import { getBearerToken, isAuthenticated } from './auth-utils';
@@ -69,7 +72,13 @@ export class ChatService {
       
       return data;
     } catch (error) {
-      console.error('Error sending message:', error);
+      try {
+        const user = await getCurrentUser();
+  const log = loggerForUser(user?.userUuid);
+  log.error({ err: error }, 'Error sending message');
+      } catch (e) {
+  logger.error({ err: error }, 'Error sending message');
+      }
       throw error;
     }
   }
