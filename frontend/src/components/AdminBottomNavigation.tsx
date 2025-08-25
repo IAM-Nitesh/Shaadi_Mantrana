@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { AuthService } from '../services/auth-service';
+import { ServerAuthService } from '../services/server-auth-service';
 import { gsap } from 'gsap';
+import ToastService from '../services/toastService';
 
 export default function AdminBottomNavigation() {
   const pathname = usePathname();
@@ -15,17 +16,22 @@ export default function AdminBottomNavigation() {
     return null;
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      // Use AuthService to handle logout
-      const result = AuthService.logout();
+      // Use ServerAuthService to handle logout
+      const result = await ServerAuthService.logout();
       
       if (result.success) {
         // Create an enhanced GSAP logout animation sequence with heart animations
         const tl = gsap.timeline();
         
-        // Phase 1: Fade out admin content with rotation
-        tl.to('.admin-content', {
+        // Phase 1: Hide the page loading indicator immediately
+        tl.set('.fixed.left-0.right-0.z-\\[60\\]', {
+          display: 'none'
+        })
+        
+        // Phase 2: Fade out admin content with rotation
+        .to('.admin-content', {
           opacity: 0,
           scale: 0.95,
           y: -20,
@@ -34,11 +40,12 @@ export default function AdminBottomNavigation() {
           ease: "power2.inOut"
         })
         
-        // Phase 2: Show logout overlay with entrance animation
+        // Phase 3: Show logout overlay with entrance animation
         .set('.logout-overlay', {
           display: 'flex',
           opacity: 0,
-          scale: 0.9
+          scale: 0.9,
+          zIndex: 9999 // Ensure it's above everything including PageLoadingIndicator
         })
         .to('.logout-overlay', {
           opacity: 1,
@@ -47,7 +54,7 @@ export default function AdminBottomNavigation() {
           ease: "back.out(1.2)"
         })
         
-        // Phase 3: Animate central success circle with bounce
+        // Phase 4: Animate central success circle with bounce
         .fromTo('.logout-circle', {
           scale: 0,
           rotation: -180,
@@ -60,7 +67,7 @@ export default function AdminBottomNavigation() {
           ease: "elastic.out(1, 0.6)"
         }, "-=0.3")
         
-        // Phase 4: Animate central heart icon
+        // Phase 5: Animate central heart icon
         .fromTo('.logout-checkmark', {
           scale: 0,
           opacity: 0,
@@ -73,7 +80,7 @@ export default function AdminBottomNavigation() {
           ease: "back.out(2)"
         }, "-=0.5")
         
-        // Phase 5: Animate floating hearts with staggered entrance
+        // Phase 6: Animate floating hearts with staggered entrance
         .fromTo('.floating-heart', {
           scale: 0,
           opacity: 0,
@@ -92,7 +99,7 @@ export default function AdminBottomNavigation() {
           }
         }, "-=0.6")
         
-        // Phase 6: Add floating animation to hearts
+        // Phase 7: Add floating animation to hearts
         .to('.floating-heart', {
           y: "-=10",
           rotation: "+=15",
@@ -106,7 +113,7 @@ export default function AdminBottomNavigation() {
           }
         }, "-=0.3")
         
-        // Phase 7: Animate text elements
+        // Phase 8: Animate text elements
         .fromTo('.logout-title', {
           y: 30,
           opacity: 0,
@@ -129,40 +136,7 @@ export default function AdminBottomNavigation() {
           ease: "power2.out"
         }, "-=0.3")
         
-        // Phase 8: Enhanced loading dots animation with pulsing effect
-        .fromTo('.logout-dots span', {
-          scale: 0.3,
-          opacity: 0.2
-        }, {
-          scale: 1.3,
-          opacity: 1,
-          duration: 0.4,
-          ease: "power2.inOut",
-          stagger: 0.15,
-          repeat: 4,
-          yoyo: true
-        }, "-=0.2")
-        
-        // Phase 9: Add continuous floating animation to decorative elements
-        .fromTo('.logout-overlay .absolute.border', {
-          scale: 0,
-          opacity: 0,
-          rotation: -180
-        }, {
-          scale: 1,
-          opacity: 1,
-          rotation: 0,
-          duration: 0.8,
-          ease: "elastic.out(1, 0.4)",
-          stagger: 0.2
-        }, "-=2")
-        
-        .to('.logout-overlay .absolute.border', {
-          rotation: "+=360",
-          duration: 8,
-          ease: "none",
-          repeat: -1
-        }, "-=0.5")
+        // Phase 9: Border animations removed for cleaner logout experience
         
         // Phase 10: Add particle floating animations
         .to('.logout-circle .absolute.animate-bounce', {
@@ -202,12 +176,12 @@ export default function AdminBottomNavigation() {
           duration: 0.5,
           ease: "power2.out",
           onComplete: () => {
-            alert('⚠️ There was an issue logging out. Please try again.');
+            ToastService.error('⚠️ There was an issue logging out. Please try again.');
           }
         });
       }
     } catch (error) {
-      console.error('❌ Logout error:', error);
+
       
       // Error shake animation
       gsap.to('.admin-content', {
@@ -221,7 +195,7 @@ export default function AdminBottomNavigation() {
         duration: 0.5,
         ease: "power2.out",
         onComplete: () => {
-          alert('⚠️ There was an issue logging out. Please try again.');
+          ToastService.error('⚠️ There was an issue logging out. Please try again.');
         }
       });
     }
@@ -318,7 +292,7 @@ export default function AdminBottomNavigation() {
       </div>
 
       {/* Logout Animation Overlay */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
         
@@ -371,7 +345,7 @@ export default function AdminBottomNavigation() {
                   Shaadi
                 </span>
                 <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent ml-2">
-                  Mantra
+                  Mantrana
                 </span>
               </h1>
               <p className="text-slate-600 text-sm">
@@ -382,7 +356,7 @@ export default function AdminBottomNavigation() {
             {/* Success Circle */}
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               <div className="logout-checkmark">
-                <img src="/icon.svg" alt="Shaadi Mantra" className="w-20 h-20 heartbeat-animation" />
+                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-64 h-64 heartbeat-animation" />
               </div>
             </div>
             
@@ -390,16 +364,11 @@ export default function AdminBottomNavigation() {
             <div className="mb-6">
               <h2 className="logout-title text-xl font-bold text-slate-800 mb-2">Successfully Logged Out!</h2>
               <p className="logout-subtitle text-slate-600 text-sm">
-                Thank you for using Shaadi Mantra. We hope you found your perfect match!
+                Thank you for using Shaadi Mantrana. We hope you found your perfect match!
               </p>
             </div>
             
-            {/* Loading Dots */}
-            <div className="logout-dots flex justify-center space-x-1">
-              <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-              <span className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
-              <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
-            </div>
+            {/* Loading dots removed */}
             
             {/* Redirect Message */}
             <p className="text-slate-500 text-xs mt-4">

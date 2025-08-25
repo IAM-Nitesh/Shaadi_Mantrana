@@ -7,7 +7,7 @@ The ShaadiMantra backend now supports **flexible data source switching** between
 ## Configuration Modes
 
 ### 🔧 Static/Mock Mode
-- **Port**: 4500
+- **Port**: 5500
 - **Database**: None required
 - **Controllers**: Memory-based with static data
 - **Use Case**: Development, testing, demos
@@ -32,7 +32,7 @@ DATA_SOURCE=mongodb
 ```
 
 ### Port Configuration
-- **Static Mode**: Automatically uses port 4500
+- **Static Mode**: Automatically uses port 5500
 - **MongoDB Mode**: Automatically uses port 5500
 - **Override**: Set `PORT` environment variable to override
 
@@ -65,7 +65,7 @@ npm run mode:help
 ### Development Scripts
 
 ```bash
-# Start in static mode (port 4500)
+# Start in static mode (port 5500)
 npm run dev:static
 
 # Start in MongoDB mode (port 5500) 
@@ -137,7 +137,7 @@ GET  /api/invitations/:code
 
 ```bash
 # Static mode health check
-curl http://localhost:4500/health
+curl http://localhost:5500/health
 
 # MongoDB mode health check  
 curl http://localhost:5500/health
@@ -149,7 +149,7 @@ curl http://localhost:5500/health
 ```bash
 npm run mode:static
 npm run dev:static
-# Frontend connects to port 4500
+# Frontend connects to port 5500
 ```
 
 ### 2. Backend Integration Testing
@@ -192,7 +192,7 @@ DATA_SOURCE=mongodb npm run prod:mongodb
 ### Port Conflicts
 ```bash
 # Check what's using the port
-lsof -i :4500
+lsof -i :5500
 lsof -i :5500
 
 # Override port if needed
@@ -205,7 +205,7 @@ PORT=9000 npm run dev:static
 npm run mode:status
 
 # View environment info
-curl http://localhost:4500/health
+curl http://localhost:5500/health
 ```
 
 ### Database Issues (MongoDB Mode)
@@ -223,7 +223,7 @@ Update frontend API base URL based on backend mode:
 
 ```javascript
 // Static mode
-const API_BASE_URL = 'http://localhost:4500/api';
+const API_BASE_URL = 'http://localhost:5500/api';
 
 // MongoDB mode  
 const API_BASE_URL = 'http://localhost:5500/api';
@@ -231,7 +231,7 @@ const API_BASE_URL = 'http://localhost:5500/api';
 // Auto-detection
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
   (process.env.NODE_ENV === 'development' ? 
-    'http://localhost:4500/api' : 'http://localhost:5500/api');
+    'http://localhost:5500/api' : 'http://localhost:5500/api');
 ```
 
 ## Next Steps

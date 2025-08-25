@@ -1,6 +1,9 @@
 // Matching Service - Handles discovery, likes, and matches
-import { API_CONFIG } from './auth-service';
-import configService from './configService';
+import { config as configService } from './configService';
+import { getBearerToken, isAuthenticated } from './auth-utils';
+import logger from '../utils/logger';
+import { loggerForUser } from '../utils/pino-logger';
+import { getCurrentUser } from './auth-utils';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -155,8 +158,14 @@ export interface DiscoveryProfile {
     name: string;
     age?: number;
     profession?: string;
-    images?: string[];
+    occupation?: string;
+    images?: string | string[]; // Handle both string and array cases
     about?: string;
+    education?: string;
+    nativePlace?: string;
+    currentResidence?: string;
+    location?: string; // Add location field
+    interests?: string[];
   };
   verification?: {
     isVerified: boolean;
@@ -169,8 +178,12 @@ export interface LikeResponse {
   error?: string;
   isMutualMatch: boolean;
   connection?: any;
+  connectionId?: string;
   dailyLikeCount: number;
   remainingLikes: number;
+  alreadyLiked?: boolean;
+  message?: string;
+  shouldShowToast?: boolean;
 }
 
 export interface DailyLikeStats {
@@ -207,7 +220,7 @@ export class MatchingService {
     dailyLikeCount: number;
     remainingLikes: number;
   }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No profiles available.');
@@ -220,9 +233,21 @@ export class MatchingService {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
-        // console.warn('No auth token found, returning empty discovery data');
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        // console.warn('User not authenticated, returning empty discovery data');
+        return {
+          profiles: [],
+          dailyLimitReached: false,
+          dailyLikeCount: 0,
+          remainingLikes: 0
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         return {
           profiles: [],
           dailyLimitReached: false,
@@ -234,7 +259,7 @@ export class MatchingService {
       const response = await fetch(`${apiBaseUrl}/api/matching/discovery?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -266,6 +291,19 @@ export class MatchingService {
       }
 
       const data = await response.json();
+      
+      // Debug: Log the raw data received from backend
+      logger.debug('🔍 MatchingService: Raw backend response:', {
+        profilesCount: data.profiles?.length || 0,
+        firstProfile: data.profiles?.[0] ? {
+          id: data.profiles[0]._id,
+          name: data.profiles[0].profile?.name,
+          interests: data.profiles[0].profile?.interests,
+          interestsType: typeof data.profiles[0].profile?.interests,
+          interestsLength: data.profiles[0].profile?.interests?.length
+        } : null
+      });
+      
       return {
         profiles: data.profiles || [],
         dailyLimitReached: data.dailyLimitReached || false,
@@ -286,7 +324,7 @@ export class MatchingService {
 
   // Like a profile (swipe right)
   static async likeProfile(targetUserId: string, type: 'like' | 'super_like' = 'like'): Promise<LikeResponse> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. Like not recorded.');
@@ -300,15 +338,22 @@ export class MatchingService {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        throw new Error('Authentication required');
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('Authentication required');
       }
 
       const response = await fetch(`${apiBaseUrl}/api/matching/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId, type }),
@@ -318,7 +363,22 @@ export class MatchingService {
         if (response.status === 401) {
           throw new Error('Authentication failed, please login again');
         }
+        
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        
+        // Handle specific error cases more gracefully
+        if (errorData.error && errorData.error.includes('Profile already liked')) {
+          // Return a special response for already liked profiles
+          return {
+            success: true,
+            isMutualMatch: false,
+            dailyLikeCount: 0,
+            remainingLikes: 0,
+            alreadyLiked: true,
+            message: 'Profile already liked'
+          };
+        }
+        
         throw new Error(errorData.error || 'Failed to like profile');
       }
 
@@ -331,7 +391,7 @@ export class MatchingService {
 
   // Pass on a profile (swipe left)
   static async passProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. Pass not recorded.');
@@ -339,10 +399,22 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        throw new Error('Authentication required');
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/pass`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId }),
@@ -362,33 +434,154 @@ export class MatchingService {
 
   // Unmatch from a profile
   static async unmatchProfile(targetUserId: string): Promise<{ success: boolean; message: string }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
-    
-    if (!apiBaseUrl) {
-      // console.warn('API_BASE_URL not configured. Unmatch not recorded.');
-      return { success: false, message: 'API not configured' };
-    }
-
     try {
-      const response = await fetch(`${apiBaseUrl}/api/matching/unmatch`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ targetUserId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || 'Failed to unmatch profile');
+      if (!isAuthenticated()) {
+        throw new Error('User not authenticated');
       }
 
-      return await response.json();
+      const token = await getBearerToken();
+      const response = await fetch(`${this.baseUrl}/api/matching/unmatch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetUserId })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to unmatch profile');
+      }
+
+      // Clear matches cache after unmatch
+      this.clearMatchesCache();
+
+      return data;
     } catch (error) {
-      // console.error('Error unmatching profile:', error);
+      try {
+        const user = await getCurrentUser();
+        const log = loggerForUser(user?.userUuid);
+        log.error({ err: error }, 'Unmatch profile error:');
+      } catch (e) {
+        logger.error({ err: error }, 'Unmatch profile error:');
+      }
       throw error;
     }
+  }
+
+  // Mark match toast as seen
+  static async markMatchToastSeen(targetUserId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Check authentication first
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+  logger.warn('User not authenticated, skipping toast seen update');
+        return { success: false, message: 'User not authenticated' };
+      }
+
+      // Get Bearer token
+      const token = await getBearerToken();
+      if (!token) {
+  logger.warn('No bearer token available, skipping toast seen update');
+        return { success: false, message: 'No access token available' };
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/matching/mark-toast-seen`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetUserId })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        try {
+          const user = await getCurrentUser();
+          const log = loggerForUser(user?.userUuid);
+          log.warn({ err: data?.error || response.statusText }, 'Failed to mark toast as seen');
+        } catch (e) {
+          logger.warn({ err: data?.error || response.statusText }, 'Failed to mark toast as seen');
+        }
+        return { success: false, message: data.error || 'Failed to mark match toast as seen' };
+      }
+
+      return data;
+    } catch (error) {
+      logger.error('Mark match toast seen error:', error);
+      return { success: false, message: 'Failed to mark match toast as seen' };
+    }
+  }
+
+  // Mark match toast as seen when entering chat
+  static async markToastSeenOnChatEntry(connectionId: string): Promise<{ success: boolean; message: string }> {
+    const maxRetries = 3;
+    const retryDelay = 200; // 200ms delay between retries
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Check authentication first
+        const authenticated = await isAuthenticated();
+        if (!authenticated) {
+          logger.warn('User not authenticated, skipping toast seen update');
+          return { success: false, message: 'User not authenticated' };
+        }
+
+        // Get Bearer token
+        const token = await getBearerToken();
+        if (!token) {
+          logger.warn('No bearer token available, skipping toast seen update');
+          return { success: false, message: 'No access token available' };
+        }
+
+        const response = await fetch(`${this.baseUrl}/api/matching/mark-toast-seen-chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ connectionId })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          // If it's a 404 and we have more retries, try again
+          if (response.status === 404 && attempt < maxRetries) {
+            logger.warn(`Attempt ${attempt}/${maxRetries}: Failed to mark toast as seen (404), retrying in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue;
+          }
+          
+          logger.warn('Failed to mark toast as seen:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: data.error,
+            data: data,
+            attempt: attempt
+          });
+          return { success: false, message: data.error || `Failed to mark match toast as seen (${response.status})` };
+        }
+
+        return data;
+      } catch (error) {
+        logger.error(`Mark toast seen on chat entry error (attempt ${attempt}):`, error);
+        
+        // If this is the last attempt, return error
+        if (attempt === maxRetries) {
+          return { success: false, message: 'Failed to mark match toast as seen' };
+        }
+        
+        // Otherwise, wait and retry
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+    
+    return { success: false, message: 'Failed to mark match toast as seen after all retries' };
   }
 
   // Get liked profiles (for Request tab)
@@ -397,7 +590,7 @@ export class MatchingService {
     totalLikes: number;
     mutualMatches: number;
   }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No liked profiles available.');
@@ -409,15 +602,42 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return {
+          likedProfiles: [],
+          totalLikes: 0,
+          mutualMatches: 0
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return {
+          likedProfiles: [],
+          totalLikes: 0,
+          mutualMatches: 0
+        };
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/liked`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          return {
+            likedProfiles: [],
+            totalLikes: 0,
+            mutualMatches: 0
+          };
+        }
         throw new Error(`Failed to fetch liked profiles: ${response.statusText}`);
       }
 
@@ -442,7 +662,7 @@ export class MatchingService {
     matches: MutualMatch[];
     totalMatches: number;
   }> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No mutual matches available.');
@@ -453,15 +673,39 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return {
+          matches: [],
+          totalMatches: 0
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return {
+          matches: [],
+          totalMatches: 0
+        };
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/matching/matches`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          return {
+            matches: [],
+            totalMatches: 0
+          };
+        }
         throw new Error(`Failed to fetch mutual matches: ${response.statusText}`);
       }
 
@@ -481,7 +725,7 @@ export class MatchingService {
 
   // Get daily like statistics
   static async getDailyLikeStats(date?: string): Promise<DailyLikeStats> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No stats available.');
@@ -494,6 +738,28 @@ export class MatchingService {
     }
 
     try {
+      // Check if user is authenticated using server-side auth
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return {
+          dailyLikeCount: 0,
+          canLikeToday: true,
+          remainingLikes: 5,
+          dailyLimit: 5
+        };
+      }
+
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
+        return {
+          dailyLikeCount: 0,
+          canLikeToday: true,
+          remainingLikes: 5,
+          dailyLimit: 5
+        };
+      }
+
       const url = date 
         ? `${apiBaseUrl}/api/matching/stats?date=${date}`
         : `${apiBaseUrl}/api/matching/stats`;
@@ -501,12 +767,20 @@ export class MatchingService {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 401) {
+          return {
+            dailyLikeCount: 0,
+            canLikeToday: true,
+            remainingLikes: 5,
+            dailyLimit: 5
+          };
+        }
         throw new Error(`Failed to fetch daily like stats: ${response.statusText}`);
       }
 
@@ -529,7 +803,7 @@ export class MatchingService {
     const cacheKey = 'matches';
     
     // Temporarily disable cache for debugging
-    console.log('🔍 Cache disabled for debugging');
+    logger.debug('🔍 Cache disabled for debugging');
     
     // Check cache first
     // const cached = cacheManager.get(cacheKey, 'matches');
@@ -538,35 +812,36 @@ export class MatchingService {
     //   return cached;
     // }
 
-    console.log('🔄 Fetching fresh matches data...');
+    logger.debug('🔄 Fetching fresh matches data...');
 
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('No authentication token found');
       }
 
-      console.log('🔗 Making API calls to fetch matches and likes...');
+      logger.debug('🔗 Making API calls to fetch matches and likes...');
 
       // Fetch both matches and likes in parallel
       const [matchesResponse, likesResponse] = await Promise.all([
         fetch(`${this.baseUrl}/api/matching/matches`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${bearerToken}`,
             'Content-Type': 'application/json',
           },
         }),
         fetch(`${this.baseUrl}/api/matching/liked`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${bearerToken}`,
             'Content-Type': 'application/json',
           },
         })
       ]);
 
-      console.log('📡 API responses received:', {
+      logger.debug('📡 API responses received:', {
         matchesStatus: matchesResponse.status,
         likesStatus: likesResponse.status
       });
@@ -580,43 +855,43 @@ export class MatchingService {
         likesResponse.json()
       ]);
 
-      console.log('📊 Raw API data:', {
+      logger.debug('📊 Raw API data:', {
         matchesData,
         likesData
       });
 
       // Debug the structure of each response
       if (matchesData.success && matchesData.matches) {
-        console.log('📋 Matches API response structure:', {
+        logger.debug('📋 Matches API response structure:', {
           success: matchesData.success,
           matchesCount: matchesData.matches.length,
           firstMatch: matchesData.matches[0],
           pagination: matchesData.pagination
         });
       } else {
-        console.log('❌ Matches API response:', matchesData);
+        logger.debug('❌ Matches API response:', matchesData);
       }
 
       if (likesData.success && likesData.likedProfiles) {
-        console.log('📋 Likes API response structure:', {
+        logger.debug('📋 Likes API response structure:', {
           success: likesData.success,
           likesCount: likesData.likedProfiles.length,
           firstLike: likesData.likedProfiles[0],
           pagination: likesData.pagination
         });
       } else {
-        console.log('❌ Likes API response:', likesData);
+        logger.debug('❌ Likes API response:', likesData);
       }
       
       // Log the exact keys in the responses
-      console.log('🔑 Matches response keys:', Object.keys(matchesData));
-      console.log('🔑 Likes response keys:', Object.keys(likesData));
+      logger.debug('🔑 Matches response keys:', Object.keys(matchesData));
+      logger.debug('🔑 Likes response keys:', Object.keys(likesData));
 
       // Combine the data
       const combinedData = {
         success: true,
         mutualMatches: matchesData.success ? matchesData.matches.map((match: any) => {
-          console.log('🔄 Processing match:', match);
+          logger.debug('🔄 Processing match:', match);
           const transformedMatch = {
             connectionId: match.connectionId,
             profile: {
@@ -624,11 +899,11 @@ export class MatchingService {
               profile: match.profile.profile
             }
           };
-          console.log('✅ Transformed match:', transformedMatch);
+          logger.debug('✅ Transformed match:', transformedMatch);
           return transformedMatch;
         }) : [],
         likedProfiles: likesData.success ? likesData.likedProfiles.map((like: any) => {
-          console.log('🔄 Processing like:', like);
+          logger.debug('🔄 Processing like:', like);
           const transformedLike = {
             likeId: like.likeId,
             likeDate: like.likeDate,
@@ -640,15 +915,15 @@ export class MatchingService {
               profile: like.profile.profile
             }
           };
-          console.log('✅ Transformed like:', transformedLike);
+          logger.debug('✅ Transformed like:', transformedLike);
           return transformedLike;
         }) : []
       };
 
-      console.log('🎯 Combined data:', combinedData);
+      logger.debug('🎯 Combined data:', combinedData);
       
       // Test the final data structure
-      console.log('🧪 Final data test:', {
+      logger.debug('🧪 Final data test:', {
         success: combinedData.success,
         mutualMatchesCount: combinedData.mutualMatches.length,
         likedProfilesCount: combinedData.likedProfiles.length,
@@ -658,11 +933,11 @@ export class MatchingService {
       
       // Cache the result for 1 week
       // cacheManager.set(cacheKey, combinedData, 'matches');
-      console.log('💾 Cached matches data');
+      logger.debug('💾 Cached matches data');
       
       return combinedData;
     } catch (error) {
-      console.error('❌ Error fetching matches:', error);
+      logger.error('❌ Error fetching matches:', error);
       throw error;
     }
   }
@@ -680,15 +955,16 @@ export class MatchingService {
     }
 
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
+      // Get Bearer token for backend API call
+      const bearerToken = await getBearerToken();
+      if (!bearerToken) {
         throw new Error('No authentication token found');
       }
 
       const response = await fetch(`${this.baseUrl}/api/chat/${connectionId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -704,7 +980,7 @@ export class MatchingService {
       
       return data;
     } catch (error) {
-      console.error('Error fetching chat messages:', error);
+      logger.error('Error fetching chat messages:', error);
       throw error;
     }
   }

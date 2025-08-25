@@ -108,7 +108,7 @@ app.get('/health', async (req, res) => {
     
     res.status(200).json({ 
       status: 'OK', 
-      message: 'Shaadi Mantra Backend API is running',
+      message: 'Shaadi Mantrana Backend API is running',
       timestamp: new Date().toISOString(),
       database: dbHealth,
       environment: process.env.NODE_ENV || 'development',

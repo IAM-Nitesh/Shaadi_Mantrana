@@ -33,8 +33,15 @@ class JWTSessionManager {
 
   // Create session with both tokens
   static createSession(user) {
+    console.log('🔍 JWTSessionManager: Creating session for user:', {
+      userId: user._id,
+      userUuid: user.userUuid,
+      email: user.email,
+      role: user.role
+    });
+    
     const payload = {
-      userId: user.userId || user._id, // use userId if present, else _id
+      userId: user._id.toString(), // Convert ObjectId to string
       userUuid: user.userUuid, // Include UUID for monitoring
       email: user.email,
       role: user.role || 'user',
@@ -42,8 +49,12 @@ class JWTSessionManager {
       sessionId: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
     };
 
+    console.log('🔍 JWTSessionManager: Creating payload:', payload);
+
     const accessToken = this.generateAccessToken(payload);
     const refreshToken = this.generateRefreshToken(payload);
+
+    console.log('🔍 JWTSessionManager: Tokens generated successfully');
 
     // Store session
     activeSessions.set(payload.sessionId, {
@@ -53,6 +64,8 @@ class JWTSessionManager {
       lastAccessed: new Date(),
       refreshToken
     });
+
+    console.log('🔍 JWTSessionManager: Session stored, active sessions:', activeSessions.size);
 
     return {
       accessToken,
@@ -154,11 +167,19 @@ class JWTSessionManager {
 }
 
 // Authentication middleware
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+  console.log('🔍 AuthMiddleware: Starting token verification...');
+  console.log('🔍 AuthMiddleware: Auth header present:', !!authHeader);
+  console.log('🔍 AuthMiddleware: Auth header value:', authHeader ? `${authHeader.substring(0, 30)}...` : 'None');
+  console.log('🔍 AuthMiddleware: Token extracted:', !!token);
+  console.log('🔍 AuthMiddleware: Token length:', token?.length || 0);
+  console.log('🔍 AuthMiddleware: Token preview:', token ? `${token.substring(0, 20)}...` : 'None');
+
   if (!token) {
+    console.log('❌ AuthMiddleware: No token provided');
     return res.status(401).json({
       success: false,
       error: 'Access token required',
@@ -167,16 +188,32 @@ const authenticateToken = (req, res, next) => {
   }
 
   try {
+    console.log('🔍 AuthMiddleware: Verifying token...');
     const decoded = JWTSessionManager.verifyAccessToken(token);
+    console.log('🔍 AuthMiddleware: Token verified, decoded:', {
+      userId: decoded.userId,
+      email: decoded.email,
+      sessionId: decoded.sessionId,
+      role: decoded.role
+    });
     
     // Validate session exists
+    console.log('🔍 AuthMiddleware: Validating session...');
+    console.log('🔍 AuthMiddleware: Session ID:', decoded.sessionId);
+    console.log('🔍 AuthMiddleware: Active sessions count:', activeSessions.size);
+    console.log('🔍 AuthMiddleware: Active session IDs:', Array.from(activeSessions.keys()));
+    
     if (!JWTSessionManager.validateSession(decoded.sessionId)) {
+      console.log('❌ AuthMiddleware: Session not found or invalid');
+      console.log('❌ AuthMiddleware: Session validation failed');
       return res.status(401).json({
         success: false,
         error: 'Session expired or invalid',
         code: 'INVALID_SESSION'
       });
     }
+
+    console.log('✅ AuthMiddleware: Session validated successfully');
 
     // Add user info to request with UUID for monitoring
     req.user = {
@@ -191,9 +228,43 @@ const authenticateToken = (req, res, next) => {
     // Add UUID to response headers for better tracking
     res.set('X-User-UUID', decoded.userUuid);
     
+    // Check if user is paused (for non-admin users) - only if needed
+    if (decoded.role !== 'admin') {
+      try {
+        const { User } = require('../models');
+        const mongoose = require('mongoose');
+        
+        // Convert string userId back to ObjectId for database lookup
+        const userId = mongoose.Types.ObjectId.isValid(decoded.userId) 
+          ? new mongoose.Types.ObjectId(decoded.userId) 
+          : decoded.userId;
+          
+        const user = await User.findById(userId);
+        
+        if (user && (user.status === 'paused' || user.isApprovedByAdmin === false)) {
+          console.log('❌ AuthMiddleware: User account paused');
+          return res.status(403).json({
+            success: false,
+            error: 'Your account has been paused by admin. Please contact support to resume your account.',
+            code: 'ACCOUNT_PAUSED'
+          });
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error);
+        // Don't fail the request if we can't check user status
+        // Just log the error and continue
+      }
+    }
+    
+    console.log('✅ AuthMiddleware: Authentication successful');
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('❌ AuthMiddleware: Token verification error:', error);
+    console.error('❌ AuthMiddleware: Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     return res.status(401).json({
       success: false,
       error: error.message,

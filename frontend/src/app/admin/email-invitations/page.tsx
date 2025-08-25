@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../../services/auth-service';
 import CustomIcon from '../../../components/CustomIcon';
+import AdminRouteGuard from '../../../components/AdminRouteGuard';
+import ToastService from '../../../services/toastService';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
+import logger from '../../../utils/logger';
 
 interface Invitation {
   _id: string;
@@ -31,7 +34,7 @@ export default function EmailInvitations() {
 
   const fetchInvitations = async () => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         router.push('/');
         return;
@@ -48,7 +51,7 @@ export default function EmailInvitations() {
       }
 
       const data = await response.json();
-      console.log('Received invitations data:', data.invitations);
+      logger.debug('Received invitations data:', data.invitations);
       setInvitations(data.invitations || []);
 
       // Animate content on load
@@ -58,7 +61,7 @@ export default function EmailInvitations() {
       );
 
     } catch (error) {
-      console.error('Error fetching invitations:', error);
+      logger.error('Error fetching invitations:', error);
       setError('Failed to load invitations');
     } finally {
       setLoading(false);
@@ -70,10 +73,10 @@ export default function EmailInvitations() {
 
     try {
       setSendingInvitation(true);
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       
-      console.log('Sending invitation to:', newEmail.trim());
-      console.log('Using token:', token ? 'Token exists' : 'No token');
+      logger.debug('Sending invitation to:', newEmail.trim());
+      logger.debug('Using token:', token ? 'Token exists' : 'No token');
       
       const response = await fetch('/api/admin/invitations', {
         method: 'POST',
@@ -84,21 +87,21 @@ export default function EmailInvitations() {
         body: JSON.stringify({ email: newEmail.trim() })
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      logger.debug('Response status:', response.status);
+      logger.debug('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('Success response:', responseData);
+        logger.debug('Success response:', responseData);
         setNewEmail('');
         await fetchInvitations();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Error response:', errorData);
+        logger.error('Error response:', errorData);
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to send invitation`);
       }
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      logger.error('Error sending invitation:', error);
       setError(`Failed to send invitation: ${error.message}`);
     } finally {
       setSendingInvitation(false);
@@ -108,7 +111,7 @@ export default function EmailInvitations() {
   const resendInvitation = async (invitationId: string) => {
     try {
       setResendingInvitation(invitationId);
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       
       const response = await fetch(`/api/admin/invitations/${invitationId}/resend`, {
         method: 'POST',
@@ -128,7 +131,7 @@ export default function EmailInvitations() {
         throw new Error('Failed to resend invitation');
       }
     } catch (error) {
-      console.error('Error resending invitation:', error);
+      logger.error('Error resending invitation:', error);
       setError('Failed to resend invitation');
     } finally {
       setResendingInvitation(null);
@@ -154,7 +157,7 @@ export default function EmailInvitations() {
         minute: '2-digit'
       });
     } catch (error) {
-      console.error('Error formatting date:', dateString, error);
+      logger.error('Error formatting date:', dateString, error);
       return 'Invalid date';
     }
   };
@@ -174,9 +177,10 @@ export default function EmailInvitations() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 
-          size="xxl" 
+          logoSize="xxl"
+          textSize="lg"
           text="Loading invitations..." 
           showText={true}
         />
@@ -186,7 +190,7 @@ export default function EmailInvitations() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Invitations</h2>
@@ -203,54 +207,56 @@ export default function EmailInvitations() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-8 pt-4">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-            <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mr-3" />
-            Email Invitations
-          </h1>
-          <p className="text-gray-600">Send and manage email invitations to new users</p>
-        </div>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-8 pt-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
+          <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mr-3" />
+          Email Invitations
+        </h1>
+        <p className="text-gray-600">Send and manage email invitations to new users</p>
+      </div>
 
-        {/* Add New Invitation */}
-        <div className="invitation-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Send New Invitation
-          </h3>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="Enter email address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <button
-              onClick={sendNewInvitation}
-              disabled={!newEmail.trim() || sendingInvitation}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {sendingInvitation ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  Send Invitation
-                </>
-              )}
-            </button>
+      {/* Add New Invitation */}
+      <div className="invitation-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Send New Invitation
+        </h3>
+        
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="Enter email address"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
           </div>
+          <button
+            onClick={sendNewInvitation}
+            disabled={!newEmail.trim() || sendingInvitation}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {sendingInvitation ? (
+              <>
+                <div className="flex items-center justify-center mr-2">
+                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center animate-pulse">
+                    <span className="text-xs">💝</span>
+                  </div>
+                </div>
+                Sending...
+              </>
+            ) : (
+              <>
+                Send Invitation
+              </>
+            )}
+          </button>
         </div>
+      </div>
 
-        {/* Invitations List */}
-        <div className="invitation-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      {/* Invitations List */}
+      <div className="invitation-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center">
               <CustomIcon name="ri-mail-list-line" className="text-xl text-blue-500 mr-2" />
@@ -311,7 +317,6 @@ export default function EmailInvitations() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 } 

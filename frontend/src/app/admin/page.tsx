@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../services/auth-service';
-import { gsap } from 'gsap';
 import CustomIcon from '../../components/CustomIcon';
+import AdminRouteGuard from '../../components/AdminRouteGuard';
+import ToastService from '../../services/toastService';
+import { gsap } from 'gsap';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useServerAuth } from '../../hooks/useServerAuth';
+import { ServerAuthService } from '../../services/server-auth-service';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import logger from '../../utils/logger';
 
 interface User {
   _id: string;
@@ -21,8 +26,13 @@ interface User {
   createdAt: string;
   isFirstLogin: boolean;
   approvedByAdmin: boolean;
+  profileCompleteness?: number;
   isPending?: boolean;
   invitationSent?: boolean;
+  verification?: {
+    isVerified?: boolean;
+    approvalType?: string;
+  };
 }
 
 interface AdminStats {
@@ -38,12 +48,12 @@ interface AdminStats {
   totalInvitationCount: number;
 }
 
-export default function AdminPage() {
+function AdminPageContent() {
   const router = useRouter();
+  const { user, isAuthenticated, logout } = useServerAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -67,27 +77,22 @@ export default function AdminPage() {
   const modalRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
-  // Check authentication and admin role
+  // Check if user is admin
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!AuthService.isAuthenticated()) {
-        router.push('/');
-        return;
-      }
-
-      const userRole = localStorage.getItem('userRole');
-      if (userRole !== 'admin') {
-        router.push('/dashboard');
-        return;
-      }
-
-      setIsAuthenticated(true);
+    if (user && user.role === 'admin') {
       setIsAdmin(true);
-      await Promise.all([fetchUsers(), fetchStats()]);
-    };
+    }
+  }, [user]);
 
-    checkAuth();
-  }, [router]);
+  // Initialize admin data
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      const initializeAdmin = async () => {
+        await Promise.all([fetchUsers(), fetchStats()]);
+      };
+      initializeAdmin();
+    }
+  }, [isAuthenticated, isAdmin]);
 
   // GSAP animations
   useEffect(() => {
@@ -121,7 +126,11 @@ export default function AdminPage() {
 
   const fetchStats = async () => {
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = await ServerAuthService.getBearerToken();
+      if (!authToken) {
+        logger.error('No auth token available');
+        return;
+      }
       const response = await fetch('/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -133,13 +142,17 @@ export default function AdminPage() {
         setStats(data.stats);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      logger.error('Error fetching stats:', error);
     }
   };
 
   const fetchUsers = async () => {
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = await ServerAuthService.getBearerToken();
+      if (!authToken) {
+        logger.error('No auth token available');
+        return;
+      }
       const response = await fetch('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -151,7 +164,7 @@ export default function AdminPage() {
         setUsers(data.users || []);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
@@ -202,7 +215,11 @@ export default function AdminPage() {
     setError('');
     
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = await ServerAuthService.getBearerToken();
+      if (!authToken) {
+        logger.error('No auth token available');
+        return;
+      }
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
@@ -240,7 +257,11 @@ export default function AdminPage() {
     setError('');
     
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = await ServerAuthService.getBearerToken();
+      if (!authToken) {
+        logger.error('No auth token available');
+        return;
+      }
       
       const endpoint = currentlyPaused ? 'resume' : 'pause';
       const response = await fetch(`/api/admin/users/${userId}/${endpoint}`, {
@@ -274,7 +295,11 @@ export default function AdminPage() {
     setError('');
     
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = await ServerAuthService.getBearerToken();
+      if (!authToken) {
+        logger.error('No auth token available');
+        return;
+      }
       const response = await fetch(`/api/admin/users/${userId}/resume`, {
         method: 'POST',
         headers: {
@@ -305,7 +330,11 @@ export default function AdminPage() {
     setError('');
     
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = await ServerAuthService.getBearerToken();
+      if (!authToken) {
+        logger.error('No auth token available');
+        return;
+      }
       const response = await fetch(`/api/admin/users/${userId}/invite`, {
         method: 'POST',
         headers: {
@@ -341,47 +370,9 @@ export default function AdminPage() {
     }
   };
 
-  const logout = () => {
-    const overlay = document.querySelector('.logout-overlay') as HTMLElement;
-    if (!overlay) return;
-    
-    overlay.classList.remove('hidden');
-    
-    // GSAP logout animation
-    gsap.to(overlay, {
-      opacity: 1,
-      duration: 0.3,
-      ease: "power2.out"
-    });
-
-    // Logo animation
-    const logo = overlay.querySelector('.logout-logo');
-    if (logo) {
-      gsap.fromTo(logo,
-        { scale: 0, rotation: -180 },
-        { scale: 1, rotation: 0, duration: 0.8, ease: "back.out(1.7)" }
-      );
-    }
-
-    // Loading dots animation
-    const dots = overlay.querySelectorAll('.loading-dot');
-    if (dots.length > 0) {
-      gsap.to(dots, {
-        opacity: 0,
-        duration: 1.5,
-        stagger: 0.2,
-        repeat: -1,
-        yoyo: true,
-        ease: "power2.inOut"
-      });
-    }
-
-    // Redirect after animation
-    setTimeout(() => {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userRole');
-      router.push('/');
-    }, 2000);
+  const handleLogout = () => {
+    logout();
+    router.push('/');
   };
 
   // Pagination calculations
@@ -393,51 +384,21 @@ export default function AdminPage() {
 
   if (!isAuthenticated || !isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <HeartbeatLoader 
-            size="lg" 
-            text="Loading Admin Panel" 
-            className="mb-4"
-          />
-          <p className="text-gray-600">Loading admin panel...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <HeartbeatLoader 
+          logoSize="xxl"
+          textSize="lg"
+          text="Loading Admin Panel..."
+          showText={true}
+        />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      {/* Header */}
-      <div ref={headerRef} className="bg-white shadow-lg border-b border-rose-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              {/* Brand Logo with Heartbeat Animation */}
-              <div ref={logoRef} className="w-16 h-16 flex items-center justify-center">
-                <img src="/icon.svg" alt="Shaadi Mantra" className="w-12 h-12" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-600">Manage users and invitations</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={logout}
-                className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 group"
-              >
-                <CustomIcon name="ri-logout-box-r-line" size={18} className="group-hover:rotate-12 transition-transform" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div ref={containerRef} className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-rose-100 admin-card-hover animate-slide-in-top">
@@ -518,11 +479,11 @@ export default function AdminPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
               <HeartbeatLoader 
-                size="xxl" 
-                text="Loading Admin Panel" 
-                className="mb-4"
+                logoSize="xxl"
+                textSize="lg"
+                text="Loading Users..."
+                showText={true}
               />
-              <p className="text-gray-600 mt-2">Loading users...</p>
             </div>
           ) : users.length === 0 ? (
             <div className="p-12 text-center">
@@ -857,7 +818,7 @@ export default function AdminPage() {
       )}
 
       {/* Logout Animation Overlay */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
         
@@ -900,17 +861,25 @@ export default function AdminPage() {
         {/* Main Content */}
         <div className="relative z-10 text-center">
           {/* Brand Logo */}
-          <div className="logout-logo w-24 h-24 mx-auto mb-8">
-            <img src="/icon.svg" alt="Shaadi Mantra" className="w-full h-full" />
+          <div className="logout-logo w-64 h-64 mx-auto mb-8">
+            <img src="/icon.svg" alt="Shaadi Mantrana" className="w-full h-full heartbeat-animation" />
           </div>
           
           {/* Loading Text */}
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Logging out...</h2>
-          <p className="text-gray-600 mb-8">Thank you for using Shaadi Mantra</p>
+          <p className="text-gray-600 mb-8">Thank you for using Shaadi Mantrana</p>
           
           {/* Loading Dots - Removed red dots */}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AdminRouteGuard>
+      <AdminPageContent />
+    </AdminRouteGuard>
   );
 } 

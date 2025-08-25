@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '../../../services/auth-service';
 import CustomIcon from '../../../components/CustomIcon';
+import AdminRouteGuard from '../../../components/AdminRouteGuard';
+import ToastService from '../../../services/toastService';
+import { ServerAuthService } from '../../../services/server-auth-service';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { gsap } from 'gsap';
+import logger from '../../../utils/logger';
 
 interface DashboardData {
   storageStats: {
@@ -33,14 +36,14 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = AuthService.getAuthToken();
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
-        console.log('🔍 Dashboard: No auth token found');
+        logger.debug('🔍 Dashboard: No auth token found');
         router.push('/');
         return;
       }
 
-      console.log('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
+      logger.debug('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
       
       // Fetch admin stats (includes storage stats)
       const statsResponse = await fetch('/api/admin/stats', {
@@ -49,16 +52,16 @@ export default function AdminDashboard() {
         }
       });
 
-      console.log('🔍 Dashboard: Response status:', statsResponse.status);
+      logger.debug('🔍 Dashboard: Response status:', statsResponse.status);
 
       if (!statsResponse.ok) {
         const errorText = await statsResponse.text();
-        console.error('🔍 Dashboard: API error response:', errorText);
+        logger.error('🔍 Dashboard: API error response:', errorText);
         throw new Error(`Failed to fetch dashboard data: ${statsResponse.status} ${errorText}`);
       }
 
       const data = await statsResponse.json();
-      console.log('🔍 Dashboard: Received data:', data);
+      logger.debug('🔍 Dashboard: Received data:', data);
       
       // Transform the data to match the expected format
       const dashboardData: DashboardData = {
@@ -75,7 +78,7 @@ export default function AdminDashboard() {
         }
       };
 
-      console.log('🔍 Dashboard: Transformed data:', dashboardData);
+      logger.debug('🔍 Dashboard: Transformed data:', dashboardData);
       setDashboardData(dashboardData);
       
       // Animate widgets on load
@@ -85,7 +88,7 @@ export default function AdminDashboard() {
       );
 
     } catch (error) {
-      console.error('❌ Dashboard: Error fetching dashboard data:', error);
+      logger.error('❌ Dashboard: Error fetching dashboard data:', error);
       setError(`Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
@@ -127,9 +130,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 
-          size="xxl" 
+          logoSize="xxl"
+          textSize="lg"
           text="Loading admin dashboard..." 
           showText={true}
         />
@@ -139,7 +143,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Dashboard</h2>
@@ -156,8 +160,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8 pt-4">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
@@ -253,6 +256,5 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 } 

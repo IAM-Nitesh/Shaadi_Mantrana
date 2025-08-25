@@ -1,16 +1,19 @@
 // Model Index - Export all MongoDB models
+
 const User = require('./User');
 const Invitation = require('./Invitation');
 const Match = require('./Match');
-const PreapprovedEmail = require('./PreapprovedEmail');
 const Connection = require('./Connection');
 const DailyLike = require('./DailyLike');
+const Message = require('./Message');
+const Conversation = require('./Conversation');
 
 module.exports = {
   User,
   Invitation,
   Match,
-  PreapprovedEmail,
   Connection,
-  DailyLike
+  DailyLike,
+  Message,
+  Conversation
 };

@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Shaadi Mantra</string>
-    <string name="title_activity_main">Shaadi Mantra</string>
-    <string name="package_name">com.shaadimantra.app</string>
-    <string name="custom_url_scheme">com.shaadimantra.app</string>
-</resources>

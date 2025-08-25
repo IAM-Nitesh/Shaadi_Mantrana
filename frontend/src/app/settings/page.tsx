@@ -4,19 +4,26 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
-import { AuthService } from '../../services/auth-service';
+import ServerAuthGuard from '../../components/ServerAuthGuard';
+import ToastService from '../../services/toastService';
 import StandardHeader from '../../components/StandardHeader';
-import ModernNavigation from '../../components/ModernNavigation';
+import SmoothNavigation from '../../components/SmoothNavigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import { gsap } from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import { useServerAuth } from '../../hooks/useServerAuth';
+import { ServerAuthService } from '../../services/server-auth-service';
+import logger from '../../utils/logger';
 
-export default function Settings() {
+
+function SettingsContent() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isAuthenticated, logout } = useServerAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
+  // Commented out for future release
+  /*
   const [notifications, setNotifications] = useState({
     newMatches: true,
     messages: true,
@@ -29,6 +36,7 @@ export default function Settings() {
     shareProfile: false,
     ageVisible: true
   });
+  */
 
   // Add state to control logout animation overlay
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
@@ -36,24 +44,8 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
 
-  // Check authentication on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuthenticated = await AuthService.isAuthenticated();
-        setIsAuthenticated(isAuthenticated);
-        
-        if (!isAuthenticated) {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        router.push('/');
-      }
-    };
-    
-    checkAuth();
-  }, [router]);
+  // Authentication is now handled by ServerAuthGuard
+  // No need for local authentication state management
 
   // Subscribe to matches count updates
   useEffect(() => {
@@ -67,7 +59,8 @@ export default function Settings() {
     return unsubscribe;
   }, []);
 
-  // Save settings to localStorage whenever they change
+  // Save settings to localStorage whenever they change - Commented out for future release
+  /*
   useEffect(() => {
     localStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);
@@ -75,6 +68,7 @@ export default function Settings() {
   useEffect(() => {
     localStorage.setItem('privacy', JSON.stringify(privacy));
   }, [privacy]);
+  */
 
   const handleLogout = () => {
     // Show custom confirmation modal with enhanced GSAP animation
@@ -157,20 +151,25 @@ export default function Settings() {
     }, "-=0.3");
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     try {
-      // Use AuthService to handle logout
-      const result = AuthService.logout();
+      // Hide confirmation modal first
+      setShowLogoutConfirm(false);
+      
+      // Use ServerAuthService directly (like admin logout) to prevent premature redirect
+      const result = await ServerAuthService.logout();
       
       if (result.success) {
-        // Hide confirmation modal first
-        setShowLogoutConfirm(false);
-        
         // Create an enhanced GSAP logout animation sequence with heart animations
         const tl = gsap.timeline();
         
-        // Phase 1: Fade out settings content with rotation
-        tl.to('.settings-container', {
+        // Phase 1: Hide the page loading indicator immediately
+        tl.set('.fixed.left-0.right-0.z-\\[60\\]', {
+          display: 'none'
+        })
+        
+        // Phase 2: Fade out settings content with rotation
+        .to('.settings-container', {
           opacity: 0,
           scale: 0.95,
           y: -20,
@@ -179,11 +178,12 @@ export default function Settings() {
           ease: "power2.inOut"
         })
         
-        // Phase 2: Show logout overlay with entrance animation
+        // Phase 3: Show logout overlay with entrance animation
         .set('.logout-overlay', {
           display: 'flex',
           opacity: 0,
-          scale: 0.9
+          scale: 0.9,
+          zIndex: 9999 // Ensure it's above everything including PageLoadingIndicator
         })
         .to('.logout-overlay', {
           opacity: 1,
@@ -192,7 +192,7 @@ export default function Settings() {
           ease: "back.out(1.2)"
         })
         
-        // Phase 3: Animate central success circle with bounce
+        // Phase 4: Animate central success circle with bounce
         .fromTo('.logout-circle', {
           scale: 0,
           rotation: -180,
@@ -205,7 +205,7 @@ export default function Settings() {
           ease: "elastic.out(1, 0.6)"
         }, "-=0.3")
         
-        // Phase 4: Animate central heart icon
+        // Phase 5: Animate central heart icon
         .fromTo('.logout-checkmark', {
           scale: 0,
           opacity: 0,
@@ -218,7 +218,7 @@ export default function Settings() {
           ease: "back.out(2)"
         }, "-=0.5")
         
-        // Phase 5: Animate floating hearts with staggered entrance
+        // Phase 6: Animate floating hearts with staggered entrance
         .fromTo('.floating-heart', {
           scale: 0,
           opacity: 0,
@@ -237,7 +237,7 @@ export default function Settings() {
           }
         }, "-=0.6")
         
-        // Phase 6: Add floating animation to hearts
+        // Phase 7: Add floating animation to hearts
         .to('.floating-heart', {
           y: "-=10",
           rotation: "+=15",
@@ -251,7 +251,7 @@ export default function Settings() {
           }
         }, "-=0.3")
         
-        // Phase 7: Animate text elements
+        // Phase 8: Animate text elements
         .fromTo('.logout-title', {
           y: 30,
           opacity: 0,
@@ -274,42 +274,7 @@ export default function Settings() {
           ease: "power2.out"
         }, "-=0.3")
         
-        // Phase 8: Enhanced loading dots animation with pulsing effect
-        .fromTo('.logout-dots span', {
-          scale: 0.3,
-          opacity: 0.2
-        }, {
-          scale: 1.3,
-          opacity: 1,
-          duration: 0.4,
-          ease: "power2.inOut",
-          stagger: 0.15,
-          repeat: 4,
-          yoyo: true
-        }, "-=0.2")
-        
-        // Phase 9: Add continuous floating animation to decorative elements
-        .fromTo('.logout-overlay .absolute.border', {
-          scale: 0,
-          opacity: 0,
-          rotation: -180
-        }, {
-          scale: 1,
-          opacity: 1,
-          rotation: 0,
-          duration: 0.8,
-          ease: "elastic.out(1, 0.4)",
-          stagger: 0.2
-        }, "-=2")
-        
-        .to('.logout-overlay .absolute.border', {
-          rotation: "+=360",
-          duration: 8,
-          ease: "none",
-          repeat: -1
-        }, "-=0.5")
-        
-        // Phase 10: Add particle floating animations
+        // Phase 9: Add particle floating animations
         .to('.logout-circle .absolute.animate-bounce', {
           y: "-=8",
           x: "+=3",
@@ -320,7 +285,7 @@ export default function Settings() {
           stagger: 0.3
         }, "-=3")
         
-        // Phase 11: Final exit and redirect
+        // Phase 10: Final exit and redirect
         .to('.logout-overlay', {
           opacity: 0,
           scale: 1.05,
@@ -333,44 +298,14 @@ export default function Settings() {
             window.location.href = '/';
           }
         });
-        
       } else {
-        // Enhanced error handling with GSAP animation
-        setShowLogoutConfirm(false);
-        gsap.to('.settings-container', {
-          keyframes: {
-            "0%": { x: 0 },
-            "25%": { x: -10 },
-            "50%": { x: 10 },
-            "75%": { x: -5 },
-            "100%": { x: 0 }
-          },
-          duration: 0.5,
-          ease: "power2.out",
-          onComplete: () => {
-            alert('⚠️ There was an issue logging out. Please try again.');
-          }
-        });
+        // Handle logout failure
+        logger.error('Logout failed:', result.message);
+        ToastService.error('Logout failed. Please try again.');
       }
     } catch (error) {
-      console.error('Error during logout:', error);
-      
-      // Error shake animation
-      setShowLogoutConfirm(false);
-      gsap.to('.settings-container', {
-        keyframes: {
-          "0%": { x: 0 },
-          "25%": { x: -10 },
-          "50%": { x: 10 },
-          "75%": { x: -5 },
-          "100%": { x: 0 }
-        },
-        duration: 0.5,
-        ease: "power2.out",
-        onComplete: () => {
-          alert('⚠️ There was an issue logging out. Please try again.');
-        }
-      });
+      logger.error('Error during logout:', error);
+      ToastService.error('An error occurred during logout. Please try again.');
     }
   };
 
@@ -422,6 +357,8 @@ export default function Settings() {
     }, "-=0.2");
   };
 
+  // Commented out for future release
+  /*
   const updateNotificationSetting = (key: string, value: boolean) => {
     setNotifications(prev => ({
       ...prev,
@@ -445,21 +382,12 @@ export default function Settings() {
     
     // Apply the setting to the app functionality
   };
+  */
 
-  // Show loading screen while checking authentication
+  // Show loading screen only during logout process, not for authentication check
+  // The ServerAuthGuard will handle authentication loading
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <HeartbeatLoader 
-            size="lg" 
-            text="Logging Out" 
-            className="mb-4"
-          />
-          <p className="text-gray-600">Please wait while we log you out...</p>
-        </div>
-      </div>
-    );
+    return null; // Let ServerAuthGuard handle the loading state
   }
 
   return (
@@ -514,7 +442,7 @@ export default function Settings() {
       )}
 
       {/* Logout Animation Overlay */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
         
@@ -571,7 +499,7 @@ export default function Settings() {
                   Shaadi
                 </span>
                 <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent ml-2">
-                  Mantra
+                  Mantrana
                 </span>
               </h1>
               <p className="text-slate-600 text-sm">
@@ -583,7 +511,7 @@ export default function Settings() {
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               {/* Brand Logo */}
               <div className="logout-checkmark">
-                <img src="/icon.svg" alt="Shaadi Mantra" className="w-20 h-20 heartbeat-animation" />
+                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-64 h-64 heartbeat-animation" />
               </div>
             </div>
             
@@ -591,7 +519,7 @@ export default function Settings() {
             <div className="mb-6">
               <h2 className="logout-title text-xl font-bold text-slate-800 mb-2">Successfully Logged Out!</h2>
               <p className="logout-subtitle text-slate-600 text-sm">
-                Thank you for using Shaadi Mantra. We hope you found your perfect match!
+                Thank you for using Shaadi Mantrana. We hope you found your perfect match!
               </p>
             </div>
             
@@ -611,19 +539,14 @@ export default function Settings() {
       {!showLogoutAnimation && (
         <div className="settings-container">
           {/* Header */}
-          <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200">
-                  <CustomIcon name="ri-arrow-left-line" />
-                </Link>
-                <h1 className="text-xl font-bold text-gray-800">Settings</h1>
-              </div>
-            </div>
-          </div>
+          <StandardHeader 
+            title="Settings"
+            showBackButton={true}
+            backHref="/dashboard"
+          />
 
           {/* Content */}
-          <div className="pt-16 pb-24 px-4 space-y-4">
+          <div className="pt-20 pb-24 px-4 space-y-4">
             {/* Account Settings */}
             <div className="bg-white rounded-xl shadow-sm transform hover:scale-105 transition-all duration-200">
               <div className="p-4 border-b border-gray-100">
@@ -642,7 +565,10 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Notifications */}
+
+
+            {/* Notifications - Commented out for future release */}
+            {/* 
             <div className="bg-white rounded-xl shadow-sm">
               <div className="p-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-800">Notifications</h2>
@@ -690,8 +616,10 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+            */}
 
-            {/* Privacy */}
+            {/* Privacy - Commented out for future release */}
+            {/* 
             <div className="bg-white rounded-xl shadow-sm">
               <div className="p-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-800">Privacy</h2>
@@ -739,6 +667,7 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+            */}
 
             {/* Support */}
             <div className="bg-white rounded-xl shadow-sm">
@@ -823,21 +752,30 @@ export default function Settings() {
           </div>
 
           {/* Modern Bottom Navigation */}
-          <ModernNavigation 
+          <SmoothNavigation 
             items={[
               { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
               { 
                 href: '/matches', 
                 icon: 'ri-chat-3-line', 
                 label: 'Matches',
+                activeIcon: 'ri-chat-3-fill',
                 ...(matchesCount > 0 && { badge: matchesCount })
               },
-              { href: '/profile', icon: 'ri-user-line', label: 'Profile' },
-              { href: '/settings', icon: 'ri-settings-line', label: 'Settings' },
+              { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
+              { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
             ]}
           />
         </div>
       )}
     </div>
+  );
+}
+
+export default function Settings() {
+  return (
+    <ServerAuthGuard requireAuth={true}>
+      <SettingsContent />
+    </ServerAuthGuard>
   );
 }

@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { AuthService } from '../services/auth-service';
-import configService from '../services/configService';
+import { ServerAuthService } from '../services/server-auth-service';
+import { config as configService } from '../services/configService';
 
 export default function AdminNavigation() {
   const router = useRouter();
@@ -19,12 +19,13 @@ export default function AdminNavigation() {
 
   const checkAdminStatus = async () => {
     try {
-      if (!AuthService.isAuthenticated()) {
+      const authStatus = await ServerAuthService.checkAuthStatus();
+      if (!authStatus.authenticated) {
         setLoading(false);
         return;
       }
 
-      const token = localStorage.getItem('authToken');
+      const token = await ServerAuthService.getBearerToken();
       if (!token) {
         setLoading(false);
         return;
@@ -41,7 +42,7 @@ export default function AdminNavigation() {
         setIsAdmin(userData.profile?.role === 'admin');
       }
     } catch (error) {
-      console.error('Error checking admin status:', error);
+
     } finally {
       setLoading(false);
     }

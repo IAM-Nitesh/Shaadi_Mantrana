@@ -77,11 +77,11 @@ class EmailService {
       
       const mailOptions = {
         from: {
-          name: 'Shaadi Mantra',
+          name: 'Shaadi Mantrana',
           address: config.EMAIL.SMTP_USER
         },
         to: email,
-        subject: 'Verify Your Shaadi Mantra Account - OTP Code',
+        subject: 'Verify Your Shaadi Mantrana Account - OTP Code',
         html: htmlContent,
         // Explicitly set to HTML only - no text fallback
         text: undefined,
@@ -91,7 +91,7 @@ class EmailService {
           'X-MSMail-Priority': 'High',
           'Importance': 'high',
           'MIME-Version': '1.0',
-          'X-Mailer': 'Shaadi Mantra React Email System'
+          'X-Mailer': 'Shaadi Mantrana React Email System'
         }
       };
 

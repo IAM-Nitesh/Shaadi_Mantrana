@@ -3,7 +3,8 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import CustomIcon from './CustomIcon';
-import { ProfileService } from '../services/profile-service';
+import { useServerAuth } from '../hooks/useServerAuth';
+import logger from '../utils/logger';
 
 interface NavItem {
   href: string;
@@ -22,18 +23,20 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { user, isAuthenticated } = useServerAuth();
 
   const handleNavigation = (href: string) => {
     // Check if user is trying to access restricted features
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
     
-    if (isRestrictedRoute) {
-      const canAccess = ProfileService.canAccessRestrictedFeatures();
-      const isInOnboarding = ProfileService.isInOnboarding();
+    if (isRestrictedRoute && user) {
+      // Access Control Logic: Only allow access if profileCompleteness is 100%
+      const canAccess = user.profileCompleteness >= 100;
+      const isFirstLogin = user.isFirstLogin;
       
-      if (!canAccess || isInOnboarding) {
+      if (!canAccess) {
         // Show toast notification
-        const message = isInOnboarding 
+        const message = isFirstLogin 
           ? 'Please complete the onboarding process first' 
           : 'Please complete your profile to access this feature';
         
@@ -51,7 +54,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
         }, 3000);
         
         // Redirect to profile page
-        console.log('🚫 Access denied: Profile incomplete or user in onboarding');
+  logger.debug('🚫 Access denied: Profile incomplete or user in onboarding');
         startTransition(() => {
           router.push('/profile');
         });
@@ -67,8 +70,8 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const getNavItemClasses = (href: string) => {
     const isActive = pathname === href;
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = ProfileService.canAccessRestrictedFeatures();
-    const isInOnboarding = ProfileService.isInOnboarding();
+    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
+    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
     const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
     
     const baseClasses = `
@@ -94,8 +97,8 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const getIconClasses = (href: string) => {
     const isActive = pathname === href;
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = ProfileService.canAccessRestrictedFeatures();
-    const isInOnboarding = ProfileService.isInOnboarding();
+    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
+    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
     const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
     
     return `
@@ -107,8 +110,8 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const getLabelClasses = (href: string) => {
     const isActive = pathname === href;
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = ProfileService.canAccessRestrictedFeatures();
-    const isInOnboarding = ProfileService.isInOnboarding();
+    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
+    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
     const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
     
     return `
@@ -134,9 +137,9 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
         {items.map((item) => {
           const isActive = pathname === item.href;
           const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
-          const canAccess = ProfileService.canAccessRestrictedFeatures();
-          const isInOnboarding = ProfileService.isInOnboarding();
-          const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
+          const canAccess = user ? (user.profileCompleteness >= 100) : false;
+          const isFirstLogin = user ? user.isFirstLogin : false;
+          const isDisabled = isRestrictedRoute && !canAccess;
           
           return (
             <button

@@ -10,7 +10,7 @@ const express = require('express');
 const databaseService = require('./src/services/databaseService');
 
 async function startApplication() {
-  console.log('🚀 Starting ShaadiMantra Backend...\n');
+  console.log('🚀 Starting ShaadiMantrana Backend...\n');
   
   // Display environment information
   console.log('🔧 Environment Configuration:');
@@ -31,7 +31,6 @@ async function startApplication() {
       console.log(`📦 Database: ${config.DATABASE.NAME}`);
       console.log('🗄️ Collections:');
       console.log('   - users: User profiles and authentication data');
-      console.log('   - preapproved: Admin approval and first login status');
       console.log('   - invitations: Invitation history and tracking');
       console.log('   - connections: User connection requests and status');
       console.log('');
@@ -57,7 +56,7 @@ async function startApplication() {
       console.log('   POST /api/auth/verify-otp - Verify OTP and login');
       console.log('   POST /api/auth/refresh-token - Refresh JWT token');
       console.log('   POST /api/auth/logout - Logout user');
-      console.log('   GET  /api/auth/preapproved/check - Check if email is approved');
+      console.log('   GET  /api/auth/preapproved/check - Check if email is approved (User collection)');
       
       console.log('\n👤 Profile Endpoints (Auth Required):');
       console.log('   GET  /api/profiles/me - Get user profile');
@@ -77,7 +76,7 @@ async function startApplication() {
       
       console.log('\n⚙️ Admin Endpoints (Admin Auth Required):');
       console.log('   GET  /api/admin/users - Get all users with approval status');
-      console.log('   POST /api/admin/users - Add new user (creates preapproved entry)');
+      console.log('   POST /api/admin/users - Add new user (creates approved user entry)');
       console.log('   POST /api/admin/users/:userId/pause - Pause user');
       console.log('   POST /api/admin/users/:userId/resume - Resume user');
       console.log('   POST /api/admin/users/:userId/invite - Send invitation to user');

@@ -5,7 +5,9 @@ const WelcomeEmail = ({ userEmail, inviteLink, userUuid }) => {
   return (
     <Html>
       <Head>
-        <title>Welcome to Shaadi Mantra - Your Journey Begins!</title>
+        <title>Welcome to Shaadi Mantrana - Your Journey Begins!</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
         <style>
           {`
             @keyframes bounce { 
@@ -21,6 +23,11 @@ const WelcomeEmail = ({ userEmail, inviteLink, userUuid }) => {
       <Body style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", lineHeight: 1.6, color: '#374151', background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 30%, #fbcfe8 70%, #f3e8ff 100%)', minHeight: '100vh', padding: '20px', margin: 0 }}>
         <Container style={{ maxWidth: '650px', margin: '0 auto', background: 'white', borderRadius: '32px', boxShadow: '0 20px 40px rgba(244, 63, 94, 0.12)', border: '1px solid #fce7f3', overflow: 'hidden' }}>
           
+          {/* Email Header - Prevents "Show quoted text" */}
+          <div style={{ display: 'none' }}>
+            <p>Welcome to Shaadi Mantrana</p>
+          </div>
+          
           {/* Hero Header */}
           <Section style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #ec4899 100%)', padding: '48px 32px', textAlign: 'center', color: 'white', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.5 }} />
@@ -35,7 +42,7 @@ const WelcomeEmail = ({ userEmail, inviteLink, userUuid }) => {
           <Section style={{ padding: '48px' }}>
             {/* Welcome Message */}
             <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-              <Heading style={{ fontSize: '32px', fontWeight: '700', color: '#374151', marginBottom: '20px' }}>You're now part of Shaadi Mantra!</Heading>
+              <Heading style={{ fontSize: '32px', fontWeight: '700', color: '#374151', marginBottom: '20px' }}>You're now part of Shaadi Mantrana!</Heading>
               <Text style={{ fontSize: '16px', color: '#6b7280', maxWidth: '400px', margin: '0 auto', lineHeight: 1.6 }}>
                 We're thrilled to have you join our exclusive community of individuals looking for meaningful relationships. Your perfect match is just a few steps away.
               </Text>
@@ -123,7 +130,7 @@ const WelcomeEmail = ({ userEmail, inviteLink, userUuid }) => {
           {/* Footer */}
           <div style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', padding: '32px', textAlign: 'center', borderTop: '1px solid #e2e8f0' }}>
             <Text style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-              <strong>Shaadi Mantra</strong> - Where meaningful relationships begin
+              <strong>Shaadi Mantrana</strong> - Where meaningful relationships begin
             </Text>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
               {['📧', '📱', '🌐', '💬'].map((icon) => (
@@ -132,11 +139,11 @@ const WelcomeEmail = ({ userEmail, inviteLink, userUuid }) => {
             </div>
             <Text style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
               Need help getting started? Contact us at 
-              <Link href="mailto:support@shaadimantra.com" style={{ color: '#f43f5e', fontWeight: '500', textDecoration: 'none' }}> support@shaadimantra.com</Link>
+              <Link href="mailto:shaadimantrana.help@gmail.com" style={{ color: '#f43f5e', fontWeight: '500', textDecoration: 'none' }}> shaadimantrana.help@gmail.com</Link>
             </Text>
             <Text style={{ fontSize: '12px', color: '#9ca3af' }}>
-              © 2025 Shaadi Mantra. All rights reserved.<br />
-              You received this email because you signed up for Shaadi Mantra.
+              © 2025 Shaadi Mantrana. All rights reserved.<br />
+              You received this email because you signed up for Shaadi Mantrana.
             </Text>
           </div>
         </Container>

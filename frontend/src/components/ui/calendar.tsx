@@ -42,10 +42,10 @@ export function Calendar({ className, classNames, showOutsideDays = true, ...pro
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
       }}
-      components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-      }}
+      components={({
+        IconLeft: (props: any) => <ChevronLeft className="h-4 w-4" {...props} />,
+        IconRight: (props: any) => <ChevronRight className="h-4 w-4" {...props} />,
+      } as any)}
       {...props}
     />
   )
