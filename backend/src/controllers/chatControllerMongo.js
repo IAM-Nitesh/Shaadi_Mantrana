@@ -1,5 +1,8 @@
 // Chat Controller - MongoDB Integration
-const { User, Connection } = require('../models');
+const { User, Connection, Conversation } = require('../models');
+const Message = require('../models/Message');
+const ChatThread = require('../models/ChatThread');
+const mongoose = require('mongoose');
 
 class ChatController {
   // Get chat messages for a connection
@@ -29,17 +32,42 @@ class ChatController {
         });
       }
       
-      // For now, return empty messages array
-      // In a real implementation, you would fetch messages from a Message collection
-      const messages = [];
-      
-      console.log(`✅ Returning ${messages.length} messages for connection ${connectionId}`);
-      
+  // Fetch messages from ChatThread (single document per connection)
+  const messages = await ChatThread.getByConnection(connectionId, 100);
+
+      // Map messages to API shape with JSON-safe primitives
+      // Include both legacy fields (e.g., _id, text, createdAt) and normalized fields (id, message, timestamp)
+      const mapped = messages.map(m => {
+        const idStr = m._id ? (m._id.toString ? m._id.toString() : m._id) : null;
+        const senderStr = m.sender ? (m.sender.toString ? m.sender.toString() : m.sender) : null;
+        const createdAtIso = m.createdAt ? (m.createdAt.toISOString ? m.createdAt.toISOString() : m.createdAt) : null;
+
+        return {
+          // Legacy/raw fields
+          _id: idStr,
+          connectionId: m.connectionId,
+          sender: senderStr,
+          text: m.text,
+          status: m.status,
+          createdAt: createdAtIso,
+          updatedAt: m.updatedAt ? (m.updatedAt.toISOString ? m.updatedAt.toISOString() : m.updatedAt) : null,
+          __v: m.__v,
+
+          // Normalized fields (for new clients)
+          id: idStr,
+          senderId: senderStr,
+          message: m.text,
+          timestamp: createdAtIso
+        };
+      });
+
+      console.log(`✅ Returning ${mapped.length} messages for connection ${connectionId}`);
+
       res.status(200).json({
         success: true,
-        messages,
+        messages: mapped,
         connectionId,
-        totalMessages: messages.length
+        totalMessages: mapped.length
       });
       
     } catch (error) {
@@ -86,22 +114,72 @@ class ChatController {
         });
       }
       
-      // For now, just return success
-      // In a real implementation, you would save the message to a Message collection
-      const savedMessage = {
-        id: Date.now().toString(),
-        senderId: userId,
-        message: message.trim(),
-        timestamp: new Date().toISOString(),
-        connectionId
-      };
-      
-      console.log(`✅ Message sent successfully: ${savedMessage.id}`);
-      
-      res.status(201).json({
-        success: true,
-        message: savedMessage
-      });
+
+      // Persist message into ChatThread (atomic append + conversation stat update)
+      let msgDoc = null;
+      const session = await mongoose.startSession();
+      try {
+        session.startTransaction();
+
+        const appendResult = await ChatThread.appendMessage(connectionId, {
+          sender: userId,
+          text: message.trim(),
+          status: 'sent',
+          createdAt: new Date()
+        }, { session, new: true });
+
+        msgDoc = appendResult.message || null;
+
+        // Update conversation stats within the same session (if conversation exists)
+        const conv = await Conversation.findOne({ connectionId }).session(session);
+        if (conv) {
+          await Conversation.updateOne(
+            { _id: conv._id },
+            { $set: { messageCount: conv.messageCount + 1, lastMessageAt: new Date() } },
+            { session }
+          );
+        }
+
+        await session.commitTransaction();
+      } catch (txErr) {
+        await session.abortTransaction();
+        console.warn('Transaction failed for sendMessage, falling back to non-transactional append:', txErr.message);
+
+        // Fallback - append without session
+        try {
+          const appendResult = await ChatThread.appendMessage(connectionId, {
+            sender: userId,
+            text: message.trim(),
+            status: 'sent',
+            createdAt: new Date()
+          }, { new: true, upsert: true });
+
+          msgDoc = appendResult.message || null;
+
+          const convFallback = await Conversation.findByConnectionId(connectionId);
+          if (convFallback) {
+            await Conversation.updateStats(convFallback._id, convFallback.messageCount + 1, new Date());
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback persistence failed:', fallbackErr.message);
+          return res.status(500).json({ success: false, error: 'Failed to persist message' });
+        }
+      } finally {
+        session.endSession();
+      }
+
+      const savedMessage = msgDoc ? {
+        id: msgDoc._id,
+        senderId: msgDoc.sender,
+        message: msgDoc.text,
+        timestamp: msgDoc.createdAt,
+        connectionId: connectionId,
+        status: msgDoc.status
+      } : null;
+
+      console.log(` Message persisted successfully: ${savedMessage.id}`);
+
+      res.status(201).json({ success: true, message: savedMessage });
       
     } catch (error) {
       console.error('❌ Send message error:', error);

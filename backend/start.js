@@ -115,10 +115,33 @@ async function startApplication() {
       console.log('   curl http://localhost:5500/api/auth/preapproved/check?email=test@example.com - Test approval check');
     });
 
+    // Initialize Socket.IO chat service so websocket endpoint is available
+    try {
+      const chatService = require('./src/services/chatService');
+      if (chatService && typeof chatService.initialize === 'function') {
+        chatService.initialize(server);
+        console.log('💬 Socket.IO chat service initialized from start script');
+      }
+    } catch (e) {
+      console.warn('⚠️  Failed to initialize Socket.IO from start script:', e && e.message);
+    }
+
     // Graceful shutdown handling
     const gracefulShutdown = async (signal) => {
       console.log(`\n⚠️  Received ${signal}, shutting down gracefully...`);
       
+      // Try to close Socket.IO if present
+      try {
+        const chatService = require('./src/services/chatService');
+        if (chatService && chatService.io && typeof chatService.io.close === 'function') {
+          chatService.io.close(() => {
+            console.log('🛑 Socket.IO server closed');
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+
       server.close(async () => {
         console.log('🛑 HTTP server closed');
         
