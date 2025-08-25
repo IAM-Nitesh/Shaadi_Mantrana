@@ -197,6 +197,17 @@ export default function Home() {
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  // Safely stringify a value for diagnostics without throwing on circular refs
+  const safeStringify = (v: unknown) => {
+    try {
+      if (typeof v === 'string') return v;
+      if (v === undefined) return '';
+      return JSON.stringify(v);
+    } catch (e) {
+      try { return String(v); } catch (e2) { return '' + v; }
+    }
+  };
+
   const sendOtpToBackend = async (email: string) => {
     try {
       // Use the backend URL from config service
@@ -254,147 +265,104 @@ export default function Home() {
     try {
       await sendOtpToBackend(cleanEmail);
       
-      // First update the state
-      setShowOtp(true);
+      // Set basic OTP state first (but DO NOT hide the email form yet)
       setCountdown(60);
       setCanResend(false);
-      
+
       // Enhanced GSAP animation sequence for full-screen OTP transition
-      setTimeout(() => {
+      try {
+        const emailFormEl = document.querySelector('.email-form');
+
+        // Animate email form out first, then flip the ui to show OTP
         const tl = gsap.timeline();
-        
-        // Phase 1: Fade out email form with elegant slide effect
-        tl.to('.email-form', {
-          x: -100,
-          opacity: 0,
-          scale: 0.95,
-          rotation: -2,
-          duration: 0.6,
-          ease: "power2.in"
-        })
-        
-        // Phase 2: Show OTP screen with entrance animation
-        .fromTo('.otp-screen', {
-          x: 100,
-          opacity: 0,
-          scale: 0.9,
-          rotation: 2
-        }, {
-          x: 0,
-          opacity: 1,
-          scale: 1,
-          rotation: 0,
-          duration: 0.7,
-          ease: "back.out(1.4)"
-        })
-        
-        // Initialize success message (hidden initially)
-        .set('.success-message', {
-          opacity: 0,
-          scale: 0.8,
-          y: -10
-        })
-        
-        // Phase 3: Animate back button
-        .fromTo('.back-button', {
-          x: -30,
-          opacity: 0
-        }, {
-          x: 0,
-          opacity: 1,
-          duration: 0.4,
-          ease: "power2.out"
-        }, "-=0.4")
-        
-        // Phase 4: Animate title with bounce
-        .fromTo('.otp-title', {
-          y: 40,
-          opacity: 0,
-          scale: 0.8
-        }, {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.5,
-          ease: "back.out(1.5)"
-        }, "-=0.3")
-        
-        // Phase 5: Animate subtitle
-        .fromTo('.otp-subtitle', {
-          y: 20,
-          opacity: 0
-        }, {
-          y: 0,
-          opacity: 1,
-          duration: 0.4,
-          ease: "power2.out"
-        }, "-=0.2")
-        
-        // Phase 5.5: Animate success message with smooth entrance
-        .to('.success-message', {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 0.7,
-          ease: "back.out(1.5)"
-        }, "-=0.1")
-        
-        // Phase 6: Animate OTP input boxes with staggered entrance
-        .fromTo('.otp-inputs input', {
-          scale: 0,
-          y: 30,
-          opacity: 0,
-          rotation: 180
-        }, {
-          scale: 1,
-          y: 0,
-          opacity: 1,
-          rotation: 0,
-          duration: 0.4,
-          ease: "back.out(1.8)",
-          stagger: 0.08
-        }, "-=0.2")
-        
-        // Phase 7: Animate countdown timer if visible
-        .fromTo('.countdown-timer', {
-          scale: 0,
-          opacity: 0
-        }, {
-          scale: 1,
-          opacity: 1,
-          duration: 0.3,
-          ease: "elastic.out(1, 0.5)"
-        }, "-=0.1")
-        
-        // Phase 8: Animate action buttons
-        .fromTo('.otp-buttons button', {
-          y: 40,
-          opacity: 0,
-          scale: 0.9
-        }, {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.4,
-          ease: "back.out(1.2)",
-          stagger: 0.1
-        }, "-=0.2")
-        
-        .call(() => {
-          // Auto-focus first input with animation
-          const firstInput = document.getElementById('otp-0');
-          if (firstInput) {
-            firstInput.focus();
-            gsap.to(firstInput, {
-              scale: 1.1,
-              duration: 0.2,
-              yoyo: true,
-              repeat: 1,
-              ease: "power2.inOut"
-            });
-          }
+
+        if (emailFormEl) {
+          tl.to(emailFormEl, {
+            x: -100,
+            opacity: 0,
+            scale: 0.95,
+            rotation: -2,
+            duration: 0.6,
+            ease: "power2.in"
+          });
+        }
+
+        // After email form is hidden, set showOtp to true so OTP DOM is mounted
+        tl.call(() => {
+          setShowOtp(true);
         });
-      }, 50);
+
+        // Small delay to allow React to mount OTP elements, then animate them if present
+        tl.call(() => {
+          setTimeout(() => {
+            const otpScreenEl = document.querySelector('.otp-screen');
+            if (otpScreenEl) {
+              const tl2 = gsap.timeline();
+              tl2.fromTo(otpScreenEl, {
+                x: 100,
+                opacity: 0,
+                scale: 0.9,
+                rotation: 2
+              }, {
+                x: 0,
+                opacity: 1,
+                scale: 1,
+                rotation: 0,
+                duration: 0.7,
+                ease: "back.out(1.4)"
+              });
+
+              // Safely animate other OTP elements only if they exist
+              const backBtn = document.querySelector('.back-button');
+              if (backBtn) {
+                tl2.fromTo(backBtn, { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.4');
+              }
+
+              const title = document.querySelector('.otp-title');
+              if (title) {
+                tl2.fromTo(title, { y: 40, opacity: 0, scale: 0.8 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.3');
+              }
+
+              const subtitle = document.querySelector('.otp-subtitle');
+              if (subtitle) {
+                tl2.fromTo(subtitle, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.2');
+              }
+
+              const successMsg = document.querySelector('.success-message');
+              if (successMsg) {
+                tl2.set(successMsg, { opacity: 0, scale: 0.8, y: -10 });
+                tl2.to(successMsg, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.5)' }, '-=0.1');
+              }
+
+              const otpInputs = document.querySelectorAll('.otp-inputs input');
+              if (otpInputs && otpInputs.length) {
+                tl2.fromTo(otpInputs, { scale: 0, y: 30, opacity: 0, rotation: 180 }, { scale: 1, y: 0, opacity: 1, rotation: 0, duration: 0.4, ease: 'back.out(1.8)', stagger: 0.08 }, '-=0.2');
+              }
+
+              const countdownEl = document.querySelector('.countdown-timer');
+              if (countdownEl) {
+                tl2.fromTo(countdownEl, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'elastic.out(1, 0.5)' }, '-=0.1');
+              }
+
+              const otpButtons = document.querySelectorAll('.otp-buttons button');
+              if (otpButtons && otpButtons.length) {
+                tl2.fromTo(otpButtons, { y: 40, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.2)', stagger: 0.1 }, '-=0.2');
+              }
+
+              // Auto-focus first input with animation
+              const firstInput = document.getElementById('otp-0');
+              if (firstInput) {
+                firstInput.focus();
+                gsap.to(firstInput, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.inOut' });
+              }
+            }
+          }, 50);
+        });
+      } catch (animErr) {
+        logger.warn('GSAP OTP transition failed or target missing:', animErr);
+        // Ensure UI state still updates even if animations fail
+        setShowOtp(true);
+      }
       
     } catch (error: unknown) {
       // Clear any existing error first
@@ -481,7 +449,10 @@ export default function Home() {
       setErrorWithId('Please enter complete 6-digit OTP');
       return;
     }
-    setIsLoading(true);
+  // Strong guard: prevent double submissions immediately
+  if (disabledAfterFailure) return;
+  setDisabledAfterFailure(true);
+  setIsLoading(true);
     
     // GSAP loading animation for verify button
     const button = document.querySelector('.verify-otp-button');
@@ -496,52 +467,99 @@ export default function Home() {
     }
     
     try {
-      const cleanEmail = email.trim().toLowerCase();
-      const result = await verifyOtpWithBackend(cleanEmail, otp);
+  const cleanEmail = email.trim().toLowerCase();
+  const result = await verifyOtpWithBackend(cleanEmail, otp);
+
+  // Debug raw result (temporary): helps diagnose intermittent failures
+  logger.debug('🔍 handleVerifyOtp - raw result (pre-normalize):', result);
+
+  // Normalize result to a safe object so downstream code never sees undefined
+  const resultObj: any = (result && typeof result === 'object') ? result : { success: !!result };
+  logger.debug('🔍 handleVerifyOtp - normalized result:', safeStringify(resultObj));
 
   // debug logging intentionally removed (kept only essential error/warn logs)
 
       // Defensive: ensure we have a result
-      if (!result) {
-        logger.error('❌ OTP verification failed: empty response from backend');
-        setErrorWithId('Invalid OTP. Please try again.');
+      if (!resultObj || Object.keys(resultObj).length === 0) {
+            logger.error('❌ OTP verification failed: empty/invalid response from backend', resultObj);
+            setErrorWithId('Invalid OTP. Please try again.');
+            // allow user to retry after a short cooldown
+            setTimeout(() => setDisabledAfterFailure(false), 3000);
+            return;
+          }
+
+      // If backend explicitly returned an error message, surface it
+      if (resultObj.error) {
+        const errString = String(resultObj.error || 'Authentication failed');
+        logger.error('❌ OTP verification failed (backend error):', errString, 'rawResult:', safeStringify(resultObj));
+        setErrorWithId(errString);
+        setOtp('');
+        setDisabledAfterFailure(true);
+        setTimeout(() => setDisabledAfterFailure(false), 3000);
         return;
       }
 
-  // Check if OTP verification was successful (accept boolean true or string 'true')
-  const successFlag = result && (result.success === true || String(result.success) === 'true');
+  // Check if OTP verification was successful.
+  // Be defensive: accept boolean true, string 'true', or presence of user/session.
+  const successFlag = Boolean(result && (
+    result.success === true ||
+    String(result.success) === 'true' ||
+    (result as any).user !== undefined ||
+    (result as any).session !== undefined
+  ));
+
+  logger.debug('🔁 handleVerifyOtp - interpreted successFlag:', successFlag, 'rawResult:', safeStringify(result));
   if (successFlag) {
-        // Success animation before redirect
-        gsap.timeline()
-          .to(cardRef.current, {
-            scale: 1.05,
-            duration: 0.3,
-            ease: "power2.out"
-          })
-          .to(cardRef.current, {
-            scale: 1,
-            duration: 0.2,
-            ease: "power2.out"
-          });
-        // Handle redirection
-        if (result.redirectTo) {
-          // Server-side redirection
-          logger.debug('🚀 Server-side redirect to:', result.redirectTo);
-          window.location.href = result.redirectTo;
-        } else {
-          // No redirect needed or redirectTo is null/undefined - default to dashboard
-          logger.debug('✅ Authentication successful - defaulting to dashboard');
-          window.location.href = '/dashboard';
+        // Success animation before redirect (guard cardRef)
+        try {
+          const tl = gsap.timeline();
+          if (cardRef?.current) {
+            tl.to(cardRef.current, {
+              scale: 1.05,
+              duration: 0.3,
+              ease: "power2.out"
+            }).to(cardRef.current, {
+              scale: 1,
+              duration: 0.2,
+              ease: "power2.out"
+            });
+          }
+        } catch (animErr) {
+          logger.warn('GSAP animation failed or target missing:', animErr);
         }
+        // Handle redirection
+  // If server provided a redirect path (non-null, non-empty), use it.
+  // Otherwise default to dashboard.
+  const redirectPath = (result && typeof (result as any).redirectTo === 'string' && (result as any).redirectTo) ? (result as any).redirectTo : '/dashboard';
+  logger.debug('🚀 Redirecting to:', redirectPath);
+  window.location.href = redirectPath;
         return;
       }
       // Handle OTP verification failure (only when success is falsey)
       if (!successFlag) {
         // Prefer explicit error from backend, otherwise dump the whole response for diagnosis
-        const errMsgRaw = result?.error || JSON.stringify(result) || 'Invalid OTP. Please try again.';
+        let errMsgRaw = '';
+        try {
+          if (result && (result as any).error !== undefined && (result as any).error !== null) {
+            errMsgRaw = String((result as any).error);
+          } else if (result && typeof result === 'object') {
+            errMsgRaw = safeStringify(result);
+          } else {
+            errMsgRaw = String(result ?? 'Invalid OTP. Please try again.');
+          }
+        } catch (e) {
+          errMsgRaw = 'Invalid OTP. Please try again.';
+        }
+
+        // Normalize common placeholder strings that are unhelpful
+        if (errMsgRaw === 'undefined' || errMsgRaw.trim() === '{}' || errMsgRaw.trim() === 'null') {
+          errMsgRaw = '';
+        }
+
         const isExpired = /expired|not found|not_found|notfound/i.test(errMsgRaw);
-        const displayMsg = isExpired ? 'OTP expired or already used — request a new code.' : errMsgRaw;
-        logger.error('❌ OTP verification failed:', displayMsg, 'rawResult:', result);
+        const displayMsg = isExpired ? 'OTP expired or already used — request a new code.' : (errMsgRaw || 'Invalid OTP. Please try again.');
+        // Log full raw result for debugging (safeStringify will avoid throws)
+        logger.error('❌ OTP verification failed:', displayMsg, 'rawResult:', safeStringify(result));
   // Clear OTP input to encourage requesting/entering a fresh code
   setOtp('');
   setErrorWithId(displayMsg);
@@ -553,25 +571,29 @@ export default function Home() {
         logger.warn('⚠️ handleVerifyOtp: unexpected control flow. result:', result);
       }
     } catch (error: unknown) {
-      logger.error('❌ OTP verification error:', error);
-      
-      let message = 'Failed to verify OTP';
-      if (error instanceof Error) {
-        if (error.message.includes('403')) {
-          // Handle specific error messages from backend
-          if (error.message.includes('paused') || error.message.includes('not approved')) {
-            message = 'Your account has been paused. Please contact the admin for re-approval.';
-          } else {
-            message = error.message;
-          }
-        } else if (error.message.includes('429')) {
-          message = 'Too many verification attempts. Please try again later.';
-        } else if (error.message.includes('network')) {
-          message = 'Network error. Please check your connection and try again.';
-        } else {
-          message = error.message;
-        }
+      // Convert unknown error types into a safe string for display/logging
+      let rawErrorString = 'Failed to verify OTP';
+      try {
+        rawErrorString = error instanceof Error ? error.message : String(error ?? 'Failed to verify OTP');
+      } catch (e) {
+        rawErrorString = 'Failed to verify OTP';
       }
+
+      logger.error('❌ OTP verification error:', rawErrorString, 'exceptionObj:', error);
+      
+      let message = rawErrorString;
+      if (rawErrorString.includes('403')) {
+        if (rawErrorString.includes('paused') || rawErrorString.includes('not approved')) {
+          message = 'Your account has been paused. Please contact the admin for re-approval.';
+        }
+      } else if (rawErrorString.includes('429')) {
+        message = 'Too many verification attempts. Please try again later.';
+      } else if (rawErrorString.toLowerCase().includes('network')) {
+        message = 'Network error. Please check your connection and try again.';
+      } else if (!rawErrorString || rawErrorString === 'Failed to verify OTP') {
+        message = 'Failed to verify OTP. Please try again.';
+      }
+
       setErrorWithId(message);
   // disable briefly on unexpected error as well
   setDisabledAfterFailure(true);
