@@ -1,3 +1,4 @@
+import logger from './logger';
 // Performance monitoring utilities
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
@@ -32,7 +33,7 @@ export class PerformanceMonitor {
     this.metrics.set(`${componentName}_render_time`, renderTime);
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`${componentName} rendered in ${renderTime.toFixed(2)}ms`);
+      logger.debug(`${componentName} rendered in ${renderTime.toFixed(2)}ms`);
     }
   }
 
@@ -42,7 +43,7 @@ export class PerformanceMonitor {
     this.metrics.set(`${endpoint}_api_time`, duration);
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`API call to ${endpoint} took ${duration.toFixed(2)}ms`);
+      logger.debug(`API call to ${endpoint} took ${duration.toFixed(2)}ms`);
     }
   }
 
@@ -79,7 +80,11 @@ export class PerformanceMonitor {
     const fidObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
       entries.forEach((entry) => {
-        this.metrics.set('fid', entry.processingStart - entry.startTime);
+        // processingStart exists on some PerformanceEntry types (e.g., FID), guard access
+        const processingStart = (entry as any).processingStart;
+        if (typeof processingStart === 'number') {
+          this.metrics.set('fid', processingStart - entry.startTime);
+        }
       });
     });
     fidObserver.observe({ entryTypes: ['first-input'] });
@@ -145,7 +150,7 @@ export function measureExecutionTime<T>(
   const endTime = performance.now();
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`${name} executed in ${(endTime - startTime).toFixed(2)}ms`);
+    logger.debug(`${name} executed in ${(endTime - startTime).toFixed(2)}ms`);
   }
   
   return result;
@@ -161,7 +166,7 @@ export async function measureAsyncExecutionTime<T>(
   const endTime = performance.now();
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`${name} executed in ${(endTime - startTime).toFixed(2)}ms`);
+    logger.debug(`${name} executed in ${(endTime - startTime).toFixed(2)}ms`);
   }
   
   return result;

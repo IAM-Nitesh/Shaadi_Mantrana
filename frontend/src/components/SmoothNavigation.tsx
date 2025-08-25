@@ -155,12 +155,13 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
     
     if (isRestrictedRoute && user) {
-      const canAccess = user.profileCompleteness >= 100 && !user.isFirstLogin;
-      const isInOnboarding = user.isFirstLogin || user.profileCompleteness < 100;
+      // Access Control Logic: Only allow access if profileCompleteness is 100%
+      const canAccess = user.profileCompleteness >= 100;
+      const isFirstLogin = user.isFirstLogin;
       
-      if (!canAccess || isInOnboarding) {
+      if (!canAccess) {
         // Show toast notification
-        const message = isInOnboarding 
+        const message = isFirstLogin 
           ? 'Please complete the onboarding process first' 
           : 'Please complete your profile to access this feature';
         
@@ -178,7 +179,6 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
         }, 3000);
         
         // Redirect to profile page with optimized transition
-  
         navigateTo('/profile', { immediate: true });
         return;
       }
@@ -198,9 +198,9 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
     items.map(item => {
       const isActive = pathname === item.href;
       const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
-      const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-      const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
-      const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
+      const canAccess = user ? (user.profileCompleteness >= 100) : false;
+      const isFirstLogin = user ? user.isFirstLogin : false;
+      const isDisabled = isRestrictedRoute && !canAccess;
 
       return {
         item,

@@ -174,7 +174,7 @@ export function useBackgroundSync() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    setIsSupported('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype);
+  setIsSupported('serviceWorker' in navigator && !!(window.ServiceWorkerRegistration && (window.ServiceWorkerRegistration as any).prototype && 'sync' in (window.ServiceWorkerRegistration as any).prototype));
   }, []);
 
   const registerSync = useCallback(async (tag: string) => {
@@ -183,7 +183,10 @@ export function useBackgroundSync() {
     }
 
     const registration = await navigator.serviceWorker.ready;
-    return registration.sync.register(tag);
+    if ((registration as any).sync && (registration as any).sync.register) {
+      return (registration as any).sync.register(tag);
+    }
+    throw new Error('Background sync not available on this registration');
   }, [isSupported]);
 
   return {

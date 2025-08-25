@@ -1,3 +1,5 @@
+import logger from '../utils/logger';
+import { loggerForUser } from '../utils/pino-logger';
 // Authentication Utilities for Service Files
 // This file contains only utility functions that can be safely imported by service files
 // without breaking Fast Refresh in React components
@@ -97,10 +99,16 @@ export async function isAuthenticated(): Promise<boolean> {
       timestamp: Date.now()
     };
 
-    console.log('✅ AuthUtils: Auth status cached:', data.authenticated);
+    logger.debug('✅ AuthUtils: Auth status cached:', data.authenticated);
     return data.authenticated === true;
   } catch (error) {
-    console.error('❌ AuthUtils: Error checking authentication:', error);
+    try {
+      const user = await getCurrentUser();
+      const log = loggerForUser(user?.userUuid);
+      log.error({ err: error }, '❌ AuthUtils: Error checking authentication:');
+    } catch (e) {
+      logger.error({ err: error }, '❌ AuthUtils: Error checking authentication:');
+    }
     // Cache the error response to prevent repeated calls
     authStatusCache = {
       data: { authenticated: false, redirectTo: '/', message: 'Auth check error' },
@@ -115,11 +123,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     // Check cache first
     if (isAuthCacheValid() && authStatusCache?.data) {
-      console.log('✅ AuthUtils: Using cached user data');
+      logger.debug('✅ AuthUtils: Using cached user data');
       return authStatusCache.data.user || null;
     }
 
-    console.log('🔍 AuthUtils: Getting current user...');
+    logger.debug('🔍 AuthUtils: Getting current user...');
     const response = await fetch('/api/auth/status', {
       method: 'GET',
       credentials: 'include',
@@ -129,7 +137,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     });
 
     if (!response.ok) {
-      console.log('❌ AuthUtils: Failed to get user data, status:', response.status);
+      logger.debug('❌ AuthUtils: Failed to get user data, status:', response.status);
       // Cache the failed response
       authStatusCache = {
         data: { authenticated: false, redirectTo: '/', message: 'User data fetch failed' },
@@ -146,10 +154,16 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       timestamp: Date.now()
     };
 
-    console.log('✅ AuthUtils: User data cached');
+    logger.debug('✅ AuthUtils: User data cached');
     return data.user || null;
   } catch (error) {
-    console.error('❌ AuthUtils: Error getting current user:', error);
+    try {
+      const user = await getCurrentUser();
+      const log = loggerForUser(user?.userUuid);
+      log.error({ err: error }, '❌ AuthUtils: Error getting current user:');
+    } catch (e) {
+      logger.error({ err: error }, '❌ AuthUtils: Error getting current user:');
+    }
     // Cache the error response
     authStatusCache = {
       data: { authenticated: false, redirectTo: '/', message: 'User data error' },
@@ -162,7 +176,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 // Function to clear auth cache (useful for logout or when forcing refresh)
 export function clearAuthStatusCache(): void {
   clearAuthCache();
-  console.log('🔍 AuthUtils: Auth status cache cleared');
+  logger.debug('🔍 AuthUtils: Auth status cache cleared');
 }
 
 // Check if user is admin

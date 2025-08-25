@@ -1,3 +1,4 @@
+import logger from './logger';
 // Security utilities for the frontend application
 
 // Input validation and sanitization
@@ -169,7 +170,7 @@ export class SecureStorage {
       const encryptedValue = await SecurityUtils.hashData(value);
       localStorage.setItem(this.PREFIX + key, encryptedValue);
     } catch (error) {
-      console.error('Failed to store secure item:', error);
+      logger.error('Failed to store secure item:', error);
     }
   }
 
@@ -178,7 +179,7 @@ export class SecureStorage {
     try {
       return localStorage.getItem(this.PREFIX + key);
     } catch (error) {
-      console.error('Failed to retrieve secure item:', error);
+      logger.error('Failed to retrieve secure item:', error);
       return null;
     }
   }
@@ -188,7 +189,7 @@ export class SecureStorage {
     try {
       localStorage.removeItem(this.PREFIX + key);
     } catch (error) {
-      console.error('Failed to remove secure item:', error);
+      logger.error('Failed to remove secure item:', error);
     }
   }
 
@@ -202,7 +203,7 @@ export class SecureStorage {
         }
       });
     } catch (error) {
-      console.error('Failed to clear secure data:', error);
+      logger.error('Failed to clear secure data:', error);
     }
   }
 }
@@ -229,14 +230,14 @@ export class SecurityMiddleware {
     const suspiciousHeaders = ['x-powered-by', 'server'];
     for (const header of suspiciousHeaders) {
       if (response.headers.get(header)) {
-        console.warn(`Suspicious header detected: ${header}`);
+        logger.warn(`Suspicious header detected: ${header}`);
         return false;
       }
     }
 
     // Check response status
     if (response.status >= 400) {
-      console.error(`API error: ${response.status}`);
+      logger.error(`API error: ${response.status}`);
       return false;
     }
 

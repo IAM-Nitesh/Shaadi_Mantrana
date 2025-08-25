@@ -5,6 +5,7 @@
 // Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
 import { config } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
+import logger from '../utils/logger';
 
 export const API_CONFIG = {
   API_BASE_URL: config.apiBaseUrl,
@@ -231,7 +232,7 @@ export class ProfileService {
           // Preserve the profileCompleteness field from the nested structure
           profileCompleteness: data.profile.profile.profileCompleteness
         };
-        console.log('🔍 Flattened profile for onboarding check:', {
+        logger.debug('🔍 Flattened profile for onboarding check:', {
           isFirstLogin: flattenedProfile.isFirstLogin,
           hasSeenOnboardingMessage: flattenedProfile.hasSeenOnboardingMessage,
           profileCompleteness: flattenedProfile.profileCompleteness
@@ -345,7 +346,7 @@ export class ProfileService {
   // DEPRECATED: Profile completion is now handled by the backend
   // This method is kept for backward compatibility but should not be used
   static updateProfileCompleteness(profile: any): void {
-    console.log('⚠️ ProfileService.updateProfileCompleteness is deprecated. Profile completion is now handled by the backend.');
+    logger.debug('⚠️ ProfileService.updateProfileCompleteness is deprecated. Profile completion is now handled by the backend.');
   }
 
   // Update onboarding message flag in backend
@@ -354,7 +355,7 @@ export class ProfileService {
       // Check if user is authenticated using server-side auth
       const authenticated = await isAuthenticated();
       if (!authenticated) {
-        console.error('❌ User not authenticated for updating onboarding message');
+        logger.error('❌ User not authenticated for updating onboarding message');
         return false;
       }
 
@@ -377,19 +378,19 @@ export class ProfileService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        console.error('❌ Failed to update onboarding message:', errorData);
+        logger.error('❌ Failed to update onboarding message:', errorData);
         return false;
       }
 
       const result = await response.json();
       if (result.success) {
-        console.log('✅ Onboarding message flag updated successfully:', hasSeenOnboardingMessage);
+        logger.debug('✅ Onboarding message flag updated successfully:', hasSeenOnboardingMessage);
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('❌ Error updating onboarding message:', error);
+      logger.error('❌ Error updating onboarding message:', error);
       return false;
     }
   }
@@ -397,7 +398,7 @@ export class ProfileService {
   // Force authentication refresh after profile updates
   static async forceAuthRefresh(): Promise<void> {
     try {
-      console.log('🔄 ProfileService: Forcing authentication refresh...');
+      logger.debug('🔄 ProfileService: Forcing authentication refresh...');
       
       // Clear any cached authentication data
       if (typeof window !== 'undefined') {
@@ -416,12 +417,12 @@ export class ProfileService {
       });
       
       if (response.ok) {
-        console.log('✅ ProfileService: Authentication refresh successful');
+        logger.debug('✅ ProfileService: Authentication refresh successful');
       } else {
-        console.warn('⚠️ ProfileService: Authentication refresh failed');
+        logger.warn('⚠️ ProfileService: Authentication refresh failed');
       }
     } catch (error) {
-      console.error('❌ ProfileService: Error forcing auth refresh:', error);
+      logger.error('❌ ProfileService: Error forcing auth refresh:', error);
     }
   }
 
@@ -431,7 +432,7 @@ export class ProfileService {
       // Check if user is authenticated using server-side auth
       const authenticated = await isAuthenticated();
       if (!authenticated) {
-        console.error('❌ User not authenticated for updating profile');
+        logger.error('❌ User not authenticated for updating profile');
         return { success: false, error: 'Not authenticated' };
       }
 
@@ -454,15 +455,15 @@ export class ProfileService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        console.error('❌ Failed to update profile:', errorData);
+        logger.error('❌ Failed to update profile:', errorData);
         return { success: false, error: errorData };
       }
 
       const result = await response.json();
-      console.log('✅ Profile updated successfully');
+      logger.debug('✅ Profile updated successfully');
       return { success: true, data: result };
     } catch (error) {
-      console.error('❌ Error updating profile:', error);
+      logger.error('❌ Error updating profile:', error);
       return { success: false, error };
     }
   }
@@ -470,7 +471,7 @@ export class ProfileService {
   // Update profile with forced authentication refresh
   static async updateProfileWithRefresh(profileData: any): Promise<any> {
     try {
-      console.log('🔄 ProfileService: Updating profile with refresh...');
+      logger.debug('🔄 ProfileService: Updating profile with refresh...');
       
       // Update profile
       const result = await ProfileService.updateProfile(profileData);
@@ -482,7 +483,7 @@ export class ProfileService {
       
       return result;
     } catch (error) {
-      console.error('❌ ProfileService: Error updating profile with refresh:', error);
+      logger.error('❌ ProfileService: Error updating profile with refresh:', error);
       throw error;
     }
   }

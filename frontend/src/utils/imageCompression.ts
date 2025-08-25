@@ -1,3 +1,4 @@
+import logger from './logger';
 /**
  * Image Compression Utility
  * Optimizes images for upload to B2 Cloud Storage
@@ -240,7 +241,7 @@ export class ImageCompression {
         const result = await this.compressProfilePicture(file, options);
         results.push(result);
       } catch (error) {
-        console.error(`Failed to compress ${file.name}:`, error);
+        logger.error(`Failed to compress ${file.name}:`, error);
         // Add original file as fallback
         results.push({
           file,
@@ -306,7 +307,7 @@ export class ImageCompression {
     const deviceType = this.detectDeviceType();
     const options = this.getOptimalOptions(deviceType);
     
-    console.log(`📱 Compressing image for ${deviceType} device with options:`, options);
+    logger.debug(`📱 Compressing image for ${deviceType} device with options:`, options);
     
     return this.compressProfilePicture(file, options);
   }
