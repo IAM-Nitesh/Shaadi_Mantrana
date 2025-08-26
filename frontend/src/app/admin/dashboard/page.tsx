@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import AdminRouteGuard from '../../../components/AdminRouteGuard';
-import ToastService from '../../../services/toastService';
-import { ServerAuthService } from '../../../services/server-auth-service';
+// AdminRouteGuard and ToastService are unused here
+import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
 
 interface DashboardData {
@@ -36,7 +35,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = await ServerAuthService.getBearerToken();
+      const token = await getClientToken();
       if (!token) {
         logger.debug('🔍 Dashboard: No auth token found');
         router.push('/');
@@ -81,11 +80,8 @@ export default function AdminDashboard() {
       logger.debug('🔍 Dashboard: Transformed data:', dashboardData);
       setDashboardData(dashboardData);
       
-      // Animate widgets on load
-      gsap.fromTo('.dashboard-widget', 
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-      );
+  // Animate widgets on load (safe)
+  safeGsap.fromTo?.('.dashboard-widget', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' });
 
     } catch (error) {
       logger.error('❌ Dashboard: Error fetching dashboard data:', error);

@@ -470,3 +470,85 @@ userSchema.methods.updateLastLogin = function(ipAddress, userAgent, deviceType =
 };
 
 module.exports = mongoose.model('User', userSchema); 
+
+/**
+ * Middleware: Recalculate profile.profileCompleteness on findOneAndUpdate operations.
+ * This ensures calls using findByIdAndUpdate / findOneAndUpdate will have profile completeness
+ * recomputed and persisted even when pre('save') middleware is not triggered.
+ */
+userSchema.pre('findOneAndUpdate', async function(next) {
+  try {
+    const update = this.getUpdate() || {};
+    const set = update.$set || update;
+
+    // If there is no profile-related update, skip heavy recompute
+    const hasProfileUpdate = Object.keys(set).some(k => k === 'profile' || k.startsWith('profile.'));
+    if (!hasProfileUpdate) return next();
+
+    // Fetch current document to merge profile fields
+    const query = this.getQuery();
+    const current = await this.model.findOne(query).lean();
+    const currentProfile = (current && current.profile) ? current.profile : {};
+
+    // Build merged profile by applying incoming profile updates over currentProfile
+    const incomingProfile = set.profile || {};
+    // Also support dot-path updates like { 'profile.name': 'X' }
+    const dotUpdates = Object.keys(set).filter(k => k.startsWith('profile.'));
+
+    const merged = { ...currentProfile, ...incomingProfile };
+    for (const path of dotUpdates) {
+      const key = path.replace(/^profile\./, '');
+      // Only set if the update provides a non-undefined value
+      if (set[path] !== undefined) merged[key] = set[path];
+    }
+
+    // Compute completeness using the same logic as controller
+    const computeCompletion = (profile) => {
+      if (!profile) return 0;
+      const requiredFields = [
+        'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
+        'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
+        'maritalStatus', 'father', 'mother', 'about', 'images',
+        'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
+        'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
+        'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
+        'interests'
+      ];
+
+      let completed = 0;
+      let total = 0;
+
+      requiredFields.forEach(field => {
+        total += 1;
+        const val = profile[field];
+        if (field === 'images') {
+          if (Array.isArray(val) && val.length > 0) completed += 1;
+          else if (typeof val === 'string' && val.trim() !== '') completed += 1;
+        } else if (field === 'interests') {
+          if (Array.isArray(val) && val.length > 0) completed += 1;
+        } else if (typeof val === 'string' && val.trim() !== '') {
+          completed += 1;
+        } else if (typeof val === 'number' && val > 0) {
+          completed += 1;
+        }
+      });
+
+      return Math.min(100, Math.round((completed / total) * 100));
+    };
+
+    const completeness = computeCompletion(merged);
+
+    // Ensure update writes the recalculated completeness
+    if (!update.$set) update.$set = {};
+    update.$set['profile.profileCompleteness'] = completeness;
+    update.$set['lastActive'] = new Date();
+    this.setUpdate(update);
+
+    return next();
+  } catch (err) {
+    // Log and continue without blocking the update
+    // eslint-disable-next-line no-console
+    console.error('Error in findOneAndUpdate profile completeness middleware:', err);
+    return next();
+  }
+});

@@ -603,11 +603,13 @@ export class ImageUploadService {
       
   logger.debug(`🔍 Response status: ${response.status}`);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-  logger.error(`❌ Response not OK: ${errorText}`);
-        return null;
-      }
+  if (!response.ok) {
+    const errorText = await response.text();
+    // Treat 404 (not found) as a normal case for users without profile pictures.
+    // Use logger.warn to avoid noisy console.error stacks in the browser.
+  logger.warn(`❌ Response not OK: ${errorText}`);
+    return null;
+  }
 
       const result = await response.json();
   logger.info(`✅ Signed URL result:`, result);
@@ -688,17 +690,21 @@ export class ImageUploadService {
       
       if (!response.ok) {
         const errorText = await response.text();
-  logger.error('❌ Response not OK:', errorText);
-        
-        // Handle specific error cases
+
+        // Treat missing profile picture (404) as a non-error case for consumers
         if (response.status === 404) {
+          // Use warn instead of error to avoid noisy error stacks in console
           logger.warn('❌ Profile picture not found for user:', userId);
         } else if (response.status === 401) {
           logger.warn('❌ Unauthorized - token may be invalid');
         } else if (response.status === 500) {
-          logger.error('❌ Server error while fetching signed URL');
+          // Server errors are worth logging as error
+          logger.error('❌ Server error while fetching signed URL:', errorText);
+        } else {
+          // For other non-OK responses emit a debug message (avoid noisy errors)
+          logger.debug('❌ Non-OK response while fetching signed URL:', response.status, errorText);
         }
-        
+
         return null;
       }
 
@@ -712,8 +718,9 @@ export class ImageUploadService {
   logger.warn('❌ Invalid response format:', result);
         return null;
       }
-    } catch (error) {
-  logger.error('❌ Error getting signed URL:', error);
+      } catch (error) {
+  // Network/parse failures are unexpected, but avoid spamming console.error in normal flows.
+  logger.warn('❌ Error getting signed URL (network/parse):', error);
       return null;
     }
   }

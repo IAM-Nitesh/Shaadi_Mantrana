@@ -2,15 +2,12 @@
 
 import { useEffect } from 'react';
 import CustomIcon from '../../../components/CustomIcon';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../../components/SafeGsap';
 
 export default function DataSafety() {
   useEffect(() => {
-    // Animate content on load
-    gsap.fromTo('.safety-card', 
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-    );
+  // Animate content on load (safe)
+  safeGsap.fromTo?.('.safety-card', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' });
   }, []);
 
   return (

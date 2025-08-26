@@ -43,11 +43,10 @@ export default function CelebratoryMatchToast({
   }, [isVisible, onClose]);
 
   const handleStartChat = () => {
-    if (connectionId) {
-      // Navigate to the specific chat
-      window.location.href = `/chat/${connectionId}`;
-    } else {
-      // Fallback to matches page if no connectionId
+    // Direct user to the Matches page to view/converse with new matches
+    try {
+      window.location.href = '/matches';
+    } catch (e) {
       onStartChat?.();
     }
     onClose();

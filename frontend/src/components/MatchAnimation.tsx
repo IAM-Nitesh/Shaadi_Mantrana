@@ -131,8 +131,12 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
             >
               <button
                 onClick={() => {
-                  // Navigate to chat
-                  window.location.href = `/chat/${matchName ? 'match-id' : '1'}`;
+                  // Direct user to Matches page to start conversations
+                  try {
+                    window.location.href = '/matches';
+                  } catch (e) {
+                    // fallback: no-op
+                  }
                 }}
                 className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
               >

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { ServerAuthService } from '../services/server-auth-service';
+// Avoid importing server-only auth service in client components
 import { config as configService } from '../services/configService';
 
 export default function AdminNavigation() {
@@ -19,13 +19,20 @@ export default function AdminNavigation() {
 
   const checkAdminStatus = async () => {
     try {
-      const authStatus = await ServerAuthService.checkAuthStatus();
+      const authRes = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
+      if (!authRes.ok) {
+        setLoading(false);
+        return;
+      }
+      const authStatus = await authRes.json();
       if (!authStatus.authenticated) {
         setLoading(false);
         return;
       }
 
-      const token = await ServerAuthService.getBearerToken();
+      const tokenRes = await fetch('/api/auth/token', { method: 'GET', credentials: 'include' });
+      const tokenData = tokenRes.ok ? await tokenRes.json().catch(() => ({})) : {};
+      const token = tokenData?.token;
       if (!token) {
         setLoading(false);
         return;

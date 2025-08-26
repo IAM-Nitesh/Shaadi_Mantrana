@@ -17,7 +17,7 @@ export default function Privacy() {
       </div>
 
       {/* Content */}
-      <div className="pt-16 pb-6 px-4">
+  <div className="pb-6 px-4" style={{ paddingTop: 'var(--header-height)' }}>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="space-y-6">
             <div>
