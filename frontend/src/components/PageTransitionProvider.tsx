@@ -29,6 +29,9 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
   const [isTransitioning, setTransitioning] = useState(false);
   const [previousPath, setPreviousPath] = useState('');
   const [currentPath, setCurrentPath] = useState(pathname);
+  // hardwareAccelerated is false during SSR to keep server HTML stable.
+  // It will be enabled on the client after mount if allowed for the current path.
+  const [hardwareAccelerated, setHardwareAccelerated] = useState(false);
 
   // Ultra-fast transition settings for instant feel (typed)
   const transitionSettings = useMemo(() => {
@@ -56,6 +59,15 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
     }
   }, [pathname, currentPath]);
 
+  // Only enable the hardware-accelerated class on the client after mount
+  // and only when not on admin routes. This avoids hydration mismatch
+  // caused by rendering different classNames on server vs client.
+  useEffect(() => {
+    // run on client only
+    setHardwareAccelerated(!(pathname && pathname.startsWith('/admin')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const value = useMemo(() => ({
     isTransitioning,
     setTransitioning,
@@ -72,7 +84,10 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={transitionSettings}
-          className="min-h-screen hardware-accelerated"
+          // Avoid setting transform on admin pages because transforms create a containing block
+          // which prevents position:fixed elements from being fixed to viewport in some browsers.
+          // We only add the hardware-accelerated class on the client to avoid hydration mismatch.
+          className={`min-h-screen ${hardwareAccelerated ? 'hardware-accelerated' : ''}`}
           style={{ willChange: 'opacity' }}
         >
           {children}

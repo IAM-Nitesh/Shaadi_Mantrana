@@ -1,5 +1,6 @@
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
+import { getUserCompleteness } from '../utils/user-utils';
 // Authentication Utilities for Service Files
 // This file contains only utility functions that can be safely imported by service files
 // without breaking Fast Refresh in React components
@@ -214,10 +215,13 @@ export function isAdmin(user?: AuthUser): boolean {
 
 // Check if user can access restricted features
 export function canAccessRestrictedFeatures(user?: AuthUser): boolean {
-  return user?.isApprovedByAdmin === true && user?.profileCompleteness === 100;
+  const completeness = getUserCompleteness(user as any);
+  return user?.isApprovedByAdmin === true && completeness >= 100;
 }
 
 // Check if user needs profile completion
 export function needsProfileCompletion(user?: AuthUser): boolean {
-  return !user || user.profileCompleteness < 100;
+  if (!user) return true;
+  const completeness = getUserCompleteness(user as any);
+  return user.role !== 'admin' && (user.isFirstLogin || completeness < 100);
 } 

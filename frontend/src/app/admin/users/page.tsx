@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import { ServerAuthService } from '../../../services/server-auth-service';
+import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../../components/SafeGsap';
 import Image from 'next/image';
 import { ImageUploadService } from '../../../services/image-upload-service';
 import ToastService from '../../../services/toastService';
@@ -122,7 +121,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async (forceRefresh = false) => {
     try {
-      const token = await ServerAuthService.getBearerToken();
+    const token = await getClientToken();
       if (!token) {
         logger.debug('🔍 Users: No auth token found');
         router.push('/');
@@ -174,7 +173,7 @@ export default function AdminUsers() {
       const newProfileImages = new Map<string, string>();
       
       // Debug: Check admin authentication token
-      const adminToken = await ServerAuthService.getBearerToken();
+  const adminToken = await getClientToken();
       logger.debug('🔍 Admin auth token available:', !!adminToken);
       logger.debug('🔍 Admin auth token length:', adminToken?.length);
       logger.debug('🔍 Admin auth token preview:', adminToken?.substring(0, 20) + '...');
@@ -183,31 +182,41 @@ export default function AdminUsers() {
       if (data.users && data.users.length > 0) {
         try {
           logger.debug('🔍 Starting batch signed URL fetch for users...');
-          const userIds = data.users.map((user: any) => user._id);
-          logger.debug('🔍 User IDs to fetch:', userIds);
-          
-          // Use the batch method for efficient fetching
-          const batchResults = await ImageUploadService.getBatchSignedUrls(userIds);
-          logger.debug('🔍 Batch results size:', batchResults.size);
-          
-          // Convert batch results to our map
-          for (const [userId, signedUrl] of batchResults.entries()) {
-            if (signedUrl) {
-              logger.debug(`✅ Got signed URL for ${userId}: ${signedUrl.substring(0, 50)}...`);
-              newProfileImages.set(userId, signedUrl);
-            } else {
-              logger.debug(`❌ No signed URL returned for ${userId}`);
+
+          // Filter out admin users and those without images early to avoid unnecessary calls
+          const userIdsToFetch = data.users
+            .filter((u: any) => u.role !== 'admin' && (u.profile?.images || '').toString().trim() !== '')
+            .map((u: any) => u._id);
+
+          logger.debug('🔍 User IDs to fetch (non-admin & has image):', userIdsToFetch);
+
+          if (userIdsToFetch.length > 0) {
+            const batchResults = await ImageUploadService.getBatchSignedUrls(userIdsToFetch);
+            logger.debug('🔍 Batch results size:', batchResults.size);
+
+            // Convert batch results to our map
+            for (const [userId, signedUrl] of batchResults.entries()) {
+              if (signedUrl) {
+                logger.debug(`✅ Got signed URL for ${userId}: ${signedUrl.substring(0, 50)}...`);
+                newProfileImages.set(userId, signedUrl);
+              } else {
+                logger.debug(`❌ No signed URL returned for ${userId}`);
+              }
             }
+          } else {
+            logger.debug('🔍 No non-admin users with images to fetch signed URLs for.');
           }
         } catch (error) {
-          logger.error('❌ Error in batch signed URL fetch:', error);
-          
-          // Fallback to individual requests if batch fails
+          logger.error('❌ Error in batch signed URL fetch:', error?.message || error);
+
+          // Fallback to individual requests if batch fails, but respect admin/no-image guard
           logger.debug('🔍 Falling back to individual requests...');
           for (const user of data.users || []) {
             try {
+              if (user.role === 'admin') continue;
+              if (!user.profile || !user.profile.images || user.profile.images.toString().trim() === '') continue;
+
               logger.debug(`🔍 Getting signed URL for user ${user._id} (${user.email})`);
-              logger.debug('🔍 About to call ImageUploadService.getUserProfilePictureSignedUrlCached...');
               const signedUrl = await getSignedUrlForUser(user._id, user.profile?.images || '');
               logger.debug('🔍 getSignedUrlForUser returned:', signedUrl);
               if (signedUrl) {
@@ -217,7 +226,7 @@ export default function AdminUsers() {
                 logger.debug(`❌ No signed URL returned for ${user._id}`);
               }
             } catch (error) {
-              logger.error('Error getting signed URL for user:', user._id, error);
+              logger.error('Error getting signed URL for user:', user._id, error?.message || error);
             }
           }
         }
@@ -255,8 +264,8 @@ export default function AdminUsers() {
         ).length
       });
 
-      // Animate content on load
-      gsap.fromTo('.user-card', 
+      // Animate content on load (use safe wrapper to avoid warnings when selector not present)
+      safeGsap.fromTo?.('.user-card',
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.6, stagger: 0.05, ease: "power2.out" }
       );
@@ -271,7 +280,7 @@ export default function AdminUsers() {
 
   const resumeUser = async (userId: string) => {
     try {
-      const token = await ServerAuthService.getBearerToken();
+      const token = await getClientToken();
       if (!token) {
         router.push('/');
         return;
@@ -344,7 +353,7 @@ export default function AdminUsers() {
 
   const pauseUser = async (userId: string) => {
     try {
-      const token = await ServerAuthService.getBearerToken();
+  const token = await getClientToken();
       if (!token) {
         router.push('/');
         return;
@@ -417,7 +426,7 @@ export default function AdminUsers() {
 
   const resendInvite = async (userId: string, userEmail: string) => {
     try {
-      const token = await ServerAuthService.getBearerToken();
+      const token = await getClientToken();
       if (!token) {
         router.push('/');
         return;

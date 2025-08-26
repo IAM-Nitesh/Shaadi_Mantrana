@@ -31,19 +31,23 @@ export default function StandardHeader({
 }: StandardHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
+  // Hide header on login page
+  if (pathname === '/') return null;
 
   // Automatically show filter icon only on dashboard page
   const shouldShowFilter = pathname === '/dashboard' && showFilter;
 
   return (
-    <motion.div 
+  <motion.div 
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-xl z-50 px-4 py-3"
+      role="banner"
+  className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-xl z-50 px-4 flex items-center relative"
+  style={{ height: 'var(--header-height, 4rem)' }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+  <div className="flex items-center justify-between w-full">
+      <div className="flex items-center space-x-3 flex-none">
           {showBackButton && (
             <button
               onClick={() => {
@@ -83,7 +87,7 @@ export default function StandardHeader({
           )}
         </div>
         
-        <div className="flex items-center space-x-4">
+  <div className="absolute inset-y-0 right-4 flex items-center space-x-4">
           {shouldShowFilter && (
             <button
               onClick={onFilterClick}
@@ -112,4 +116,4 @@ export default function StandardHeader({
       </div>
     </motion.div>
   );
-} 
+}

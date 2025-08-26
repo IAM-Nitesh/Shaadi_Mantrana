@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ServerAuthService } from '../../services/server-auth-service';
+import { getAuthStatus } from '../../utils/client-auth';
 import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
-import { gsap } from 'gsap';
 import logger from '../../utils/logger';
 
 export default function AdminLayout({
@@ -32,15 +31,15 @@ export default function AdminLayout({
         return;
       }
 
-      // Check if user is authenticated using server-side auth
-      const authStatus = await ServerAuthService.checkAuthStatus();
+  // Check if user is authenticated using server API
+  const authStatus = await getAuthStatus();
       if (!authStatus.authenticated) {
         router.replace('/'); // Redirect to main app login
         return;
       }
 
       // Verify admin access
-      if (authStatus.user?.role !== 'admin') {
+  if (authStatus.user?.role !== 'admin') {
         router.replace('/'); // Redirect to main app if not admin
         return;
       }
@@ -77,17 +76,17 @@ export default function AdminLayout({
   if (isAuthenticated || pathname === '/admin/login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col">
-        {/* Fixed Header - StandardHeader already has fixed positioning */}
+        {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}
         <StandardHeader showProfileLink={false} />
-        
-        {/* Scrollable Content Area */}
-        <main className="flex-1 pt-20 pb-20 overflow-y-auto">
+
+        {/* Scrollable Content Area (padding matches header/footer heights) */}
+        <main className="flex-1 overflow-y-auto" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
           <div className="admin-content relative">
             {children}
           </div>
         </main>
-        
-        {/* Fixed Footer - AdminBottomNavigation already has fixed positioning */}
+
+        {/* Fixed Footer - AdminBottomNavigation is fixed and uses h-20 */}
         <AdminBottomNavigation />
       </div>
     );

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useServerAuth } from '../hooks/useServerAuth';
-import { ServerAuthService } from '../services/server-auth-service';
 import HeartbeatLoader from './HeartbeatLoader';
 import logger from '../utils/logger';
 

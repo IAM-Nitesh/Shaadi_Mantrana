@@ -118,7 +118,7 @@ const NavigationItem = memo(({
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.08 }} // Ultra-fast badge animation
-          className="absolute -top-1 -right-0 text-red-700 text-[12px] font-extrabold leading-none pointer-events-none drop-shadow-sm"
+          className="absolute top-0 right-0 translate-x-1 -translate-y-1 text-red-700 text-[12px] font-extrabold leading-none pointer-events-none drop-shadow-sm"
           aria-label={`You have ${item.badge} matches`}
         >
           <span className="select-none">{item.badge > 99 ? '99+' : item.badge}</span>
@@ -157,8 +157,15 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
     
     if (isRestrictedRoute && user) {
       // Access Control Logic: Only allow access if profileCompleteness is 100%
-      const canAccess = user.profileCompleteness >= 100;
-      const isFirstLogin = user.isFirstLogin;
+      // Support multiple user shapes: user.profileCompleteness (top-level),
+      // user.profile?.profileCompleteness (nested), or legacy user.profileCompleted boolean.
+      const completeness = (user && (
+        (user as any).profileCompleteness ??
+        (user as any).profile?.profileCompleteness ??
+        ((user as any).profileCompleted ? 100 : undefined)
+      )) || 0;
+      const canAccess = completeness >= 100;
+      const isFirstLogin = (user as any).isFirstLogin;
       
       if (!canAccess) {
         // Show toast notification
@@ -199,7 +206,12 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
     items.map(item => {
       const isActive = pathname === item.href;
       const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
-      const canAccess = user ? (user.profileCompleteness >= 100) : false;
+      const completeness = (user && (
+        (user as any).profileCompleteness ??
+        (user as any).profile?.profileCompleteness ??
+        ((user as any).profileCompleted ? 100 : undefined)
+      )) || 0;
+      const canAccess = user ? (completeness >= 100) : false;
       const isFirstLogin = user ? user.isFirstLogin : false;
       const isDisabled = isRestrictedRoute && !canAccess;
 
@@ -217,8 +229,9 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }} // Smooth, natural easing
       className={`fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg ${className}`}
+      style={{ height: 'var(--bottom-nav-height, 4rem)' }}
     >
-      <div className="flex justify-around items-center py-4 px-4">
+      <div className="flex justify-around items-center h-full px-4">
         <AnimatePresence>
           {navigationItems.map(({ item, isActive, isDisabled }) => (
             <NavigationItem

@@ -7,9 +7,8 @@ import { MatchingService, type LikedProfile, type MutualMatch } from '../../serv
 import { matchesCountService } from '../../services/matches-count-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import CustomIcon from '../../components/CustomIcon';
-import { gsap } from 'gsap';
-import HeartbeatLoader from '../../components/HeartbeatLoader';
-import StandardHeader from '../../components/StandardHeader';
+import { safeGsap } from '../../components/SafeGsap';
+// HeartbeatLoader removed (unused)
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import { config as configService } from '../../services/configService';
 import SmoothNavigation from '../../components/SmoothNavigation';
@@ -223,7 +222,7 @@ function MatchesContent() {
   // GSAP animations - simplified to remove bounce effects
   useEffect(() => {
     if (tabsRef.current) {
-      gsap.fromTo(tabsRef.current,
+      safeGsap.fromTo?.(tabsRef.current,
         { y: 20, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }
       );
@@ -245,10 +244,7 @@ function MatchesContent() {
   // Remove content animation to prevent bounce effects
   // useEffect(() => {
   //   if (contentRef.current && !loading) {
-  //     gsap.fromTo(contentRef.current,
-  //       { opacity: 0, y: 20 },
-  //       { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-  //     );
+  // commented GSAP usage removed in favor of safeGsap
   //   }
   // }, [loading, mutualMatches, likedProfiles]);
 
@@ -258,7 +254,7 @@ function MatchesContent() {
     
     cards.forEach(card => {
       const handleMouseEnter = () => {
-        gsap.to(card, {
+        safeGsap.to?.(card, {
           scale: 1.01, // Reduced scale for subtler effect
           duration: 0.15, // Faster animation
           ease: "power2.out"
@@ -266,7 +262,7 @@ function MatchesContent() {
       };
       
       const handleMouseLeave = () => {
-        gsap.to(card, {
+        safeGsap.to?.(card, {
           scale: 1,
           duration: 0.15, // Faster animation
           ease: "power2.out"
@@ -321,10 +317,9 @@ function MatchesContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      <StandardHeader />
       
       {/* Main Content */}
-      <div className="pt-20 pb-24 px-4 relative z-10">
+    <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
         {/* Tabs */}
         <div ref={tabsRef} className="mb-6">
           <div className="flex bg-white rounded-2xl p-1 shadow-sm">

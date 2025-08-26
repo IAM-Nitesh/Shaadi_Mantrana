@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-import { ServerAuthService } from '../services/server-auth-service';
 import { config as configService } from '../services/configService';
-import { gsap } from 'gsap';
+import { safeGsap } from '../components/SafeGsap';
 import HeartbeatLoader from '../components/HeartbeatLoader';
 import ToastService from '../services/toastService';
 import logger from '../utils/logger';
@@ -91,23 +89,27 @@ export default function Home() {
 
   // GSAP animations on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && typeof gsap !== 'undefined') {
-      try {
-        // Clear any existing animations
-        gsap.killTweensOf("*");
+  if (typeof window !== 'undefined') {
+     try {
+       // Clear any existing animations (guarded)
+       try {
+         safeGsap.killTweensOf?.("*");
+       } catch (e) {
+         logger.debug('safeGsap.killTweensOf failed:', e);
+       }
         
         // Initial setup - hide elements
-        gsap.set([logoRef.current, cardRef.current, featuresRef.current], { 
+        safeGsap.set?.([logoRef.current, cardRef.current, featuresRef.current], { 
           opacity: 0, 
           y: 30,
           scale: 0.95
         });
         
         // Simple entrance animation
-        const tl = gsap.timeline({ delay: 0.3 });
+  const tl = safeGsap.timeline?.({ delay: 0.3 });
         
         // Background entrance
-        tl.fromTo(backgroundRef.current, {
+  tl?.fromTo?.(backgroundRef.current, {
           opacity: 0
         }, {
           opacity: 1,
@@ -115,7 +117,7 @@ export default function Home() {
           ease: "power2.out"
         })
         // Logo entrance
-        .to(logoRef.current, {
+  .to?.(logoRef.current, {
           opacity: 1,
           y: 0,
           scale: 1,
@@ -123,7 +125,7 @@ export default function Home() {
           ease: "back.out(1.2)",
         }, "-=0.2")
         // Card entrance
-        .to(cardRef.current, {
+  .to?.(cardRef.current, {
           opacity: 1,
           y: 0,
           scale: 1,
@@ -131,7 +133,7 @@ export default function Home() {
           ease: "back.out(1.2)",
         }, "-=0.4")
         // Features entrance
-        .to(featuresRef.current, {
+  .to?.(featuresRef.current, {
           opacity: 1,
           y: 0,
           scale: 1,
@@ -144,14 +146,14 @@ export default function Home() {
         if (heartsContainer && heartsContainer.children) {
           Array.from(heartsContainer.children).forEach((heart, index) => {
             const heartElement = heart as HTMLElement;
-            gsap.set(heartElement, { 
+            safeGsap.set?.(heartElement, { 
               y: window.innerHeight + 50, 
               opacity: 0, 
               scale: 0.5
             });
             
             // Simple floating animation
-            gsap.to(heartElement, {
+            safeGsap.to?.(heartElement, {
               y: -100,
               opacity: 0.6,
               scale: 1,
@@ -161,7 +163,7 @@ export default function Home() {
               repeat: -1,
               repeatDelay: 5,
               onRepeat: () => {
-                gsap.set(heartElement, { 
+                safeGsap.set?.(heartElement, { 
                   y: window.innerHeight + 50, 
                   opacity: 0, 
                   scale: 0.5
@@ -171,9 +173,9 @@ export default function Home() {
           });
         }
       } catch (error) {
-        logger.error('GSAP animation error:', error);
+        logger.warn('GSAP animation error or targets missing:', error);
         // Fallback: show elements without animation
-        gsap.set([logoRef.current, cardRef.current, featuresRef.current], { 
+        safeGsap.set?.([logoRef.current, cardRef.current, featuresRef.current], { 
           opacity: 1, 
           y: 0,
           scale: 1
@@ -250,17 +252,15 @@ export default function Home() {
     }
     setIsLoading(true);
     
-    // GSAP loading animation
+    // GSAP loading animation (safe)
     const button = document.querySelector('.send-otp-button');
-    if (button) {
-      gsap.to(button, {
-        scale: 0.95,
-        duration: 0.1,
-        ease: "power2.out",
-        yoyo: true,
-        repeat: 1
-      });
-    }
+    safeGsap.to?.(button, {
+      scale: 0.95,
+      duration: 0.1,
+      ease: "power2.out",
+      yoyo: true,
+      repeat: 1
+    });
     
     try {
       await sendOtpToBackend(cleanEmail);
@@ -273,91 +273,93 @@ export default function Home() {
       try {
         const emailFormEl = document.querySelector('.email-form');
 
-        // Animate email form out first, then flip the ui to show OTP
-        const tl = gsap.timeline();
+        // Animate email form out first, then flip the ui to show OTP using safe timeline
+        const tl = safeGsap.timeline?.();
 
-        if (emailFormEl) {
-          tl.to(emailFormEl, {
-            x: -100,
-            opacity: 0,
-            scale: 0.95,
-            rotation: -2,
-            duration: 0.6,
-            ease: "power2.in"
+        if (tl) {
+          if (emailFormEl) {
+            tl.to?.(emailFormEl, {
+              x: -100,
+              opacity: 0,
+              scale: 0.95,
+              rotation: -2,
+              duration: 0.6,
+              ease: "power2.in"
+            });
+          }
+
+          // After email form is hidden, set showOtp to true so OTP DOM is mounted
+          tl.call?.(() => {
+            setShowOtp(true);
           });
-        }
 
-        // After email form is hidden, set showOtp to true so OTP DOM is mounted
-        tl.call(() => {
+          // Small delay to allow React to mount OTP elements, then animate them if present
+          tl.call?.(() => {
+            setTimeout(() => {
+              const otpScreenEl = document.querySelector('.otp-screen');
+              if (otpScreenEl) {
+                const tl2 = safeGsap.timeline?.();
+                if (tl2) {
+                  tl2.fromTo?.(otpScreenEl, {
+                    x: 100,
+                    opacity: 0,
+                    scale: 0.9,
+                    rotation: 2
+                  }, {
+                    x: 0,
+                    opacity: 1,
+                    scale: 1,
+                    rotation: 0,
+                    duration: 0.7,
+                    ease: "back.out(1.4)"
+                  });
+
+                  // Safely animate other OTP elements only if they exist
+                  const backBtn = document.querySelector('.back-button');
+                  if (backBtn) {
+                    tl2.fromTo?.(backBtn, { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.4');
+                  }
+
+                  const title = document.querySelector('.otp-title');
+                  if (title) {
+                    tl2.fromTo?.(title, { y: 40, opacity: 0, scale: 0.8 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.3');
+                  }
+
+                  const subtitle = document.querySelector('.otp-subtitle');
+                  if (subtitle) {
+                    tl2.fromTo?.(subtitle, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.2');
+                  }
+
+                  const successMsg = document.querySelector('.success-message');
+                  if (successMsg) {
+                    tl2.set?.(successMsg, { opacity: 0, scale: 0.8, y: -10 });
+                    tl2.to?.(successMsg, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.5)' }, '-=0.1');
+                  }
+
+                  const countdownEl = document.querySelector('.countdown-timer');
+                  if (countdownEl) {
+                    tl2.fromTo?.(countdownEl, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'elastic.out(1, 0.5)' }, '-=0.1');
+                  }
+                  const firstInput = document.getElementById('otp-0');
+                  if (firstInput) {
+                    firstInput.focus();
+                    safeGsap.to?.(firstInput, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.inOut' });
+                  }
+                }
+              }
+            }, 50);
+          });
+        } else {
+          // No timeline available: ensure UI still updates
           setShowOtp(true);
-        });
-
-        // Small delay to allow React to mount OTP elements, then animate them if present
-        tl.call(() => {
           setTimeout(() => {
-            const otpScreenEl = document.querySelector('.otp-screen');
-            if (otpScreenEl) {
-              const tl2 = gsap.timeline();
-              tl2.fromTo(otpScreenEl, {
-                x: 100,
-                opacity: 0,
-                scale: 0.9,
-                rotation: 2
-              }, {
-                x: 0,
-                opacity: 1,
-                scale: 1,
-                rotation: 0,
-                duration: 0.7,
-                ease: "back.out(1.4)"
-              });
-
-              // Safely animate other OTP elements only if they exist
-              const backBtn = document.querySelector('.back-button');
-              if (backBtn) {
-                tl2.fromTo(backBtn, { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.4');
-              }
-
-              const title = document.querySelector('.otp-title');
-              if (title) {
-                tl2.fromTo(title, { y: 40, opacity: 0, scale: 0.8 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.3');
-              }
-
-              const subtitle = document.querySelector('.otp-subtitle');
-              if (subtitle) {
-                tl2.fromTo(subtitle, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.2');
-              }
-
-              const successMsg = document.querySelector('.success-message');
-              if (successMsg) {
-                tl2.set(successMsg, { opacity: 0, scale: 0.8, y: -10 });
-                tl2.to(successMsg, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.5)' }, '-=0.1');
-              }
-
-              const otpInputs = document.querySelectorAll('.otp-inputs input');
-              if (otpInputs && otpInputs.length) {
-                tl2.fromTo(otpInputs, { scale: 0, y: 30, opacity: 0, rotation: 180 }, { scale: 1, y: 0, opacity: 1, rotation: 0, duration: 0.4, ease: 'back.out(1.8)', stagger: 0.08 }, '-=0.2');
-              }
-
-              const countdownEl = document.querySelector('.countdown-timer');
-              if (countdownEl) {
-                tl2.fromTo(countdownEl, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'elastic.out(1, 0.5)' }, '-=0.1');
-              }
-
-              const otpButtons = document.querySelectorAll('.otp-buttons button');
-              if (otpButtons && otpButtons.length) {
-                tl2.fromTo(otpButtons, { y: 40, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.2)', stagger: 0.1 }, '-=0.2');
-              }
-
-              // Auto-focus first input with animation
-              const firstInput = document.getElementById('otp-0');
-              if (firstInput) {
-                firstInput.focus();
-                gsap.to(firstInput, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.inOut' });
-              }
+            const firstInput = document.getElementById('otp-0');
+            if (firstInput) {
+              firstInput.focus();
+              safeGsap.to?.(firstInput, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.inOut' });
             }
           }, 50);
-        });
+        }
       } catch (animErr) {
         logger.warn('GSAP OTP transition failed or target missing:', animErr);
         // Ensure UI state still updates even if animations fail
@@ -381,7 +383,7 @@ export default function Home() {
       setErrorWithId(message);
       // Error shake animation
       if (cardRef.current) {
-        gsap.to(cardRef.current, {
+        safeGsap.to?.(cardRef.current, {
           keyframes: {
             "0%": { x: 0 },
             "10%": { x: -10 },
@@ -435,9 +437,28 @@ export default function Home() {
     }
   };
 
+  // Call the backend API directly from the client to avoid importing
+  // server-only service code into a client component (prevents bundler/runtime errors).
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
-    const result = await ServerAuthService.verifyOTP(email, otpCode);
-    return result;
+    try {
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: otpCode }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(err.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      // Normalize error to match previous ServerAuthService shape
+      const message = error instanceof Error ? error.message : String(error ?? 'Verification failed');
+      return { success: false, redirectTo: '/', error: message };
+    }
   };
 
   const handleVerifyOtp = async () => {
@@ -456,15 +477,13 @@ export default function Home() {
     
     // GSAP loading animation for verify button
     const button = document.querySelector('.verify-otp-button');
-    if (button) {
-      gsap.to(button, {
-        scale: 0.95,
-        duration: 0.1,
-        ease: "power2.out",
-        yoyo: true,
-        repeat: 1
-      });
-    }
+    safeGsap.to?.(button, {
+      scale: 0.95,
+      duration: 0.1,
+      ease: "power2.out",
+      yoyo: true,
+      repeat: 1
+    });
     
     try {
   const cleanEmail = email.trim().toLowerCase();
@@ -512,13 +531,13 @@ export default function Home() {
   if (successFlag) {
         // Success animation before redirect (guard cardRef)
         try {
-          const tl = gsap.timeline();
-          if (cardRef?.current) {
-            tl.to(cardRef.current, {
+          const tl = safeGsap.timeline?.();
+          if (tl && cardRef?.current) {
+            tl.to?.(cardRef.current, {
               scale: 1.05,
               duration: 0.3,
               ease: "power2.out"
-            }).to(cardRef.current, {
+            }).to?.(cardRef.current, {
               scale: 1,
               duration: 0.2,
               ease: "power2.out"
@@ -719,14 +738,14 @@ export default function Home() {
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full px-4 py-3 bg-slate-50/80 border-2 border-slate-200 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all duration-300 hover:border-slate-300 text-sm"
                         onFocus={() => {
-                          gsap.to('.email-form input', {
+                          safeGsap.to?.('.email-form input', {
                             scale: 1.02,
                             duration: 0.2,
                             ease: "power2.out"
                           });
                         }}
                         onBlur={() => {
-                          gsap.to('.email-form input', {
+                          safeGsap.to?.('.email-form input', {
                             scale: 1,
                             duration: 0.2,
                             ease: "power2.out"
@@ -753,52 +772,52 @@ export default function Home() {
                   </button>
                 </div>
               ) : (
-                // OTP Entry Screen - Full Screen Navigation
-                <div className="otp-screen space-y-8">
+                // OTP Entry Screen - match email form sizing
+                <div className="email-form otp-screen space-y-4">
                   
                   {/* Back Button */}
                   <div className="mb-6">
                     <button
                       onClick={() => {
                         // Enhanced back animation with multiple phases
-                        const tl = gsap.timeline();
-                        
-                        // Phase 1: Animate out OTP elements in reverse order
-                        tl.to('.otp-buttons button', {
+                        const tl = safeGsap.timeline?.();
+
+                        // Phase 1: Animate out OTP elements in reverse order (safe-chained)
+                        tl?.to?.('.otp-buttons button', {
                           y: 20,
                           opacity: 0,
                           scale: 0.9,
                           duration: 0.3,
-                          ease: "power2.in",
+                          ease: 'power2.in',
                           stagger: 0.05
                         })
-                        
-                        .to('.countdown-timer', {
+
+                        tl?.to?.('.countdown-timer', {
                           scale: 0,
                           opacity: 0,
                           duration: 0.2,
-                          ease: "power2.in"
-                        }, "-=0.2")
-                        
-                        .to('.otp-inputs input', {
+                          ease: 'power2.in'
+                        }, '-=0.2')
+
+                        tl?.to?.('.otp-inputs input', {
                           scale: 0,
                           y: -20,
                           opacity: 0,
                           rotation: -90,
                           duration: 0.3,
-                          ease: "power2.in",
+                          ease: 'power2.in',
                           stagger: 0.05
-                        }, "-=0.2")
-                        
-                        .to('.otp-subtitle, .otp-title', {
+                        }, '-=0.2')
+
+                        tl?.to?.('.otp-subtitle, .otp-title', {
                           y: -30,
                           opacity: 0,
                           duration: 0.3,
-                          ease: "power2.in",
+                          ease: 'power2.in',
                           stagger: 0.05
-                        }, "-=0.2")
-                        
-                        .to('.back-button', {
+                        }, '-=0.2')
+
+                        tl?.to?.('.back-button', {
                           x: -30,
                           opacity: 0,
                           duration: 0.2,
@@ -846,6 +865,11 @@ export default function Home() {
                       </svg>
                       Back
                     </button>
+
+                    {/* Extra content below Resend OTP button */}
+                    <div className="otp-extra mt-3 text-center text-sm text-slate-600">
+                      <p>Didn't receive the code? Check your spam folder or try again. For help, <a href="/support" className="text-rose-600 font-medium">contact support</a>.</p>
+                    </div>
                   </div>
 
                   {/* Title */}
@@ -893,7 +917,7 @@ export default function Home() {
                                 const nextInput = document.getElementById(`otp-${index + 1}`);
                                 if (nextInput) {
                                   nextInput.focus();
-                                  gsap.fromTo(nextInput, 
+                                  safeGsap.fromTo?.(nextInput, 
                                     { scale: 1.3, borderColor: '#10b981' },
                                     { scale: 1, borderColor: '#ef4444', duration: 0.3, ease: "back.out(1.5)" }
                                   );
@@ -907,7 +931,7 @@ export default function Home() {
                               const prevInput = document.getElementById(`otp-${index - 1}`);
                               if (prevInput) {
                                 prevInput.focus();
-                                gsap.to(prevInput, {
+                                safeGsap.to?.(prevInput, {
                                   scale: 1.1,
                                   duration: 0.2,
                                   yoyo: true,
@@ -918,7 +942,7 @@ export default function Home() {
                             }
                           }}
                           onFocus={() => {
-                            gsap.to(`#otp-${index}`, {
+                            safeGsap.to?.(`#otp-${index}`, {
                               scale: 1.15,
                               borderColor: '#ef4444',
                               boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.1)',
@@ -927,7 +951,7 @@ export default function Home() {
                             });
                           }}
                           onBlur={() => {
-                            gsap.to(`#otp-${index}`, {
+                            safeGsap.to?.(`#otp-${index}`, {
                               scale: 1,
                               borderColor: '#cbd5e1',
                               boxShadow: '0 0 0 0px rgba(239, 68, 68, 0)',
@@ -970,7 +994,7 @@ export default function Home() {
                       className="verify-button w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-bold py-4 px-6 rounded-xl hover:from-rose-600 hover:via-pink-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl relative overflow-hidden group"
                       onMouseEnter={() => {
                         if (!isLoading && otp.length === 6) {
-                          gsap.to('.verify-button', {
+                          safeGsap.to?.('.verify-button', {
                             scale: 1.02,
                             boxShadow: '0 10px 25px rgba(244, 63, 94, 0.3)',
                             duration: 0.3,
@@ -979,7 +1003,7 @@ export default function Home() {
                         }
                       }}
                       onMouseLeave={() => {
-                        gsap.to('.verify-button', {
+                        safeGsap.to?.('.verify-button', {
                           scale: 1,
                           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                           duration: 0.3,
@@ -1005,7 +1029,7 @@ export default function Home() {
                       className="resend-button w-full bg-slate-100 text-slate-700 font-medium py-4 px-6 rounded-xl hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       onMouseEnter={() => {
                         if (countdown === 0 && !isLoading) {
-                          gsap.to('.resend-button', {
+                          safeGsap.to?.('.resend-button', {
                             scale: 1.02,
                             backgroundColor: '#e2e8f0',
                             duration: 0.3,
@@ -1014,7 +1038,7 @@ export default function Home() {
                         }
                       }}
                       onMouseLeave={() => {
-                        gsap.to('.resend-button', {
+                        safeGsap.to?.('.resend-button', {
                           scale: 1,
                           backgroundColor: '#f1f5f9',
                           duration: 0.3,
@@ -1030,8 +1054,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Ultra Compact Features Grid */}
-          <div ref={featuresRef} className="mt-4 space-y-2">
+          {/* Ultra Compact Features Grid (hidden on OTP screen) */}
+          {!showOtp && (
+            <>
+              <div ref={featuresRef} className="mt-4 space-y-2">
             {/* Top Row - Main Features */}
             <div className="grid grid-cols-2 gap-2">
               <div className="feature-card group relative overflow-hidden border border-slate-200/50 rounded-lg p-3 hover:shadow-lg transition-all duration-500">
@@ -1072,10 +1098,10 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </div>
+              </div>
 
-          {/* Very Compact Quality Indicators */}
-          <div className="highlight-section mt-2 relative overflow-hidden border border-slate-200/60 rounded-lg p-3 shadow-md hover:shadow-lg transition-all duration-500 group">
+              {/* Very Compact Quality Indicators */}
+              <div className="highlight-section mt-2 relative overflow-hidden border border-slate-200/60 rounded-lg p-3 shadow-md hover:shadow-lg transition-all duration-500 group">
             <div className="relative z-10">
               {/* Header */}
               <div className="text-center mb-2">
@@ -1094,7 +1120,7 @@ export default function Home() {
                 </div>
                 
                 <div className="text-center group/item">
-                  <div className="w-6 h-6 flex items-center justify-center mx-auto mb-1 group-hover/item:scale-110 group-hover/item:rotate-6 transition-all duration-500">
+                  <div className="w-6 h-6 flex items-center justify-center mx-auto mb-1 group-hover/item:scale-110 group-hover:item:rotate-6 transition-all duration-500">
                     <span className="text-lg">✨</span>
                   </div>
                   <h5 className="text-xs font-bold text-slate-800 group-hover/item:text-purple-700 transition-colors duration-300">Quality Profiles</h5>
@@ -1102,7 +1128,7 @@ export default function Home() {
                 </div>
                 
                 <div className="text-center group/item">
-                  <div className="w-6 h-6 flex items-center justify-center mx-auto mb-1 group-hover/item:scale-110 group-hover/item:-rotate-3 transition-all duration-500">
+                  <div className="w-6 h-6 flex items-center justify-center mx-auto mb-1 group-hover:item:scale-110 group-hover:item:-rotate-3 transition-all duration-500">
                     <span className="text-lg">🎯</span>
                   </div>
                   <h5 className="text-xs font-bold text-slate-800 group-hover/item:text-emerald-700 transition-colors duration-300">Easy to Use</h5>
@@ -1115,21 +1141,23 @@ export default function Home() {
             <div className="absolute top-1 right-1 opacity-20 group-hover:opacity-40 transition-opacity duration-500">
               <div className="w-4 h-4 border border-rose-300 rounded-full animate-spin-slow"></div>
             </div>
-          </div>
+              </div>
 
-          {/* Minimal Terms Section */}
-          <div className="terms-section mt-4 text-center">
-            <p className="text-xs text-slate-500">
-              By continuing, you agree to our{' '}
-              <Link href="/terms" className="text-rose-600 hover:text-rose-700 font-semibold transition-all duration-200 hover:underline">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="text-rose-600 hover:text-rose-700 font-semibold transition-all duration-200 hover:underline">
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
+              {/* Minimal Terms Section */}
+              <div className="terms-section mt-4 text-center">
+                <p className="text-xs text-slate-500">
+                  By continuing, you agree to our{' '}
+                  <Link href="/terms" className="text-rose-600 hover:text-rose-700 font-semibold transition-all duration-200 hover:underline">
+                    Terms
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="text-rose-600 hover:text-rose-700 font-semibold transition-all duration-200 hover:underline">
+                    Privacy Policy
+                  </Link>
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

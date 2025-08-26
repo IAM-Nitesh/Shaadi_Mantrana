@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import HeartbeatLoader from './HeartbeatLoader';
 import { config as configService } from '../services/configService';
-import { ServerAuthService } from '../services/server-auth-service';
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
@@ -20,15 +19,24 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
-        // Check if user is authenticated using server-side auth
-        const authStatus = await ServerAuthService.checkAuthStatus();
+        // Check if user is authenticated via client-side API
+        const authRes = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
+        if (!authRes.ok) {
+          setError('Authentication required');
+          router.replace('/');
+          return;
+        }
+        const authStatus = await authRes.json();
         if (!authStatus.authenticated) {
           setError('Authentication required');
           router.replace('/');
           return;
         }
 
-        const token = await ServerAuthService.getBearerToken();
+        // Get a bearer token endpoint for server API calls if available
+        const tokenRes = await fetch('/api/auth/token', { method: 'GET', credentials: 'include' });
+        const tokenData = tokenRes.ok ? await tokenRes.json().catch(() => ({})) : {};
+        const token = tokenData?.token;
         if (!token) {
           setError('Authentication required');
           router.replace('/');

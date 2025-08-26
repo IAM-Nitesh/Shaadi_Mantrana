@@ -31,8 +31,8 @@ class ProfileController {
         });
       }
 
-      // Get isFirstLogin from user's own field
-      const isFirstLogin = user.isFirstLogin || true;
+  // Get isFirstLogin from user's own field (default to true only when undefined/null)
+  const isFirstLogin = user.isFirstLogin ?? true;
       
       // Debug: Check what profileCompleteness value is being returned
       console.log(`🔍 Profile completeness debug for ${user.email}:`, {
@@ -395,24 +395,35 @@ class ProfileController {
       
       // Check if user should be marked as not first login (100% threshold)
       if (completion >= 100) {
-        console.log('🎉 Profile is 100% complete! Updating user status...');
-        
-        // Update isFirstLogin in User collection
-        const userUpdate = await User.findByIdAndUpdate(
-          userId,
-          { isFirstLogin: false },
-          { new: true }
-        );
-        console.log('✅ User updated:', userUpdate ? 'success' : 'not found');
-        
-        // Update user status to active if profile is completed
-        if (user.status === 'invited') {
-          user.status = 'active';
-          user.profileCompleted = true;
-          await user.save();
-          console.log(`✅ User ${user.email} status updated to active (profile 100% complete)`);
-        } else {
-          console.log(`ℹ️ User ${user.email} status is already ${user.status}, no change needed`);
+        console.log('🎉 Profile is 100% complete! Updating user flags and status if needed...');
+
+        try {
+          // Build update object: always clear isFirstLogin and mark profileCompleted=true
+          const updateFields = {
+            isFirstLogin: false,
+            profileCompleted: true,
+            lastActive: new Date()
+          };
+
+          // If user is still in 'invited' state, promote to 'active'
+          if (user.status === 'invited') {
+            updateFields.status = 'active';
+          }
+
+          const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateFields },
+            { new: true }
+          );
+
+          console.log('✅ User update result:', updatedUser ? {
+            userId: updatedUser._id,
+            status: updatedUser.status,
+            profileCompleted: updatedUser.profileCompleted
+          } : 'not found');
+        } catch (err) {
+          console.error('❌ Error updating user flags for completed profile:', err);
+          throw err;
         }
       } else {
         console.log('⚠️ Profile is less than 100% complete, keeping user status as is');

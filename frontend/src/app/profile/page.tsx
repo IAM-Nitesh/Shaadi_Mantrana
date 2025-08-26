@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import InterestModal from './InterestModal';
 import { ImageUploadService, UploadResult } from '../../services/image-upload-service';
 import ServerAuthGuard from '../../components/ServerAuthGuard';
 import CustomIcon from '../../components/CustomIcon';
 import ImageCompression from '../../utils/imageCompression';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../components/SafeGsap';
 import Image from 'next/image';
 import { ProfileService } from '../../services/profile-service';
 import { DatePicker } from '../../components/date-picker';
@@ -16,12 +15,11 @@ import { format } from 'date-fns';
 import 'react-time-picker/dist/TimePicker.css';
 import { TimePicker } from '../../components/time-picker';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
-import StandardHeader from '../../components/StandardHeader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import SmoothNavigation from '../../components/SmoothNavigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import ToastService from '../../services/toastService';
-import { ServerAuthService } from '../../services/server-auth-service';
+import { getAuthStatus, getClientToken } from '../../utils/client-auth';
 import OnboardingOverlay from '../../components/OnboardingOverlay';
 import { useServerAuth } from '../../hooks/useServerAuth';
 import { OnboardingService } from '../../services/onboarding-service';
@@ -379,17 +377,89 @@ function ProfileContent() {
   };
 
   const handleFieldBlur = (fieldName: string) => {
-    // Only hide hint if field is valid, keep hint visible for invalid fields
-    const value = profile[fieldName];
-    const isValid = isFieldValid(fieldName, value);
-    
-    if (isValid) {
-      // Hide hint after a moment for valid fields
-      setTimeout(() => {
-        setFieldHints(prev => ({ ...prev, [fieldName]: false }));
-      }, 2000);
+    // Validate the specific field when the user finishes interacting with it (on blur).
+    // This triggers per-field visual feedback (red border + shake) if invalid,
+    // or clears the error styling if valid. It mirrors the bulk validation used on save
+    // but scoped to the single field to avoid surprising users.
+    try {
+      const value = profile[fieldName];
+      // Special-case: height is represented by two selects (height-feet / height-inches)
+      let isValid = isFieldValid(fieldName, value);
+
+      if (fieldName === 'height') {
+        const feetEl = document.querySelector(`[data-field="height-feet"]`) as HTMLSelectElement | null;
+        const inchesEl = document.querySelector(`[data-field="height-inches"]`) as HTMLSelectElement | null;
+        if (feetEl && inchesEl && feetEl.value && inchesEl.value && feetEl.value.trim() !== '' && inchesEl.value.trim() !== '') {
+          isValid = true;
+        } else {
+          isValid = false;
+        }
+      }
+
+      // For dropdown fields, also check the actual DOM element when profile may not reflect the selection immediately
+      const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
+      if (dropdownFields.includes(fieldName) && !isValid) {
+        const el = document.querySelector(`[data-field="${fieldName}"]`) as HTMLSelectElement | null;
+        if (el && el.value && el.value.trim() !== '') {
+          isValid = true;
+        }
+      }
+
+      // Update interacted state so hints/errors are only shown for interacted fields
+      setInteractedFields(prev => ({ ...prev, [fieldName]: true }));
+
+      // Update fieldHints: keep showing hint for invalid fields, hide after delay for valid
+      if (isValid) {
+        // hide hint after a short delay so user sees success briefly
+        setTimeout(() => setFieldHints(prev => ({ ...prev, [fieldName]: false })), 1200);
+      } else {
+        setFieldHints(prev => ({ ...prev, [fieldName]: true }));
+      }
+
+      // Update fieldErrors state for this field
+      setFieldErrors(prev => ({ ...prev, [fieldName]: !isValid }));
+
+      // Visual DOM feedback: add red border and shake animation on invalid
+      const elementSelector = fieldName === 'height' ? `[data-field="height-feet"]` : `[data-field="${fieldName}"]`;
+      const el = document.querySelector(elementSelector) as HTMLElement | null;
+
+      if (!isValid) {
+        if (el) {
+          // Remove any previous animation class to re-trigger
+          el.classList.remove('animate-shake');
+          // Add error styles
+          el.classList.add('border-red-500', 'bg-red-50');
+          // Force reflow then add animation so it replays
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+          void el.offsetWidth;
+          el.classList.add('animate-shake');
+
+          // Remove animation class after animation duration (matches .animate-shake in globals.css)
+          setTimeout(() => {
+            el.classList.remove('animate-shake');
+          }, 420);
+        }
+      } else {
+        // Valid field: briefly show success style then clear
+        if (el) {
+          el.classList.remove('animate-shake');
+          el.classList.remove('border-red-500', 'bg-red-50');
+          el.classList.add('border-green-500', 'bg-green-50');
+          setTimeout(() => {
+            el.classList.remove('border-green-500', 'bg-green-50');
+          }, 900);
+        }
+      }
+    } catch (err) {
+      // If any DOM lookup fails, fall back to existing behaviour of hint management
+      const value = profile[fieldName];
+      const valid = isFieldValid(fieldName, value);
+      if (valid) {
+        setTimeout(() => {
+          setFieldHints(prev => ({ ...prev, [fieldName]: false }));
+        }, 2000);
+      }
     }
-    // Keep hint visible for invalid fields
   };
 
   const markFieldAsCompleted = (fieldName: string) => {
@@ -516,7 +586,7 @@ function ProfileContent() {
         // Use API profile directly from MongoDB
         
         setProfile(apiProfile);
-        // Onboarding is handled by ServerAuthService.shouldShowOnboarding()
+  // Onboarding handled via client auth status
         
         // Profile completion is now handled by the backend
         
@@ -755,8 +825,8 @@ function ProfileContent() {
     if (typeof window !== 'undefined' && isAuthenticated && !loadingProfile) {
       const elements = [headerRef.current, profileInfoRef.current, profileDetailsRef.current].filter(Boolean);
       if (elements.length > 0) {
-        gsap.set(elements, { opacity: 0, y: 40, filter: 'blur(8px)' });
-        gsap.to(elements, {
+        safeGsap.set?.(elements, { opacity: 0, y: 40, filter: 'blur(8px)' });
+        safeGsap.to?.(elements, {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
@@ -776,12 +846,9 @@ function ProfileContent() {
       const content = document.querySelector('.modal-content');
       
       if (overlay && content) {
-        try {
-          gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.3 });
-          gsap.fromTo(content, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3 });
-        } catch (error) {
-          // Silently handle GSAP errors
-        }
+        // Use safeGsap guards to avoid target-not-found warnings
+        safeGsap.fromTo?.(overlay, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+        safeGsap.fromTo?.(content, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3 });
       }
     }
   }, [showInterestModal]);
@@ -1189,7 +1256,7 @@ function ProfileContent() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await ServerAuthService.getBearerToken()}`,
+          'Authorization': `Bearer ${await getClientToken()}`,
         },
         body: JSON.stringify({
           ...profileData,
@@ -1222,7 +1289,7 @@ function ProfileContent() {
           const response = await fetch(`${apiBaseUrl}/api/profiles/me?t=${Date.now()}`, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${await ServerAuthService.getBearerToken()}`,
+              'Authorization': `Bearer ${await getClientToken()}`,
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache'
             },
@@ -2230,19 +2297,11 @@ function ProfileContent() {
       <div className="absolute inset-0 bg-gradient-to-br from-rose-100/30 to-pink-100/30 backdrop-blur-[2.5px]"></div>
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.13),transparent_50%)]"></div>
       
-      {/* Onboarding Overlay */}
-      <OnboardingOverlay
-        isVisible={showOnboarding}
-        onComplete={handleOnboardingDismiss}
-      />
+  {/* Onboarding Overlay (rendered above once earlier) - duplicate removed */}
       
-      {/* Header */}
-      <StandardHeader
-        showProfileLink={true}
-      />
 
-      {/* Content */}
-      <div className="relative z-10 pt-16 pb-24 page-transition">
+  {/* Content */}
+  <div className="relative z-10 page-transition">
 
         {/* Profile Complete Success Banner */}
         {isProfileComplete && (
@@ -3193,7 +3252,7 @@ function ProfileContent() {
 
           {/* Save Button */}
           {isEditing && (
-            <div className="space-y-3">
+            <div className="space-y-3 relative z-[100001]">
               {/* Progress indicator */}
               <div className="flex items-center justify-between text-sm text-gray-600">
                 <span>Profile Completion</span>
@@ -3214,6 +3273,7 @@ function ProfileContent() {
                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600' 
                     : 'bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600'
                 }`}
+                style={{ position: 'relative', zIndex: 100002 }}
               >
                 {calculatedCompleteness >= 100 ? '🎉 Save Complete Profile' : 'Save Changes'}
               </button>

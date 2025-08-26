@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../components/SafeGsap';
 import { Profile } from '../../services/profile-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import { SwipeCardImage } from '../../components/LazyImage';
@@ -37,7 +37,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
   // GSAP entrance animation
   useEffect(() => {
     if (cardRef.current) {
-      gsap.fromTo(
+  safeGsap.fromTo?.(
         cardRef.current,
         { y: 60, opacity: 0, scale: 0.96, filter: 'blur(6px)' },
         {

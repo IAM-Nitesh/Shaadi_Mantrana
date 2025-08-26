@@ -2,6 +2,7 @@
 import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
+import { getUserCompleteness } from '../utils/user-utils';
 
 export interface OnboardingFlags {
   isFirstLogin: boolean;
@@ -113,9 +114,10 @@ export class OnboardingService {
     // 1. User is first login AND
     // 2. Hasn't seen onboarding message yet AND
     // 3. Profile is not complete
-    return user.isFirstLogin && 
-           !user.hasSeenOnboardingMessage && 
-           (user.profileCompleteness || 0) < 100;
+  const completeness = getUserCompleteness(user);
+  return user.isFirstLogin && 
+       !user.hasSeenOnboardingMessage && 
+       completeness < 100;
   }
 
   /**
@@ -125,7 +127,8 @@ export class OnboardingService {
     if (!user) return false;
     
     // Access Control Logic: Only allow access if profileCompleteness is 100%
-    return (user.profileCompleteness || 0) >= 100;
+  const completeness = getUserCompleteness(user);
+  return completeness >= 100;
   }
 
   /**
@@ -152,13 +155,15 @@ export class OnboardingService {
     }
 
     // Case 2: Returning user with incomplete profile (profileCompleteness < 100%)
-    if ((user.profileCompleteness || 0) < 100) {
+  const completeness = getUserCompleteness(user);
+  if (completeness < 100) {
       return '/profile';
     }
 
     // Case 3: User with complete profile (profileCompleteness = 100%)
     // Allow access to all pages - NO REDIRECT NEEDED
-    if ((user.profileCompleteness || 0) >= 100) {
+  const completeness2 = getUserCompleteness(user);
+  if (completeness2 >= 100) {
       return null; // No redirect needed - user can access any page
     }
 

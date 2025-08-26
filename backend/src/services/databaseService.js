@@ -186,17 +186,6 @@ class DatabaseService {
         }, this.retryDelay);
       }
     });
-
-    // Handle app termination
-    process.on('SIGINT', async () => {
-      await this.disconnect();
-      process.exit(0);
-    });
-
-    process.on('SIGTERM', async () => {
-      await this.disconnect();
-      process.exit(0);
-    });
   }
 
   // Disconnect from MongoDB (both Mongoose and native client)
@@ -245,8 +234,9 @@ class DatabaseService {
     if (!this.mongoClient) {
       throw new Error('Native MongoDB client not available');
     }
-    // Always use 'test' database
-    return this.mongoClient.db('test');
+  // Prefer explicit dbName, otherwise use configured database name or mongoose connection name
+  const name = dbName || (config && config.DATABASE && config.DATABASE.NAME) || mongoose.connection.name || 'test';
+  return this.mongoClient.db(name);
   }
 
   // Health check

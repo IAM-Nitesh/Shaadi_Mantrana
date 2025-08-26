@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ServerAuthService, type AuthUser } from '../services/server-auth-service';
+import type { AuthUser } from '../services/server-auth-service';
 import logger from '../utils/logger';
-import tokenRefreshService from '../services/token-refresh-service';
+// NOTE: This is a client-side hook — avoid importing server-only services.
 
 export interface UseServerAuthReturn {
   user: AuthUser | null;
@@ -28,10 +28,10 @@ function determineRedirectPath(user: AuthUser): string | null {
     return '/admin/dashboard';
   }
 
-  // Get user flags
-  const isFirstLogin = user.isFirstLogin;
-  const profileCompleteness = user.profileCompleteness || 0;
-  const hasSeenOnboardingMessage = user.hasSeenOnboardingMessage;
+  // Get user flags (support multiple user shapes)
+  const isFirstLogin = (user as any).isFirstLogin;
+  const profileCompleteness = (user as any).profileCompleteness ?? (user as any).profile?.profileCompleteness ?? ((user as any).profileCompleted ? 100 : 0);
+  const hasSeenOnboardingMessage = (user as any).hasSeenOnboardingMessage;
 
   logger.debug('🔍 useServerAuth - User flags:', {
     isFirstLogin,
@@ -198,30 +198,40 @@ export function useServerAuth(): UseServerAuthReturn {
     setError('');
     
     try {
-      const response = await ServerAuthService.checkAuthStatus();
-  logger.debug('🔍 useServerAuth: Auth status response:', response);
-      
-      if (response.authenticated && response.user) {
-  logger.info('✅ useServerAuth: User authenticated:', response.user);
-        setUser(response.user);
-        setIsAuthenticated(true);
-        setError('');
-        
-        // Determine redirect path
-        const redirectPath = response.redirectTo || determineRedirectPath(response.user);
-  logger.debug('🔍 useServerAuth: Redirect path:', redirectPath);
-        setRedirectTo(redirectPath);
-        
-        // Cache authentication persistently
-        setCachedAuth(response.user, redirectPath);
-        setLastCheckTime(Date.now());
-      } else {
-  logger.info('ℹ️ useServerAuth: User not authenticated - this is normal for unauthenticated users');
+      // Call the auth status API directly from the client
+      const res = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
+      if (!res.ok) {
+        logger.info('ℹ️ useServerAuth: User not authenticated or status check failed');
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
         setRedirectTo('/');
-        setError(''); // Clear any previous errors for unauthenticated state
+        setError('');
+        return;
+      }
+
+      const response = await res.json();
+      logger.debug('🔍 useServerAuth: Auth status response:', response);
+
+      if (response.authenticated && response.user) {
+        logger.info('✅ useServerAuth: User authenticated:', response.user);
+        setUser(response.user);
+        setIsAuthenticated(true);
+        setError('');
+
+        const redirectPath = response.redirectTo || determineRedirectPath(response.user);
+        logger.debug('🔍 useServerAuth: Redirect path:', redirectPath);
+        setRedirectTo(redirectPath);
+
+        setCachedAuth(response.user, redirectPath);
+        setLastCheckTime(Date.now());
+      } else {
+        logger.info('ℹ️ useServerAuth: User not authenticated - this is normal for unauthenticated users');
+        setUser(null);
+        setIsAuthenticated(false);
+        clearCachedAuth();
+        setRedirectTo('/');
+        setError('');
       }
     } catch (error) {
   logger.error('❌ useServerAuth: Authentication check failed:', error);
@@ -238,28 +248,25 @@ export function useServerAuth(): UseServerAuthReturn {
 
   const logout = useCallback(async () => {
     try {
-  logger.debug('🔍 useServerAuth: Starting logout...');
+      logger.debug('🔍 useServerAuth: Starting logout...');
       setIsLoading(true);
-      
-      const result = await ServerAuthService.logout();
-      
-      if (result.success) {
-  logger.info('✅ useServerAuth: Logout successful');
+
+      const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        setError(err.error || 'Logout failed');
+      } else {
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
         setRedirectTo('/');
         setError(null);
         setRetryCount(0);
-        
-        // Clear auth cache in auth-utils as well
+
         if (typeof window !== 'undefined') {
           const { clearAuthStatusCache } = await import('../services/auth-utils');
           clearAuthStatusCache();
         }
-      } else {
-  logger.warn('❌ useServerAuth: Logout failed:', result.message);
-        setError(result.message);
       }
     } catch (err) {
   logger.error('❌ useServerAuth: Logout error:', err);
@@ -405,16 +412,10 @@ export function useServerAuth(): UseServerAuthReturn {
     };
 
     // Start token refresh service if user is authenticated
-    if (isAuthenticated && user) {
-  logger.debug('🔄 useServerAuth: Starting token refresh service for authenticated user');
-      tokenRefreshService.start(handleTokenRefresh, handleTokenExpired);
-    }
-
-    // Cleanup function
-    return () => {
-  logger.debug('🔄 useServerAuth: Cleaning up token refresh service');
-      tokenRefreshService.stop();
-    };
+  // The token refresh service is server-side and not available in client bundles.
+  // We will rely on the server to issue refreshes via cookies. If a client-side
+  // token refresh mechanism is needed, implement a small client-only poll here.
+  return () => {};
   }, [isClient, isAuthenticated, user, checkAuth]);
 
   // Add a method to clear cache for debugging/testing

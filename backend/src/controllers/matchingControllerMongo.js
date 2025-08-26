@@ -800,31 +800,35 @@ class MatchingController {
         return res.status(400).json({ success: false, error: 'Cannot unmatch from your own profile' });
       }
 
-      // Delete like records when we have a targetUserId
+      // Load like records when we have a targetUserId (do not delete yet)
       let userLike = null;
       let targetLike = null;
       if (targetUserId) {
         [userLike, targetLike] = await Promise.all([
-          DailyLike.findOneAndDelete({ userId, likedProfileId: targetUserId }),
-          DailyLike.findOneAndDelete({ userId: targetUserId, likedProfileId: userId })
+          DailyLike.findOne({ userId, likedProfileId: targetUserId }),
+          DailyLike.findOne({ userId: targetUserId, likedProfileId: userId })
         ]);
 
-        console.log(`🗑️ Deleted likes - User like: ${userLike?._id}, Target like: ${targetLike?._id}`);
+        console.log(`� Loaded likes for unmatch - User like: ${userLike?._id}, Target like: ${targetLike?._id}`);
       }
 
-      // Resolve and delete the accepted connection
+      // Resolve and delete the accepted connection (be defensive if connection missing)
       let connection = null;
+      let connectionMissing = false;
       if (bodyConnectionId) {
-        // Ensure connection exists and user is part of it
+        // Try to load connection to validate ownership
         const existing = await Connection.findById(bodyConnectionId);
         if (!existing) {
-          return res.status(404).json({ success: false, error: 'Connection not found' });
-        }
-        if (!existing.users.map(u => u.toString()).includes(userId.toString())) {
-          return res.status(403).json({ success: false, error: 'Not authorized to unmatch this connection' });
-        }
+          // Connection record already gone; continue with defensive cleanup using connectionId
+          console.warn(`⚠️ Connection ${bodyConnectionId} not found; proceeding with cleanup using connectionId`);
+          connectionMissing = true;
+        } else {
+          if (!existing.users.map(u => u.toString()).includes(userId.toString())) {
+            return res.status(403).json({ success: false, error: 'Not authorized to unmatch this connection' });
+          }
 
-        connection = await Connection.findByIdAndDelete(bodyConnectionId);
+          connection = await Connection.findByIdAndDelete(bodyConnectionId);
+        }
       } else {
         connection = await Connection.findOneAndDelete({
           users: { $all: [userId, targetUserId] },
@@ -834,9 +838,120 @@ class MatchingController {
 
       console.log(`🔗 Deleted connection: ${connection?._id}`);
 
+      // Determine otherUserId (prefer explicit targetUserId if provided)
+      let otherUserId = null;
+      if (targetUserId) otherUserId = targetUserId;
+      if (!otherUserId && connection && connection.users) {
+        otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
+      }
+
+      // If connection wasn't found by strict query, try a broader lookup and delete it
+      try {
+        if (!connection && otherUserId) {
+          const broader = await Connection.findOneAndDelete({ users: { $all: [userId, otherUserId] } });
+          if (broader) {
+            connection = broader;
+            console.log('🔎 Found and deleted broader connection:', connection._id);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed broader connection deletion attempt:', e.message);
+      }
+
+      // Always clear DailyLike mutual flags and connectionId for these users (defensive)
+      try {
+        // Collect DailyLike docs either by user-pair or by connectionId (if provided or deduced)
+        let dlDocs = [];
+
+        if (otherUserId) {
+          dlDocs = await DailyLike.find({
+            $or: [
+              { userId, likedProfileId: otherUserId },
+              { userId: otherUserId, likedProfileId: userId }
+            ]
+          });
+        } else if (bodyConnectionId) {
+          // Find DailyLike docs that reference this connectionId (string or ObjectId)
+          dlDocs = await DailyLike.find({ connectionId: bodyConnectionId });
+
+          // If we found docs, attempt to derive otherUserId
+          if (dlDocs.length > 0) {
+            const sample = dlDocs[0];
+            if (String(sample.userId) === String(userId)) {
+              otherUserId = String(sample.likedProfileId);
+            } else if (String(sample.likedProfileId) === String(userId)) {
+              otherUserId = String(sample.userId);
+            }
+          }
+        }
+
+        const dlIds = dlDocs.map(d => d._id.toString());
+        const connIds = dlDocs.map(d => d.connectionId).filter(Boolean).map(String);
+
+        if (dlIds.length > 0) {
+          await DailyLike.updateMany(
+            { _id: { $in: dlIds } },
+            { $set: { isMutualMatch: false, connectionId: null, 'toastSeen.userA': false, 'toastSeen.userB': false } }
+          );
+          console.log('🔧 Cleared mutual match flags on DailyLike records for unmatch', dlIds);
+        } else {
+          console.log('🔍 No DailyLike records found to clear for unmatch between', userId, otherUserId, 'connectionId:', bodyConnectionId);
+        }
+
+        // Cascade-delete chat storage for any connectionIds found on DailyLike
+        try {
+          const ChatThread = require('../models/ChatThread');
+          const MessageModel = require('../models/Message');
+
+          let deletedChat = false;
+          let deletedMessagesCount = 0;
+
+          if (connIds.length > 0) {
+            const ctRes = await ChatThread.deleteMany({ connectionId: { $in: connIds } });
+            const msgRes = await MessageModel.deleteMany({ connectionId: { $in: connIds } });
+
+            deletedChat = !!(ctRes && (ctRes.deletedCount >= 1 || ctRes.n >= 1));
+            deletedMessagesCount = (msgRes && (msgRes.deletedCount || msgRes.n)) || 0;
+
+            console.log(`🗑️ Deleted chat storage for connections ${connIds.join(', ')} - chatDeleted: ${deletedChat}, messagesDeleted: ${deletedMessagesCount}`);
+
+            // Notify chat service to evict rooms
+            try {
+              const chatService = require('../services/chatService');
+              if (chatService && chatService.io) {
+                for (const cid of connIds) {
+                  chatService.io.to(cid).emit('force_unmatched', { connectionId: cid });
+                  if (chatService.chatRooms && typeof chatService.chatRooms.delete === 'function') {
+                    chatService.chatRooms.delete(cid);
+                  }
+                  const room = chatService.io.sockets.adapter.rooms.get(cid);
+                  if (room && room.size) {
+                    for (const socketId of room) {
+                      const s = chatService.io.sockets.sockets.get(socketId);
+                      if (s) {
+                        try { s.leave(cid); } catch (e) { /* ignore */ }
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('Failed to notify chatService after unmatch cascade delete:', e.message);
+            }
+          } else {
+            console.log('🔍 No connectionIds found on DailyLike records for chat cascade delete');
+          }
+        } catch (e) {
+          console.warn('Failed to cascade-delete chat storage during unmatch defensive cleanup:', e.message);
+        }
+      } catch (e) {
+        console.warn('Failed to clear DailyLike mutual match flags after unmatch:', e.message);
+      }
       // Cascade-delete chat storage (ChatThread + legacy Message docs) if connection was removed
       let deletedChat = false;
       let deletedMessagesCount = 0;
+  // Also attempt to delete any legacy `matches` documents that may exist in a separate collection
+  let deletedLegacyMatchesCount = 0;
       try {
         const ChatThread = require('../models/ChatThread');
         const MessageModel = require('../models/Message');
@@ -881,14 +996,187 @@ class MatchingController {
         console.warn('Failed to cascade-delete chat storage:', e.message);
       }
 
+      // Legacy matches collection cleanup
+      // Some deployments have an older `matches` collection that stores active matches
+      // with a `users` array and/or `connectionId`. Attempt to remove matching docs
+      // both via existing Mongoose `Match` model and by direct collection delete.
+      try {
+        const mongoose = require('mongoose');
+        const MatchModel = require('../models/Match');
+
+        // First try via the Mongoose model (handles newer match docs)
+        try {
+          const matchQuery = {};
+          if (connection && connection._id) {
+            matchQuery.$or = [ { connectionId: connection._id.toString() } ];
+          } else if (otherUserId) {
+            matchQuery.$or = [
+              { users: { $all: [userId, otherUserId] } },
+              { $and: [ { userId: userId }, { likedUserId: otherUserId } ] },
+              { $and: [ { userId: otherUserId }, { likedUserId: userId } ] }
+            ];
+          }
+
+          if (matchQuery.$or && matchQuery.$or.length > 0) {
+            const resDel = await MatchModel.deleteMany(matchQuery);
+            deletedLegacyMatchesCount += (resDel && (resDel.deletedCount || resDel.n)) || 0;
+            console.log(`🗑️ Deleted ${deletedLegacyMatchesCount} legacy match document(s) (via Match model) for unmatch between ${userId} and ${otherUserId}`);
+          }
+        } catch (e) {
+          console.warn('Legacy Match model deletion failed (continuing with collection delete):', e.message);
+        }
+
+  // Also attempt direct collection delete for docs stored in `matches` collection
+  try {
+          const coll = mongoose.connection.db.collection('matches');
+          const collQuery = { $or: [] };
+
+          if (connection && connection._id) {
+            try {
+              collQuery.$or.push({ connectionId: mongoose.Types.ObjectId(connection._id.toString()) });
+            } catch (errCast) {
+              // fallback to string match
+              collQuery.$or.push({ connectionId: connection._id.toString() });
+            }
+          }
+
+          if (otherUserId) {
+            try {
+              collQuery.$or.push({ users: { $all: [ mongoose.Types.ObjectId(userId), mongoose.Types.ObjectId(otherUserId) ] } });
+            } catch (errCast) {
+              collQuery.$or.push({ users: { $all: [ userId, otherUserId ] } });
+            }
+          }
+
+          if (collQuery.$or.length > 0) {
+            console.log('🔎 Attempting native collection delete with query on matches:', JSON.stringify(collQuery));
+            const colRes = await coll.deleteMany(collQuery);
+            const colDeleted = (colRes && (colRes.deletedCount || colRes.n)) || 0;
+            deletedLegacyMatchesCount += colDeleted;
+            console.log(`🗑️ Deleted ${colDeleted} legacy match document(s) from 'matches' collection for unmatch between ${userId} and ${otherUserId}`);
+          } else {
+            console.log('🔎 No native matches collection query constructed (nothing to delete)');
+          }
+        } catch (e) {
+          console.warn('Failed to delete from native matches collection:', e.message);
+        }
+      } catch (e) {
+        console.warn('Failed to delete legacy matches during unmatch cleanup (outer):', e.message);
+      }
+
+      // Defensive native collection deletes to ensure no orphaned documents remain
+      try {
+        const mongoose = require('mongoose');
+        const db = mongoose.connection.db;
+
+        const chatColl = db.collection('chatthreads');
+        const msgColl = db.collection('messages');
+        const connColl = db.collection('connections');
+
+        let nativeDeleted = { chatthreads: 0, messages: 0, connections: 0 };
+
+        // Delete by known connection id (from Connection model if available)
+        if (connection && connection._id) {
+          try {
+            const cid = mongoose.Types.ObjectId(connection._id.toString());
+            const ctRes = await chatColl.deleteMany({ connectionId: cid });
+            const mRes = await msgColl.deleteMany({ connectionId: cid });
+            nativeDeleted.chatthreads += (ctRes.deletedCount || ctRes.n || 0);
+            nativeDeleted.messages += (mRes.deletedCount || mRes.n || 0);
+          } catch (errCast) {
+            const ctRes = await chatColl.deleteMany({ connectionId: connection._id.toString() });
+            const mRes = await msgColl.deleteMany({ connectionId: connection._id.toString() });
+            nativeDeleted.chatthreads += (ctRes.deletedCount || ctRes.n || 0);
+            nativeDeleted.messages += (mRes.deletedCount || mRes.n || 0);
+          }
+
+          // Also attempt to delete any lingering connection documents by _id
+          try {
+            const conRes = await connColl.deleteMany({ _id: mongoose.Types.ObjectId(connection._id.toString()) });
+            nativeDeleted.connections += (conRes.deletedCount || conRes.n || 0);
+          } catch (e) {
+            const conRes = await connColl.deleteMany({ _id: connection._id.toString() });
+            nativeDeleted.connections += (conRes.deletedCount || conRes.n || 0);
+          }
+        }
+
+        // If we have a bodyConnectionId (string) but Connection model was missing, try deleting by that too
+        if (!connection && bodyConnectionId) {
+          try {
+            const cid2 = mongoose.Types.ObjectId(bodyConnectionId.toString());
+            const ctRes = await chatColl.deleteMany({ connectionId: cid2 });
+            const mRes = await msgColl.deleteMany({ connectionId: cid2 });
+            nativeDeleted.chatthreads += (ctRes.deletedCount || ctRes.n || 0);
+            nativeDeleted.messages += (mRes.deletedCount || mRes.n || 0);
+            const conRes = await connColl.deleteMany({ _id: cid2 });
+            nativeDeleted.connections += (conRes.deletedCount || conRes.n || 0);
+          } catch (e) {
+            const ctRes = await chatColl.deleteMany({ connectionId: bodyConnectionId.toString() });
+            const mRes = await msgColl.deleteMany({ connectionId: bodyConnectionId.toString() });
+            nativeDeleted.chatthreads += (ctRes.deletedCount || ctRes.n || 0);
+            nativeDeleted.messages += (mRes.deletedCount || mRes.n || 0);
+            const conRes = await connColl.deleteMany({ _id: bodyConnectionId.toString() });
+            nativeDeleted.connections += (conRes.deletedCount || conRes.n || 0);
+          }
+        }
+
+        // If we know the other user id, delete by users array match as well (covers legacy shapes)
+        if (otherUserId) {
+          try {
+            const u1 = mongoose.Types.ObjectId(userId);
+            const u2 = mongoose.Types.ObjectId(otherUserId);
+            const conRes = await connColl.deleteMany({ users: { $all: [u1, u2] } });
+            nativeDeleted.connections += (conRes.deletedCount || conRes.n || 0);
+
+            // Find any connections that matched and delete their chat/messages
+            const foundConns = await connColl.find({ users: { $all: [u1, u2] } }).project({ _id: 1 }).toArray();
+            if (foundConns && foundConns.length) {
+              const connIds = foundConns.map(c => c._id);
+              const ctRes = await chatColl.deleteMany({ connectionId: { $in: connIds } });
+              const mRes = await msgColl.deleteMany({ connectionId: { $in: connIds } });
+              nativeDeleted.chatthreads += (ctRes.deletedCount || ctRes.n || 0);
+              nativeDeleted.messages += (mRes.deletedCount || mRes.n || 0);
+            }
+          } catch (e) {
+            // Fallback to string-based query
+            const conRes = await connColl.deleteMany({ users: { $all: [userId, otherUserId] } });
+            nativeDeleted.connections += (conRes.deletedCount || conRes.n || 0);
+            const foundConns = await connColl.find({ users: { $all: [userId, otherUserId] } }).project({ _id: 1 }).toArray();
+            if (foundConns && foundConns.length) {
+              const connIds = foundConns.map(c => c._id);
+              const ctRes = await chatColl.deleteMany({ connectionId: { $in: connIds } });
+              const mRes = await msgColl.deleteMany({ connectionId: { $in: connIds } });
+              nativeDeleted.chatthreads += (ctRes.deletedCount || ctRes.n || 0);
+              nativeDeleted.messages += (mRes.deletedCount || mRes.n || 0);
+            }
+          }
+        }
+
+        console.log('🔧 Native cleanup counts:', nativeDeleted);
+      } catch (e) {
+        console.warn('Failed native collection cleanup during unmatch:', e.message || e);
+      }
+
       res.status(200).json({
         success: true,
         message: 'Successfully unmatched',
         deletedLikes: [userLike?._id, targetLike?._id].filter(Boolean),
         deletedConnection: connection?._id,
         deletedChatThread: deletedChat,
-        deletedMessagesCount
+        deletedMessagesCount,
+        deletedLegacyMatchesCount
       });
+
+      // Finally, remove the DailyLike records (do this after cascade cleanup so we could read connectionId)
+      try {
+        const dlDeleteIds = [userLike?._id, targetLike?._id].filter(Boolean);
+        if (dlDeleteIds.length > 0) {
+          const dlDelRes = await DailyLike.deleteMany({ _id: { $in: dlDeleteIds } });
+          console.log(`🗑️ Removed DailyLike records after unmatch: ${dlDeleteIds.join(', ')} (deletedCount: ${dlDelRes.deletedCount || dlDelRes.n || 0})`);
+        }
+      } catch (e) {
+        console.warn('Failed to delete DailyLike records after unmatch:', e.message);
+      }
 
     } catch (error) {
       console.error('❌ Unmatch profile error:', error);

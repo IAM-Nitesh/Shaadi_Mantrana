@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { ServerAuthService } from '../services/server-auth-service';
-import { gsap } from 'gsap';
+// Avoid importing server-only auth service in client components
+import { safeGsap } from './SafeGsap';
 import ToastService from '../services/toastService';
 
 export default function AdminBottomNavigation() {
@@ -18,193 +18,65 @@ export default function AdminBottomNavigation() {
 
   const handleLogout = async () => {
     try {
-      // Use ServerAuthService to handle logout
-      const result = await ServerAuthService.logout();
-      
+      const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      const result = res.ok ? await res.json().catch(() => ({ success: true })) : { success: false };
+
       if (result.success) {
-        // Create an enhanced GSAP logout animation sequence with heart animations
-        const tl = gsap.timeline();
-        
-        // Phase 1: Hide the page loading indicator immediately
-        tl.set('.fixed.left-0.right-0.z-\\[60\\]', {
-          display: 'none'
-        })
-        
-        // Phase 2: Fade out admin content with rotation
-        .to('.admin-content', {
-          opacity: 0,
-          scale: 0.95,
-          y: -20,
-          rotation: -1,
-          duration: 0.7,
-          ease: "power2.inOut"
-        })
-        
-        // Phase 3: Show logout overlay with entrance animation
-        .set('.logout-overlay', {
-          display: 'flex',
-          opacity: 0,
-          scale: 0.9,
-          zIndex: 9999 // Ensure it's above everything including PageLoadingIndicator
-        })
-        .to('.logout-overlay', {
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          ease: "back.out(1.2)"
-        })
-        
-        // Phase 4: Animate central success circle with bounce
-        .fromTo('.logout-circle', {
-          scale: 0,
-          rotation: -180,
-          opacity: 0
-        }, {
-          scale: 1,
-          rotation: 0,
-          opacity: 1,
-          duration: 1,
-          ease: "elastic.out(1, 0.6)"
-        }, "-=0.3")
-        
-        // Phase 5: Animate central heart icon
-        .fromTo('.logout-checkmark', {
-          scale: 0,
-          opacity: 0,
-          rotation: -90
-        }, {
-          scale: 1,
-          opacity: 1,
-          rotation: 0,
-          duration: 0.8,
-          ease: "back.out(2)"
-        }, "-=0.5")
-        
-        // Phase 6: Animate floating hearts with staggered entrance
-        .fromTo('.floating-heart', {
-          scale: 0,
-          opacity: 0,
-          y: 20,
-          rotation: -45
-        }, {
-          scale: 1,
-          opacity: 1,
-          y: 0,
-          rotation: 0,
-          duration: 0.6,
-          ease: "back.out(1.5)",
-          stagger: {
-            amount: 0.8,
-            from: "random"
-          }
-        }, "-=0.6")
-        
-        // Phase 7: Add floating animation to hearts
-        .to('.floating-heart', {
-          y: "-=10",
-          rotation: "+=15",
-          duration: 2,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-          stagger: {
-            amount: 1,
-            from: "random"
-          }
-        }, "-=0.3")
-        
-        // Phase 8: Animate text elements
-        .fromTo('.logout-title', {
-          y: 30,
-          opacity: 0,
-          scale: 0.9
-        }, {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          ease: "power2.out"
-        }, "-=1.5")
-        
-        .fromTo('.logout-subtitle', {
-          y: 20,
-          opacity: 0
-        }, {
-          y: 0,
-          opacity: 1,
-          duration: 0.5,
-          ease: "power2.out"
-        }, "-=0.3")
-        
-        // Phase 9: Border animations removed for cleaner logout experience
-        
-        // Phase 10: Add particle floating animations
-        .to('.logout-circle .absolute.animate-bounce', {
-          y: "-=8",
-          x: "+=3",
-          duration: 1.5,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-          stagger: 0.3
-        }, "-=3")
-        
-        // Phase 11: Final exit and redirect
-        .to('.logout-overlay', {
-          opacity: 0,
-          scale: 1.05,
-          y: -30,
-          duration: 0.7,
-          delay: 1.5,
-          ease: "power2.in",
-          onComplete: () => {
-            // Force redirect to home page
-            window.location.href = '/';
-          }
-        });
-        
+        const canAnimate = typeof document !== 'undefined' && (
+          document.querySelector('.admin-content') || document.querySelector('.logout-overlay')
+        );
+
+        if (canAnimate) {
+          const tl = safeGsap.timeline?.();
+
+          tl?.to?.('.admin-content', {
+            opacity: 0,
+            scale: 0.95,
+            y: -20,
+            duration: 0.6,
+            ease: 'power2.inOut'
+          });
+
+          tl?.set?.('.logout-overlay', { display: 'flex', opacity: 0, scale: 0.9, zIndex: 9999 });
+          tl?.to?.('.logout-overlay', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' });
+
+          tl?.fromTo?.('.logout-circle', { scale: 0, rotation: -180, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 1, ease: 'elastic.out(1, 0.6)' }, '-=0.3');
+          tl?.fromTo?.('.logout-checkmark', { scale: 0, opacity: 0, rotation: -90 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.8, ease: 'back.out(2)' }, '-=0.5');
+
+          tl?.fromTo?.('.logout-title', { y: 30, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' }, '-=1.5');
+          tl?.fromTo?.('.logout-subtitle', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+
+          tl?.to?.('.logout-circle .absolute.animate-bounce', { y: '-=8', x: '+=3', duration: 1.5, ease: 'sine.inOut', repeat: -1, yoyo: true, stagger: 0.3 }, '-=3');
+
+          tl?.to?.('.logout-overlay', { opacity: 0, scale: 1.05, y: -30, duration: 0.7, delay: 1.5, ease: 'power2.in', onComplete: () => { window.location.href = '/'; } });
+        } else {
+          safeGsap.set?.('.logout-overlay', { display: 'flex', opacity: 0, scale: 0.9, zIndex: 9999 });
+          safeGsap.to?.('.logout-overlay', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' });
+          setTimeout(() => { window.location.href = '/'; }, 1600);
+        }
+
       } else {
-        // Enhanced error handling with GSAP animation
-        gsap.to('.admin-content', {
-          keyframes: {
-            "0%": { x: 0 },
-            "25%": { x: -10 },
-            "50%": { x: 10 },
-            "75%": { x: -5 },
-            "100%": { x: 0 }
-          },
+        safeGsap.to?.('.admin-content', {
+          keyframes: [ { x: -10 }, { x: 10 }, { x: -5 }, { x: 0 } ],
           duration: 0.5,
-          ease: "power2.out",
-          onComplete: () => {
-            ToastService.error('⚠️ There was an issue logging out. Please try again.');
-          }
+          ease: 'power2.out',
+          onComplete: () => ToastService.error('⚠️ There was an issue logging out. Please try again.')
         });
       }
     } catch (error) {
-
-      
-      // Error shake animation
-      gsap.to('.admin-content', {
-        keyframes: {
-          "0%": { x: 0 },
-          "25%": { x: -10 },
-          "50%": { x: 10 },
-          "75%": { x: -5 },
-          "100%": { x: 0 }
-        },
+      safeGsap.to?.('.admin-content', {
+        keyframes: [ { x: -10 }, { x: 10 }, { x: -5 }, { x: 0 } ],
         duration: 0.5,
-        ease: "power2.out",
-        onComplete: () => {
-          ToastService.error('⚠️ There was an issue logging out. Please try again.');
-        }
+        ease: 'power2.out',
+        onComplete: () => ToastService.error('⚠️ There was an issue logging out. Please try again.')
       });
     }
   };
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg">
-        <div className="flex justify-around items-center py-4 px-4">
+      <div role="navigation" aria-label="Admin bottom navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg" style={{ height: 'var(--bottom-nav-height, 5rem)' }}>
+        <div className="flex justify-around items-center h-full px-4">
           <Link
             href="/admin/dashboard"
             className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
@@ -292,7 +164,7 @@ export default function AdminBottomNavigation() {
       </div>
 
       {/* Logout Animation Overlay */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 hidden">
+  <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
         
@@ -379,4 +251,5 @@ export default function AdminBottomNavigation() {
       </div>
     </>
   );
-} 
+}
+ 

@@ -2,9 +2,10 @@ import toast from 'react-hot-toast';
 
 class ToastService {
   // Success Toasts
-  static success(message: string) {
+  static success(message: string, options?: { duration?: number } ) {
     return toast.success(message, {
       id: `success-${Date.now()}`,
+      ...(options || {}),
     });
   }
 

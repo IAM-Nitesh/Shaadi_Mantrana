@@ -5,6 +5,7 @@ import tokenRefreshService from './token-refresh-service';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
+import { getUserCompleteness } from '../utils/user-utils';
 
 export interface AuthUser {
   role: string;
@@ -362,9 +363,10 @@ export class ServerAuthService {
     if (user.role === 'admin') return true;
     
     // Regular users need to be approved and have complete profile
-    return user.isApprovedByAdmin && 
-           user.profileCompleteness >= 100 && 
-           !user.isFirstLogin;
+  const completeness = getUserCompleteness(user);
+  return user.isApprovedByAdmin && 
+       completeness >= 100 && 
+       !user.isFirstLogin;
   }
 
   // Check if user needs to complete profile
@@ -375,7 +377,8 @@ export class ServerAuthService {
     if (user.role === 'admin') return false;
     
     // Regular users need profile completion if first login or incomplete profile
-    return user.isFirstLogin || user.profileCompleteness < 100;
+  const completeness = getUserCompleteness(user);
+  return user.isFirstLogin || completeness < 100;
   }
 
   // Check if user should see onboarding message
@@ -383,9 +386,9 @@ export class ServerAuthService {
     if (!user) return false;
     
     // Only show onboarding for regular users who haven't seen it and are on first login
-    return user.role === 'user' && 
-           !user.hasSeenOnboardingMessage && 
-           user.isFirstLogin;
+  return user.role === 'user' && 
+       !user.hasSeenOnboardingMessage && 
+       user.isFirstLogin;
   }
 
   // Get auth token for API calls (for backward compatibility)

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ServerAuthService } from '../../../services/server-auth-service';
+import { getAuthStatus } from '../../../utils/client-auth';
 import CustomIcon from '../../../components/CustomIcon';
 import logger from '../../../utils/logger';
 
@@ -13,7 +13,7 @@ export default function AdminLogin() {
     // Check if user is already authenticated and is admin
     const checkAdminAccess = async () => {
       try {
-        const authStatus = await ServerAuthService.checkAuthStatus();
+        const authStatus = await getAuthStatus();
         if (authStatus.authenticated && authStatus.user?.role === 'admin') {
           router.replace('/admin/dashboard');
           return;

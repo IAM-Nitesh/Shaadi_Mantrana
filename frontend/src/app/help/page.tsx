@@ -49,7 +49,7 @@ export default function Help() {
       </div>
 
       {/* Content */}
-      <div className="pt-16 pb-8 px-4">
+  <div className="pb-8 px-4" style={{ paddingTop: 'var(--header-height)' }}>
         {/* Contact Support */}
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6 transform hover:scale-105 transition-all duration-200">
           <div className="text-center">

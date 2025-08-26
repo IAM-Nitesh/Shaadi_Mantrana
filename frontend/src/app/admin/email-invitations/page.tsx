@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import AdminRouteGuard from '../../../components/AdminRouteGuard';
-import ToastService from '../../../services/toastService';
-import { ServerAuthService } from '../../../services/server-auth-service';
+import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
 
 interface Invitation {
@@ -34,7 +32,7 @@ export default function EmailInvitations() {
 
   const fetchInvitations = async () => {
     try {
-      const token = await ServerAuthService.getBearerToken();
+  const token = await getClientToken();
       if (!token) {
         router.push('/');
         return;
@@ -54,11 +52,8 @@ export default function EmailInvitations() {
       logger.debug('Received invitations data:', data.invitations);
       setInvitations(data.invitations || []);
 
-      // Animate content on load
-      gsap.fromTo('.invitation-card', 
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, stagger: 0.05, ease: "power2.out" }
-      );
+  // Animate content on load (safe)
+  safeGsap.fromTo?.('.invitation-card', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.05, ease: 'power2.out' });
 
     } catch (error) {
       logger.error('Error fetching invitations:', error);
@@ -73,7 +68,7 @@ export default function EmailInvitations() {
 
     try {
       setSendingInvitation(true);
-      const token = await ServerAuthService.getBearerToken();
+  const token = await getClientToken();
       
       logger.debug('Sending invitation to:', newEmail.trim());
       logger.debug('Using token:', token ? 'Token exists' : 'No token');
@@ -111,7 +106,7 @@ export default function EmailInvitations() {
   const resendInvitation = async (invitationId: string) => {
     try {
       setResendingInvitation(invitationId);
-      const token = await ServerAuthService.getBearerToken();
+  const token = await getClientToken();
       
       const response = await fetch(`/api/admin/invitations/${invitationId}/resend`, {
         method: 'POST',

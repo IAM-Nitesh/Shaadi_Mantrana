@@ -126,6 +126,9 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+    /* Centralized header/footer height variables */
+    --header-height: 4rem; /* matches h-16 */
+    --bottom-nav-height: 4rem; /* bottom navigation default */
   right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.3), transparent);
