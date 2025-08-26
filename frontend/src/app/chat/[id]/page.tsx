@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatComponent from './ChatComponent';
-import { ServerAuthService } from '../../../services/server-auth-service';
+import { getAuthStatus, getClientToken } from '../../../utils/client-auth';
 import CustomIcon from '../../../components/CustomIcon';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import logger from '../../../utils/logger';
@@ -23,13 +23,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     // Check authentication using server-side auth
     const checkAuth = async () => {
       try {
-        const authStatus = await ServerAuthService.checkAuthStatus();
+        const authStatus = await getAuthStatus();
         if (!authStatus.authenticated) {
           router.push('/');
           return;
         }
 
-        // Check for incomplete profile using server data
         const user = authStatus.user;
         if (user?.isFirstLogin && (user?.profileCompleteness || 0) < 100) {
           router.replace('/profile');
@@ -47,7 +46,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     async function loadMatch() {
       try {
         // Fetch connection and other user's profile from MongoDB
-        const token = await ServerAuthService.getBearerToken();
+  const token = await getClientToken();
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/connections/${id}`,
           {
@@ -67,7 +66,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         
         // Get the other user's profile from the connection
         // Extract current user ID from server auth
-        const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
         let currentUserId = null;
         if (authToken) {
           try {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../components/SafeGsap';
 import CustomIcon from '../../components/CustomIcon';
 
 interface FilterModalProps {
@@ -40,14 +40,14 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
   // GSAP modal entrance
   useEffect(() => {
     if (backdropRef.current) {
-      gsap.fromTo(
+      safeGsap.fromTo?.(
         backdropRef.current,
         { opacity: 0 },
         { opacity: 1, duration: 0.35, ease: 'power2.out' }
       );
     }
     if (modalRef.current) {
-      gsap.fromTo(
+      safeGsap.fromTo?.(
         modalRef.current,
         { y: 80, opacity: 0, scale: 0.98, filter: 'blur(8px)' },
         { y: 0, opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power3.out', delay: 0.05 }

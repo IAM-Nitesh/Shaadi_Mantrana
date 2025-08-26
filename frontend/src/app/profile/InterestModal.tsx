@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../components/SafeGsap';
 
 import CustomIcon from '../../components/CustomIcon';
 
@@ -24,17 +24,17 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   
   // Ensure existingInterests is always an array
   const safeExistingInterests = existingInterests || [];
-  // GSAP modal entrance
+  // GSAP modal entrance (use safeGsap guards)
   useEffect(() => {
     if (backdropRef.current) {
-      gsap.fromTo(
+      safeGsap.fromTo?.(
         backdropRef.current,
         { opacity: 0 },
         { opacity: 1, duration: 0.32, ease: 'power2.out' }
       );
     }
     if (modalRef.current) {
-      gsap.fromTo(
+      safeGsap.fromTo?.(
         modalRef.current,
         { y: 60, opacity: 0, scale: 0.98, filter: 'blur(8px)' },
         { y: 0, opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.48, ease: 'power3.out', delay: 0.04 }
@@ -71,10 +71,10 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   };
 
   return (
-    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]">
+  <div ref={backdropRef} className="fixed inset-0 z-[99999] flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]">
       <div
         ref={modalRef}
-        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none"
+        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[100000]"
         style={{ boxShadow: '0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
       >
         {/* Header */}
