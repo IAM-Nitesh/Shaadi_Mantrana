@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
+import { gsap } from 'gsap';
 import toast from 'react-hot-toast';
 import { ChatMessage } from '../../../services/chat-service';
 import { ImageUploadService } from '../../../services/image-upload-service';
@@ -12,7 +13,7 @@ import CustomIcon from '../../../components/CustomIcon';
 import { ChatService } from '../../../services/chat-service';
 import { MatchingService } from '../../../services/matching-service';
 import ToastService from '../../../services/toastService';
-import { ServerAuthService } from '../../../services/server-auth-service';
+import { getClientToken } from '../../../utils/client-auth';
 import logger from '../../../utils/logger';
 
 interface Match {
@@ -44,6 +45,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   const [isSending, setIsSending] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [showDisappearingBanner, setShowDisappearingBanner] = useState(true);
+  const disappearingBannerRef = useRef<HTMLDivElement | null>(null);
+  const [headerOffset, setHeaderOffset] = useState<number>(0);
+  const [headerHeight, setHeaderHeight] = useState<number>(0);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
   // Get current user ID from JWT token
   const getCurrentUserId = async (): Promise<string | null> => {
-    const token = await ServerAuthService.getBearerToken();
+    const token = await getClientToken();
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -98,6 +102,40 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Compute top offset so chat header sits below app banner and any extra banner
+  useEffect(() => {
+    const computeOffset = () => {
+      try {
+        let offset = 0;
+        const appBanner = document.querySelector('[role="banner"]') as HTMLElement | null;
+        if (appBanner) offset += appBanner.offsetHeight || 0;
+        if (disappearingBannerRef.current && showDisappearingBanner) {
+          offset += disappearingBannerRef.current.offsetHeight || 0;
+        }
+
+        // Read the CSS var --header-height (e.g. "96px") and parse it to a number
+        let parsedHeaderHeight = 0;
+        try {
+          const raw = getComputedStyle(document.documentElement).getPropertyValue('--header-height') || '';
+          const px = raw.trim().endsWith('px') ? raw.trim().slice(0, -2) : raw.trim();
+          parsedHeaderHeight = Number(px) || 0;
+        } catch (e) {
+          parsedHeaderHeight = 0;
+        }
+
+        setHeaderHeight(parsedHeaderHeight);
+        setHeaderOffset(offset);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    computeOffset();
+    const onResize = () => computeOffset();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [showDisappearingBanner]);
 
   // Close unmatch menu when clicking outside
   useEffect(() => {
@@ -281,10 +319,14 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
     setIsUnmatching(true);
     try {
-      await MatchingService.unmatchProfile(connectionId);
+  // Pass both connectionId and the other user's id so backend can
+  // clear DailyLike records and perform defensive cleanup even when
+  // the Connection document or connectionId field on DailyLike is missing.
+  await MatchingService.unmatchProfile({ connectionId, targetUserId: match.otherUserId });
 
-      // Show success message and redirect
-      ToastService.success('Successfully unmatched!');
+  // Show swipeable success toast controlled by GSAP (auto-dismiss after 3s)
+  toast((t) => <AutoDismissToast toastId={t.id} message={'Successfully unmatched!'} />, { duration: Infinity });
+
       router.push('/matches');
     } catch (error) {
       logger.error('Error unmatching:', error);
@@ -321,6 +363,96 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         </div>
       </div>
     ), { duration: 10000 });
+  };
+
+  // Small component used to auto-dismiss a toast after 3s using GSAP animation
+  const AutoDismissToast: React.FC<{ toastId: string; message: string }> = ({ toastId, message }) => {
+    const elRef = useRef<HTMLDivElement | null>(null);
+    const dismissRef = useRef<number | null>(null);
+
+    useEffect(() => {
+      const node = elRef.current;
+      if (!node) return;
+
+      // Visible initial state
+      gsap.set(node, { y: 0, opacity: 1, scale: 1 });
+
+      // Auto dismiss after 3s with a smoother exit (translate + fade + scale)
+      dismissRef.current = window.setTimeout(() => {
+        gsap.to(node, {
+          y: -30,
+          opacity: 0,
+          scale: 0.96,
+          duration: 0.55,
+          ease: 'power3.out',
+          onComplete: () => toast.dismiss(toastId),
+        });
+      }, 3000) as unknown as number;
+
+      return () => {
+        if (dismissRef.current) {
+          clearTimeout(dismissRef.current as number);
+        }
+      };
+    }, [toastId]);
+
+    return (
+      <motion.div
+        ref={elRef}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.18}
+        onDragStart={() => {
+          // cancel auto-dismiss while user interacts
+          if (dismissRef.current) clearTimeout(dismissRef.current as number);
+        }}
+        onDragEnd={(e: any, info: any) => {
+          if (Math.abs(info.offset.x) > 100) {
+            toast.dismiss(toastId);
+            return;
+          }
+
+          // if not dismissed, re-arm timer for a short period to let user continue
+          dismissRef.current = window.setTimeout(() => {
+            const node = elRef.current;
+            if (!node) return;
+            gsap.to(node, {
+              y: -30,
+              opacity: 0,
+              scale: 0.96,
+              duration: 0.55,
+              ease: 'power3.out',
+              onComplete: () => toast.dismiss(toastId),
+            });
+          }, 2000) as unknown as number;
+        }}
+        initial={{ x: 0, opacity: 0, y: 8 }}
+        animate={{ x: 0, opacity: 1, y: 0 }}
+        exit={{ x: 0, opacity: 0, y: -20 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="p-0"
+        style={{ cursor: 'grab' }}
+      >
+  <div className="flex items-center space-x-3 px-4 py-3 rounded-xl shadow-xl text-white bg-gradient-to-r from-red-600 to-red-500 border border-red-700/30">
+          <div className="flex items-center justify-center w-8 h-8 rounded-md bg-white/10">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+            </svg>
+          </div>
+          <div className="flex-1 text-sm font-medium">{message}</div>
+          <button
+            onClick={() => toast.dismiss(toastId)}
+            aria-label="dismiss"
+            className="ml-2 p-1 rounded hover:bg-white/10 transition-colors"
+            style={{ color: 'rgba(255,255,255,0.95)' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </motion.div>
+    );
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -439,8 +571,8 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-white/20 shadow-lg z-40 px-4 py-3"
-        style={{ top: showDisappearingBanner ? '60px' : '0px' }}
+        className="fixed w-full bg-white/90 backdrop-blur-md border-b border-white/20 shadow-lg z-40 px-4 py-3"
+          style={{ top: headerOffset > 0 ? `${headerOffset}px` : (showDisappearingBanner ? 'calc(var(--header-height) + 60px)' : 'var(--header-height)') }}
       >
         <div className="flex items-center space-x-3">
           <button 
@@ -515,8 +647,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               title="Unmatch"
               aria-label="Unmatch"
               className={`px-3 py-1 bg-red-600 text-white rounded-full text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+              aria-busy={isUnmatching}
             >
-              Unmatch
+              {isUnmatching ? 'Unmatching...' : 'Unmatch'}
             </button>
           </div>
 
@@ -576,7 +709,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       <div
         className="absolute left-0 right-0 z-10 overflow-y-auto px-4"
         style={{
-          top: showDisappearingBanner ? '120px' : '96px',
+          top: headerOffset > 0 ? `${headerOffset + headerHeight}px` : (showDisappearingBanner ? '120px' : '96px'),
           bottom: '112px'
         }}
       >

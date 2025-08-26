@@ -10,18 +10,17 @@ import { MatchingService, type DiscoveryProfile } from '../../services/matching-
 import { matchesCountService } from '../../services/matches-count-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import CustomIcon from '../../components/CustomIcon';
-import SmoothNavigation from '../../components/SmoothNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
-import StandardHeader from '../../components/StandardHeader';
 import ServerAuthGuard from '../../components/ServerAuthGuard';
 import CelebratoryMatchToast from '../../components/CelebratoryMatchToast';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useAndroidBackButton } from '../../hooks/useAndroidBackButton';
-import { ServerAuthService } from '../../services/server-auth-service';
+import { getAuthStatus } from '../../utils/client-auth';
+import ToastService from '../../services/toastService';
 
-import { gsap } from 'gsap';
+import { safeGsap } from '../../components/SafeGsap';
 import { AnimatePresence, motion } from 'framer-motion';
 import logger from '../../utils/logger';
 
@@ -81,8 +80,8 @@ function DashboardContent() {
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const authStatus = await ServerAuthService.checkAuthStatus();
-        if (!authStatus.authenticated) {
+        const authStatus = await getAuthStatus();
+        if (!authStatus?.authenticated) {
           router.push('/');
           return;
         }
@@ -224,17 +223,17 @@ function DashboardContent() {
       
       if (elements.length === 0) return; // Exit if no elements are ready
       
-      // Initial setup - hide elements
-      gsap.set(elements, { 
+      // Initial setup - hide elements (use safe wrapper)
+      safeGsap.set?.(elements, { 
         opacity: 0, 
         y: 50 
       });
       
-      // Simplified entrance animation timeline
-      const tl = gsap.timeline({ delay: 0.1 });
+      // Simplified entrance animation timeline (use safe wrapper)
+      const tl = safeGsap.timeline?.({ delay: 0.1 });
       
       if (headerRef.current) {
-        tl.to(headerRef.current, {
+  tl?.to?.(headerRef.current, {
           opacity: 1,
           y: 0,
           duration: 0.3,
@@ -243,7 +242,7 @@ function DashboardContent() {
       }
       
       if (cardRef.current) {
-        tl.to(cardRef.current, {
+  tl?.to?.(cardRef.current, {
           opacity: 1,
           y: 0,
           duration: 0.4,
@@ -252,7 +251,7 @@ function DashboardContent() {
       }
       
       if (controlsRef.current) {
-        tl.to(controlsRef.current, {
+  tl?.to?.(controlsRef.current, {
           opacity: 1,
           y: 0,
           duration: 0.3,
@@ -263,7 +262,7 @@ function DashboardContent() {
       // Animate action buttons if they exist
       const actionButtons = document.querySelectorAll('.action-button');
       if (actionButtons.length > 0) {
-        tl.fromTo('.action-button', {
+        tl?.fromTo?.('.action-button', {
           scale: 0,
           rotation: -90
         }, {
@@ -275,12 +274,12 @@ function DashboardContent() {
         }, "-=0.1");
       }
 
-      // Add hover animations to action buttons
+  // Add hover animations to action buttons
       actionButtons.forEach((button) => {
         const element = button as HTMLElement;
         
         const handleMouseEnter = () => {
-          gsap.to(element, {
+          safeGsap.to?.(element, {
             scale: 1.05,
             y: -2,
             duration: 0.15,
@@ -289,7 +288,7 @@ function DashboardContent() {
         };
         
         const handleMouseLeave = () => {
-          gsap.to(element, {
+          safeGsap.to?.(element, {
             scale: 1,
             y: 0,
             duration: 0.15,
@@ -302,7 +301,7 @@ function DashboardContent() {
       });
       
       // Add pulse animations
-      gsap.to('.pulse-indicator', {
+      safeGsap.to?.('.pulse-indicator', {
         scale: 1.2,
         opacity: 0.7,
         duration: 1,
@@ -311,7 +310,7 @@ function DashboardContent() {
         repeat: -1
       });
       
-      gsap.to('.pulse-badge', {
+      safeGsap.to?.('.pulse-badge', {
         scale: 1.1,
         duration: 1.5,
         ease: "power2.inOut",
@@ -325,8 +324,8 @@ function DashboardContent() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (loading) {
-        // Animate loading state
-        gsap.fromTo('.loading-container', {
+        // Animate loading state (use safe wrapper to avoid missing-target warnings)
+        safeGsap.fromTo?.('.loading-container', {
           scale: 0,
           opacity: 0
         }, {
@@ -336,7 +335,7 @@ function DashboardContent() {
           ease: "back.out(1.7)"
         });
         
-        gsap.fromTo('.loading-spinner', {
+        safeGsap.fromTo?.('.loading-spinner', {
           rotation: 0
         }, {
           rotation: 360,
@@ -345,7 +344,7 @@ function DashboardContent() {
           repeat: -1
         });
         
-        gsap.fromTo(['.loading-title', '.loading-subtitle'], {
+        safeGsap.fromTo?.(['.loading-title', '.loading-subtitle'], {
           opacity: 0,
           y: 20
         }, {
@@ -357,8 +356,8 @@ function DashboardContent() {
           delay: 0.3
         });
       } else if (error) {
-        // Animate error state
-        gsap.fromTo('.error-container', {
+        // Animate error state (safe)
+        safeGsap.fromTo?.('.error-container', {
           scale: 0,
           opacity: 0
         }, {
@@ -368,7 +367,7 @@ function DashboardContent() {
           ease: "back.out(1.7)"
         });
         
-        gsap.fromTo('.error-icon', {
+        safeGsap.fromTo?.('.error-icon', {
           scale: 0.5,
           rotation: -45
         }, {
@@ -379,7 +378,7 @@ function DashboardContent() {
           delay: 0.2
         });
         
-        gsap.fromTo(['.error-title', '.error-message', '.retry-button'], {
+        safeGsap.fromTo?.(['.error-title', '.error-message', '.retry-button'], {
           opacity: 0,
           y: 20
         }, {
@@ -407,17 +406,7 @@ function DashboardContent() {
   // GSAP animation for filter modal
   useEffect(() => {
     if (showFilter) {
-      gsap.fromTo('.filter-modal', {
-        scale: 0.8,
-        opacity: 0,
-        y: 50
-      }, {
-        scale: 1,
-        opacity: 1,
-        y: 0,
-        duration: 0.4,
-        ease: "back.out(1.4)"
-      });
+      safeGsap.fromTo?.('.filter-modal', { scale: 0.8, opacity: 0, y: 50 }, { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)' });
     }
   }, [showFilter]);
 
@@ -428,6 +417,13 @@ function DashboardContent() {
     
     // Add haptic feedback
     haptics.swipeLeft();
+
+    // Block likes (right-swipes) if daily limit is reached
+    if (direction === 'right' && (dailyLimitReached || remainingLikes <= 0)) {
+      // Show brief message and do not perform like
+      ToastService.error('Try again tomorrow');
+      return;
+    }
     
     // Check if profile has already been interacted with in this session
     if (interactedProfiles.has(currentProfile._id)) {
@@ -565,15 +561,9 @@ function DashboardContent() {
       <div className="absolute inset-0 bg-gradient-to-br from-rose-100/20 to-pink-100/20"></div>
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.1),transparent_50%)]"></div>
       
-      {/* Header */}
-      <StandardHeader 
-        showFilter={true}
-        onFilterClick={() => setShowFilter(true)}
-        hasActiveFilters={hasActiveFilters}
-      />
 
       {/* Main Content with Pull-to-Refresh */}
-      <div ref={pullToRefreshRef} className="pt-20 pb-24 px-4 relative z-10 android-scroll">
+  <div ref={pullToRefreshRef} className="px-4 relative z-10 android-scroll" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
         {loading ? (
           <DashboardSkeleton />
         ) : error ? (
@@ -646,21 +636,6 @@ function DashboardContent() {
         )}
       </div>
 
-      {/* Modern Bottom Navigation */}
-      <SmoothNavigation 
-        items={[
-          { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
-          { 
-            href: '/matches', 
-            icon: 'ri-chat-3-line', 
-            label: 'Matches',
-            activeIcon: 'ri-chat-3-fill',
-            ...(matchesCount > 0 && { badge: matchesCount })
-          },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
-        ]}
-      />
 
       {/* Filter Modal */}
       {showFilter && (

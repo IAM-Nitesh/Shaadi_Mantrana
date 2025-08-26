@@ -4,11 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
 import AdminRouteGuard from '../../components/AdminRouteGuard';
-import ToastService from '../../services/toastService';
-import { gsap } from 'gsap';
+import { safeGsap } from '../../components/SafeGsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useServerAuth } from '../../hooks/useServerAuth';
-import { ServerAuthService } from '../../services/server-auth-service';
+import { getClientToken, getAuthStatus } from '../../utils/client-auth';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
@@ -96,37 +95,25 @@ function AdminPageContent() {
 
   // GSAP animations
   useEffect(() => {
-    if (isAuthenticated && containerRef.current && typeof gsap !== 'undefined') {
-      // Initial page load animation
-      gsap.fromTo(containerRef.current, 
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
-      );
+    if (isAuthenticated && containerRef.current) {
+      // Initial page load animation (safe)
+      safeGsap.fromTo?.(containerRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' });
 
       // Header animation
       if (headerRef.current) {
-        gsap.fromTo(headerRef.current.children,
-          { opacity: 0, y: -20 },
-          { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-        );
+        safeGsap.fromTo?.(headerRef.current.children, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' });
       }
 
       // Logo heartbeat animation
       if (logoRef.current) {
-        gsap.to(logoRef.current, {
-          scale: 1.1,
-          duration: 1,
-          repeat: -1,
-          yoyo: true,
-          ease: "power2.inOut"
-        });
+        safeGsap.to?.(logoRef.current, { scale: 1.1, duration: 1, repeat: -1, yoyo: true, ease: 'power2.inOut' });
       }
     }
   }, [isAuthenticated]);
 
   const fetchStats = async () => {
     try {
-      const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -148,7 +135,7 @@ function AdminPageContent() {
 
   const fetchUsers = async () => {
     try {
-      const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -215,7 +202,7 @@ function AdminPageContent() {
     setError('');
     
     try {
-      const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -257,7 +244,7 @@ function AdminPageContent() {
     setError('');
     
     try {
-      const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -295,7 +282,7 @@ function AdminPageContent() {
     setError('');
     
     try {
-      const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -330,7 +317,7 @@ function AdminPageContent() {
     setError('');
     
     try {
-      const authToken = await ServerAuthService.getBearerToken();
+  const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -817,8 +804,8 @@ function AdminPageContent() {
         </div>
       )}
 
-      {/* Logout Animation Overlay */}
-      <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 hidden">
+  {/* Logout Animation Overlay */}
+  <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
         
