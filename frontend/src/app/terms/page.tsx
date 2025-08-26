@@ -6,17 +6,7 @@ import CustomIcon from '../../components/CustomIcon';
 export default function Terms() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-        <div className="flex items-center">
-          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 mr-3">
-            <CustomIcon name="ri-arrow-left-line" />
-          </Link>
-          <h1 className="text-xl font-bold text-gray-800">Terms of Service</h1>
-        </div>
-      </div>
-
-      {/* Content */}
+    {/* Content (global header provides the banner/back button) */}
   <div className="pb-6 px-4" style={{ paddingTop: 'var(--header-height)' }}>
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="space-y-6">

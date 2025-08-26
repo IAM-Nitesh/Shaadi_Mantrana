@@ -41,6 +41,8 @@ ENABLE_EMAIL=false
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5500
 ```
 
+> Security: Never commit `.env` or `.env.*` files with real credentials. Use placeholders in repo examples and store real secrets in a local gitignored file or a secrets manager.
+
 ### 2. Install Dependencies
 
 ```bash

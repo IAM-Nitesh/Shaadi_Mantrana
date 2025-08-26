@@ -11,7 +11,7 @@ async function migratePreapprovedToUsers() {
     console.log('🚀 Starting migration from PreapprovedEmail to User collection...');
     
     // Connect to MongoDB
-    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://<REDACTED_USER>:<REDACTED_PASS>@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+  const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
 
