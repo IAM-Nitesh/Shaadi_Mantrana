@@ -7,12 +7,13 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 // MongoDB connection (using same URI as main app)
-const mongoUri = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
+if (!mongoUri) throw new Error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment.');
 
 async function checkUser() {
   try {
     console.log('🔄 Checking user document...');
-    
+
     // Connect to MongoDB
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
@@ -50,4 +51,4 @@ async function checkUser() {
 }
 
 // Run the check
-checkUser(); 
+checkUser();

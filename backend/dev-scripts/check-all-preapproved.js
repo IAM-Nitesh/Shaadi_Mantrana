@@ -5,9 +5,9 @@ async function checkAllPreapproved() {
   try {
     console.log('\ud83d\udd0d Checking all preapproved emails...');
     
-    const mongoUri = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
-    
-    await mongoose.connect(mongoUri);
+  const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
+  if (!mongoUri) throw new Error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment.');
+  await mongoose.connect(mongoUri);
     console.log('\u2705 Connected to MongoDB');
 
     const db = mongoose.connection.db;

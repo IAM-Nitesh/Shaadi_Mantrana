@@ -19,7 +19,8 @@ If the scripts don't work, you can run these MongoDB commands directly:
 
 ### Connect to MongoDB:
 ```bash
-mongosh "mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier"
+# Use a connection string from your environment or secrets manager. Example placeholder:
+# mongosh "${MONGODB_URI}"
 ```
 
 ### Add to preapproved collection:

@@ -38,17 +38,7 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="fixed top-0 w-full bg-white z-40 px-4 py-3 shadow-sm">
-        <div className="flex items-center">
-          <Link href="/settings" className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 mr-3">
-            <CustomIcon name="ri-arrow-left-line" />
-          </Link>
-          <h1 className="text-xl font-bold text-gray-800">Help & Support</h1>
-        </div>
-      </div>
-
-      {/* Content */}
+  {/* Content (global header provides the banner/back button) */}
   <div className="pb-8 px-4" style={{ paddingTop: 'var(--header-height)' }}>
         {/* Contact Support */}
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6 transform hover:scale-105 transition-all duration-200">

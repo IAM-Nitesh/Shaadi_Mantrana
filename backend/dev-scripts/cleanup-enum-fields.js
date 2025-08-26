@@ -16,7 +16,7 @@ async function cleanupEnumFields() {
   try {
     // Use the same MongoDB URI logic as the main application
     const environment = process.env.NODE_ENV || 'development';
-    const DEV_MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+  const DEV_MONGODB_URI = process.env.DEV_MONGODB_URI || '';
     
     let mongoUri;
     switch (environment) {
@@ -105,7 +105,7 @@ async function cleanupEnumFields() {
   try {
     // Use the same MongoDB URI logic as the main application
     const environment = process.env.NODE_ENV || 'development';
-    const DEV_MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+    const DEV_MONGODB_URI = process.env.DEV_MONGODB_URI || '';
     
     let mongoUri;
     switch (environment) {
@@ -125,8 +125,12 @@ async function cleanupEnumFields() {
         mongoUri = DEV_MONGODB_URI;
     }
     
+    if (!mongoUri) {
+      console.error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment or .env.development');
+      process.exit(1);
+    }
     await mongoose.connect(mongoUri);
-    console.log('\u2705 Connected to MongoDB');
+    console.log('✅ Connected to MongoDB');
 
     // Find users with empty string enum values
     const enumFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad'];
@@ -139,22 +143,22 @@ async function cleanupEnumFields() {
       
       const result = await User.updateMany(query, update);
       if (result.modifiedCount > 0) {
-        console.log(`\u2705 Cleaned up ${result.modifiedCount} users with empty '${field}' field`);
+        console.log(`✅ Cleaned up ${result.modifiedCount} users with empty '${field}' field`);
         totalUpdated += result.modifiedCount;
       }
     }
     
     if (totalUpdated === 0) {
-      console.log('\u2705 No users found with empty enum values');
+      console.log('✅ No users found with empty enum values');
     } else {
-      console.log(`\u2705 Total users updated: ${totalUpdated}`);
+      console.log(`✅ Total users updated: ${totalUpdated}`);
     }
 
   } catch (error) {
-    console.error('\u274c Error during cleanup:', error);
+    console.error('❌ Error during cleanup:', error);
   } finally {
     await mongoose.disconnect();
-    console.log('\u2705 Disconnected from MongoDB');
+    console.log('✅ Disconnected from MongoDB');
   }
 }
 
@@ -163,4 +167,4 @@ if (require.main === module) {
   cleanupEnumFields();
 }
 
-module.exports = { cleanupEnumFields }; 
+module.exports = { cleanupEnumFields };

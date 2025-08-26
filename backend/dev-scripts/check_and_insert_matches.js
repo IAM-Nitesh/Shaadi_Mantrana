@@ -2,10 +2,15 @@ const mongoose = require('mongoose');
 const { User, DailyLike, Connection, Match } = require('../src/models');
 
 // MongoDB connection - using Atlas cloud database
-const MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+// MongoDB connection - prefer MONGODB_URI then DEV_MONGODB_URI
+const MONGODB_URI = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI || '';
 
 async function connectDB() {
   try {
+    if (!MONGODB_URI) {
+      console.error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment or .env.development');
+      process.exit(1);
+    }
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Connected to MongoDB Atlas');
   } catch (error) {
