@@ -6,7 +6,8 @@ async function testPreapprovedLogic() {
   try {
     console.log('🧪 Testing preapproved check logic...');
     
-    const mongoUri = 'mongodb+srv://<REDACTED_USER>:<REDACTED_PASS>@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+    const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
+    if (!mongoUri) throw new Error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment.');
     
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
