@@ -8,7 +8,7 @@ async function testAdminApproval() {
     
     // Connect to MongoDB
     const environment = process.env.NODE_ENV || 'development';
-    const DEV_MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+  const DEV_MONGODB_URI = process.env.DEV_MONGODB_URI || '';
     
     let mongoUri;
     switch (environment) {
@@ -28,6 +28,10 @@ async function testAdminApproval() {
         mongoUri = DEV_MONGODB_URI;
     }
     
+    if (!mongoUri) {
+      console.error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment or .env.development');
+      process.exit(1);
+    }
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
 

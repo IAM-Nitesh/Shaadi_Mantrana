@@ -9,14 +9,19 @@ const mongoose = require('mongoose');
 const https = require('https');
 const http = require('http');
 
-// MongoDB connection (using same URI as main app)
-const mongoUri = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+// MongoDB connection (use env variables; prefer MONGODB_URI then DEV_MONGODB_URI)
+const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI || '';
 
 async function migrateToUserIdFormat() {
   try {
     console.log('🔄 Starting migration to userId-based format...');
     
-    // Connect to MongoDB
+    // Validate and connect to MongoDB
+    if (!mongoUri) {
+      console.error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment or .env.development');
+      process.exit(1);
+    }
+
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
     

@@ -14,25 +14,34 @@ const getPort = () => {
 const getMongoDBURI = () => {
   const environment = process.env.NODE_ENV || 'development';
   
-  // Development MongoDB URI (provided with updated credentials)
-  const DEV_MONGODB_URI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
-  
+  // Prefer explicit environment variables for all URIs.
+  // Do NOT embed credentials in source. Set any of the following in your
+  // environment or in `.env.development` for local development:
+  // - MONGODB_URI (primary)
+  // - DEV_MONGODB_URI (development fallback)
+  // - MONGODB_PRODUCTION_URI (production fallback)
+  // - MONGODB_TEST_URI (test fallback)
+
+  const primary = process.env.MONGODB_URI;
+  const devFallback = process.env.DEV_MONGODB_URI;
+  const prodFallback = process.env.MONGODB_PRODUCTION_URI;
+  const testFallback = process.env.MONGODB_TEST_URI;
+
   switch (environment) {
     case 'development':
     case 'dev':
     case 'local':
-      return process.env.MONGODB_URI || DEV_MONGODB_URI;
-    
+      return primary || devFallback || null;
+
     case 'production':
     case 'prod':
-      // Use production MongoDB URI from environment
-      return process.env.MONGODB_URI || process.env.MONGODB_PRODUCTION_URI;
-    
+      return primary || prodFallback || null;
+
     case 'test':
-      return process.env.MONGODB_TEST_URI || DEV_MONGODB_URI;
-    
+      return testFallback || devFallback || primary || null;
+
     default:
-      return DEV_MONGODB_URI;
+      return primary || devFallback || null;
   }
 };
 
@@ -69,25 +78,27 @@ module.exports = {
   
   // JWT configuration with strong defaults
   JWT: {
-    SECRET: process.env.JWT_SECRET || 'dev-jwt-secret-key-2024-shaadi-mantra',
+    // Do not ship secrets in code. Provide JWT_SECRET in environment.
+    SECRET: process.env.JWT_SECRET || '',
     EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
     REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     ALGORITHM: 'HS256',
     ISSUER: 'shaadi-mantra-api',
     AUDIENCE: 'shaadi-mantra-app'
   },
-  
-  // Legacy JWT config for backward compatibility
-  jwtSecret: process.env.JWT_SECRET || 'dev-jwt-secret-key-2024-shaadi-mantra',
+
+  // Legacy JWT config for backward compatibility (prefer env variable)
+  jwtSecret: process.env.JWT_SECRET || '',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   
   // Email configuration
   EMAIL: {
     SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
     SMTP_PORT: process.env.SMTP_PORT || 587,
-    SMTP_USER: process.env.SMTP_USER || 'shaadimantrana.help@gmail.com',
-    SMTP_PASS: process.env.SMTP_PASS || 'xgemnazzfyyuxzvr',
-    FROM_EMAIL: process.env.EMAIL_FROM || 'shaadimantrana.help@gmail.com',
+    // Do not hard-code credentials in source. Set these in your environment.
+    SMTP_USER: process.env.SMTP_USER || '',
+    SMTP_PASS: process.env.SMTP_PASS || '',
+    FROM_EMAIL: process.env.EMAIL_FROM || process.env.SMTP_USER || '',
     FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shaadi Mantrana Support',
     ENABLED: process.env.ENABLE_EMAIL === 'true'
   },

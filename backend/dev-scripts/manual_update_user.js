@@ -7,7 +7,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 // MongoDB connection (using same URI as main app)
-const mongoUri = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
+const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
 
 async function manualUpdateUser() {
   try {

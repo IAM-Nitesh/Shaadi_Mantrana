@@ -5,7 +5,10 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 
 // JWT Configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'shaadi-mantra-super-secret-key-2024';
+// Do not use hard-coded secrets in source. Expect JWT_SECRET to be provided
+// via environment variables. In production this must be set. For local
+// development you may set JWT_SECRET in `.env.development`.
+const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
@@ -15,7 +18,8 @@ const activeSessions = new Map();
 class JWTSessionManager {
   // Generate JWT access token
   static generateAccessToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, {
+  if (!JWT_SECRET) throw new Error('JWT secret not configured');
+  return jwt.sign(payload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
       issuer: 'shaadi-mantra-api',
       audience: 'shaadi-mantra-app'
@@ -24,7 +28,8 @@ class JWTSessionManager {
 
   // Generate JWT refresh token
   static generateRefreshToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, {
+  if (!JWT_SECRET) throw new Error('JWT secret not configured');
+  return jwt.sign(payload, JWT_SECRET, {
       expiresIn: JWT_REFRESH_EXPIRES_IN,
       issuer: 'shaadi-mantra-api',
       audience: 'shaadi-mantra-app'
@@ -78,7 +83,8 @@ class JWTSessionManager {
   // Verify access token
   static verifyAccessToken(token) {
     try {
-      return jwt.verify(token, JWT_SECRET, {
+  if (!JWT_SECRET) throw new Error('JWT secret not configured');
+  return jwt.verify(token, JWT_SECRET, {
         issuer: 'shaadi-mantra-api',
         audience: 'shaadi-mantra-app'
       });
@@ -90,7 +96,8 @@ class JWTSessionManager {
   // Verify refresh token
   static verifyRefreshToken(token) {
     try {
-      return jwt.verify(token, JWT_SECRET, {
+  if (!JWT_SECRET) throw new Error('JWT secret not configured');
+  return jwt.verify(token, JWT_SECRET, {
         issuer: 'shaadi-mantra-api',
         audience: 'shaadi-mantra-app'
       });

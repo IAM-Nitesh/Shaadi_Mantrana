@@ -34,20 +34,20 @@ FRONTEND_FALLBACK_URL=http://localhost:3000
 API_BASE_URL=http://localhost:5500
 
 # Database Configuration
-MONGODB_URI=mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier
+MONGODB_URI=
 DATABASE_NAME=shaadimantra_dev
 
 # JWT Configuration
-JWT_SECRET=dev-jwt-secret-key-2024-shaadi-mantra
+JWT_SECRET=
 JWT_EXPIRES_IN=24h
 JWT_REFRESH_EXPIRES_IN=7d
 
 # Email Configuration
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=shaadimantrana.help@gmail.com
-SMTP_PASS=xgemnazzfyyuxzvr
-EMAIL_FROM=shaadimantrana.help@gmail.com
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM=
 EMAIL_FROM_NAME=Shaadi Mantrana Support
 ENABLE_EMAIL=true
 
@@ -82,13 +82,13 @@ DEBUG_MODE=true
 | `DATA_SOURCE` | Data source type | `mongodb` |
 | `FRONTEND_URL` | Frontend URL for CORS | `http://localhost:3000` |
 | `API_BASE_URL` | API base URL | `http://localhost:5500` |
-| `MONGODB_URI` | MongoDB connection string | (see template) |
-| `JWT_SECRET` | JWT secret key | (see template) |
+| `MONGODB_URI` | MongoDB connection string | (provide in environment) |
+| `JWT_SECRET` | JWT secret key | (provide in environment) |
 | `SMTP_HOST` | SMTP server host | `smtp.gmail.com` |
 | `SMTP_PORT` | SMTP server port | `587` |
-| `SMTP_USER` | Email username | `shaadimantrana.help@gmail.com` |
-| `SMTP_PASS` | Email app password | `xgemnazzfyyuxzvr` |
-| `EMAIL_FROM` | From email address | `shaadimantrana.help@gmail.com` |
+| `SMTP_USER` | Email username | (provide in environment) |
+| `SMTP_PASS` | Email app password | (provide in environment) |
+| `EMAIL_FROM` | From email address | (provide in environment) |
 | `EMAIL_FROM_NAME` | From name | `Shaadi Mantrana Support` |
 | `ENABLE_EMAIL` | Enable email sending | `true` |
 
@@ -119,6 +119,7 @@ const frontendUrl = config.FRONTEND_URL;
 1. **Frontend**: Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser
 2. **Backend**: All variables are server-side only
 3. **Security**: Never commit `.env*` files to version control
+4. **Secrets**: Move any real credentials into a secrets manager or local `.env` files that are gitignored. Replace values in example files with placeholders.
 4. **Restart**: Always restart servers after changing environment variables
 
 ## Production Setup

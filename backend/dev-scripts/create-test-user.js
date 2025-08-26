@@ -15,8 +15,9 @@ async function createTestUser() {
   try {
     // Connect to MongoDB
     console.log('1\ufe0f\u20e3 Connecting to MongoDB...');
-    const mongoUri = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
-    await mongoose.connect(mongoUri);
+  const mongoUri = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
+  if (!mongoUri) throw new Error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment.');
+  await mongoose.connect(mongoUri);
     console.log('\u2705 MongoDB connected successfully\\n');
 
     // Test user details

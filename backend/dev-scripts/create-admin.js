@@ -4,8 +4,9 @@ const mongoose = require('mongoose');
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    const mongoURI = 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier';
-    await mongoose.connect(mongoURI);
+  const mongoURI = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
+  if (!mongoURI) throw new Error('MONGODB_URI not configured. Set MONGODB_URI or DEV_MONGODB_URI in your environment.');
+  await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error);
