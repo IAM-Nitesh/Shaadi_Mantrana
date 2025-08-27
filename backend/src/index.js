@@ -75,6 +75,23 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request logging middleware (before routes)
 app.use(requestLogger);
 
+// Metrics - expose Prometheus metrics if prom-client is installed
+try {
+  const { promClient } = require('./utils/metrics');
+  if (promClient) {
+    app.get('/metrics', async (req, res) => {
+      try {
+        res.set('Content-Type', promClient.register.contentType);
+        res.end(await promClient.register.metrics());
+      } catch (err) {
+        res.status(500).send('Error collecting metrics');
+      }
+    });
+  }
+} catch (e) {
+  // ignore if prom-client not installed
+}
+
 // Serve static files (uploaded images)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
