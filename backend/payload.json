@@ -1,0 +1,1 @@
+{"streams":[{"stream":{"job":"shaadimantra-test","level":"info","user_uuid":"00000000-0000-0000-0000-000000000000"},"values":[["$(date +%s%N)","{\"msg\":\"test log\",\"status_code\":200}"]]}]}

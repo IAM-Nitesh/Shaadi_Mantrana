@@ -154,8 +154,19 @@
 
 
 to be implemented
-logging used loki and pro
+logging used loki and pino logger
+
  Logflare (for Cloudflare or Vercel)
  
 Notification 
 Firebase Cloud Messaging (FCM)
+
+
+
+Third‑party clients/components we use (or can use) to send logs to Grafana Loki:
+
+Promtail (grafana/promtail) — primary log collector/forwarder that tails files or container logs and pushes to Loki.
+Grafana Loki push API — HTTP endpoint (can be used directly via curl/axios with basic auth or bearer token).
+Pino (pino + pino-http) — structured JSON logger in the app that emits logs (stdout or file) which Promtail ingests.
+pino-loki / winston-loki (optional) — direct transports that push logs from the app to Loki without Promtail.
+Docker (grafana/promtail image) — common runtime for Promtail in local/host/container setups.
