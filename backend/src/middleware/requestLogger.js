@@ -2,6 +2,13 @@
 // Logs all requests with user UUID for better monitoring
 
 const crypto = require('crypto');
+const { logger, loggerForUser } = require('../utils/pino-logger');
+let promClient;
+try {
+  promClient = require('prom-client');
+} catch (e) {
+  promClient = null;
+}
 
 // Utility to sanitize email for logging
 const sanitizeEmailForLog = (email) => {
@@ -43,12 +50,15 @@ const requestLogger = (req, res, next) => {
   
   // Add request ID to request object
   req.requestId = requestId;
-  
+
   // Extract user UUID if available
   const userUuid = req.user?.userUuid || 'anonymous';
   const email = req.user?.email || 'none';
   const sanitizedEmail = sanitizeEmailForLog(email);
-  
+
+  // Use pino child logger for this request (includes requestId and user_uuid)
+  req.log = loggerForUser(userUuid).child({ request_id: requestId, user_uuid: userUuid });
+
   // Set response headers for tracking
   res.set('X-Request-ID', requestId);
   if (userUuid !== 'anonymous') {
@@ -60,36 +70,50 @@ const requestLogger = (req, res, next) => {
                    req.connection?.remoteAddress ||
                    req.socket?.remoteAddress ||
                    '127.0.0.1';
-  
-  // Log request start with sanitized data
-  console.log(`🔄 [${new Date().toISOString()}] REQUEST START`, {
-    requestId,
-    userUuid,
+
+  // Log request start with structured pino log
+  req.log.info({
+    event: 'request_start',
+    request_id: requestId,
+    user_uuid: userUuid,
     email: sanitizedEmail,
     method: req.method,
     url: req.originalUrl,
-    clientIP,
-    userAgent: req.headers['user-agent'] || 'unknown',
+    client_ip: clientIP,
+    user_agent: req.headers['user-agent'] || 'unknown',
     body: process.env.DEBUG_MODE === 'true' ? sanitizeRequestBody(req.body) : '[hidden]'
-  });
+  }, 'REQUEST START');
   
   // Override res.end to log response
   const originalEnd = res.end;
   res.end = function(chunk, encoding) {
     const duration = Date.now() - startTime;
-    
-    // Log request completion with sanitized data
-    console.log(`✅ [${new Date().toISOString()}] REQUEST END`, {
-      requestId,
-      userUuid,
-      email: sanitizedEmail,
+
+    // Log request completion with structured pino log
+    req.log.info({
+      event: 'request_end',
+      request_id: requestId,
+      user_uuid: userUuid,
       method: req.method,
       url: req.originalUrl,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      clientIP
-    });
-    
+      status_code: res.statusCode,
+      duration_ms: duration,
+      client_ip: clientIP
+    }, 'REQUEST END');
+
+    // Expose basic metrics if prom-client is available
+    try {
+      if (promClient && promClient.register) {
+        const histogram = promClient.register.getSingleMetric('http_request_duration_seconds') || null;
+        if (histogram && typeof histogram.observe === 'function') {
+          // convert ms to seconds
+          histogram.observe({ method: req.method, route: req.originalUrl || req.path, status: res.statusCode }, duration / 1000);
+        }
+      }
+    } catch (e) {
+      // ignore metrics errors
+    }
+
     // Call original end method
     originalEnd.call(this, chunk, encoding);
   };
