@@ -1,0 +1,18 @@
+import React from "react";
+import type { NextPageContext } from "next";
+
+type Props = { statusCode?: number };
+
+export default function ErrorPage({ statusCode }: Props) {
+  return (
+    <div style={{ padding: 32, fontFamily: "sans-serif" }}>
+      <h1>{statusCode ? `${statusCode} — Error` : "An error occurred"}</h1>
+      <p>{statusCode === 404 ? "Page not found." : "Server error."}</p>
+    </div>
+  );
+}
+
+ErrorPage.getInitialProps = ({ res, err }: NextPageContext) => {
+  const statusCode = res?.statusCode ?? (err as any)?.statusCode ?? 500;
+  return { statusCode };
+};
