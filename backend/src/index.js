@@ -27,11 +27,17 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-  styleSrc: ["'self'", "'unsafe-inline'"],
-  scriptSrc: ["'self'"],
-  imgSrc: ["'self'", "data:", "https:"],
-  // allow websocket/connect to configured frontend origins
-  connectSrc: ["'self'", ...(Array.isArray(config.SECURITY?.CORS_ORIGINS) ? config.SECURITY.CORS_ORIGINS : [config.SECURITY?.CORS_ORIGINS || 'http://localhost:3000'])],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      // Updated to match our CORS policy
+      connectSrc: [
+        "'self'", 
+        "https://*.vercel.app",                    // All Vercel deployments
+        "https://shaadi-mantrana-app-frontend-*",  // All our frontend deployments
+        "https://*.shaadimantrana.com",            // All subdomains of our custom domain
+        "http://localhost:3000"                    // Local development
+      ],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -62,20 +68,30 @@ const authLimiter = rateLimit({
   }
 });
 
-// CORS configuration - add this near the top of your middleware setup
+// CORS configuration for dynamic Vercel domains
 const corsOptions = {
-  origin: [
-    'https://shaadi-mantrana-app-frontend-jo0oo35pm.vercel.app',
-    'https://shaadi-mantrana.vercel.app',
-    'https://www.shaadimantrana.com',
-    /\.vercel\.app$/  // Allow all Vercel subdomains
-  ],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow known domains
+    if (
+      origin.includes('shaadi-mantrana-app-frontend') || // Match any Shaadi Mantrana frontend
+      origin.endsWith('vercel.app') ||                  // Any Vercel app
+      origin.endsWith('shaadimantrana.com') ||          // Custom domain
+      origin === 'http://localhost:3000'                // Local development
+    ) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// Apply CORS middleware (make sure this is BEFORE your route handlers)
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
 // Body parsing middleware
