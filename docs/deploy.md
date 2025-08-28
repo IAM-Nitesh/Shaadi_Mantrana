@@ -1,6 +1,6 @@
-Here's a **detailed step-by-step deployment plan** (including CI/CD) for publishing a **mobile app** to the **Google Play Store**, using the following stack:
+# Shaadi Mantra Deployment Guide
 
----
+This document outlines the complete deployment workflow for the Shaadi Mantra app, covering both backend (Render) and frontend (Vercel) deployments, as well as creating Android builds with Capacitor.
 
 ## 📦 Stack Overview
 
@@ -9,22 +9,44 @@ Here's a **detailed step-by-step deployment plan** (including CI/CD) for publish
 | Frontend         | React (Next.js) + Capacitor          |
 | Backend          | Express.js + Helmet                  |
 | Frontend Hosting | Vercel                               |
-| Backend Hosting  | render  |
+| Backend Hosting  | Render                               |
 | Mobile Wrapper   | Capacitor → Android Build (.AAB)     |
 | CI/CD            | GitHub + GitHub Actions              |
 | Store            | Google Play Store (via Play Console) |
 
----
-
 ## 🚀 Deployment Plan Breakdown
 
----
+### ✅ **1. Backend Setup on Render**
 
-### ✅ **1. Frontend Setup (Next.js + Capacitor)**
+#### 1.1 - Create a Render Account & Project
+1. Sign up at [https://render.com](https://render.com)
+2. Navigate to Dashboard → "New" → "Web Service"
+3. Connect your GitHub repo or use direct deployment
 
-This part includes preparing your web app, wrapping it with Capacitor, and targeting Android.
+#### 1.2 - Configure Web Service
+- **Name**: `shaadi-mantrana` (or your preferred name)
+- **Runtime**: Node
+- **Build Command**: `cd backend && npm install`
+- **Start Command**: `cd backend && npm start`
+- **Environment Variables**:
+  - Add all required env variables from `.env.production`
+  - Ensure DB connection strings, JWT secrets, etc. are set
 
-#### 1.1 – Setup Your Next.js App
+#### 1.3 - Deploy Backend
+1. Click "Create Web Service"
+2. Render will automatically deploy your backend
+3. Once deployed, note the URL: `https://shaadi-mantrana.onrender.com`
+
+### ✅ **2. Frontend Setup (Next.js + Capacitor)**
+
+#### 2.1 - Configure API URL
+Update `.env.production` in your frontend directory:
+
+```
+NEXT_PUBLIC_API_URL=https://shaadi-mantrana.onrender.com/api
+```
+
+#### 2.2 - Setup Your Next.js App
 
 If not already done:
 
@@ -39,7 +61,7 @@ Add required packages:
 npm install @capacitor/core @capacitor/cli
 ```
 
-#### 1.2 – Initialize Capacitor
+#### 2.3 - Initialize Capacitor
 
 ```bash
 npx cap init
@@ -48,7 +70,7 @@ npx cap init
 * App name: `YourAppName`
 * App ID: `com.yourcompany.yourapp`
 
-#### 1.3 – Configure Capacitor to Load from Vercel
+#### 2.4 - Configure Capacitor to Load from Vercel
 
 In `capacitor.config.ts` or `capacitor.config.json`:
 
@@ -63,9 +85,9 @@ server: {
 
 ---
 
-### ✅ **2. Vercel Frontend Deployment**
+### ✅ **3. Vercel Frontend Deployment**
 
-#### 2.1 – Push to GitHub
+#### 3.1 - Push to GitHub
 
 ```bash
 git init
@@ -73,7 +95,7 @@ git remote add origin https://github.com/youruser/yourrepo
 git push -u origin main
 ```
 
-#### 2.2 – Deploy on Vercel
+#### 3.2 - Deploy on Vercel
 
 1. Go to [https://vercel.com](https://vercel.com)
 2. Import your repo
@@ -83,56 +105,9 @@ git push -u origin main
 
 ---
 
-### ✅ **3. Backend Setup on Firebase**
-
-#### 3.1 – Install Firebase CLI
-
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init functions
-```
-
-Choose:
-
-* `Functions` (for backend logic)
-* `Node.js` (JavaScript or TypeScript)
-
-Move your Express server into the `functions/` folder.
-
-#### 3.2 – Setup Express inside Firebase Function
-
-```js
-// functions/index.js
-const functions = require('firebase-functions');
-const express = require('express');
-const helmet = require('helmet');
-
-const app = express();
-app.use(helmet());
-
-app.get('/api/hello', (req, res) => res.send('Hello from Firebase!'));
-
-exports.api = functions.https.onRequest(app);
-```
-
-#### 3.3 – Deploy to Firebase
-
-```bash
-firebase deploy --only functions
-```
-
-You’ll get an API URL like:
-
-```
-https://yourproject.cloudfunctions.net/api
-```
-
----
-
 ### ✅ **4. Wrap App for Android (Capacitor)**
 
-#### 4.1 – Add Android Platform
+#### 4.1 - Add Android Platform
 
 ```bash
 npx cap add android
@@ -142,14 +117,14 @@ npx cap open android
 
 This opens your app in **Android Studio**.
 
-#### 4.2 – Configure App Details
+#### 4.2 - Configure App Details
 
 In `android/app/build.gradle`:
 
 * Set versionCode, versionName
 * Set package name
 
-#### 4.3 – Add Internet Permissions
+#### 4.3 - Add Internet Permissions
 
 In `AndroidManifest.xml`:
 
@@ -157,7 +132,7 @@ In `AndroidManifest.xml`:
 <uses-permission android:name="android.permission.INTERNET" />
 ```
 
-#### 4.4 – Build AAB
+#### 4.4 - Build AAB
 
 From Android Studio:
 
@@ -223,31 +198,31 @@ jobs:
 
 ### ✅ **6. Upload to Google Play Store**
 
-#### 6.1 – Create Google Developer Account
+#### 6.1 - Create Google Developer Account
 
 * Go to [Google Play Console](https://play.google.com/console)
 * Pay \$25 USD one-time fee
 
-#### 6.2 – Prepare App Listing
+#### 6.2 - Prepare App Listing
 
 * Title, short & full description
 * App icon (512x512), feature graphic
 * Screenshots (mobile/tablet)
 
-#### 6.3 – Upload AAB
+#### 6.3 - Upload AAB
 
 1. Go to **Release > Production > Create Release**
 2. Upload your `.aab` bundle
 3. Fill in release notes
 
-#### 6.4 – Review App Content
+#### 6.4 - Review App Content
 
 * Privacy policy
 * Data safety section
 * Target audience
 * App permissions
 
-#### 6.5 – Submit for Review
+#### 6.5 - Submit for Review
 
 Wait 2–7 days for review (first submission usually takes longer).
 
@@ -341,7 +316,7 @@ Navigate to your backend folder:
 
 ```bash
 cd backend
-firebase init functions
+
 ```
 
 **Choose:**
