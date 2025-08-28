@@ -14,7 +14,6 @@ try {
     httpLogger: (_req, _res, _next) => _next && _next(),
     loggerForUser: (_uuid) => console,
   };
-  return;
 }
 
 const level = process.env.LOG_LEVEL || 'info';
