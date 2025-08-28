@@ -65,7 +65,6 @@ export default function RootLayout({
             <PageDataLoadingProvider>
               <PWAProvider>
                 <PageTransitionProvider>
-                  <PageLoadingIndicator />
                   <ConsoleSuppressor />
                   {/* Layout container with fixed header and footer */}
                   <div className="flex flex-col min-h-screen">
@@ -78,6 +77,7 @@ export default function RootLayout({
                     {/* Pinned bottom navigation */}
                     <ClientOnly><BottomWrapper /></ClientOnly>
                   </div>
+                  <ClientOnly><PageLoadingIndicator /></ClientOnly>
                 </PageTransitionProvider>
               </PWAProvider>
             </PageDataLoadingProvider>
