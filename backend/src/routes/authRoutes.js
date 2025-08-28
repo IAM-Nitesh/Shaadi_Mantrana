@@ -26,6 +26,11 @@ router.post('/logout', authenticateToken, (req, res) => authController.logout(re
 
 // Check if an email is preapproved
 router.get('/preapproved/check', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://shaadi-mantrana-app-frontend.vercel.app');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   const email = req.query.email?.toLowerCase().trim();
   if (!email) return res.status(400).json({ preapproved: false });
 
