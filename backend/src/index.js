@@ -62,11 +62,21 @@ const authLimiter = rateLimit({
   }
 });
 
-// CORS configuration - use config values
-app.use(cors({
-  origin: config.SECURITY.CORS_ORIGINS,
+// CORS configuration - add this near the top of your middleware setup
+const corsOptions = {
+  origin: [
+    'https://shaadi-mantrana-app-frontend-jo0oo35pm.vercel.app',
+    'https://shaadi-mantrana.vercel.app',
+    'https://www.shaadimantrana.com',
+    /\.vercel\.app$/  // Allow all Vercel subdomains
+  ],
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Apply CORS middleware (make sure this is BEFORE your route handlers)
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
