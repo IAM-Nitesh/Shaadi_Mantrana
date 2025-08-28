@@ -9,7 +9,7 @@ Here's a **detailed step-by-step deployment plan** (including CI/CD) for publish
 | Frontend         | React (Next.js) + Capacitor          |
 | Backend          | Express.js + Helmet                  |
 | Frontend Hosting | Vercel                               |
-| Backend Hosting  | Firebase Functions (or alternative)  |
+| Backend Hosting  | render  |
 | Mobile Wrapper   | Capacitor → Android Build (.AAB)     |
 | CI/CD            | GitHub + GitHub Actions              |
 | Store            | Google Play Store (via Play Console) |
