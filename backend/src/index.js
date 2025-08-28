@@ -22,6 +22,21 @@ const PORT = process.env.PORT || 5001;
 // Import configuration
 const config = require('./config');
 
+// CORS configuration for specific domain - ADD THIS BEFORE HELMET
+const corsOptions = {
+  origin: [
+    'https://shaadi-mantrana-app-frontend.vercel.app',
+    'http://localhost:3000',
+    'https://shaadi-mantrana-app-frontend-niteshs-projects-7cfa63e5.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Apply CORS middleware BEFORE helmet
+app.use(cors(corsOptions));
+
 // Security middleware - Helmet
 app.use(helmet({
   contentSecurityPolicy: {
@@ -67,32 +82,6 @@ const authLimiter = rateLimit({
     message: 'Please try again in 15 minutes'
   }
 });
-
-// CORS configuration for dynamic Vercel domains
-const corsOptions = {
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow known domains
-    if (
-      origin.includes('shaadi-mantrana-app-frontend') || // Match any Shaadi Mantrana frontend
-      origin.endsWith('vercel.app') ||                  // Any Vercel app
-      origin.endsWith('shaadimantrana.com') ||          // Custom domain
-      origin === 'http://localhost:3000'                // Local development
-    ) {
-      return callback(null, true);
-    }
-    
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
