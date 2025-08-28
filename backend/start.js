@@ -1,5 +1,20 @@
 #!/usr/bin/env node
 
+// Enable on-the-fly JSX/ES transpilation for backend email components
+try {
+  require('@babel/register')({
+    extensions: ['.js', '.jsx'],
+    presets: [
+      ['@babel/preset-env', { targets: { node: 'current' } }],
+      '@babel/preset-react'
+    ],
+    ignore: [/node_modules/]
+  });
+} catch (e) {
+  // If @babel/register isn't installed, startup will continue and fail later with a helpful error.
+  // Install dev deps with: npm install @babel/register @babel/core @babel/preset-env @babel/preset-react
+}
+
 // Application Startup Script with Environment-Based Configuration
 // This script initializes the database and starts the server with proper environment handling
 
