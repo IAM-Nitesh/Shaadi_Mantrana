@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../../utils/logger';
+import { config as configService } from '../../../../services/configService';
 import { withRouteLogging } from '../../route-logger';
 
 async function handlePost(request: NextRequest) {
@@ -28,7 +29,7 @@ async function handlePost(request: NextRequest) {
     logger.debug('🔍 Token Refresh API: Tokens found, attempting refresh...');
 
     // Attempt to refresh token with backend
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
+    const backendUrl = configService.apiBaseUrl;
     
     // Add timeout to prevent hanging requests
     const controller = new AbortController();

@@ -1,6 +1,7 @@
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getUserCompleteness } from '../utils/user-utils';
+import { config as configService } from './configService';
 // Authentication Utilities for Service Files
 // This file contains only utility functions that can be safely imported by service files
 // without breaking Fast Refresh in React components
@@ -41,14 +42,11 @@ function clearAuthCache(): void {
 // Get Bearer token for backend API calls
 export async function getBearerToken(): Promise<string | null> {
   try {
-    // Since we're using HTTP-only cookies, we need to make a server request
-    // to get the token from the server side. Do a single retry on failure
-    // to handle transient cookie/cache issues.
     async function fetchTokenOnce(): Promise<Response | null> {
       try {
-        return await fetch('/api/auth/token', {
+        return await fetch(`${configService.apiBaseUrl}/api/auth/token`, {
           method: 'GET',
-          credentials: 'include', // Include cookies
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -103,7 +101,7 @@ export async function isAuthenticated(): Promise<boolean> {
     if (isAuthCacheValid() && authStatusCache?.data) {
       return authStatusCache.data.authenticated;
     }
-    const response = await fetch('/api/auth/status', {
+    const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -157,7 +155,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
 
     logger.debug('🔍 AuthUtils: Getting current user...');
-    const response = await fetch('/api/auth/status', {
+    const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -224,4 +222,4 @@ export function needsProfileCompletion(user?: AuthUser): boolean {
   if (!user) return true;
   const completeness = getUserCompleteness(user as any);
   return user.role !== 'admin' && (user.isFirstLogin || completeness < 100);
-} 
+}
