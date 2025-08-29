@@ -115,7 +115,7 @@ export class ServerAuthService {
       logger.debug('🔍 ServerAuthService: Starting OTP verification for:', email);
       
       const result = await this.withRetryAndTokenRefresh(async () => {
-        const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify`, {
+        const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
            method: 'POST',
            credentials: 'include',
            headers: { 'Content-Type': 'application/json' },
