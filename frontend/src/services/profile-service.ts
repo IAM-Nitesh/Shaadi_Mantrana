@@ -3,13 +3,11 @@
 
 // To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
 // Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
-import { config } from './configService';
+import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 
-export const API_CONFIG = {
-  API_BASE_URL: config.apiBaseUrl,
-};
+// use configService.apiBaseUrl directly
 
 export interface Profile {
   // Basic fields
@@ -81,7 +79,7 @@ export interface FilterCriteria {
 export class ProfileService {
   // Fetch profiles based on filters and user preferences
   static async getProfiles(filters: FilterCriteria, page: number = 1, limit: number = 10): Promise<Profile[]> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. Returning empty array.');
@@ -133,7 +131,7 @@ export class ProfileService {
 
   // Record user interaction (like/dislike)
   static async recordInteraction(profileId: number, action: 'like' | 'dislike'): Promise<boolean> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
           // console.log(`API not configured: ${action} not recorded for profile ${profileId}`);
@@ -169,7 +167,7 @@ export class ProfileService {
 
   // Get user's profile
   static async getUserProfile(): Promise<Profile | null> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       // console.warn('API_BASE_URL not configured. No profile available.');
@@ -256,7 +254,7 @@ export class ProfileService {
 
   // Get user profile by UUID (public)
   static async getProfileByUuid(uuid: string): Promise<Profile | null> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     if (!apiBaseUrl) return null;
     try {
       const response = await fetch(`${apiBaseUrl}/api/profiles/uuid/${uuid}`);
@@ -271,7 +269,7 @@ export class ProfileService {
 
   // Soft delete (deactivate) user profile
   static async deleteProfile(): Promise<boolean> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     if (!apiBaseUrl) return false;
     
     // Check if user is authenticated using server-side auth
@@ -359,7 +357,7 @@ export class ProfileService {
         return false;
       }
 
-      const apiUrl = API_CONFIG.API_BASE_URL + '/api/profiles/me/onboarding';
+      const apiUrl = configService.apiBaseUrl + '/api/profiles/me/onboarding';
       
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
@@ -407,14 +405,14 @@ export class ProfileService {
       }
       
       // Trigger a fresh authentication check
-      const response = await fetch('/api/auth/status', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
+         method: 'GET',
+         credentials: 'include',
+         headers: {
+           'Cache-Control': 'no-cache',
+           'Pragma': 'no-cache'
+         }
+       });
       
       if (response.ok) {
         logger.debug('✅ ProfileService: Authentication refresh successful');
@@ -436,7 +434,7 @@ export class ProfileService {
         return { success: false, error: 'Not authenticated' };
       }
 
-      const apiUrl = API_CONFIG.API_BASE_URL + '/api/profiles/me';
+      const apiUrl = configService.apiBaseUrl + '/api/profiles/me';
       
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();

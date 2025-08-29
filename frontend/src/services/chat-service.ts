@@ -23,7 +23,6 @@ export interface ChatConnection {
     image: string;
   };
 }
-
 export class ChatService {
   private static baseUrl = configService.apiBaseUrl;
   private static socket: Socket | null = null;
@@ -54,7 +53,7 @@ export class ChatService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${this.baseUrl}/api/chat/${connectionId}`, {
+      const response = await fetch(`${configService.apiBaseUrl}/api/chat/${connectionId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
@@ -173,4 +172,4 @@ export class ChatService {
   static getCacheStats() {
     return MatchingService.getCacheStats();
   }
-} 
+}

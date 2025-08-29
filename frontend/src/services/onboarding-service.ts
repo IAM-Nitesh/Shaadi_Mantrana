@@ -31,7 +31,7 @@ export class OnboardingService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${this.baseUrl}/api/profiles/onboarding-flag`, {
+      const response = await fetch(`${configService.apiBaseUrl}/api/profiles/onboarding-flag`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
@@ -69,7 +69,7 @@ export class OnboardingService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${this.baseUrl}/api/profiles/first-login-flag`, {
+      const response = await fetch(`${configService.apiBaseUrl}/api/profiles/first-login-flag`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${bearerToken}`,

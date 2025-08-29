@@ -441,7 +441,7 @@ export default function Home() {
   // server-only service code into a client component (prevents bundler/runtime errors).
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
     try {
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp: otpCode }),
