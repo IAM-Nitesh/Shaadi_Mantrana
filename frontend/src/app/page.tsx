@@ -441,12 +441,12 @@ export default function Home() {
   // server-only service code into a client component (prevents bundler/runtime errors).
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
     try {
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: otpCode }),
-        credentials: 'include',
-      });
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email, otp: otpCode }),
+         credentials: 'include',
+       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: response.statusText }));
