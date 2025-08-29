@@ -25,29 +25,44 @@ router.post('/refresh', (req, res) => authController.refreshSession(req, res));
 router.post('/logout', authenticateToken, (req, res) => authController.logout(req, res));
 
 // Check if an email is preapproved
-router.get('/preapproved/check', async (req, res) => {
+router.get('/preapproved/check', (req, res, next) => {
+  // IMPROVED explicit CORS headers for this route
   res.header('Access-Control-Allow-Origin', 'https://shaadi-mantrana-app-frontend.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
   const email = req.query.email?.toLowerCase().trim();
   if (!email) return res.status(400).json({ preapproved: false });
 
   const { User } = require('../models');
-  const user = await User.findOne({ email });
-  
-  if (user) {
-    // Check if user is admin or approved by admin
-    const isAdmin = user.role === 'admin';
-    const isApproved = user.isApprovedByAdmin;
-    
-    if (isAdmin || isApproved) {
-      return res.json({ preapproved: true });
-    }
-  }
-  
-  return res.json({ preapproved: false });
+  User.findOne({ email })
+    .then(user => {
+      if (user) {
+        // Check if user is admin or approved by admin
+        const isAdmin = user.role === 'admin';
+        const isApproved = user.isApprovedByAdmin;
+        
+        if (isAdmin || isApproved) {
+          return res.json({ preapproved: true });
+        }
+      }
+      
+      return res.json({ preapproved: false });
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    });
+});
+
+// Also handle OPTIONS preflight for this route specifically
+router.options('/preapproved/check', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://shaadi-mantrana-app-frontend.vercel.app');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.sendStatus(204); // No content needed for OPTIONS response
 });
 
 module.exports = router;
