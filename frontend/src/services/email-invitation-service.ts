@@ -1,12 +1,9 @@
 // Email Invitation Service for Frontend
 // This service handles email invitation operations and uses the same API config as auth service
 
-import { config } from './configService';
+import { config as configService } from './configService';
 import logger from '../utils/logger';
-
-export const API_CONFIG = {
-  API_BASE_URL: config.apiBaseUrl,
-};
+// use configService.apiBaseUrl directly
 
 export interface Invitation {
   _id: string;
@@ -33,34 +30,34 @@ export interface InvitationResponse {
 export class EmailInvitationService {
   // Send invitation email
   static async sendInvitation(email: string): Promise<InvitationResponse> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
-    
-    if (!apiBaseUrl) {
-      throw new Error('API_BASE_URL not configured');
-    }
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/invitations/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || 'Failed to send invitation');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      logger.error('EmailInvitationService.sendInvitation error:', error);
-      throw error;
-    }
-  }
+    const apiBaseUrl = configService.apiBaseUrl;
+     
+     if (!apiBaseUrl) {
+       throw new Error('API_BASE_URL not configured');
+     }
+ 
+     try {
+       const response = await fetch(`${apiBaseUrl}/api/invitations/send`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email }),
+       });
+       
+       if (!response.ok) {
+         const errorData = await response.json().catch(() => ({ error: response.statusText }));
+         throw new Error(errorData.error || 'Failed to send invitation');
+       }
+       
+       return await response.json();
+     } catch (error) {
+       logger.error('EmailInvitationService.sendInvitation error:', error);
+       throw error;
+     }
+   }
 
   // Get all invitations
   static async getInvitations(): Promise<Invitation[]> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return [];
@@ -68,9 +65,9 @@ export class EmailInvitationService {
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/invitations`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+         method: 'GET',
+         headers: { 'Content-Type': 'application/json' },
+       });
       
       if (!response.ok) {
         throw new Error('Failed to fetch invitations');
@@ -86,7 +83,7 @@ export class EmailInvitationService {
 
   // Remove invitation
   static async removeInvitation(email: string): Promise<boolean> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return false;
@@ -94,9 +91,9 @@ export class EmailInvitationService {
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/invitations/${encodeURIComponent(email)}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
+         method: 'DELETE',
+         headers: { 'Content-Type': 'application/json' },
+       });
       
       return response.ok;
     } catch (error) {
@@ -124,7 +121,7 @@ export class EmailInvitationService {
 
   // Check if email is approved (now uses User collection)
   static async checkEmailApproval(email: string): Promise<boolean> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return false;
@@ -132,9 +129,9 @@ export class EmailInvitationService {
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+         method: 'GET',
+         headers: { 'Content-Type': 'application/json' },
+       });
       
       if (!response.ok) {
         return false;
@@ -156,7 +153,7 @@ export class EmailInvitationService {
     isFirstLogin: boolean;
     profileCompleteness: number;
   } | null> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return null;
@@ -164,9 +161,9 @@ export class EmailInvitationService {
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+         method: 'GET',
+         headers: { 'Content-Type': 'application/json' },
+       });
       
       if (!response.ok) {
         return null;
