@@ -2,6 +2,7 @@
 // Handles automatic token refresh to prevent authentication failures
 
 import logger from '../utils/logger';
+import { config as configService } from './configService';
 
 export interface TokenRefreshOptions {
   refreshInterval?: number; // How often to check for token refresh (default: 5 minutes)
@@ -129,7 +130,7 @@ class TokenRefreshService {
     try {
       logger.debug('🔄 TokenRefreshService: Performing token refresh...');
 
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,7 +186,7 @@ class TokenRefreshService {
   // Get current token information
   private async getCurrentTokenInfo(): Promise<TokenInfo | null> {
     try {
-      const response = await fetch('/api/auth/token', {
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/token`, {
         method: 'GET',
         credentials: 'include',
       });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../../utils/logger';
 import { withRouteLogging } from '../../route-logger';
+import { config as configService } from '../../../../services/configService';
 
 async function handlePost(request: NextRequest) {
   try {
@@ -15,14 +16,14 @@ async function handlePost(request: NextRequest) {
     }
 
     // Call the backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mantrana.onrender.com';
     
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
-      const response = await fetch(`${backendUrl}/api/auth/verify-otp`, {
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
