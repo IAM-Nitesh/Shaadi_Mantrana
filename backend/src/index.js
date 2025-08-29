@@ -22,22 +22,34 @@ const PORT = process.env.PORT || 5001;
 // Import configuration
 const config = require('./config');
 
-// CORS configuration for specific domain - ADD THIS BEFORE HELMET
+// IMPROVED CORS configuration for specific domain
 const corsOptions = {
-  origin: [
-    'https://shaadi-mantrana-app-frontend.vercel.app',
-    'http://localhost:3000',
-    'https://shaadi-mantrana-app-frontend-niteshs-projects-7cfa63e5.vercel.app'
-  ],
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'https://shaadi-mantrana-app-frontend.vercel.app', // Production
+      'http://localhost:3000' // Local development
+    ];
+    
+    // Allow requests with no origin (mobile apps, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`CORS blocked origin: ${origin}`);
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 // Apply CORS middleware BEFORE helmet
 app.use(cors(corsOptions));
 
-// Security middleware - Helmet
+// Handle OPTIONS preflight requests explicitly
+app.options('*', cors(corsOptions));
+
+// Security middleware - Helmet with relaxed CSP
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -45,13 +57,10 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
-      // Updated to match our CORS policy
       connectSrc: [
         "'self'", 
-        "https://*.vercel.app",                    // All Vercel deployments
-        "https://shaadi-mantrana-app-frontend-*",  // All our frontend deployments
-        "https://*.shaadimantrana.com",            // All subdomains of our custom domain
-        "http://localhost:3000"                    // Local development
+        "https://shaadi-mantrana-app-frontend.vercel.app",
+        "http://localhost:3000"
       ],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
@@ -59,6 +68,8 @@ app.use(helmet({
       frameSrc: ["'none'"],
     },
   },
+  // Allow cross-origin resource sharing
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
 }));
 

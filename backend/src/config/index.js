@@ -73,8 +73,8 @@ module.exports = {
   DATABASE_URL: getMongoDBURI(),
   
   // Frontend URL for CORS (support multiple environments)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
-  FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || 'http://localhost:3000',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://shaadi-mantrana-app-frontend.vercel.app',
+  FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || 'https://shaadi-mantrana-app-frontend.vercel.app',
   
   // JWT configuration with strong defaults
   JWT: {
@@ -116,7 +116,9 @@ module.exports = {
   
   // API configuration
   API: {
-    BASE_URL: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5500}`,
+    BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'production' 
+      ? 'https://shaadi-mantrana.onrender.com'
+      : `http://localhost:${process.env.PORT || 5500}`),
     VERSION: 'v1',
     RATE_LIMIT: {
       WINDOW_MS: 15 * 60 * 1000, // 15 minutes
@@ -142,7 +144,7 @@ module.exports = {
     BCRYPT_ROUNDS: process.env.NODE_ENV === 'production' ? 12 : 8,
     SESSION_SECRET: process.env.SESSION_SECRET || 'dev-session-secret',
     CORS_ORIGINS: process.env.NODE_ENV === 'production' 
-      ? [process.env.FRONTEND_URL]
+      ? ['https://shaadi-mantrana-app-frontend.vercel.app']
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002']
   },
   
