@@ -441,12 +441,12 @@ export default function Home() {
   // server-only service code into a client component (prevents bundler/runtime errors).
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
     try {
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: otpCode }),
-        credentials: 'include',
-      });
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email, otp: otpCode }),
+         credentials: 'include',
+       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: response.statusText }));
@@ -1128,7 +1128,7 @@ export default function Home() {
                 </div>
                 
                 <div className="text-center group/item">
-                  <div className="w-6 h-6 flex items-center justify-center mx-auto mb-1 group-hover:item:scale-110 group-hover:item:-rotate-3 transition-all duration-500">
+                  <div className="w-6 h-6 flex items-center justify-center mx-auto mb-1 group-hover/item:scale-110 group-hover:item:-rotate-3 transition-all duration-500">
                     <span className="text-lg">🎯</span>
                   </div>
                   <h5 className="text-xs font-bold text-slate-800 group-hover/item:text-emerald-700 transition-colors duration-300">Easy to Use</h5>

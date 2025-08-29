@@ -21,7 +21,7 @@ export const sendOTP = async (email) => {
 
 export const verifyOTP = async (email, otp) => {
   try {
-    const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify`, {
+    const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
