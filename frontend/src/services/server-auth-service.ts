@@ -6,6 +6,7 @@ import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
 import { getUserCompleteness } from '../utils/user-utils';
+import { config as configService } from './configService';
 
 export interface AuthUser {
   role: string;
@@ -111,17 +112,15 @@ export class ServerAuthService {
   // Verify OTP and get authentication status
   static async verifyOTP(email: string, otp: string): Promise<{ success: boolean; redirectTo: string; user?: AuthUser; error?: string }> {
     try {
-  logger.debug('🔍 ServerAuthService: Starting OTP verification for:', email);
+      logger.debug('🔍 ServerAuthService: Starting OTP verification for:', email);
       
       const result = await this.withRetryAndTokenRefresh(async () => {
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, otp }),
-          credentials: 'include', // Include cookies
-        });
+        const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify`, {
+           method: 'POST',
+           credentials: 'include',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ email, otp })
+         });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: response.statusText }));
@@ -179,7 +178,7 @@ export class ServerAuthService {
       const result = await this.withRetryAndTokenRefresh(async () => {
   logger.debug('🔍 ServerAuthService: Making request to /api/auth/status...');
         
-        const response = await fetch('/api/auth/status', {
+        const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
           method: 'GET',
           credentials: 'include', // Include cookies
           // Add timeout to prevent hanging
@@ -260,9 +259,9 @@ export class ServerAuthService {
       this.stopTokenRefresh();
       
       const result = await this.withRetryAndTokenRefresh(async () => {
-        const response = await fetch('/api/auth/logout', {
+        const response = await fetch(`${configService.apiBaseUrl}/api/auth/logout`, {
           method: 'POST',
-          credentials: 'include', // Include cookies
+          credentials: 'include',
           signal: AbortSignal.timeout(5000) // 5 second timeout
         });
 
@@ -323,7 +322,7 @@ export class ServerAuthService {
       
       // Since we're using HTTP-only cookies, we need to make a server request
       // to get the token from the server side
-      const response = await fetch('/api/auth/token', {
+      const response = await fetch(`${configService.apiBaseUrl}/api/auth/token`, {
         method: 'GET',
         credentials: 'include', // Include cookies
         headers: {
@@ -418,4 +417,4 @@ export class ServerAuthService {
       return false;
     }
   }
-} 
+}
