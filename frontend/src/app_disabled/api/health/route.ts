@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../utils/logger';
+import { config as configService } from '../../../services/configService';
 import { withRouteLogging } from '../route-logger';
 
 async function handleGet(request: NextRequest) {
   try {
     logger.debug('🔍 Health Check API: Checking system health...');
     
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
+    const backendUrl = configService.apiBaseUrl;
     
     // Test backend connectivity
     const controller = new AbortController();

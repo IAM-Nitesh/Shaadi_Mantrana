@@ -1,5 +1,6 @@
 // Matches Count Service - Global state management for matches count
 import { MatchingService } from './matching-service';
+import { config as configService } from './configService';
 
 class MatchesCountService {
   private count: number | null = null;
@@ -50,7 +51,7 @@ class MatchesCountService {
       return this.count || 0;
     }
   }
-
+  
   // Subscribe to count changes
   subscribe(listener: (count: number) => void): () => void {
     this.listeners.add(listener);
@@ -81,4 +82,4 @@ class MatchesCountService {
 }
 
 // Export singleton instance
-export const matchesCountService = new MatchesCountService(); 
+export const matchesCountService = new MatchesCountService();

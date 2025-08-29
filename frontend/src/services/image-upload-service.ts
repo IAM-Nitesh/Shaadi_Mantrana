@@ -3,13 +3,13 @@
 
 // To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
 // Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
-import { config } from './configService';
+import { config as configService } from './configService';
 import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 
 export const API_CONFIG = {
-  API_BASE_URL: config.apiBaseUrl,
+  API_BASE_URL: configService.apiBaseUrl,
 };
 
 import ImageCompression from '../utils/imageCompression';
@@ -170,7 +170,7 @@ export class ImageUploadService {
 
   // Upload profile image with face validation
   static async uploadProfileImage(file: File): Promise<UploadResult> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     // Development mode fallback
     if (process.env.NODE_ENV === 'development' && !apiBaseUrl) {
@@ -278,7 +278,7 @@ export class ImageUploadService {
 
   // Upload multiple images with batch processing
   static async uploadMultipleImages(files: File[]): Promise<UploadResult[]> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     const results: UploadResult[] = [];
     
     for (const file of files) {
@@ -291,7 +291,7 @@ export class ImageUploadService {
 
   // Delete image
   static async deleteImage(imageUrl: string): Promise<boolean> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
           // console.log('Image deletion not configured');
@@ -323,7 +323,7 @@ export class ImageUploadService {
 
   // Get uploaded images for profile
   static async getProfileImages(): Promise<string[]> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return [];
@@ -413,7 +413,7 @@ export class ImageUploadService {
     // Clear cache when uploading new image
     this.clearSignedUrlCache();
     
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return {
@@ -494,7 +494,7 @@ export class ImageUploadService {
     // Clear cache when deleting image
     this.clearSignedUrlCache();
     
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return false;
@@ -527,7 +527,7 @@ export class ImageUploadService {
    * @returns Promise with signed URL
    */
   static async getProfilePictureUrl(userId: string, expiry: number = 3600): Promise<string | null> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
       return null;
@@ -553,7 +553,7 @@ export class ImageUploadService {
    * @returns Promise with signed URL
    */
   static async getMyProfilePictureSignedUrl(expiry: number = 4200): Promise<string | null> {
-    const apiBaseUrl = API_CONFIG.API_BASE_URL;
+    const apiBaseUrl = configService.apiBaseUrl;
     
     if (!apiBaseUrl) {
   logger.warn('❌ API_BASE_URL not configured');
@@ -596,10 +596,10 @@ export class ImageUploadService {
   logger.debug(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
       
       const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`,
-        },
-      });
+         headers: {
+           'Authorization': `Bearer ${bearerToken}`,
+         },
+       });
       
   logger.debug(`🔍 Response status: ${response.status}`);
       
@@ -664,8 +664,7 @@ export class ImageUploadService {
    * @returns Promise with signed URL
    */
   static async getUserProfilePictureSignedUrl(userId: string, expiry: number = 4200): Promise<string | null> {
-  logger.debug('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
-    
+    logger.debug('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
     try {
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
@@ -676,9 +675,9 @@ export class ImageUploadService {
         return null;
       }
 
-      const url = `/api/upload/profile-picture/${userId}/url?expiry=${expiry}`;
-  logger.debug('🔍 Fetching signed URL from:', url);
-      
+      const url = `${configService.apiBaseUrl}/api/upload/profile-picture/${userId}/url?expiry=${expiry}`;
+      logger.debug('🔍 Fetching signed URL from:', url);
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
@@ -743,7 +742,7 @@ export class ImageUploadService {
 
     // Check if there's already a pending request for this user
     if (this.pendingRequests.has(userId)) {
-      return this.pendingRequests.get(userId);
+      return this.pendingRequests.get(userId) ?? null;
     }
 
     // Create new request
