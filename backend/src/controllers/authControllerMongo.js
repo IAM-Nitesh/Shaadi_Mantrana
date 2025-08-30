@@ -632,6 +632,135 @@ class AuthController {
       });
     }
   }
+
+  // Get auth status (returns profile when authenticated, otherwise authenticated:false)
+  async getAuthStatus(req, res) {
+    try {
+      // Get user from session token if available
+      const authHeader = req.headers.authorization;
+      let user = null;
+
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, config.jwtSecret);
+          const sessionData = sessions.get(decoded.sessionId);
+          
+          if (sessionData) {
+            // Get full user data from database
+            const dbUser = await User.findById(decoded.userId).select('-password');
+            if (dbUser) {
+              user = {
+                userUuid: dbUser._id.toString(),
+                email: dbUser.email,
+                role: dbUser.role,
+                isFirstLogin: dbUser.isFirstLogin,
+                isApprovedByAdmin: dbUser.isApprovedByAdmin,
+                profileCompleteness: dbUser.profileCompleteness || 0,
+                hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false
+              };
+            }
+          }
+        } catch (tokenError) {
+          console.log('Token verification failed:', tokenError.message);
+        }
+      }
+
+      if (user) {
+        return res.status(200).json({
+          authenticated: true,
+          user: user,
+          redirectTo: '/dashboard'
+        });
+      }
+
+      // Not authenticated
+      return res.status(200).json({
+        authenticated: false,
+        redirectTo: '/',
+        message: 'Not authenticated'
+      });
+    } catch (err) {
+      console.error('❌ Auth status error:', err);
+      return res.status(500).json({ 
+        authenticated: false, 
+        redirectTo: '/',
+        message: 'Internal server error' 
+      });
+    }
+  }
+
+  // Get token for frontend (extract from HTTP-only cookies)
+  async getToken(req, res) {
+    try {
+      // Get user from session token if available
+      const authHeader = req.headers.authorization;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, config.jwtSecret);
+          const sessionData = sessions.get(decoded.sessionId);
+          
+          if (sessionData) {
+            return res.status(200).json({
+              success: true,
+              token: token
+            });
+          }
+        } catch (tokenError) {
+          console.log('Token verification failed:', tokenError.message);
+        }
+      }
+
+      // Try to get from cookies
+      const sessionToken = req.cookies?.sessionToken;
+      if (sessionToken) {
+        try {
+          const decoded = jwt.verify(sessionToken, config.jwtSecret);
+          const sessionData = sessions.get(decoded.sessionId);
+          
+          if (sessionData) {
+            // Generate a new access token
+            const payload = {
+              userId: sessionData.userId,
+              email: sessionData.email,
+              sessionId: decoded.sessionId
+            };
+
+            const accessToken = jwt.sign(payload, config.jwtSecret, { 
+              expiresIn: '24h',
+              issuer: 'shaadi-mantra-api',
+              audience: 'shaadi-mantra-app'
+            });
+
+            return res.status(200).json({
+              success: true,
+              token: accessToken
+            });
+          }
+        } catch (tokenError) {
+          console.log('Session token verification failed:', tokenError.message);
+        }
+      }
+
+      return res.status(401).json({
+        success: false,
+        message: 'No valid session found'
+      });
+    } catch (err) {
+      console.error('❌ Get token error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error' 
+      });
+    }
+  }
+
+  // Legacy status method for backward compatibility
+  async status(req, res) {
+    return this.getAuthStatus(req, res);
+  }
 }
 
 module.exports = new AuthController();

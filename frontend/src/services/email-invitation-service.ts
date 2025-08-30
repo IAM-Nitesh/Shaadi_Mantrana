@@ -3,6 +3,7 @@
 
 import { config as configService } from './configService';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 // use configService.apiBaseUrl directly
 
 export interface Invitation {
@@ -37,10 +38,8 @@ export class EmailInvitationService {
      }
  
      try {
-       const response = await fetch(`${apiBaseUrl}/api/invitations/send`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email }),
+       const response = await apiClient.post('/api/invitations/send', { email }, {
+         timeout: 15000
        });
        
        if (!response.ok) {
@@ -64,10 +63,9 @@ export class EmailInvitationService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/invitations`, {
-         method: 'GET',
-         headers: { 'Content-Type': 'application/json' },
-       });
+      const response = await apiClient.get('/api/invitations', {
+        timeout: 15000
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch invitations');
@@ -89,11 +87,10 @@ export class EmailInvitationService {
       return false;
     }
 
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/invitations/${encodeURIComponent(email)}`, {
-         method: 'DELETE',
-         headers: { 'Content-Type': 'application/json' },
-       });
+        try {
+      const response = await apiClient.delete(`/api/invitations/${encodeURIComponent(email)}`, {
+        timeout: 15000
+      });
       
       return response.ok;
     } catch (error) {

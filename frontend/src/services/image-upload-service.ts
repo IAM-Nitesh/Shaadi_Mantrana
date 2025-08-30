@@ -7,6 +7,7 @@ import { config as configService } from './configService';
 import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
+import { apiClient } from '../utils/api-client';
 
 export const API_CONFIG = {
   API_BASE_URL: configService.apiBaseUrl,
@@ -595,11 +596,12 @@ export class ImageUploadService {
 
   logger.debug(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
       
-      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`, {
-         headers: {
-           'Authorization': `Bearer ${bearerToken}`,
-         },
-       });
+      const response = await apiClient.get(`/api/upload/profile-picture/url?expiry=${expiry}`, {
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`,
+        },
+        timeout: 15000
+      });
       
   logger.debug(`🔍 Response status: ${response.status}`);
       

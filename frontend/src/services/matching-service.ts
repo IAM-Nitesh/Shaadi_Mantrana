@@ -2,6 +2,7 @@
 import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
 
@@ -256,12 +257,11 @@ export class MatchingService {
         };
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/matching/discovery?page=${page}&limit=${limit}`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/matching/discovery?page=${page}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
@@ -834,19 +834,17 @@ export class MatchingService {
 
       // Fetch both matches and likes in parallel
       const [matchesResponse, likesResponse] = await Promise.all([
-        fetch(`${this.baseUrl}/api/matching/matches`, {
-          method: 'GET',
+        apiClient.get('/api/matching/matches', {
           headers: {
             'Authorization': `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
           },
+          timeout: 15000
         }),
-        fetch(`${this.baseUrl}/api/matching/liked`, {
-          method: 'GET',
+        apiClient.get('/api/matching/liked', {
           headers: {
             'Authorization': `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
           },
+          timeout: 15000
         })
       ]);
 

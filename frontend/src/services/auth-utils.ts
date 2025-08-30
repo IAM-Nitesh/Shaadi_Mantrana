@@ -2,6 +2,8 @@ import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getUserCompleteness } from '../utils/user-utils';
 import { config as configService } from './configService';
+import { apiClient } from '../utils/api-client';
+
 // Authentication Utilities for Service Files
 // This file contains only utility functions that can be safely imported by service files
 // without breaking Fast Refresh in React components
@@ -42,54 +44,22 @@ function clearAuthCache(): void {
 // Get Bearer token for backend API calls
 export async function getBearerToken(): Promise<string | null> {
   try {
-    async function fetchTokenOnce(): Promise<Response | null> {
-      try {
-        return await fetch(`${configService.apiBaseUrl}/api/auth/token`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-      } catch (err) {
-        logger.debug('🔍 AuthUtils: fetch /api/auth/token failed', err);
-        return null;
-      }
+    logger.debug('🔍 AuthUtils: Getting Bearer token...');
+    
+    const response = await apiClient.get('/api/auth/token', {
+      credentials: 'include',
+      timeout: 5000
+    });
+
+    if (response.ok && response.data.success && response.data.token) {
+      logger.info('✅ AuthUtils: Bearer token retrieved successfully');
+      return response.data.token;
     }
 
-    let response = await fetchTokenOnce();
-
-    // If response is missing or not ok, attempt a cache-clear + retry (dev-friendly)
-    if (!response || !response.ok) {
-      // In dev, capture body for debugging
-      if (response && !response.ok && process.env.NODE_ENV === 'development') {
-        try {
-          const text = await response.text();
-          logger.warn('❌ AuthUtils: /api/auth/token non-ok response body:', text);
-        } catch (e) {
-          logger.warn('❌ AuthUtils: /api/auth/token non-ok and body unreadable');
-        }
-      }
-
-      // Clear local auth cache then retry once
-      try {
-        clearAuthCache();
-      } catch (e) {
-        // ignore
-      }
-
-      response = await fetchTokenOnce();
-    }
-
-    if (!response || !response.ok) return null;
-
-    const data = await response.json();
-    if (data.success && data.token) {
-      return data.token;
-    }
-
+    logger.warn('❌ AuthUtils: No token in response');
     return null;
   } catch (error) {
+    logger.error('❌ AuthUtils: Error getting Bearer token:', error);
     return null;
   }
 }
@@ -101,24 +71,24 @@ export async function isAuthenticated(): Promise<boolean> {
     if (isAuthCacheValid() && authStatusCache?.data) {
       return authStatusCache.data.authenticated;
     }
-    const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
-      method: 'GET',
+
+    logger.debug('🔍 AuthUtils: Checking authentication status...');
+    
+    const response = await apiClient.get('/api/auth/status', {
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      timeout: 10000
     });
 
-          if (!response.ok) {
-        // Cache the failed response to prevent repeated calls
-        authStatusCache = {
-          data: { authenticated: false, redirectTo: '/', message: 'Auth check failed' },
-          timestamp: Date.now()
-        };
-        return false;
-      }
+    if (!response.ok) {
+      // Cache the failed response to prevent repeated calls
+      authStatusCache = {
+        data: { authenticated: false, redirectTo: '/', message: 'Auth check failed' },
+        timestamp: Date.now()
+      };
+      return false;
+    }
 
-    const data: AuthStatus = await response.json();
+    const data: AuthStatus = response.data;
     
     // Cache the response
     authStatusCache = {
@@ -155,12 +125,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
 
     logger.debug('🔍 AuthUtils: Getting current user...');
-    const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
-      method: 'GET',
+    
+    const response = await apiClient.get('/api/auth/status', {
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      timeout: 10000
     });
 
     if (!response.ok) {
@@ -173,7 +141,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       return null;
     }
 
-    const data: AuthStatus = await response.json();
+    const data: AuthStatus = response.data;
     
     // Cache the response
     authStatusCache = {
@@ -203,7 +171,19 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 // Function to clear auth cache (useful for logout or when forcing refresh)
 export function clearAuthStatusCache(): void {
   clearAuthCache();
-  logger.debug('🔍 AuthUtils: Auth status cache cleared');
+}
+
+// Get user completeness percentage
+export async function getUserCompletenessPercentage(): Promise<number> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return 0;
+    
+    return getUserCompleteness(user);
+  } catch (error) {
+    logger.error('❌ AuthUtils: Error getting user completeness:', error);
+    return 0;
+  }
 }
 
 // Check if user is admin
@@ -211,15 +191,17 @@ export function isAdmin(user?: AuthUser): boolean {
   return user?.role === 'admin';
 }
 
-// Check if user can access restricted features
-export function canAccessRestrictedFeatures(user?: AuthUser): boolean {
-  const completeness = getUserCompleteness(user as any);
-  return user?.isApprovedByAdmin === true && completeness >= 100;
+// Check if user is approved by admin
+export function isApprovedByAdmin(user?: AuthUser): boolean {
+  return user?.isApprovedByAdmin === true;
 }
 
-// Check if user needs profile completion
-export function needsProfileCompletion(user?: AuthUser): boolean {
-  if (!user) return true;
-  const completeness = getUserCompleteness(user as any);
-  return user.role !== 'admin' && (user.isFirstLogin || completeness < 100);
+// Check if user has completed onboarding
+export function hasCompletedOnboarding(user?: AuthUser): boolean {
+  return user?.hasSeenOnboardingMessage === true;
+}
+
+// Check if user is first login
+export function isFirstLogin(user?: AuthUser): boolean {
+  return user?.isFirstLogin === true;
 }
