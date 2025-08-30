@@ -1,51 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import logger from '../../../../utils/logger';
-import { withRouteLogging } from '../../route-logger';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-async function handleGet(request: NextRequest) {
+// Simple logger for API routes
+const logger = {
+  debug: (...args: any[]) => {
+    if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ENABLE_DEBUG === 'true') {
+      console.log('[DEBUG]', ...args);
+    }
+  },
+  error: (...args: any[]) => console.error('[ERROR]', ...args),
+};
+
+// Backend API URL from env
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mantrana.onrender.com';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     logger.debug('🔍 Auth Status API: Starting authentication status check...');
-    
-    const authToken = request.cookies.get('authToken')?.value;
-    const refreshToken = request.cookies.get('refreshToken')?.value;
-    
+
+    // Get tokens from cookies
+    const authToken = req.cookies.authToken;
+    const refreshToken = req.cookies.refreshToken;
+
     logger.debug('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
     logger.debug('🔍 Auth Status API: Auth token length:', authToken?.length || 0);
-    logger.debug('🔍 Auth Status API: Auth token preview:', authToken ? `${authToken.substring(0, 20)}...` : 'None');
     logger.debug('🔍 Auth Status API: Refresh token found:', refreshToken ? 'Yes' : 'No');
 
     if (!authToken) {
       logger.debug('ℹ️ Auth Status API: No authentication token found - returning graceful response');
-      return NextResponse.json(
-        { 
-          authenticated: false, 
-          redirectTo: '/',
-          message: 'No authentication token found' 
-        },
-        { status: 200 } // Changed from 401 to 200 to prevent blocking
-      );
+      return res.status(200).json({
+        authenticated: false,
+        redirectTo: '/',
+        message: 'No authentication token found'
+      });
     }
 
     logger.debug('🔍 Auth Status API: Token found, verifying with backend...');
 
-    // Verify token with backend
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
-    
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
     try {
-      logger.debug('🔍 Auth Status API: Making request to backend:', `${backendUrl}/api/auth/profile`);
+      logger.debug('🔍 Auth Status API: Making request to backend:', `${BACKEND_URL}/api/auth/profile`);
       logger.debug('🔍 Auth Status API: Authorization header:', `Bearer ${authToken.substring(0, 20)}...`);
-      logger.debug('🔍 Auth Status API: Full backend URL:', `${backendUrl}/api/auth/profile`);
       logger.debug('🔍 Auth Status API: Environment check:', {
         NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-        backendUrl,
+        backendUrl: BACKEND_URL,
         authTokenLength: authToken.length
       });
-      
-      const response = await fetch(`${backendUrl}/api/auth/profile`, {
+
+      const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -56,11 +60,10 @@ async function handleGet(request: NextRequest) {
 
       clearTimeout(timeoutId);
       logger.debug('🔍 Auth Status API: Backend response status:', response.status);
-      logger.debug('🔍 Auth Status API: Backend response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         logger.debug(`❌ Auth Status API: Backend returned ${response.status}`);
-        
+
         // Try to get error details
         try {
           const errorData = await response.text();
@@ -68,13 +71,13 @@ async function handleGet(request: NextRequest) {
         } catch (e) {
           logger.debug('❌ Auth Status API: Could not read error response');
         }
-        
+
         // If it's a 401 error and we have a refresh token, try to refresh
         if (response.status === 401 && refreshToken) {
           logger.debug('🔄 Auth Status API: Token expired, attempting refresh...');
-          
+
           try {
-            const refreshResponse = await fetch(`${backendUrl}/api/auth/refresh`, {
+            const refreshResponse = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -87,37 +90,20 @@ async function handleGet(request: NextRequest) {
             if (refreshResponse.ok) {
               const refreshResult = await refreshResponse.json();
               logger.debug('✅ Auth Status API: Token refresh successful');
-              
+
               // Set new cookies with the refreshed tokens
-              const successResponse = NextResponse.json({
+              if (refreshResult.accessToken) {
+                res.setHeader('Set-Cookie', [
+                  `authToken=${refreshResult.accessToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
+                  refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
+                ].filter(Boolean));
+              }
+
+              return res.status(200).json({
                 authenticated: true,
                 user: refreshResult.user || null,
                 redirectTo: refreshResult.user ? determineRedirectPath(refreshResult.user) : '/'
               });
-
-              // Set new auth token cookie
-              if (refreshResult.accessToken) {
-                successResponse.cookies.set('authToken', refreshResult.accessToken, {
-                  httpOnly: true,
-                  secure: process.env.NODE_ENV === 'production',
-                  sameSite: 'lax',
-                  maxAge: 60 * 60 * 24 * 7, // 7 days
-                  path: '/'
-                });
-              }
-
-              // Set new refresh token cookie if provided
-              if (refreshResult.refreshToken) {
-                successResponse.cookies.set('refreshToken', refreshResult.refreshToken, {
-                  httpOnly: true,
-                  secure: process.env.NODE_ENV === 'production',
-                  sameSite: 'lax',
-                  maxAge: 60 * 60 * 24 * 30, // 30 days
-                  path: '/'
-                });
-              }
-
-              return successResponse;
             } else {
               logger.debug('❌ Auth Status API: Token refresh failed, status:', refreshResponse.status);
             }
@@ -125,22 +111,19 @@ async function handleGet(request: NextRequest) {
             logger.error('❌ Auth Status API: Token refresh error:', refreshError);
           }
         }
-        
+
         // Clear invalid cookies and return graceful response
-        const errorResponse = NextResponse.json(
-          { 
-            authenticated: false, 
-            redirectTo: '/',
-            message: 'Invalid or expired token' 
-          },
-          { status: 200 } // Changed from 401 to 200 to prevent blocking
-        );
+        res.setHeader('Set-Cookie', [
+          'authToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
+          'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
+          'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
+        ]);
 
-        errorResponse.cookies.delete('authToken');
-        errorResponse.cookies.delete('refreshToken');
-        errorResponse.cookies.delete('sessionId');
-
-        return errorResponse;
+        return res.status(200).json({
+          authenticated: false,
+          redirectTo: '/',
+          message: 'Invalid or expired token'
+        });
       }
 
       const result = await response.json();
@@ -154,8 +137,8 @@ async function handleGet(request: NextRequest) {
           isFirstLogin: user.isFirstLogin,
           profileCompleteness: user.profileCompleteness
         });
-        
-        return NextResponse.json({
+
+        return res.status(200).json({
           authenticated: true,
           user: {
             role: user.role,
@@ -171,61 +154,49 @@ async function handleGet(request: NextRequest) {
       }
 
       logger.debug('❌ Auth Status API: Failed to get user profile from backend');
-      return NextResponse.json(
-        { 
-          authenticated: false, 
-          redirectTo: '/',
-          message: 'Failed to get user profile' 
-        },
-        { status: 200 } // Changed from 401 to 200 to prevent blocking
-      );
+      return res.status(200).json({
+        authenticated: false,
+        redirectTo: '/',
+        message: 'Failed to get user profile'
+      });
 
     } catch (fetchError) {
       clearTimeout(timeoutId);
-      
+
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         logger.error('❌ Auth Status API: Request timeout');
-        return NextResponse.json(
-          { 
-            authenticated: false, 
-            redirectTo: '/',
-            message: 'Request timeout. Please try again.' 
-          },
-          { status: 200 } // Changed from 408 to 200 to prevent blocking
-        );
+        return res.status(200).json({
+          authenticated: false,
+          redirectTo: '/',
+          message: 'Request timeout. Please try again.'
+        });
       }
-      
+
       logger.error('❌ Auth Status API: Fetch error:', fetchError);
-      
-      // For development, let's add a fallback mechanism
+
+      // For development, add fallback mechanism
       if (process.env.NODE_ENV === 'development') {
         logger.debug('🔧 Auth Status API: Development mode - adding fallback response');
-        return NextResponse.json(
-          { 
-            authenticated: false, 
-            redirectTo: '/',
-            message: 'Backend connection failed. Please check if the backend is running.' 
-          },
-          { status: 200 } // Changed from 503 to 200 to prevent blocking
-        );
-      }
-      
-      // Return graceful response for any other errors
-      return NextResponse.json(
-        { 
-          authenticated: false, 
+        return res.status(200).json({
+          authenticated: false,
           redirectTo: '/',
-          message: 'Authentication service temporarily unavailable' 
-        },
-        { status: 200 } // Changed from throwing error to returning 200
-      );
+          message: 'Backend connection failed. Please check if the backend is running.'
+        });
+      }
+
+      // Return graceful response for any other errors
+      return res.status(200).json({
+        authenticated: false,
+        redirectTo: '/',
+        message: 'Authentication service temporarily unavailable'
+      });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     logger.error('❌ Auth Status API: Error:', error);
-    
+
     let message = 'Internal server error';
-    
+
     if (error instanceof Error) {
       if (error.message.includes('fetch')) {
         message = 'Unable to connect to authentication server';
@@ -235,15 +206,12 @@ async function handleGet(request: NextRequest) {
         message = error.message;
       }
     }
-    
-    return NextResponse.json(
-      { 
-        authenticated: false, 
-        redirectTo: '/',
-        message 
-      },
-      { status: 200 } // Changed from 500 to 200 to prevent blocking
-    );
+
+    return res.status(200).json({
+      authenticated: false,
+      redirectTo: '/',
+      message
+    });
   }
 }
 
@@ -274,7 +242,7 @@ function determineRedirectPath(user: any): string | null {
 
   // Access Control Logic:
   // Users should only access /dashboard and /matches if profileCompleteness is 100%
-  
+
   // Case 1: First-time user (isFirstLogin = true)
   if (isFirstLogin) {
     // Always redirect to profile for first-time users
@@ -299,5 +267,3 @@ function determineRedirectPath(user: any): string | null {
   logger.debug('🔄 Default case - redirecting to profile');
   return '/profile';
 }
-
-export const GET = withRouteLogging(handleGet);
