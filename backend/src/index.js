@@ -22,6 +22,9 @@ const PORT = process.env.PORT || 5001;
 // Import configuration
 const config = require('./config');
 
+// Trust proxy for rate limiting behind reverse proxies (like Render)
+app.set('trust proxy', 1);
+
 // IMPROVED CORS configuration for specific domain
 const corsOptions = {
   origin: function(origin, callback) {
