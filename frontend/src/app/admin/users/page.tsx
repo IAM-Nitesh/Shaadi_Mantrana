@@ -134,7 +134,8 @@ export default function AdminUsers() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Cache-Control': forceRefresh ? 'no-cache' : 'max-age=300' // 5 minutes cache unless force refresh
-        }
+        },
+        credentials: 'include'
       });
 
       logger.debug('🔍 Users: Response status:', response.status);
@@ -301,7 +302,8 @@ export default function AdminUsers() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ approvedByAdmin: true })
+        body: JSON.stringify({ approvedByAdmin: true }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -374,7 +376,8 @@ export default function AdminUsers() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ approvedByAdmin: false })
+        body: JSON.stringify({ approvedByAdmin: false }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -438,7 +441,8 @@ export default function AdminUsers() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email: userEmail })
+        body: JSON.stringify({ email: userEmail }),
+        credentials: 'include'
       });
 
       if (!response.ok) {

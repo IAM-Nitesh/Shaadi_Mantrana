@@ -38,6 +38,7 @@ export class OnboardingService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ hasSeenOnboardingMessage }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -76,6 +77,7 @@ export class OnboardingService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ isFirstLogin }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
