@@ -249,13 +249,16 @@ export function useServerAuth(): UseServerAuthReturn {
   const logout = useCallback(async () => {
     try {
       logger.debug('🔍 useServerAuth: Starting logout...');
-      setIsLoading(true);
+      // Don't set loading state during logout to avoid interfering with UI animations
+      // setIsLoading(true);
 
       const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         setError(err.error || 'Logout failed');
+        throw new Error(err.error || 'Logout failed');
       } else {
+        // Clear authentication state
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
@@ -263,16 +266,21 @@ export function useServerAuth(): UseServerAuthReturn {
         setError(null);
         setRetryCount(0);
 
+        // Clear auth utils cache
         if (typeof window !== 'undefined') {
           const { clearAuthStatusCache } = await import('../services/auth-utils');
           clearAuthStatusCache();
         }
+
+        logger.debug('✅ useServerAuth: Logout successful');
       }
     } catch (err) {
-  logger.error('❌ useServerAuth: Logout error:', err);
+      logger.error('❌ useServerAuth: Logout error:', err);
       setError('Failed to logout');
+      throw err; // Re-throw to allow calling component to handle the error
     } finally {
-      setIsLoading(false);
+      // Don't set loading to false to avoid interfering with animations
+      // setIsLoading(false);
     }
   }, []);
 
@@ -382,34 +390,6 @@ export function useServerAuth(): UseServerAuthReturn {
   // Handle token refresh events
   useEffect(() => {
     if (!isClient) return;
-
-    const handleTokenRefresh = (success: boolean) => {
-  logger.debug('🔄 useServerAuth: Token refresh event received:', success);
-      
-      if (success) {
-        // Token was refreshed successfully, clear cache and re-check auth
-  logger.info('✅ useServerAuth: Token refreshed, re-checking authentication');
-        clearCachedAuth();
-        checkAuth(true); // Force refresh to get updated user data
-      } else {
-        // Token refresh failed, user needs to re-authenticate
-  logger.warn('❌ useServerAuth: Token refresh failed, clearing authentication');
-        setUser(null);
-        setIsAuthenticated(false);
-        clearCachedAuth();
-        setRedirectTo('/');
-        setError('Session expired. Please log in again.');
-      }
-    };
-
-    const handleTokenExpired = () => {
-  logger.warn('⚠️ useServerAuth: Token expired event received');
-      setUser(null);
-      setIsAuthenticated(false);
-      clearCachedAuth();
-      setRedirectTo('/');
-      setError('Session expired. Please log in again.');
-    };
 
     // Start token refresh service if user is authenticated
   // The token refresh service is server-side and not available in client bundles.
