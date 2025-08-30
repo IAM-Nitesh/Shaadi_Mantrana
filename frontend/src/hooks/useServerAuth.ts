@@ -198,8 +198,64 @@ export function useServerAuth(): UseServerAuthReturn {
     setError('');
     
     try {
-      // Call the auth status API directly from the client
-      const res = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
+      // Call the auth status API directly from the client with cache-busting headers
+      const res = await fetch('/api/auth/status', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      // Handle 304 Not Modified - this means we need fresh data
+      if (res.status === 304) {
+        logger.debug('🔄 useServerAuth: Received 304, forcing fresh request');
+        const freshRes = await fetch(`/api/auth/status?t=${Date.now()}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        if (!freshRes.ok) {
+          logger.info('ℹ️ useServerAuth: Fresh auth check failed');
+          setUser(null);
+          setIsAuthenticated(false);
+          clearCachedAuth();
+          setRedirectTo('/');
+          setError('');
+          return;
+        }
+
+        const freshResponse = await freshRes.json();
+        logger.debug('🔍 useServerAuth: Fresh auth status response:', freshResponse);
+
+        if (freshResponse.authenticated && freshResponse.user) {
+          logger.info('✅ useServerAuth: User authenticated (fresh):', freshResponse.user);
+          setUser(freshResponse.user);
+          setIsAuthenticated(true);
+          setError('');
+
+          const redirectPath = freshResponse.redirectTo || determineRedirectPath(freshResponse.user);
+          logger.debug('🔍 useServerAuth: Redirect path:', redirectPath);
+          setRedirectTo(redirectPath);
+
+          setCachedAuth(freshResponse.user, redirectPath);
+          setLastCheckTime(Date.now());
+        } else {
+          logger.info('ℹ️ useServerAuth: User not authenticated (fresh)');
+          setUser(null);
+          setIsAuthenticated(false);
+          clearCachedAuth();
+          setRedirectTo('/');
+          setError('');
+        }
+        return;
+      }
+
       if (!res.ok) {
         logger.info('ℹ️ useServerAuth: User not authenticated or status check failed');
         setUser(null);
