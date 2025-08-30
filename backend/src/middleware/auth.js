@@ -160,6 +160,11 @@ class JWTSessionManager {
     return activeSessions.size;
   }
 
+  // Get session by ID
+  static getSession(sessionId) {
+    return activeSessions.get(sessionId);
+  }
+
   // Clean expired sessions
   static cleanExpiredSessions() {
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
