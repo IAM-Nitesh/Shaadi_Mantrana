@@ -16,7 +16,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mant
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     // Get auth token from cookies
-    const authToken = req.cookies.authToken;
+    const authToken = req.cookies.accessToken;
 
     if (!authToken) {
       logger.debug('❌ Admin Users API: No auth token found');

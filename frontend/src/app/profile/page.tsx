@@ -1262,6 +1262,7 @@ function ProfileContent() {
           ...profileData,
           images: uploadedImageUrl || profileData.images
         }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -1293,6 +1294,7 @@ function ProfileContent() {
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache'
             },
+            credentials: 'include',
           });
           
           if (response.ok) {
