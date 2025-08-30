@@ -240,6 +240,7 @@ export class ImageUploadService {
           'Authorization': `Bearer ${bearerToken}`,
         },
         body: formData,
+        credentials: 'include',
       });
 
   // logger.debug('Upload response status:', response.status);
@@ -313,6 +314,7 @@ export class ImageUploadService {
           'Authorization': `Bearer ${bearerToken}`,
         },
         body: JSON.stringify({ imageUrl }),
+        credentials: 'include',
       });
 
       return response.ok;
@@ -342,6 +344,7 @@ export class ImageUploadService {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -453,6 +456,7 @@ export class ImageUploadService {
           'Authorization': `Bearer ${bearerToken}`,
         },
         body: formData,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -513,6 +517,7 @@ export class ImageUploadService {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
         },
+        credentials: 'include',
       });
 
       return response.ok;
@@ -683,6 +688,7 @@ export class ImageUploadService {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
         },
+        credentials: 'include',
       });
       
   logger.debug('🔍 Response status:', response.status);

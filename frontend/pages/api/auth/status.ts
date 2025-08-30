@@ -17,8 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     logger.debug('🔍 Auth Status API: Starting authentication status check...');
 
-    // Get tokens from cookies
-    const authToken = req.cookies.authToken;
+    // Get tokens from cookies (use correct cookie names from backend)
+    const authToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
 
     logger.debug('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         authTokenLength: authToken.length
       });
 
-      const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/status`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -94,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               // Set new cookies with the refreshed tokens
               if (refreshResult.accessToken) {
                 res.setHeader('Set-Cookie', [
-                  `authToken=${refreshResult.accessToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
+                  `accessToken=${refreshResult.accessToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
                   refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
                 ].filter(Boolean));
               }
@@ -114,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Clear invalid cookies and return graceful response
         res.setHeader('Set-Cookie', [
-          'authToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
+          'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
           'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
           'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
         ]);

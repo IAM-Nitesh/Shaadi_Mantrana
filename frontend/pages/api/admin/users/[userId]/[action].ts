@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug(`🔍 Admin User Action API: ${action} for user ${userId}`);
 
     // Get auth token from cookies
-    const authToken = req.cookies.authToken;
+    const authToken = req.cookies.accessToken;
 
     if (!authToken) {
       logger.debug('❌ Admin User Action API: No auth token found');

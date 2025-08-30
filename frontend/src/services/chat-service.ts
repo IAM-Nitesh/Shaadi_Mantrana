@@ -60,6 +60,7 @@ export class ChatService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message }),
+        credentials: 'include',
       });
 
       if (!response.ok) {

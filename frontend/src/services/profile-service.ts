@@ -156,6 +156,7 @@ export class ProfileService {
           action,
           timestamp: new Date().toISOString(),
         }),
+        credentials: 'include',
       });
 
       return response.ok;
@@ -290,6 +291,7 @@ export class ProfileService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
       return response.ok;
     } catch (error) {
@@ -370,7 +372,8 @@ export class ProfileService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ hasSeenOnboardingMessage })
+        body: JSON.stringify({ hasSeenOnboardingMessage }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -447,7 +450,8 @@ export class ProfileService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(profileData)
+        body: JSON.stringify(profileData),
+        credentials: 'include',
       });
 
       if (!response.ok) {

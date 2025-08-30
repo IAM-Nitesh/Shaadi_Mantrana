@@ -357,6 +357,7 @@ export class MatchingService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId, type }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -418,6 +419,7 @@ export class MatchingService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -455,7 +457,8 @@ export class MatchingService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -503,7 +506,8 @@ export class MatchingService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ targetUserId })
+        body: JSON.stringify({ targetUserId }),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -553,7 +557,8 @@ export class MatchingService {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ connectionId })
+          body: JSON.stringify({ connectionId }),
+          credentials: 'include',
         });
 
         const data = await response.json();
@@ -637,6 +642,7 @@ export class MatchingService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok && response.status !== 304) {
@@ -706,6 +712,7 @@ export class MatchingService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok && response.status !== 304) {
@@ -779,6 +786,7 @@ export class MatchingService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok && response.status !== 304) {
@@ -974,6 +982,7 @@ export class MatchingService {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
