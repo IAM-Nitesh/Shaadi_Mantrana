@@ -6,6 +6,7 @@
 import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 
 // use configService.apiBaseUrl directly
 
@@ -104,12 +105,11 @@ export class ProfileService {
         return [];
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/profiles?${params}`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/profiles?${params}`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
+        timeout: 15000
       });
 
       if (!response.ok) {
@@ -117,10 +117,10 @@ export class ProfileService {
           // No profiles found, return empty array
           return [];
         }
-        throw new Error(`Failed to fetch profiles: ${response.statusText}`);
+        throw new Error(`Failed to fetch profiles: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       return data.profiles || [];
     } catch (error: unknown) {
       // console.error('Error fetching profiles:', error);
@@ -188,12 +188,11 @@ export class ProfileService {
         return null;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
-        method: 'GET',
+      const response = await apiClient.get('/api/profiles/me', {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
@@ -210,7 +209,7 @@ export class ProfileService {
         return null;
       }
 
-      const data = await response.json();
+      const data = response.data;
       // console.log('🔍 Backend profile response:', data);
       
       // The backend returns profile data nested under data.profile.profile

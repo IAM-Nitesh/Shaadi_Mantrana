@@ -24,6 +24,12 @@ router.get('/profile', authenticateToken, (req, res) => authController.getProfil
 router.post('/refresh', (req, res) => authController.refreshSession(req, res));
 router.post('/logout', authenticateToken, (req, res) => authController.logout(req, res));
 
+// Auth status endpoint
+router.get('/status', (req, res) => authController.getAuthStatus(req, res));
+
+// Token endpoint for frontend
+router.get('/token', (req, res) => authController.getToken(req, res));
+
 // Check if an email is preapproved
 router.get('/preapproved/check', (req, res, next) => {
   // IMPROVED explicit CORS headers for this route

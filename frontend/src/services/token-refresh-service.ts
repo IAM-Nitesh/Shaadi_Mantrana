@@ -3,6 +3,7 @@
 
 import logger from '../utils/logger';
 import { config as configService } from './configService';
+import { apiClient } from '../utils/api-client';
 
 export interface TokenRefreshOptions {
   refreshInterval?: number; // How often to check for token refresh (default: 5 minutes)
@@ -130,16 +131,13 @@ class TokenRefreshService {
     try {
       logger.debug('🔄 TokenRefreshService: Performing token refresh...');
 
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies
+      const response = await apiClient.post('/api/auth/refresh', null, {
+        credentials: 'include',
+        timeout: 10000
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = response.data;
 
         if (result.success) {
           logger.debug('✅ TokenRefreshService: Token refresh successful');
@@ -151,8 +149,8 @@ class TokenRefreshService {
           throw new Error(result.error || 'Token refresh failed');
         }
       } else {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        const errorData = response.data?.error || response.data?.message || 'Request failed';
+        throw new Error(errorData || `HTTP ${response.status}: Request failed`);
       }
     } catch (error) {
       logger.error('❌ TokenRefreshService: Token refresh failed:', error);
@@ -186,16 +184,16 @@ class TokenRefreshService {
   // Get current token information
   private async getCurrentTokenInfo(): Promise<TokenInfo | null> {
     try {
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/token`, {
-        method: 'GET',
+      const response = await apiClient.get('/api/auth/token', {
         credentials: 'include',
+        timeout: 5000
       });
 
       if (!response.ok) {
         return null;
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success && data.token) {
         // Decode JWT to get expiration time

@@ -3,6 +3,7 @@
 
 import { config as configService } from './configService';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 // use configService.apiBaseUrl directly
 
 export interface Invitation {
@@ -37,18 +38,16 @@ export class EmailInvitationService {
      }
  
      try {
-       const response = await fetch(`${apiBaseUrl}/api/invitations/send`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email }),
+       const response = await apiClient.post('/api/invitations/send', { email }, {
+         timeout: 15000
        });
        
        if (!response.ok) {
-         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-         throw new Error(errorData.error || 'Failed to send invitation');
+         const errorData = response.data?.error || response.data?.message || 'Failed to send invitation';
+         throw new Error(errorData);
        }
        
-       return await response.json();
+       return response.data;
      } catch (error) {
        logger.error('EmailInvitationService.sendInvitation error:', error);
        throw error;
@@ -64,17 +63,15 @@ export class EmailInvitationService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/invitations`, {
-         method: 'GET',
-         headers: { 'Content-Type': 'application/json' },
-       });
+      const response = await apiClient.get('/api/invitations', {
+        timeout: 15000
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch invitations');
       }
       
-      const data = await response.json();
-      return data.invitations || [];
+             return response.data.invitations || [];
     } catch (error) {
       logger.error('EmailInvitationService.getInvitations error:', error);
       return [];
@@ -89,11 +86,10 @@ export class EmailInvitationService {
       return false;
     }
 
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/invitations/${encodeURIComponent(email)}`, {
-         method: 'DELETE',
-         headers: { 'Content-Type': 'application/json' },
-       });
+        try {
+      const response = await apiClient.delete(`/api/invitations/${encodeURIComponent(email)}`, {
+        timeout: 15000
+      });
       
       return response.ok;
     } catch (error) {

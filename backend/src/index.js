@@ -26,11 +26,15 @@ const config = require('./config');
 const corsOptions = {
   origin: function(origin, callback) {
     const allowedOrigins = [
-      'https://shaadi-mantrana-app-frontend.vercel.app', // Production
-      'http://localhost:3000' // Local development
+      'https://shaadi-mantrana-app-frontend.vercel.app', // Production frontend
+      'https://shaadi-mantrana.onrender.com', // Production backend (for health checks)
+      'http://localhost:3000', // Local development
+      'http://localhost:3001', // Local backend
+      'http://127.0.0.1:3000', // Local development alternative
+      'http://127.0.0.1:3001'  // Local backend alternative
     ];
     
-    // Allow requests with no origin (mobile apps, Postman)
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -39,8 +43,21 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Cache-Control',
+    'X-File-Name'
+  ],
+  exposedHeaders: [
+    'Content-Length',
+    'X-Requested-With',
+    'X-Total-Count'
+  ]
 };
 
 // Apply CORS middleware BEFORE helmet
@@ -60,7 +77,11 @@ app.use(helmet({
       connectSrc: [
         "'self'", 
         "https://shaadi-mantrana-app-frontend.vercel.app",
-        "http://localhost:3000"
+        "https://shaadi-mantrana.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001"
       ],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
