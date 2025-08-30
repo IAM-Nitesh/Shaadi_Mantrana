@@ -44,7 +44,7 @@ const FIELD_HINTS: { [key: string]: FieldConfig } = {
   gender: {
     hint: "Select your gender",
     placeholder: "Choose gender",
-    validation: (value: string) => value && ['Male', 'Female'].includes(value),
+    validation: (value: any) => !!value && ['Male', 'Female'].includes(value),
     errorMessage: "Please select your gender"
   },
   dateOfBirth: {
@@ -86,7 +86,7 @@ const FIELD_HINTS: { [key: string]: FieldConfig } = {
   complexion: {
     hint: "Select your skin complexion",
     placeholder: "Choose complexion",
-    validation: (value: string) => value && ['Fair', 'Medium', 'Dark'].includes(value),
+    validation: (value: string) => !!value && ['Fair', 'Medium', 'Dark'].includes(value),
     errorMessage: "Please select your skin complexion"
   },
   education: {
@@ -126,7 +126,7 @@ const FIELD_HINTS: { [key: string]: FieldConfig } = {
   maritalStatus: {
     hint: "Select your current marital status",
     placeholder: "Choose status",
-    validation: (value: string) => value && ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce'].includes(value),
+    validation: (value: string) => !!value && ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce'].includes(value),
     errorMessage: "Please select your marital status"
   },
   father: {
@@ -168,7 +168,7 @@ const FIELD_HINTS: { [key: string]: FieldConfig } = {
   manglik: {
     hint: "Select your Manglik status",
     placeholder: "Choose status",
-    validation: (value: string) => value && ['Yes', 'No', 'Dont Know'].includes(value),
+    validation: (value: string) => !!value && ['Yes', 'No', 'Dont Know'].includes(value),
     errorMessage: "Please select your Manglik status"
   },
   fatherGotra: {
@@ -218,25 +218,25 @@ const FIELD_HINTS: { [key: string]: FieldConfig } = {
   eatingHabit: {
     hint: "Select your eating preference",
     placeholder: "Choose preference",
-    validation: (value: string) => value && ['Vegetarian', 'Non-Vegetarian', 'Eggetarian'].includes(value),
+    validation: (value: string) => !!value && ['Vegetarian', 'Non-Vegetarian', 'Eggetarian'].includes(value),
     errorMessage: "Please select your eating preference"
   },
   smokingHabit: {
     hint: "Select your smoking preference",
     placeholder: "Choose preference",
-    validation: (value: string) => value && ['Yes', 'No', 'Occasionally'].includes(value),
+    validation: (value: string) => !!value && ['Yes', 'No', 'Occasionally'].includes(value),
     errorMessage: "Please select your smoking preference"
   },
   drinkingHabit: {
     hint: "Select your drinking preference",
     placeholder: "Choose preference",
-    validation: (value: string) => value && ['Yes', 'No', 'Occasionally'].includes(value),
+    validation: (value: string) => !!value && ['Yes', 'No', 'Occasionally'].includes(value),
     errorMessage: "Please select your drinking preference"
   },
   settleAbroad: {
     hint: "Select your preference for settling abroad",
     placeholder: "Choose preference",
-    validation: (value: string) => value && ['Yes', 'No', 'Maybe'].includes(value),
+    validation: (value: string) => !!value && ['Yes', 'No', 'Maybe'].includes(value),
     errorMessage: "Please select your preference for settling abroad"
   },
   interests: {
@@ -518,7 +518,7 @@ function ProfileContent() {
   }, []);
 
   // For date picker state
-  const [dateValue, setDateValue] = useState({ startDate: null, endDate: null });
+  const [dateValue, setDateValue] = useState<{ startDate: string | null; endDate: string | null }>({ startDate: null, endDate: null });
   // For time picker state
   const [clockTime, setClockTime] = useState(new Date());
 
@@ -855,15 +855,15 @@ function ProfileContent() {
 
   // Add lockout timer for onboarding overlay
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    let interval: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | undefined = undefined;
+    let interval: NodeJS.Timeout | undefined = undefined;
     if (showOnboarding) {
       // This useEffect is no longer needed as OnboardingOverlay handles its own timer
       logger.debug('✅ Onboarding overlay is visible');
     }
     return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
+      if (timer) clearTimeout(timer);
+      if (interval) clearInterval(interval);
     };
   }, [showOnboarding]);
 
@@ -907,15 +907,15 @@ function ProfileContent() {
 
   // Add lockout timer for onboarding overlay
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    let interval: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | undefined = undefined;
+    let interval: NodeJS.Timeout | undefined = undefined;
     if (showOnboarding) {
       // This useEffect is no longer needed as OnboardingOverlay handles its own timer
       logger.debug('✅ Onboarding overlay is visible');
     }
     return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
+      if (timer) clearTimeout(timer);
+      if (interval) clearInterval(interval);
     };
   }, [showOnboarding]);
 
@@ -1218,7 +1218,7 @@ function ProfileContent() {
       }
 
       // Upload image to B2 if there's a temporary image
-      let uploadedImageUrl = null;
+      let uploadedImageUrl: string | null = null;
       if (tempImageFile) {
         const loadingToast = ToastService.loading('☁️ Saving your profile picture...');
         try {
@@ -1283,7 +1283,7 @@ function ProfileContent() {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Refresh profile data from backend to ensure all fields are properly updated
-        let refreshedProfile = null;
+        let refreshedProfile: Record<string, any> | null = null;
         try {
           // Add cache-busting parameter to ensure fresh data
           const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
@@ -1313,7 +1313,7 @@ function ProfileContent() {
               };
               setProfile(refreshedProfile);
               logger.debug('🔄 Profile refreshed from backend with cache-busting:', refreshedProfile);
-              logger.debug('📊 Refreshed profile completeness:', refreshedProfile.profileCompleteness);
+              logger.debug('📊 Refreshed profile completeness:', refreshedProfile && typeof refreshedProfile === 'object' ? refreshedProfile.profileCompleteness : null);
             } else {
               logger.error('❌ Invalid profile data structure in response:', data);
             }
@@ -2216,7 +2216,7 @@ function ProfileContent() {
             setHasSeenOnboarding(true);
             
             // If profile is incomplete, enable edit mode
-            if (profileCompletenessFromApi < 100) {
+            if ((profileCompletenessFromApi ?? 0) < 100) {
               setIsEditing(true);
             }
           }
@@ -2330,7 +2330,7 @@ function ProfileContent() {
               {(tempImageUrl || signedImageUrl) ? (
                 <div className="relative">
                   <Image
-                    src={tempImageUrl || signedImageUrl}
+                    src={tempImageUrl || signedImageUrl || '/icons/user.svg'}
                     alt="Profile"
                     width={128}
                     height={128}
@@ -2638,7 +2638,10 @@ function ProfileContent() {
                           return isNaN(date.getTime()) ? undefined : date;
                         })() : undefined}
                         onChange={date => {
-                          setDateValue({ startDate: date, endDate: date });
+                          setDateValue({ 
+                            startDate: date ? date.toISOString().split('T')[0] : null, 
+                            endDate: date ? date.toISOString().split('T')[0] : null 
+                          });
                           // Store the date as an ISO string for consistency
                           const dateString = date ? date.toISOString().split('T')[0] : '';
                           setProfile({ ...profile, dateOfBirth: dateString });
@@ -2673,7 +2676,7 @@ function ProfileContent() {
                       <TimePicker
                         time={clockTime}
                         onChange={date => {
-                          setClockTime(date);
+                          if (date) setClockTime(date);
                           setProfile({ ...profile, timeOfBirth: date });
                         }}
                         className="w-full"
