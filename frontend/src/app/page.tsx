@@ -8,6 +8,7 @@ import { safeGsap } from '../components/SafeGsap';
 import HeartbeatLoader from '../components/HeartbeatLoader';
 import ToastService from '../services/toastService';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 
 export default function Home() {
   const [email, setEmail] = useState('');
@@ -31,11 +32,10 @@ export default function Home() {
 
   const isApprovedEmail = async (email: string) => {
     try {
-      // Use the backend URL from config service
-      const backendUrl = configService.apiBaseUrl;
-      const response = await fetch(`${backendUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email.trim().toLowerCase())}`);
-      const data = await response.json();
-      return data.preapproved;
+      const response = await apiClient.get(`/api/auth/preapproved/check?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+        timeout: 10000
+      });
+      return response.data.preapproved;
     } catch (error) {
       logger.error('Error checking email approval:', error);
       return false;
@@ -212,22 +212,15 @@ export default function Home() {
 
   const sendOtpToBackend = async (email: string) => {
     try {
-      // Use the backend URL from config service
-      const backendUrl = configService.apiBaseUrl;
-      const response = await fetch(`${backendUrl}/api/auth/send-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      const response = await apiClient.post('/api/auth/send-otp', { email }, {
+        timeout: 15000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || 'Failed to send OTP');
+        throw new Error(response.data?.error || 'Failed to send OTP');
       }
 
-      return await response.json();
+      return response.data;
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new Error(error.message || 'Failed to send OTP');

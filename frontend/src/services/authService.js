@@ -1,12 +1,11 @@
 import { config as configService } from './configService';
+import { apiClient } from '../utils/api-client';
 
 export const sendOTP = async (email) => {
   try {
-    const response = await fetch(`${configService.apiBaseUrl}/api/auth/send-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await apiClient.post('/api/auth/send-otp', { email }, {
       credentials: 'include',
-      body: JSON.stringify({ email }),
+      timeout: 15000
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -21,11 +20,9 @@ export const sendOTP = async (email) => {
 
 export const verifyOTP = async (email, otp) => {
   try {
-    const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await apiClient.post('/api/auth/verify-otp', { email, otp }, {
       credentials: 'include',
-      body: JSON.stringify({ email, otp }),
+      timeout: 15000
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
