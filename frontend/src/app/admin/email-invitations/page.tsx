@@ -41,7 +41,8 @@ export default function EmailInvitations() {
       const response = await fetch('/api/admin/invitations', {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -79,7 +80,8 @@ export default function EmailInvitations() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email: newEmail.trim() })
+        body: JSON.stringify({ email: newEmail.trim() }),
+        credentials: 'include',
       });
 
       logger.debug('Response status:', response.status);
@@ -112,7 +114,8 @@ export default function EmailInvitations() {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include',
       });
 
       if (response.ok) {
