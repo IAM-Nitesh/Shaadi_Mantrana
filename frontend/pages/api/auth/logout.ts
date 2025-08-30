@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Auth Logout API: Starting logout process...');
 
     // Get auth token from cookies
-    const authToken = req.cookies.authToken;
+    const authToken = req.cookies.accessToken;
 
     if (authToken) {
       // Call backend logout endpoint
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Auth Logout API: Clearing authentication cookies');
 
     res.setHeader('Set-Cookie', [
-      'authToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
+      'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
       'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
       'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
     ]);
@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Still clear cookies even if there's an error
     res.setHeader('Set-Cookie', [
-      'authToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
+      'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
       'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
       'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
     ]);

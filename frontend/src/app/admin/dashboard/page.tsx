@@ -48,7 +48,8 @@ export default function AdminDashboard() {
       const statsResponse = await fetch('/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include',
       });
 
       logger.debug('🔍 Dashboard: Response status:', statsResponse.status);

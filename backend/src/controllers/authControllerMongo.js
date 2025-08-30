@@ -481,6 +481,30 @@ class AuthController {
         }
       };
 
+      // Set HTTP-only cookies for the session
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+      };
+
+      // Set access token cookie
+      res.cookie('accessToken', session.accessToken, cookieOptions);
+      
+      // Set refresh token cookie with longer expiration
+      const refreshCookieOptions = {
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      };
+      res.cookie('refreshToken', session.refreshToken, refreshCookieOptions);
+      
+      // Set session ID cookie
+      res.cookie('sessionId', session.sessionId, cookieOptions);
+
+      console.log('🍪 Cookies set for user:', sanitizedEmail);
+
       res.status(200).json(responseData);
 
     } catch (error) {
@@ -558,7 +582,12 @@ class AuthController {
   // Refresh session token
   async refreshSession(req, res) {
     try {
-      const { refreshToken } = req.body;
+      let refreshToken = req.body.refreshToken;
+
+      // If no refresh token in body, try cookies
+      if (!refreshToken && req.cookies?.refreshToken) {
+        refreshToken = req.cookies.refreshToken;
+      }
 
       if (!refreshToken) {
         return res.status(400).json({
@@ -594,6 +623,17 @@ class AuthController {
         audience: 'shaadi-mantra-app'
       });
 
+      // Set new access token cookie
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+      };
+
+      res.cookie('accessToken', newAccessToken, cookieOptions);
+
       res.status(200).json({
         success: true,
         accessToken: newAccessToken,
@@ -619,6 +659,20 @@ class AuthController {
         console.log(`✅ Session logged out: ${sessionId}`);
       }
 
+      // Clear authentication cookies
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+      };
+
+      res.clearCookie('accessToken', cookieOptions);
+      res.clearCookie('refreshToken', cookieOptions);
+      res.clearCookie('sessionId', cookieOptions);
+
+      console.log('🍪 Cookies cleared for logout');
+
       res.status(200).json({
         success: true,
         message: 'Logged out successfully'
@@ -636,12 +690,26 @@ class AuthController {
   // Get auth status (returns profile when authenticated, otherwise authenticated:false)
   async getAuthStatus(req, res) {
     try {
+      // Set cache control headers to prevent browser caching
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+
       // Get user from session token if available
       const authHeader = req.headers.authorization;
       let user = null;
+      let token = null;
 
+      // First try Authorization header
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+        token = authHeader.substring(7);
+      } 
+      // Then try cookies
+      else if (req.cookies?.accessToken) {
+        token = req.cookies.accessToken;
+      }
+
+      if (token) {
         try {
           const decoded = jwt.verify(token, config.jwtSecret);
           const sessionData = JWTSessionManager.getSession(decoded.sessionId);
