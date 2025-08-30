@@ -2,15 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import CustomIcon from '../../components/CustomIcon';
 import AdminRouteGuard from '../../components/AdminRouteGuard';
 import { safeGsap } from '../../components/SafeGsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useServerAuth } from '../../hooks/useServerAuth';
-import { getClientToken, getAuthStatus } from '../../utils/client-auth';
+import { getClientToken } from '../../utils/client-auth';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+
+// Type assertion for EllipsisVerticalIcon
+const EllipsisVerticalIconTyped = EllipsisVerticalIcon as React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import logger from '../../utils/logger';
 
@@ -57,11 +61,11 @@ function AdminPageContent() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [addingUser, setAddingUser] = useState(false);
-  const [resumingUser, setResumingUser] = useState<string | null>(null);
   const [pausingUser, setPausingUser] = useState<string | null>(null);
   const [sendingInvite, setSendingInvite] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Pagination and sorting
   const [currentPage, setCurrentPage] = useState(1);
@@ -113,7 +117,7 @@ function AdminPageContent() {
 
   const fetchStats = async () => {
     try {
-  const authToken = await getClientToken();
+    const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -136,7 +140,7 @@ function AdminPageContent() {
 
   const fetchUsers = async () => {
     try {
-  const authToken = await getClientToken();
+    const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -161,8 +165,8 @@ function AdminPageContent() {
 
   const sortUsers = (users: User[]) => {
     return users.sort((a, b) => {
-      let aValue: any, bValue: any;
-      
+      let aValue: string | number | Date, bValue: string | number | Date;
+
       switch (sortField) {
         case 'firstName':
           aValue = a.fullName || `${a.firstName} ${a.lastName}`.trim() || a.email;
@@ -204,7 +208,7 @@ function AdminPageContent() {
     setError('');
     
     try {
-  const authToken = await getClientToken();
+    const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -247,7 +251,7 @@ function AdminPageContent() {
     setError('');
     
     try {
-  const authToken = await getClientToken();
+    const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -281,48 +285,12 @@ function AdminPageContent() {
     }
   };
 
-  const resumeUser = async (userId: string) => {
-    setResumingUser(userId);
-    setError('');
-    
-    try {
-  const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
-      const response = await fetch(`/api/admin/users/${userId}/resume`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        setSuccess('User resumed successfully!');
-        await Promise.all([fetchUsers(), fetchStats()]);
-        
-        // Auto-clear success message
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to resume user');
-      }
-    } catch (error) {
-      setError('Failed to resume user');
-    } finally {
-      setResumingUser(null);
-    }
-  };
-
   const sendInvite = async (userId: string, userEmail: string) => {
     setSendingInvite(userId);
     setError('');
     
     try {
-  const authToken = await getClientToken();
+    const authToken = await getClientToken();
       if (!authToken) {
         logger.error('No auth token available');
         return;
@@ -363,9 +331,14 @@ function AdminPageContent() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+
+    // Add delay for logout animation
+    setTimeout(async () => {
+      await logout();
+      router.push('/');
+    }, 2000); // 2 second delay for animation
   };
 
   // Pagination calculations
@@ -438,13 +411,23 @@ function AdminPageContent() {
               <h2 className="text-xl font-semibold text-gray-900 mb-2">User Management</h2>
               <p className="text-sm text-gray-600">Add new users and manage existing accounts</p>
             </div>
-            <button
-              onClick={() => setShowAddUserModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
-            >
-              <CustomIcon name="ri-user-add-line" size={20} />
-              <span>Add User</span>
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowAddUserModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+              >
+                <CustomIcon name="ri-user-add-line" size={20} />
+                <span>Add User</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl font-semibold hover:from-gray-600 hover:to-gray-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CustomIcon name="ri-logout-box-line" size={20} />
+                <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -638,7 +621,7 @@ function AdminPageContent() {
                             <Menu as="div" className="relative inline-block text-left">
                               <div>
                                 <Menu.Button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                                  <EllipsisVerticalIcon className="h-5 w-5" />
+                                  <EllipsisVerticalIconTyped className="h-5 w-5" aria-hidden={true} />
                                 </Menu.Button>
                               </div>
                               <Transition
@@ -653,23 +636,23 @@ function AdminPageContent() {
                                 <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg z-50 focus:outline-none">
                                   <div className="py-1">
                                     {!user.isPending && !user.invitationSent && (
-                                      <Menu.Item>
+                                      <Menu.Item as="button">
                                         {({ active }) => (
-                                          <button
+                                          <span
                                             onClick={() => sendInvite(user._id, user.email)}
-                                            disabled={sendingInvite === user._id}
                                             className={`block w-full text-left px-4 py-2 text-sm ${
                                               active ? 'bg-blue-50 text-blue-600' : 'text-blue-600'
-                                            } disabled:opacity-50`}
+                                            }${sendingInvite === user._id ? ' opacity-50 cursor-not-allowed' : ''}`}
+                                            style={{ pointerEvents: sendingInvite === user._id ? 'none' : 'auto' }}
                                           >
                                             {sendingInvite === user._id ? 'Sending...' : 'Send Invite'}
-                                          </button>
+                                          </span>
                                         )}
                                       </Menu.Item>
                                     )}
                                     
                                     {!user.isPending && (
-                                      <Menu.Item>
+                                      <Menu.Item as={Fragment}>
                                         {({ active }) => (
                                           <button
                                             onClick={() => pauseUser(user._id, !user.approvedByAdmin)}
@@ -688,16 +671,16 @@ function AdminPageContent() {
                                     )}
                                     
                                     {user.status === 'paused' && (
-                                      <Menu.Item>
+                                      <Menu.Item as={Fragment}>
                                         {({ active }) => (
                                           <button
-                                            onClick={() => resumeUser(user._id)}
-                                            disabled={resumingUser === user._id}
+                                            onClick={() => pauseUser(user._id, true)}
+                                            disabled={pausingUser === user._id}
                                             className={`block w-full text-left px-4 py-2 text-sm ${
                                               active ? 'bg-green-50 text-green-600' : 'text-green-600'
                                             } disabled:opacity-50`}
                                           >
-                                            {resumingUser === user._id ? 'Resuming...' : 'Resume'}
+                                            {pausingUser === user._id ? 'Resuming...' : 'Resume'}
                                           </button>
                                         )}
                                       </Menu.Item>
@@ -810,65 +793,79 @@ function AdminPageContent() {
         </div>
       )}
 
-  {/* Logout Animation Overlay */}
-  <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-20"></div>
-        
-        {/* Animated Hearts Background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Heart 1 */}
-          <div className="floating-heart absolute" style={{ left: '10%', top: '20%' }}>
-            <div className="w-6 h-6 text-red-400 opacity-80">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
+      {/* Logout Animation Overlay */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-20"
+               style={{
+                 backgroundImage: 'linear-gradient(to right, #f1f5f9 1px, transparent 1px), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px)',
+                 backgroundSize: '6rem 4rem'
+               }}>
+          </div>
+
+          {/* Animated Hearts Background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Heart 1 */}
+            <div className="absolute animate-bounce" style={{ left: '10%', top: '20%', animationDelay: '0s' }}>
+              <div className="w-6 h-6 text-red-400 opacity-80">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+            </div>
+            {/* Heart 2 */}
+            <div className="absolute animate-bounce" style={{ right: '15%', top: '30%', animationDelay: '0.5s' }}>
+              <div className="w-5 h-5 text-pink-400 opacity-70">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+            </div>
+            {/* Heart 3 */}
+            <div className="absolute animate-bounce" style={{ left: '20%', bottom: '25%', animationDelay: '1s' }}>
+              <div className="w-4 h-4 text-rose-400 opacity-90">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+            </div>
+            {/* Heart 4 */}
+            <div className="absolute animate-bounce" style={{ right: '25%', bottom: '35%', animationDelay: '1.5s' }}>
+              <div className="w-5 h-5 text-red-500 opacity-60">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
             </div>
           </div>
-          {/* Heart 2 */}
-          <div className="floating-heart absolute" style={{ right: '15%', top: '30%' }}>
-            <div className="w-5 h-5 text-pink-400 opacity-70">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
+
+          {/* Main Content */}
+          <div className="relative z-10 text-center">
+            {/* Brand Logo */}
+            <div className="w-32 h-32 mx-auto mb-8 animate-pulse">
+              <Image src="/icon.svg" alt="Shaadi Mantrana" width={128} height={128} className="w-full h-full" />
             </div>
-          </div>
-          {/* Heart 3 */}
-          <div className="floating-heart absolute" style={{ left: '20%', bottom: '25%' }}>
-            <div className="w-4 h-4 text-rose-400 opacity-90">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-            </div>
-          </div>
-          {/* Heart 4 */}
-          <div className="floating-heart absolute" style={{ right: '25%', bottom: '35%' }}>
-            <div className="w-5 h-5 text-red-500 opacity-60">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
+
+            {/* Loading Spinner */}
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
+
+            {/* Loading Text */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Logging out...</h2>
+            <p className="text-gray-600 mb-8">Thank you for using Shaadi Mantrana</p>
+
+            {/* Progress dots */}
+            <div className="flex justify-center space-x-2">
+              <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
           </div>
         </div>
-        
-        {/* Main Content */}
-        <div className="relative z-10 text-center">
-          {/* Brand Logo */}
-          <div className="logout-logo w-64 h-64 mx-auto mb-8">
-            <img src="/icon.svg" alt="Shaadi Mantrana" className="w-full h-full heartbeat-animation" />
-          </div>
-          
-          {/* Loading Text */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Logging out...</h2>
-          <p className="text-gray-600 mb-8">Thank you for using Shaadi Mantrana</p>
-          
-          {/* Loading Dots - Removed red dots */}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-
 export default function AdminPage() {
   return (
     <AdminRouteGuard>
