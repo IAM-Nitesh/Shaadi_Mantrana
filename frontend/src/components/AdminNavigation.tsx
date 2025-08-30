@@ -2,60 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-// Avoid importing server-only auth service in client components
-import { config as configService } from '../services/configService';
+import { useServerAuth } from '../hooks/useServerAuth';
 
 export default function AdminNavigation() {
-  const router = useRouter();
   const pathname = usePathname();
+  const { user, isAuthenticated, isLoading } = useServerAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAdminStatus();
-  }, []);
-
-  const checkAdminStatus = async () => {
-    try {
-      const authRes = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
-      if (!authRes.ok) {
-        setLoading(false);
-        return;
-      }
-      const authStatus = await authRes.json();
-      if (!authStatus.authenticated) {
-        setLoading(false);
-        return;
-      }
-
-      const tokenRes = await fetch('/api/auth/token', { method: 'GET', credentials: 'include' });
-      const tokenData = tokenRes.ok ? await tokenRes.json().catch(() => ({})) : {};
-      const token = tokenData?.token;
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setIsAdmin(userData.profile?.role === 'admin');
-      }
-    } catch (error) {
-
-    } finally {
-      setLoading(false);
+    // Check if user is admin when authentication state changes
+    if (!isLoading && isAuthenticated && user) {
+      setIsAdmin(user.role === 'admin');
+    } else if (!isLoading && !isAuthenticated) {
+      setIsAdmin(false);
     }
-  };
+  }, [isAuthenticated, isLoading, user]);
 
-  if (loading || !isAdmin) {
+  // Don't render navigation if not admin or still loading
+  if (isLoading || !isAuthenticated || !isAdmin) {
     return null;
   }
 

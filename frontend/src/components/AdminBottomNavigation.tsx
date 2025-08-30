@@ -1,74 +1,70 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
+import { useServerAuth } from '../hooks/useServerAuth';
 // Avoid importing server-only auth service in client components
 import { safeGsap } from './SafeGsap';
 import ToastService from '../services/toastService';
 
 export default function AdminBottomNavigation() {
   const pathname = usePathname();
-  const router = useRouter();
+  const { logout } = useServerAuth();
 
   // Only show on admin pages
-  if (!pathname.startsWith('/admin')) {
+  if (!pathname?.startsWith('/admin')) {
     return null;
   }
 
   const handleLogout = async () => {
     try {
-      const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      const result = res.ok ? await res.json().catch(() => ({ success: true })) : { success: false };
+      // Call the centralized logout method
+      await logout();
 
-      if (result.success) {
-        const canAnimate = typeof document !== 'undefined' && (
-          document.querySelector('.admin-content') || document.querySelector('.logout-overlay')
-        );
+      // Handle the beautiful logout animation and redirect
+      const canAnimate = typeof document !== 'undefined' && (
+        document.querySelector('.admin-content') || document.querySelector('.logout-overlay')
+      );
 
-        if (canAnimate) {
-          const tl = safeGsap.timeline?.();
+      if (canAnimate) {
+        const tl = safeGsap.timeline?.();
 
-          tl?.to?.('.admin-content', {
-            opacity: 0,
-            scale: 0.95,
-            y: -20,
-            duration: 0.6,
-            ease: 'power2.inOut'
-          });
-
-          tl?.set?.('.logout-overlay', { display: 'flex', opacity: 0, scale: 0.9, zIndex: 9999 });
-          tl?.to?.('.logout-overlay', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' });
-
-          tl?.fromTo?.('.logout-circle', { scale: 0, rotation: -180, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 1, ease: 'elastic.out(1, 0.6)' }, '-=0.3');
-          tl?.fromTo?.('.logout-checkmark', { scale: 0, opacity: 0, rotation: -90 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.8, ease: 'back.out(2)' }, '-=0.5');
-
-          tl?.fromTo?.('.logout-title', { y: 30, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' }, '-=1.5');
-          tl?.fromTo?.('.logout-subtitle', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
-
-          tl?.to?.('.logout-circle .absolute.animate-bounce', { y: '-=8', x: '+=3', duration: 1.5, ease: 'sine.inOut', repeat: -1, yoyo: true, stagger: 0.3 }, '-=3');
-
-          tl?.to?.('.logout-overlay', { opacity: 0, scale: 1.05, y: -30, duration: 0.7, delay: 1.5, ease: 'power2.in', onComplete: () => { window.location.href = '/'; } });
-        } else {
-          safeGsap.set?.('.logout-overlay', { display: 'flex', opacity: 0, scale: 0.9, zIndex: 9999 });
-          safeGsap.to?.('.logout-overlay', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' });
-          setTimeout(() => { window.location.href = '/'; }, 1600);
-        }
-
-      } else {
-        safeGsap.to?.('.admin-content', {
-          keyframes: [ { x: -10 }, { x: 10 }, { x: -5 }, { x: 0 } ],
-          duration: 0.5,
-          ease: 'power2.out',
-          onComplete: () => ToastService.error('⚠️ There was an issue logging out. Please try again.')
+        tl?.to?.('.admin-content', {
+          opacity: 0,
+          scale: 0.95,
+          y: -20,
+          duration: 0.6,
+          ease: 'power2.inOut'
         });
+
+        tl?.set?.('.logout-overlay', { display: 'flex', opacity: 0, scale: 0.9, zIndex: 9999 });
+        tl?.to?.('.logout-overlay', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' });
+
+        tl?.fromTo?.('.logout-circle', { scale: 0, rotation: -180, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 1, ease: 'elastic.out(1, 0.6)' }, '-=0.3');
+        tl?.fromTo?.('.logout-checkmark', { scale: 0, opacity: 0, rotation: -90 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.8, ease: 'back.out(2)' }, '-=0.5');
+
+        tl?.fromTo?.('.logout-title', { y: 30, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' }, '-=1.5');
+        tl?.fromTo?.('.logout-subtitle', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+
+        tl?.to?.('.logout-circle .absolute.animate-bounce', { y: '-=8', x: '+=3', duration: 1.5, ease: 'sine.inOut', repeat: -1, yoyo: true, stagger: 0.3 }, '-=3');
+
+        tl?.to?.('.logout-overlay', { opacity: 0, scale: 1.05, y: -30, duration: 0.7, delay: 1.5, ease: 'power2.in', onComplete: () => { window.location.href = '/'; } });
+      } else {
+        // Fallback for when animation elements are not available
+        safeGsap.set?.('.logout-overlay', { display: 'flex', opacity: 0, scale: 0.9, zIndex: 9999 });
+        safeGsap.to?.('.logout-overlay', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' });
+        setTimeout(() => { window.location.href = '/'; }, 1600);
       }
-    } catch (error) {
+    } catch {
+      // Enhanced error handling with user feedback
       safeGsap.to?.('.admin-content', {
         keyframes: [ { x: -10 }, { x: 10 }, { x: -5 }, { x: 0 } ],
         duration: 0.5,
         ease: 'power2.out',
-        onComplete: () => ToastService.error('⚠️ There was an issue logging out. Please try again.')
+        onComplete: () => {
+          ToastService.error('⚠️ There was an issue logging out. Please try again.');
+        }
       });
     }
   };
