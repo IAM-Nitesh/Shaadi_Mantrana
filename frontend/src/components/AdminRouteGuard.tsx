@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import HeartbeatLoader from './HeartbeatLoader';
-import { config as configService } from '../services/configService';
+import { useServerAuth } from '../hooks/useServerAuth';
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
@@ -11,83 +11,33 @@ interface AdminRouteGuardProps {
 
 export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const [isChecking, setIsChecking] = useState(true);
+  const { user, isAuthenticated, isLoading, error } = useServerAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      try {
-        // Check if user is authenticated via client-side API
-        const authRes = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
-        if (!authRes.ok) {
-          setError('Authentication required');
-          router.replace('/');
-          return;
-        }
-        const authStatus = await authRes.json();
-        if (!authStatus.authenticated) {
-          setError('Authentication required');
-          router.replace('/');
-          return;
-        }
-
-        // Get a bearer token endpoint for server API calls if available
-        const tokenRes = await fetch('/api/auth/token', { method: 'GET', credentials: 'include' });
-        const tokenData = tokenRes.ok ? await tokenRes.json().catch(() => ({})) : {};
-        const token = tokenData?.token;
-        if (!token) {
-          setError('Authentication required');
-          router.replace('/');
-          return;
-        }
-
-        // Check if user is admin
-        const response = await fetch(`${configService.apiBaseUrl}/api/auth/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          const userRole = userData.profile?.role;
-          
-          if (userRole === 'admin') {
-            setIsAdmin(true);
-          } else {
-            setError('Admin access required');
-            router.replace('/');
-            return;
-          }
-        } else {
-          setError('Authentication failed');
-          router.replace('/');
-          return;
-        }
-      } catch (error) {
-  
-        setError('Authentication failed');
+    // Check admin access when authentication state changes
+    if (!isLoading && isAuthenticated && user) {
+      if (user.role === 'admin') {
+        setIsAdmin(true);
+      } else {
+        // User is authenticated but not admin
         router.replace('/');
-        return;
-      } finally {
-        setIsChecking(false);
       }
-    };
+    } else if (!isLoading && !isAuthenticated) {
+      // User is not authenticated
+      router.replace('/');
+    }
+  }, [isAuthenticated, isLoading, user, router]);
 
-    checkAdminAccess();
-  }, [router]);
-
-  // Show loading state while checking
-  if (isChecking) {
+  // Show loading state while checking authentication
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <HeartbeatLoader 
+          <HeartbeatLoader
             logoSize="xxxxl"
             textSize="xl"
-            text="Verifying Admin Access" 
+            text="Verifying Admin Access"
             className="mb-4"
           />
         </div>
@@ -96,7 +46,7 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   }
 
   // Show error state
-  if (error) {
+  if (error && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -120,11 +70,11 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
     );
   }
 
-  // If admin, render children
-  if (isAdmin) {
+  // Only render children if user is authenticated and is admin
+  if (isAuthenticated && isAdmin) {
     return <>{children}</>;
   }
 
-  // Fallback - should not reach here
+  // Don't render anything while redirecting
   return null;
 } 
