@@ -2,6 +2,7 @@
 import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
 
@@ -256,12 +257,11 @@ export class MatchingService {
         };
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/matching/discovery?page=${page}&limit=${limit}`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/matching/discovery?page=${page}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
@@ -278,10 +278,10 @@ export class MatchingService {
         }
         
         // Try to get error details from response
-        let errorMessage = response.statusText;
+        let errorMessage = 'Request failed';
         try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || response.statusText;
+          const errorData = response.data;
+          errorMessage = errorData?.error || errorData?.message || 'Request failed';
         } catch (parseError) {
           // console.warn('Could not parse error response:', parseError);
         }
@@ -290,7 +290,7 @@ export class MatchingService {
         throw new Error(`Failed to fetch discovery profiles: ${errorMessage}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       
       // Debug: Log the raw data received from backend
       logger.debug('🔍 MatchingService: Raw backend response:', {
@@ -834,19 +834,17 @@ export class MatchingService {
 
       // Fetch both matches and likes in parallel
       const [matchesResponse, likesResponse] = await Promise.all([
-        fetch(`${this.baseUrl}/api/matching/matches`, {
-          method: 'GET',
+        apiClient.get('/api/matching/matches', {
           headers: {
             'Authorization': `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
           },
+          timeout: 15000
         }),
-        fetch(`${this.baseUrl}/api/matching/liked`, {
-          method: 'GET',
+        apiClient.get('/api/matching/liked', {
           headers: {
             'Authorization': `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
           },
+          timeout: 15000
         })
       ]);
 
@@ -859,10 +857,10 @@ export class MatchingService {
         throw new Error(`HTTP error! status: ${matchesResponse.status} / ${likesResponse.status}`);
       }
 
-      const [matchesData, likesData] = await Promise.all([
-        matchesResponse.json(),
-        likesResponse.json()
-      ]);
+      const [matchesData, likesData] = [
+        matchesResponse.data,
+        likesResponse.data
+      ];
 
       logger.debug('📊 Raw API data:', {
         matchesData,
