@@ -1,7 +1,30 @@
 // Client-side auth helpers that call server APIs.
 export async function getAuthStatus() {
   try {
-    const res = await fetch('/api/auth/status', { method: 'GET', credentials: 'include' });
+    const res = await fetch('/api/auth/status', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+
+    // Handle 304 Not Modified - this means we need fresh data
+    if (res.status === 304) {
+      // Force a fresh request by adding a timestamp
+      const freshRes = await fetch(`/api/auth/status?t=${Date.now()}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (!freshRes.ok) return { authenticated: false };
+      return await freshRes.json();
+    }
+
     if (!res.ok) return { authenticated: false };
     return await res.json();
   } catch (err) {
