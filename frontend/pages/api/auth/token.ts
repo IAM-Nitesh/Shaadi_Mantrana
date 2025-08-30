@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Token API: Starting token extraction...');
 
     // Get the authToken from cookies
-    const authToken = req.cookies.authToken;
+    const authToken = req.cookies.accessToken;
 
     if (!authToken) {
       logger.debug('❌ Token API: No authToken cookie found');

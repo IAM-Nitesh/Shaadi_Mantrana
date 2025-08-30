@@ -123,6 +123,7 @@ function AdminPageContent() {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
@@ -145,6 +146,7 @@ function AdminPageContent() {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
@@ -218,6 +220,7 @@ function AdminPageContent() {
           firstName: 'User',
           lastName: 'Name'
         }),
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -257,6 +260,7 @@ function AdminPageContent() {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       const responseData = await response.json();
@@ -293,6 +297,7 @@ function AdminPageContent() {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -331,6 +336,7 @@ function AdminPageContent() {
         body: JSON.stringify({
           email: userEmail
         }),
+        credentials: 'include',
       });
 
       if (response.ok) {

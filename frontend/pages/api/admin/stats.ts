@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Admin Stats API: Fetching admin statistics...');
 
     // Get auth token from cookies
-    const authToken = req.cookies.authToken;
+    const authToken = req.cookies.accessToken;
 
     if (!authToken) {
       logger.debug('❌ Admin Stats API: No auth token found');
