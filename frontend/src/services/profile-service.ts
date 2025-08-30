@@ -6,6 +6,7 @@
 import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 
 // use configService.apiBaseUrl directly
 
@@ -104,12 +105,11 @@ export class ProfileService {
         return [];
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/profiles?${params}`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/profiles?${params}`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
+        timeout: 15000
       });
 
       if (!response.ok) {
@@ -188,12 +188,11 @@ export class ProfileService {
         return null;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
-        method: 'GET',
+      const response = await apiClient.get('/api/profiles/me', {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
