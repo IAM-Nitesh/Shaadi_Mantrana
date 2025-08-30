@@ -10,8 +10,8 @@ const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
 const { User } = require('../models');
 
-// Session management
-const sessions = new Map();
+// Session management - use JWTSessionManager's activeSessions
+// const sessions = new Map(); // Removed - using JWTSessionManager.activeSessions instead
 
 // OTP store with expiration (use Redis in production)
 const otpStore = require('../utils/otpStorage');
@@ -569,7 +569,7 @@ class AuthController {
 
       // Verify refresh token
       const decoded = jwt.verify(refreshToken, config.jwtSecret);
-      const sessionData = sessions.get(decoded.sessionId);
+      const sessionData = JWTSessionManager.getSession(decoded.sessionId);
 
       if (!sessionData) {
         return res.status(401).json({
@@ -615,7 +615,7 @@ class AuthController {
       const sessionId = req.user?.sessionId;
 
       if (sessionId) {
-        sessions.delete(sessionId);
+        JWTSessionManager.revokeSession(sessionId);
         console.log(`✅ Session logged out: ${sessionId}`);
       }
 
@@ -644,7 +644,7 @@ class AuthController {
         const token = authHeader.substring(7);
         try {
           const decoded = jwt.verify(token, config.jwtSecret);
-          const sessionData = sessions.get(decoded.sessionId);
+          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
             // Get full user data from database
@@ -700,7 +700,7 @@ class AuthController {
         const token = authHeader.substring(7);
         try {
           const decoded = jwt.verify(token, config.jwtSecret);
-          const sessionData = sessions.get(decoded.sessionId);
+          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
             return res.status(200).json({
@@ -718,7 +718,7 @@ class AuthController {
       if (sessionToken) {
         try {
           const decoded = jwt.verify(sessionToken, config.jwtSecret);
-          const sessionData = sessions.get(decoded.sessionId);
+          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
             // Generate a new access token
