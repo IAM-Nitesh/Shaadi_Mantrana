@@ -117,10 +117,10 @@ export class ProfileService {
           // No profiles found, return empty array
           return [];
         }
-        throw new Error(`Failed to fetch profiles: ${response.statusText}`);
+        throw new Error(`Failed to fetch profiles: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       return data.profiles || [];
     } catch (error: unknown) {
       // console.error('Error fetching profiles:', error);
@@ -209,7 +209,7 @@ export class ProfileService {
         return null;
       }
 
-      const data = await response.json();
+      const data = response.data;
       // console.log('🔍 Backend profile response:', data);
       
       // The backend returns profile data nested under data.profile.profile
