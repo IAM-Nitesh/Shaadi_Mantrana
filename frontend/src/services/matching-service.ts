@@ -278,10 +278,10 @@ export class MatchingService {
         }
         
         // Try to get error details from response
-        let errorMessage = response.statusText;
+        let errorMessage = 'Request failed';
         try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || response.statusText;
+          const errorData = response.data;
+          errorMessage = errorData?.error || errorData?.message || 'Request failed';
         } catch (parseError) {
           // console.warn('Could not parse error response:', parseError);
         }
@@ -290,7 +290,7 @@ export class MatchingService {
         throw new Error(`Failed to fetch discovery profiles: ${errorMessage}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       
       // Debug: Log the raw data received from backend
       logger.debug('🔍 MatchingService: Raw backend response:', {
@@ -857,10 +857,10 @@ export class MatchingService {
         throw new Error(`HTTP error! status: ${matchesResponse.status} / ${likesResponse.status}`);
       }
 
-      const [matchesData, likesData] = await Promise.all([
-        matchesResponse.json(),
-        likesResponse.json()
-      ]);
+      const [matchesData, likesData] = [
+        matchesResponse.data,
+        likesResponse.data
+      ];
 
       logger.debug('📊 Raw API data:', {
         matchesData,
