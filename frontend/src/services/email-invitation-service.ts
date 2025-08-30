@@ -43,11 +43,11 @@ export class EmailInvitationService {
        });
        
        if (!response.ok) {
-         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-         throw new Error(errorData.error || 'Failed to send invitation');
+         const errorData = response.data?.error || response.data?.message || 'Failed to send invitation';
+         throw new Error(errorData);
        }
        
-       return await response.json();
+       return response.data;
      } catch (error) {
        logger.error('EmailInvitationService.sendInvitation error:', error);
        throw error;
@@ -71,8 +71,7 @@ export class EmailInvitationService {
         throw new Error('Failed to fetch invitations');
       }
       
-      const data = await response.json();
-      return data.invitations || [];
+             return response.data.invitations || [];
     } catch (error) {
       logger.error('EmailInvitationService.getInvitations error:', error);
       return [];

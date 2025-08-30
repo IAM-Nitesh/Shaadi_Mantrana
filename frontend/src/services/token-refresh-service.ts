@@ -137,7 +137,7 @@ class TokenRefreshService {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = response.data;
 
         if (result.success) {
           logger.debug('✅ TokenRefreshService: Token refresh successful');
@@ -149,8 +149,8 @@ class TokenRefreshService {
           throw new Error(result.error || 'Token refresh failed');
         }
       } else {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        const errorData = response.data?.error || response.data?.message || 'Request failed';
+        throw new Error(errorData || `HTTP ${response.status}: Request failed`);
       }
     } catch (error) {
       logger.error('❌ TokenRefreshService: Token refresh failed:', error);
@@ -193,7 +193,7 @@ class TokenRefreshService {
         return null;
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success && data.token) {
         // Decode JWT to get expiration time

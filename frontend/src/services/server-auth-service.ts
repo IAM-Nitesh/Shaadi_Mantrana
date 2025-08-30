@@ -122,7 +122,7 @@ export class ServerAuthService {
         });
 
         if (!response.ok) {
-          throw new Error(response.data?.error || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(response.data?.error || `HTTP ${response.status}: Request failed`);
         }
 
         return response.data;
@@ -196,7 +196,7 @@ export class ServerAuthService {
             throw new Error('Rate limit exceeded. Please wait before trying again.');
           }
           
-          throw new Error(response.data?.message || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(response.data?.message || `HTTP ${response.status}: Request failed`);
         }
 
   logger.debug('🔍 ServerAuthService: Response data:', response.data);
@@ -259,7 +259,7 @@ export class ServerAuthService {
         });
 
         if (!response.ok) {
-          throw new Error(response.data?.error || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(response.data?.error || `HTTP ${response.status}: Request failed`);
         }
 
         return response.data;

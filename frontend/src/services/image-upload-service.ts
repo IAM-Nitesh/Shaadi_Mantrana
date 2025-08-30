@@ -606,14 +606,13 @@ export class ImageUploadService {
   logger.debug(`🔍 Response status: ${response.status}`);
       
   if (!response.ok) {
-    const errorText = await response.text();
     // Treat 404 (not found) as a normal case for users without profile pictures.
     // Use logger.warn to avoid noisy console.error stacks in the browser.
-  logger.warn(`❌ Response not OK: ${errorText}`);
+  logger.warn(`❌ Response not OK: ${response.data}`);
     return null;
   }
 
-      const result = await response.json();
+      const result = response.data;
   logger.info(`✅ Signed URL result:`, result);
       
       // Cache the signed URL
