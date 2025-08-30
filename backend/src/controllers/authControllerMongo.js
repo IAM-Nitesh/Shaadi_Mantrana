@@ -487,7 +487,8 @@ class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        // Remove domain restriction to allow cross-site cookies
+        // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
       };
 
       // Set access token cookie
@@ -629,7 +630,8 @@ class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        // Remove domain restriction to allow cross-site cookies
+        // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
       };
 
       res.cookie('accessToken', newAccessToken, cookieOptions);
@@ -664,7 +666,8 @@ class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        // Remove domain restriction to allow cross-site cookies
+        // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
       };
 
       res.clearCookie('accessToken', cookieOptions);
@@ -690,10 +693,12 @@ class AuthController {
   // Get auth status (returns profile when authenticated, otherwise authenticated:false)
   async getAuthStatus(req, res) {
     try {
-      // Set cache control headers to prevent browser caching
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      // Set comprehensive cache control headers to prevent any caching
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
+      res.set('ETag', `"${Date.now()}-${Math.random()}"`); // Unique ETag to prevent 304
+      res.set('Last-Modified', new Date().toUTCString());
 
       // Get user from session token if available
       const authHeader = req.headers.authorization;
@@ -703,7 +708,7 @@ class AuthController {
       // First try Authorization header
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
-      } 
+      }
       // Then try cookies
       else if (req.cookies?.accessToken) {
         token = req.cookies.accessToken;
@@ -713,7 +718,7 @@ class AuthController {
         try {
           const decoded = jwt.verify(token, config.jwtSecret);
           const sessionData = JWTSessionManager.getSession(decoded.sessionId);
-          
+
           if (sessionData) {
             // Get full user data from database
             const dbUser = await User.findById(decoded.userId).select('-password');
@@ -738,7 +743,8 @@ class AuthController {
         return res.status(200).json({
           authenticated: true,
           user: user,
-          redirectTo: '/dashboard'
+          redirectTo: '/dashboard',
+          timestamp: Date.now() // Add timestamp to ensure uniqueness
         });
       }
 
@@ -746,7 +752,8 @@ class AuthController {
       return res.status(200).json({
         authenticated: false,
         redirectTo: '/',
-        message: 'Not authenticated'
+        message: 'Not authenticated',
+        timestamp: Date.now() // Add timestamp to ensure uniqueness
       });
     } catch (err) {
       console.error('❌ Auth status error:', err);
