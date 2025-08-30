@@ -7,6 +7,7 @@ import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
 import { getUserCompleteness } from '../utils/user-utils';
 import { config as configService } from './configService';
+import { apiClient } from '../utils/api-client';
 
 export interface AuthUser {
   role: string;
@@ -115,19 +116,16 @@ export class ServerAuthService {
       logger.debug('🔍 ServerAuthService: Starting OTP verification for:', email);
       
       const result = await this.withRetryAndTokenRefresh(async () => {
-        const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
-           method: 'POST',
-           credentials: 'include',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ email, otp })
-         });
+        const response = await apiClient.post('/api/auth/verify-otp', { email, otp }, {
+          credentials: 'include',
+          timeout: 10000
+        });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: response.statusText }));
-          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(response.data?.error || `HTTP ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        return response.data;
       });
 
   logger.info('✅ ServerAuthService: OTP verification successful (raw):', result);
@@ -178,19 +176,16 @@ export class ServerAuthService {
       const result = await this.withRetryAndTokenRefresh(async () => {
   logger.debug('🔍 ServerAuthService: Making request to /api/auth/status...');
         
-        const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
-          method: 'GET',
-          credentials: 'include', // Include cookies
-          // Add timeout to prevent hanging
-          signal: AbortSignal.timeout(10000) // 10 second timeout
+        const response = await apiClient.get('/api/auth/status', {
+          credentials: 'include',
+          timeout: 10000
         });
 
   logger.debug('🔍 ServerAuthService: Response status:', response.status);
   logger.debug('🔍 ServerAuthService: Response ok:', response.ok);
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: response.statusText }));
-          logger.error('❌ ServerAuthService: Response not ok, error:', errorData);
+          logger.error('❌ ServerAuthService: Response not ok, error:', response.data);
           
           // Handle rate limiting specifically
           if (response.status === 429) {
@@ -201,12 +196,11 @@ export class ServerAuthService {
             throw new Error('Rate limit exceeded. Please wait before trying again.');
           }
           
-          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(response.data?.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const result = await response.json();
-  logger.debug('🔍 ServerAuthService: Response data:', result);
-        return result;
+  logger.debug('🔍 ServerAuthService: Response data:', response.data);
+        return response.data;
       });
 
   logger.info('✅ ServerAuthService: Auth status check successful:', result);
@@ -259,18 +253,16 @@ export class ServerAuthService {
       this.stopTokenRefresh();
       
       const result = await this.withRetryAndTokenRefresh(async () => {
-        const response = await fetch(`${configService.apiBaseUrl}/api/auth/logout`, {
-          method: 'POST',
+        const response = await apiClient.post('/api/auth/logout', null, {
           credentials: 'include',
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          timeout: 5000
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: response.statusText }));
-          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(response.data?.error || `HTTP ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        return response.data;
       });
 
   logger.info('✅ ServerAuthService: Logout successful');
@@ -320,25 +312,14 @@ export class ServerAuthService {
     try {
   logger.debug('🔍 ServerAuthService: Getting Bearer token...');
       
-      // Since we're using HTTP-only cookies, we need to make a server request
-      // to get the token from the server side
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/token`, {
-        method: 'GET',
-        credentials: 'include', // Include cookies
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await apiClient.get('/api/auth/token', {
+        credentials: 'include',
+        timeout: 5000
       });
 
-      if (!response.ok) {
-  logger.warn('❌ ServerAuthService: Failed to get Bearer token, status:', response.status);
-        return null;
-      }
-
-      const data = await response.json();
-      if (data.success && data.token) {
+      if (response.ok && response.data.success && response.data.token) {
   logger.info('✅ ServerAuthService: Bearer token retrieved successfully');
-        return data.token;
+        return response.data.token;
       }
 
   logger.warn('❌ ServerAuthService: No token in response');
