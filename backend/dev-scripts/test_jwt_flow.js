@@ -1,7 +1,8 @@
 // Test JWT flow
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = 'dev-jwt-secret-key-2024-shaadi-mantra';
+// Use environment variable instead of hardcoded secret
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-key-2024-shaadi-mantra';
 
 // Test payload
 const testPayload = {

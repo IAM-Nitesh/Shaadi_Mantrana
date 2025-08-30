@@ -7,6 +7,7 @@ import { config as configService } from './configService';
 import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
+import { apiClient } from '../utils/api-client';
 
 export const API_CONFIG = {
   API_BASE_URL: configService.apiBaseUrl,
@@ -595,23 +596,23 @@ export class ImageUploadService {
 
   logger.debug(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
       
-      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`, {
-         headers: {
-           'Authorization': `Bearer ${bearerToken}`,
-         },
-       });
+      const response = await apiClient.get(`/api/upload/profile-picture/url?expiry=${expiry}`, {
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`,
+        },
+        timeout: 15000
+      });
       
   logger.debug(`🔍 Response status: ${response.status}`);
       
   if (!response.ok) {
-    const errorText = await response.text();
     // Treat 404 (not found) as a normal case for users without profile pictures.
     // Use logger.warn to avoid noisy console.error stacks in the browser.
-  logger.warn(`❌ Response not OK: ${errorText}`);
+  logger.warn(`❌ Response not OK: ${response.data}`);
     return null;
   }
 
-      const result = await response.json();
+      const result = response.data;
   logger.info(`✅ Signed URL result:`, result);
       
       // Cache the signed URL
