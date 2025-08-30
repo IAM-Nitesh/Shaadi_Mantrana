@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Backend API URL from env
-const BACKEND_URL = process.env.BACKEND_URL || 'https://shaadi-mantrana.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mantrana.onrender.com';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -15,6 +15,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       credentials: 'include',
     });
+
+    if (!response.ok) {
+      console.error(`Backend error: ${response.status} ${response.statusText}`);
+      return res.status(response.status).send(await response.text());
+    }
 
     const data = await response.text();
     res.status(response.status).send(data);
