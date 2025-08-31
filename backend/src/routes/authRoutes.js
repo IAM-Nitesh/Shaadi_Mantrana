@@ -32,12 +32,6 @@ router.get('/token', (req, res) => authController.getToken(req, res));
 
 // Check if an email is preapproved
 router.get('/preapproved/check', (req, res, next) => {
-  // IMPROVED explicit CORS headers for this route
-  res.header('Access-Control-Allow-Origin', 'https://shaadi-mantrana.vercel.app');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  
   const email = req.query.email?.toLowerCase().trim();
   if (!email) return res.status(400).json({ preapproved: false });
 
@@ -64,10 +58,6 @@ router.get('/preapproved/check', (req, res, next) => {
 
 // Also handle OPTIONS preflight for this route specifically
 router.options('/preapproved/check', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://shaadi-mantrana.vercel.app');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.sendStatus(204); // No content needed for OPTIONS response
 });
 
