@@ -33,9 +33,6 @@ const corsOptions = {
       process.env.PRODUCTION_FRONTEND_URL || '', // Production frontend
       process.env.PRODUCTION_API_URL || '', // Production backend (for health checks)
       'http://localhost:3000', // Local development
-      'http://localhost:3001', // Local backend
-      'http://127.0.0.1:3000', // Local development alternative
-      'http://127.0.0.1:3001'  // Local backend alternative
     ].filter(Boolean); // Remove empty strings
     
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
@@ -85,7 +82,8 @@ app.use(helmet({
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001"
+        "http://127.0.0.1:3001",
+        "https://shaadi-mantrana.vercel.app"
       ].filter(Boolean), // Remove empty strings
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
