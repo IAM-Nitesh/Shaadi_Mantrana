@@ -255,3 +255,10 @@ docs/ENVIRONMENT_SECURITY_SUMMARY.md
 frontend/scripts/validate-env.js
 backend/scripts/setup-production-env.js
 backend/scripts/validate-env.js
+backend/scripts/switch-env.js
+docs/ENVIRONMENT_SWITCHING_GUIDE.md
+docs/ENVIRONMENT_VARIABLES_AUDIT.md
+frontend/scripts/switch-env.js
+backend/.env.production
+backend/.env.production
+frontend/.env.production
