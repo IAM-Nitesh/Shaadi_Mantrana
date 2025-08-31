@@ -30,13 +30,13 @@ app.set('trust proxy', 1);
 const corsOptions = {
   origin: function(origin, callback) {
     const allowedOrigins = [
-      'https://shaadi-mantrana-app-frontend.vercel.app', // Production frontend
-      'https://shaadi-mantrana.onrender.com', // Production backend (for health checks)
+      process.env.PRODUCTION_FRONTEND_URL || '', // Production frontend
+      process.env.PRODUCTION_API_URL || '', // Production backend (for health checks)
       'http://localhost:3000', // Local development
       'http://localhost:3001', // Local backend
       'http://127.0.0.1:3000', // Local development alternative
       'http://127.0.0.1:3001'  // Local backend alternative
-    ];
+    ].filter(Boolean); // Remove empty strings
     
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin)) {
@@ -80,13 +80,13 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
         "'self'", 
-        "https://shaadi-mantrana-app-frontend.vercel.app",
-        "https://shaadi-mantrana.onrender.com",
+        process.env.PRODUCTION_FRONTEND_URL || "",
+        process.env.PRODUCTION_API_URL || "",
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001"
-      ],
+      ].filter(Boolean), // Remove empty strings
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -97,6 +97,13 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
 }));
+
+// Add environment info to response headers for debugging
+app.use((req, res, next) => {
+  res.set('X-Environment', config.NODE_ENV);
+  res.set('X-Is-Production', config.isProduction.toString());
+  next();
+});
 
 // Rate limiting - more lenient for development
 const limiter = rateLimit({
