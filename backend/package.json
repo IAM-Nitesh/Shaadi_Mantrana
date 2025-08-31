@@ -55,6 +55,10 @@
     "test:admin-user-creation": "NODE_ENV=development node scripts/test-admin-user-creation.js"
   },
   "dependencies": {
+    "@babel/core": "^7.28.3",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-react": "^7.27.1",
+    "@babel/register": "^7.28.3",
     "@react-email/components": "^0.3.3",
     "@react-email/render": "^1.1.4",
     "@react-email/tailwind": "^1.2.2",
@@ -82,10 +86,6 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.3",
-    "@babel/preset-env": "^7.28.3",
-    "@babel/preset-react": "^7.27.1",
-    "@babel/register": "^7.28.3",
     "@eslint/js": "^9.31.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
