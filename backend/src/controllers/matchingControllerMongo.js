@@ -137,32 +137,10 @@ class MatchingController {
         };
       });
       
-      // Log found profiles for debugging
-      profilesWithAge.forEach((profile, index) => {
-        console.log(`👤 Profile ${index + 1}: ${profile.profile?.name} (${profile.profile?.gender}, ${profile.profile?.age} years)`);
-        console.log(`🎯 Profile ${index + 1} interests:`, profile.profile?.interests);
-        console.log(`🎯 Profile ${index + 1} profession:`, profile.profile?.profession);
-        console.log(`🎯 Profile ${index + 1} occupation:`, profile.profile?.occupation);
-        console.log(`🎯 Profile ${index + 1} currentResidence:`, profile.profile?.currentResidence);
-        console.log(`🎯 Profile ${index + 1} nativePlace:`, profile.profile?.nativePlace);
-        
-        // Special debug for the specific user
-        if (profile._id.toString() === '688bb32be0ec0285ce006276') {
-          console.log('🎯 SPECIAL DEBUG - User nitesh:', {
-            id: profile._id,
-            name: profile.profile?.name,
-            interests: profile.profile?.interests,
-            interestsType: typeof profile.profile?.interests,
-            interestsLength: profile.profile?.interests?.length,
-            isArray: Array.isArray(profile.profile?.interests),
-            fullProfile: JSON.stringify(profile.profile, null, 2)
-          });
-        }
-      });
+      // Profile debugging removed for production security
       
       // Handle case when no profiles are found
       if (!profilesWithAge || profilesWithAge.length === 0) {
-        console.log('📭 No profiles available for discovery');
         return res.status(200).json({
           success: true,
           profiles: [],
@@ -214,7 +192,7 @@ class MatchingController {
       const userId = req.user.userId;
       const { targetUserId, type = 'like' } = req.body;
       
-      console.log(`💕 Like request - User: ${userId}, Target: ${targetUserId}, Type: ${type}`);
+      // Like request logging removed for production security
       
       if (!targetUserId) {
         return res.status(400).json({ success: false, error: 'Target user ID is required' });
@@ -226,7 +204,6 @@ class MatchingController {
       
       // Check daily like limit
       const dailyLikeCount = await DailyLike.getDailyLikeCount(userId);
-      console.log(`📊 Daily like count: ${dailyLikeCount}`);
       
       if (dailyLikeCount >= 5) {
         return res.status(429).json({ 
@@ -239,18 +216,14 @@ class MatchingController {
       // Check if already liked
       const existingLike = await DailyLike.findOne({ userId, likedProfileId: targetUserId });
       if (existingLike) {
-        console.log('⚠️ Profile already liked');
         return res.status(409).json({ success: false, error: 'Profile already liked' });
       }
       
       // Validate target user exists
       const targetUser = await User.findById(targetUserId);
       if (!targetUser) {
-        console.log('❌ Target user not found');
         return res.status(404).json({ success: false, error: 'Target user not found' });
       }
-      
-      console.log(`✅ Target user found: ${targetUser.profile?.name}`);
       
       // Create the like
       const like = new DailyLike({
@@ -260,8 +233,6 @@ class MatchingController {
         likeDate: new Date()
       });
       await like.save();
-      
-      console.log(`💾 Like saved successfully: ${like._id}`);
       
       // Check for mutual match
       const mutualLike = await DailyLike.findOne({
