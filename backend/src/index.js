@@ -70,7 +70,7 @@ app.use(cors(corsOptions));
 // Handle OPTIONS preflight requests explicitly
 app.options('*', cors(corsOptions));
 
-// Security middleware - Helmet with relaxed CSP
+// Enhanced Security middleware - Helmet with comprehensive security headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -92,12 +92,44 @@ app.use(helmet({
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: []
     },
   },
-  // Allow cross-origin resource sharing
+  // Enhanced security policies
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
+  // Additional security headers
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  permissionsPolicy: {
+    features: {
+      geolocation: [],
+      microphone: [],
+      camera: [],
+      payment: [],
+      usb: [],
+      magnetometer: [],
+      gyroscope: [],
+      accelerometer: []
+    }
+  }
 }));
+
+// Additional security headers
+app.use((req, res, next) => {
+  res.set('X-Permitted-Cross-Domain-Policies', 'none');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 // Add environment info to response headers for debugging
 app.use((req, res, next) => {

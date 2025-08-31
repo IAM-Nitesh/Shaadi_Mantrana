@@ -22,6 +22,7 @@ router.get('/profile', authenticateToken, (req, res) => authController.getProfil
 
 // Session management
 router.post('/refresh', (req, res) => authController.refreshSession(req, res));
+router.post('/refresh-token', (req, res) => authController.refreshSession(req, res)); // Alias for compatibility
 router.post('/logout', authenticateToken, (req, res) => authController.logout(req, res));
 
 // Auth status endpoint
