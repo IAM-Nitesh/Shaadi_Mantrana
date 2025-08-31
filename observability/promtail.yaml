@@ -3,7 +3,7 @@ server:
   grpc_listen_port: 0
 
 clients:
-  - url: https://logs-prod-028.grafana.net/loki/api/v1/push
+  - url: ${GRAFANA_LOKI_URL:-https://logs-prod-028.grafana.net/loki/api/v1/push}
     basic_auth:
       username: ${GRAFANA_LOKI_USER}
       password: ${GRAFANA_LOKI_PASSWORD}

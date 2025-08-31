@@ -154,7 +154,7 @@ module.exports = {
     BCRYPT_ROUNDS: process.env.NODE_ENV === 'production' ? 12 : 8,
     SESSION_SECRET: process.env.SESSION_SECRET || 'dev-session-secret',
     CORS_ORIGINS: process.env.NODE_ENV === 'production' 
-      ? ['https://shaadi-mantrana-app-frontend.vercel.app']
+      ? [process.env.PRODUCTION_FRONTEND_URL || ''].filter(Boolean)
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002']
   },
   
