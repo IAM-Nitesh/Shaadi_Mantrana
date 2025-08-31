@@ -253,3 +253,5 @@ docs/ENVIRONMENT_CONFIGURATION.md
 docs/ENVIRONMENT_SECURITY_AUDIT.md
 docs/ENVIRONMENT_SECURITY_SUMMARY.md
 frontend/scripts/validate-env.js
+backend/scripts/setup-production-env.js
+backend/scripts/validate-env.js

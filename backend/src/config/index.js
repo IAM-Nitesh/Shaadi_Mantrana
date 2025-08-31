@@ -45,9 +45,19 @@ const getMongoDBURI = () => {
   }
 };
 
+// Environment configuration
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const isProduction = NODE_ENV === 'production' || 
+                    process.env.RENDER === 'true' || 
+                    process.env.VERCEL === 'true' ||
+                    process.env.HEROKU === 'true' ||
+                    process.env.NODE_ENV === 'production';
+
 module.exports = {
-  // Environment configuration
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  // Environment
+  NODE_ENV: isProduction ? 'production' : NODE_ENV,
+  isProduction,
+  isDevelopment: !isProduction,
   PORT: getPort(),
   
   // Data source configuration (MongoDB only)
@@ -73,8 +83,8 @@ module.exports = {
   DATABASE_URL: getMongoDBURI(),
   
   // Frontend URL for CORS (support multiple environments)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'https://shaadi-mantrana-app-frontend.vercel.app',
-  FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || 'https://shaadi-mantrana-app-frontend.vercel.app',
+  FRONTEND_URL: process.env.FRONTEND_URL || process.env.PRODUCTION_FRONTEND_URL || '',
+  FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || process.env.PRODUCTION_FRONTEND_URL || '',
   
   // JWT configuration with strong defaults
   JWT: {
