@@ -8,6 +8,8 @@ require('dotenv').config();
 
 // MongoDB connection string selection
 const getPort = () => {
+  // Always use PORT environment variable if set (Render, Heroku, etc.)
+  // Fallback to 5500 for local development
   return process.env.PORT || 5500;
 };
 
@@ -128,7 +130,7 @@ module.exports = {
   API: {
     BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'production' 
       ? process.env.PRODUCTION_API_URL || ''
-      : `http://localhost:${process.env.PORT || 5500}`),
+      : `http://localhost:${getPort()}`),
     VERSION: 'v1',
     RATE_LIMIT: {
       WINDOW_MS: 15 * 60 * 1000, // 15 minutes

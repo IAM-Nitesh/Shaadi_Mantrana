@@ -262,3 +262,4 @@ frontend/scripts/switch-env.js
 backend/.env.production
 backend/.env.production
 frontend/.env.production
+backend/scripts/test-render-health.js

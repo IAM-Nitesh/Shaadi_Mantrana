@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node start.js",
     "start:legacy": "node src/index.js",
-    "dev": "cross-env NODE_ENV=development DATA_SOURCE=mongodb PORT=5500 node start.js",
+    "dev": "cross-env NODE_ENV=development DATA_SOURCE=mongodb node start.js",
     "dev:static": "NODE_ENV=development DATA_SOURCE=static nodemon start.js",
     "dev:mongodb": "NODE_ENV=development DATA_SOURCE=mongodb nodemon start.js",
     "dev:legacy": "NODE_ENV=development nodemon src/index.js",
@@ -23,6 +23,8 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "env:check": "node scripts/check-env.js",
+    "test:render": "node scripts/test-render-health.js render",
+    "test:health": "node scripts/test-render-health.js all",
     "mode:static": "node scripts/switch-mode.js static",
     "mode:mongodb": "node scripts/switch-mode.js mongodb",
     "mode:status": "node scripts/switch-mode.js status",
