@@ -249,3 +249,7 @@ android/app/src/main/assets/www/static/
 !**/.gitkeep
 
 # --- End custom additions ---
+docs/ENVIRONMENT_CONFIGURATION.md
+docs/ENVIRONMENT_SECURITY_AUDIT.md
+docs/ENVIRONMENT_SECURITY_SUMMARY.md
+frontend/scripts/validate-env.js
