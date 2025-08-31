@@ -117,7 +117,7 @@ module.exports = {
   // API configuration
   API: {
     BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'production' 
-      ? 'https://shaadi-mantrana.onrender.com'
+      ? process.env.PRODUCTION_API_URL || ''
       : `http://localhost:${process.env.PORT || 5500}`),
     VERSION: 'v1',
     RATE_LIMIT: {

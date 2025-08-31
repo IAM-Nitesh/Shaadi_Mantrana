@@ -11,7 +11,7 @@ const logger = {
 };
 
 // Backend API URL from env
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mantrana.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {

@@ -30,8 +30,8 @@ app.set('trust proxy', 1);
 const corsOptions = {
   origin: function(origin, callback) {
     const allowedOrigins = [
-      'https://shaadi-mantrana-app-frontend.vercel.app', // Production frontend
-      'https://shaadi-mantrana.onrender.com', // Production backend (for health checks)
+      process.env.PRODUCTION_FRONTEND_URL || 'https://shaadi-mantrana-app-frontend.vercel.app', // Production frontend
+      process.env.PRODUCTION_API_URL || 'https://shaadi-mantrana.onrender.com', // Production backend (for health checks)
       'http://localhost:3000', // Local development
       'http://localhost:3001', // Local backend
       'http://127.0.0.1:3000', // Local development alternative
@@ -80,8 +80,8 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
         "'self'", 
-        "https://shaadi-mantrana-app-frontend.vercel.app",
-        "https://shaadi-mantrana.onrender.com",
+        process.env.PRODUCTION_FRONTEND_URL || "https://shaadi-mantrana-app-frontend.vercel.app",
+        process.env.PRODUCTION_API_URL || "https://shaadi-mantrana.onrender.com",
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
