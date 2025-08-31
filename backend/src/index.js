@@ -30,9 +30,11 @@ app.set('trust proxy', 1);
 const corsOptions = {
   origin: function(origin, callback) {
     const allowedOrigins = [
-      process.env.PRODUCTION_FRONTEND_URL || '', // Production frontend
-      process.env.PRODUCTION_API_URL || '', // Production backend (for health checks)
+      config.FRONTEND_URL, // Production frontend from config
+      config.FRONTEND_FALLBACK_URL, // Fallback frontend URL
       'http://localhost:3000', // Local development
+      'http://localhost:3001', // Alternative local port
+      'https://shaadi-mantrana.vercel.app', // Explicit new frontend URL
     ].filter(Boolean); // Remove empty strings
     
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
@@ -40,6 +42,7 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.log(`CORS blocked origin: ${origin}`);
+      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(null, false);
     }
   },
@@ -77,8 +80,8 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
         "'self'", 
-        process.env.PRODUCTION_FRONTEND_URL || "",
-        process.env.PRODUCTION_API_URL || "",
+        config.FRONTEND_URL,
+        config.FRONTEND_FALLBACK_URL,
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
