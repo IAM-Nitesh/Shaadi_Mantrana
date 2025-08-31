@@ -484,8 +484,8 @@ class AuthController {
       // Set HTTP-only cookies for the session
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         // Remove domain restriction to allow cross-site cookies
         // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
@@ -693,6 +693,14 @@ class AuthController {
   // Get auth status (returns profile when authenticated, otherwise authenticated:false)
   async getAuthStatus(req, res) {
     try {
+      console.log('🔍 getAuthStatus: Starting auth status check...');
+      console.log('🔍 getAuthStatus: Environment:', process.env.NODE_ENV);
+      console.log('🔍 getAuthStatus: Request secure:', req.secure);
+      console.log('🔍 getAuthStatus: X-Forwarded-Proto:', req.headers['x-forwarded-proto']);
+      console.log('🔍 getAuthStatus: Cookies present:', !!req.cookies);
+      console.log('🔍 getAuthStatus: Cookie keys:', req.cookies ? Object.keys(req.cookies) : 'None');
+      console.log('🔍 getAuthStatus: Authorization header:', req.headers.authorization ? 'Present' : 'None');
+      
       // Set comprehensive cache control headers to prevent any caching
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.set('Pragma', 'no-cache');
@@ -708,16 +716,28 @@ class AuthController {
       // First try Authorization header
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
+        console.log('🔍 getAuthStatus: Using Authorization header token');
       }
       // Then try cookies
       else if (req.cookies?.accessToken) {
         token = req.cookies.accessToken;
+        console.log('🔍 getAuthStatus: Using cookie token');
+      } else {
+        console.log('🔍 getAuthStatus: No token found in headers or cookies');
       }
 
       if (token) {
         try {
+          console.log('🔍 getAuthStatus: Verifying token...');
           const decoded = jwt.verify(token, config.jwtSecret);
+          console.log('🔍 getAuthStatus: Token decoded successfully:', {
+            userId: decoded.userId,
+            sessionId: decoded.sessionId,
+            email: decoded.email
+          });
+          
           const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          console.log('🔍 getAuthStatus: Session data found:', !!sessionData);
 
           if (sessionData) {
             // Get full user data from database
@@ -732,10 +752,15 @@ class AuthController {
                 profileCompleteness: dbUser.profileCompleteness || 0,
                 hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false
               };
+              console.log('✅ getAuthStatus: User authenticated successfully:', user.email);
+            } else {
+              console.log('❌ getAuthStatus: User not found in database');
             }
+          } else {
+            console.log('❌ getAuthStatus: Session not found or invalid');
           }
         } catch (tokenError) {
-          console.log('Token verification failed:', tokenError.message);
+          console.log('❌ getAuthStatus: Token verification failed:', tokenError.message);
         }
       }
 
@@ -749,6 +774,7 @@ class AuthController {
       }
 
       // Not authenticated
+      console.log('🔍 getAuthStatus: User not authenticated, returning anonymous status');
       return res.status(200).json({
         authenticated: false,
         redirectTo: '/',
@@ -756,7 +782,7 @@ class AuthController {
         timestamp: Date.now() // Add timestamp to ensure uniqueness
       });
     } catch (err) {
-      console.error('❌ Auth status error:', err);
+      console.error('❌ getAuthStatus: Error:', err);
       return res.status(500).json({ 
         authenticated: false, 
         redirectTo: '/',

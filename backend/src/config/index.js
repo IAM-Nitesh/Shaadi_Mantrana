@@ -45,9 +45,19 @@ const getMongoDBURI = () => {
   }
 };
 
+// Environment configuration
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const isProduction = NODE_ENV === 'production' || 
+                    process.env.RENDER === 'true' || 
+                    process.env.VERCEL === 'true' ||
+                    process.env.HEROKU === 'true' ||
+                    process.env.NODE_ENV === 'production';
+
 module.exports = {
-  // Environment configuration
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  // Environment
+  NODE_ENV: isProduction ? 'production' : NODE_ENV,
+  isProduction,
+  isDevelopment: !isProduction,
   PORT: getPort(),
   
   // Data source configuration (MongoDB only)
@@ -73,8 +83,8 @@ module.exports = {
   DATABASE_URL: getMongoDBURI(),
   
   // Frontend URL for CORS (support multiple environments)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'https://shaadi-mantrana-app-frontend.vercel.app',
-  FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || 'https://shaadi-mantrana-app-frontend.vercel.app',
+  FRONTEND_URL: process.env.FRONTEND_URL || process.env.PRODUCTION_FRONTEND_URL || '',
+  FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || process.env.PRODUCTION_FRONTEND_URL || '',
   
   // JWT configuration with strong defaults
   JWT: {
@@ -117,7 +127,7 @@ module.exports = {
   // API configuration
   API: {
     BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'production' 
-      ? 'https://shaadi-mantrana.onrender.com'
+      ? process.env.PRODUCTION_API_URL || ''
       : `http://localhost:${process.env.PORT || 5500}`),
     VERSION: 'v1',
     RATE_LIMIT: {
@@ -144,7 +154,7 @@ module.exports = {
     BCRYPT_ROUNDS: process.env.NODE_ENV === 'production' ? 12 : 8,
     SESSION_SECRET: process.env.SESSION_SECRET || 'dev-session-secret',
     CORS_ORIGINS: process.env.NODE_ENV === 'production' 
-      ? ['https://shaadi-mantrana-app-frontend.vercel.app']
+      ? [process.env.PRODUCTION_FRONTEND_URL || ''].filter(Boolean)
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002']
   },
   
