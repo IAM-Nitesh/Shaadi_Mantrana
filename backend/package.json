@@ -55,7 +55,9 @@
     "send-invite-krtk": "NODE_ENV=development node scripts/send-invite-to-krtk.js",
     "test:admin-approval": "NODE_ENV=development node scripts/test-admin-approval.js",
     "test:auth-flow": "NODE_ENV=development node scripts/test-auth-flow.js",
-    "test:admin-user-creation": "NODE_ENV=development node scripts/test-admin-user-creation.js"
+    "test:admin-user-creation": "NODE_ENV=development node scripts/test-admin-user-creation.js",
+    "keep-alive": "node scripts/keep-alive.js",
+    "keep-alive-bg": "node scripts/keep-alive.js &"
   },
   "dependencies": {
     "@babel/core": "^7.28.3",

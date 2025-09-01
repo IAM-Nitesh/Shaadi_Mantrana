@@ -18,7 +18,9 @@
     "emails:add": "node scripts/manage-approved-emails.js add",
     "emails:remove": "node scripts/manage-approved-emails.js remove",
     "emails:list": "node scripts/manage-approved-emails.js list",
-    "emails:sync": "node scripts/manage-approved-emails.js sync"
+    "emails:sync": "node scripts/manage-approved-emails.js sync",
+    "keep-alive": "node scripts/keep-alive.js",
+    "keep-alive-bg": "node scripts/keep-alive.js &"
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.5",
