@@ -50,7 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         signal: controller.signal,
       });
 
@@ -83,7 +82,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ refreshToken }),
-              credentials: 'include',
               signal: AbortSignal.timeout(5000), // 5 second timeout for refresh
             });
 
