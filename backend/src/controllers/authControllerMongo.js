@@ -755,7 +755,12 @@ class AuthController {
                 profileCompleteness: dbUser.profileCompleteness || 0,
                 hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false
               };
-              console.log('✅ getAuthStatus: User authenticated successfully:', user.email);
+              console.log('✅ getAuthStatus: User authenticated successfully:', {
+                email: user.email,
+                role: user.role,
+                isFirstLogin: user.isFirstLogin,
+                isApprovedByAdmin: user.isApprovedByAdmin
+              });
             } else {
               console.log('❌ getAuthStatus: User not found in database');
             }
@@ -768,6 +773,12 @@ class AuthController {
       }
 
       if (user) {
+        console.log('📤 getAuthStatus: Sending authentication response:', {
+          authenticated: true,
+          userRole: user.role,
+          userEmail: user.email,
+          redirectTo: '/dashboard'
+        });
         return res.status(200).json({
           authenticated: true,
           user: user,
