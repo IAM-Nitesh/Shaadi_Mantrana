@@ -92,9 +92,12 @@ export default function ServerAuthGuard({
       }
     }
 
-    // Handle onboarding message for users
-    if (user && user.role === 'user' && !user.hasSeenOnboardingMessage && user.isFirstLogin) {
-      logger.debug('🎯 ServerAuthGuard: Showing onboarding message for first-time user');
+    // Handle profile completeness requirement
+    if (requireCompleteProfile && user && user.profileCompleteness < 100) {
+      logger.debug('🚫 ServerAuthGuard: Profile incomplete - redirecting to profile');
+      setHasRedirected(true);
+      router.push('/profile');
+      return;
     }
 
   }, [isClientInitialized, isAuthenticated, user, redirectTo, requireAuth, requireAdmin, requireCompleteProfile, fallbackPath, router, hasRedirected, authTimeout]);
