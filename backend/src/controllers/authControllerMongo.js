@@ -801,7 +801,7 @@ class AuthController {
         const token = authHeader.substring(7);
         try {
           const decoded = jwt.verify(token, config.jwtSecret);
-          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
             return res.status(200).json({
@@ -814,34 +814,54 @@ class AuthController {
         }
       }
 
-      // Try to get from cookies
-      const sessionToken = req.cookies?.sessionToken;
-      if (sessionToken) {
+      // Try to get from accessToken cookie (primary method)
+      const accessToken = req.cookies?.accessToken;
+      if (accessToken) {
         try {
-          const decoded = jwt.verify(sessionToken, config.jwtSecret);
-          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          const decoded = jwt.verify(accessToken, config.jwtSecret);
+          const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
-            // Generate a new access token
-            const payload = {
-              userId: sessionData.userId,
-              email: sessionData.email,
-              sessionId: decoded.sessionId
-            };
-
-            const accessToken = jwt.sign(payload, config.jwtSecret, { 
-              expiresIn: '24h',
-              issuer: 'shaadi-mantra-api',
-              audience: 'shaadi-mantra-app'
-            });
-
             return res.status(200).json({
               success: true,
               token: accessToken
             });
           }
         } catch (tokenError) {
-          console.log('Session token verification failed:', tokenError.message);
+          console.log('Access token verification failed:', tokenError.message);
+        }
+      }
+
+      // Try to get from sessionId cookie (fallback method)
+      const sessionId = req.cookies?.sessionId;
+      if (sessionId) {
+        try {
+          const sessionData = await JWTSessionManager.getSession(sessionId);
+          
+          if (sessionData) {
+            // Generate a new access token from session data
+            const payload = {
+              userId: sessionData.userId,
+              userUuid: sessionData.userUuid,
+              email: sessionData.email,
+              role: sessionData.role,
+              verified: sessionData.verified,
+              sessionId: sessionId,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+              aud: 'shaadi-mantra-app',
+              iss: 'shaadi-mantra-api'
+            };
+
+            const newAccessToken = jwt.sign(payload, config.jwtSecret);
+
+            return res.status(200).json({
+              success: true,
+              token: newAccessToken
+            });
+          }
+        } catch (tokenError) {
+          console.log('Session ID verification failed:', tokenError.message);
         }
       }
 
