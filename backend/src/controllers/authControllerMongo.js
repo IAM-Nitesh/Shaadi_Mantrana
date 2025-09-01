@@ -766,20 +766,24 @@ class AuthController {
             // Get full user data from database
             const dbUser = await User.findById(decoded.userId).select('-password');
             if (dbUser) {
+              // Get profileCompleteness from the correct location
+              const profileCompleteness = dbUser.profile?.profileCompleteness || dbUser.profileCompleteness || 0;
+              
               user = {
                 userUuid: dbUser._id.toString(),
                 email: dbUser.email,
                 role: dbUser.role,
                 isFirstLogin: dbUser.isFirstLogin,
                 isApprovedByAdmin: dbUser.isApprovedByAdmin,
-                profileCompleteness: dbUser.profileCompleteness || 0,
+                profileCompleteness: profileCompleteness,
                 hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false
               };
               console.log('✅ getAuthStatus: User authenticated successfully:', {
                 email: user.email,
                 role: user.role,
                 isFirstLogin: user.isFirstLogin,
-                isApprovedByAdmin: user.isApprovedByAdmin
+                isApprovedByAdmin: user.isApprovedByAdmin,
+                profileCompleteness: profileCompleteness
               });
             } else {
               console.log('❌ getAuthStatus: User not found in database');
