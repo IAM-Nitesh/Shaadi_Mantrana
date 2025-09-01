@@ -76,7 +76,7 @@ function determineRedirectPath(user: AuthUser): string | null {
 
 // Cache management utilities
 const CACHE_KEY = 'auth_cache';
-const CACHE_DURATION = 2 * 60 * 1000; // Reduced to 2 minutes for better responsiveness
+const CACHE_DURATION = 5 * 60 * 1000; // Increased to 5 minutes for better user experience
 const MIN_REQUEST_INTERVAL = 5 * 1000; // 5 seconds minimum between requests for better responsiveness
 
 interface AuthCache {
@@ -205,14 +205,20 @@ export function useServerAuth(): UseServerAuthReturn {
     
     try {
       // Call the auth status API directly from the client with cache-busting headers
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
       const res = await fetch('/api/auth/status', {
         method: 'GET',
         credentials: 'include',
+        signal: controller.signal,
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
+
+      clearTimeout(timeoutId);
 
       // Handle 304 Not Modified - this means we need fresh data
       if (res.status === 304) {
@@ -300,11 +306,19 @@ export function useServerAuth(): UseServerAuthReturn {
         setError('');
       }
     } catch (error) {
-  logger.error('❌ useServerAuth: Authentication check failed:', error);
+      logger.error('❌ useServerAuth: Authentication check failed:', error);
+      
+      // Handle timeout specifically
+      if (error.name === 'AbortError') {
+        logger.error('⏰ useServerAuth: Authentication request timed out');
+        setError('Authentication check timed out. Please check your connection and try again.');
+      } else {
+        setError(error instanceof Error ? error.message : 'Authentication failed');
+      }
+      
       setUser(null);
       setIsAuthenticated(false);
       clearCachedAuth();
-      setError(error instanceof Error ? error.message : 'Authentication failed');
       setRedirectTo('/');
     } finally {
       setIsLoading(false);
