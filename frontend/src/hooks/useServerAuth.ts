@@ -43,14 +43,15 @@ function determineRedirectPath(user: AuthUser): string | null {
     isFirstLogin,
     profileCompleteness,
     hasSeenOnboardingMessage,
-    isApprovedByAdmin: user.isApprovedByAdmin
+    isApprovedByAdmin: user.isApprovedByAdmin,
+    userRole: user.role
   });
 
   // Access Control Logic:
   // Users should only access /dashboard and /matches if profileCompleteness is 100%
   
   // Case 1: First-time user (isFirstLogin = true)
-  if (isFirstLogin) {
+  if (isFirstLogin === true) {
     // Always redirect to profile for first-time users
     logger.debug('🔄 First-time user - redirecting to profile');
     return '/profile';
@@ -58,14 +59,14 @@ function determineRedirectPath(user: AuthUser): string | null {
 
   // Case 2: Returning user with incomplete profile (profileCompleteness < 100%)
   if (profileCompleteness < 100) {
-    logger.debug('🔄 Profile incomplete - redirecting to profile');
+    logger.debug('🔄 Profile incomplete - redirecting to profile', { profileCompleteness });
     return '/profile';
   }
 
   // Case 3: User with complete profile (profileCompleteness = 100%)
   // Allow access to all pages - NO REDIRECT NEEDED
   if (profileCompleteness >= 100) {
-    logger.debug('✅ Profile complete - allowing access to all pages');
+    logger.debug('✅ Profile complete - allowing access to all pages', { profileCompleteness });
     return null; // No redirect needed - user can access any page
   }
 
@@ -206,7 +207,7 @@ export function useServerAuth(): UseServerAuthReturn {
     try {
       // Call the auth status API directly from the client with cache-busting headers
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 40000); // Increased to 40 second timeout
 
       const res = await fetch('/api/auth/status', {
         method: 'GET',
@@ -311,15 +312,18 @@ export function useServerAuth(): UseServerAuthReturn {
       // Handle timeout specifically
       if (error.name === 'AbortError') {
         logger.error('⏰ useServerAuth: Authentication request timed out');
-        setError('Authentication check timed out. Please check your connection and try again.');
+        setError('Authentication check timed out. Please refresh the page.');
       } else {
         setError(error instanceof Error ? error.message : 'Authentication failed');
       }
       
-      setUser(null);
-      setIsAuthenticated(false);
-      clearCachedAuth();
-      setRedirectTo('/');
+      // Don't clear authentication state on timeout - user might still be logged in
+      if (error.name !== 'AbortError') {
+        setUser(null);
+        setIsAuthenticated(false);
+        clearCachedAuth();
+        setRedirectTo('/');
+      }
     } finally {
       setIsLoading(false);
       isAuthCheckInProgress.current = false;
