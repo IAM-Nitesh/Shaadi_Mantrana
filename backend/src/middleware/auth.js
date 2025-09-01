@@ -180,9 +180,18 @@ class JWTSessionManager {
     return activeSessions.delete(sessionId);
   }
 
-  // Get active sessions count
-  static getActiveSessionsCount() {
-    return activeSessions.size;
+  // Update session last accessed time
+  static async updateSessionLastAccessed(sessionId) {
+    try {
+      await Session.updateOne(
+        { sessionId },
+        { lastAccessed: new Date() }
+      );
+      return true;
+    } catch (error) {
+      console.error('❌ JWTSessionManager: Error updating session lastAccessed:', error);
+      return false;
+    }
   }
 
   // Get session by ID
