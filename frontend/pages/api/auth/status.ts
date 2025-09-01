@@ -93,9 +93,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
               // Set new cookies with the refreshed tokens
               if (refreshResult.accessToken) {
+                const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
+                const sameSite = isSecure ? 'None' : 'Lax';
                 res.setHeader('Set-Cookie', [
-                  `accessToken=${refreshResult.accessToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
-                  refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
+                  `accessToken=${refreshResult.accessToken}; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
+                  refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
                 ].filter(Boolean));
               }
 
@@ -113,10 +115,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Clear invalid cookies and return graceful response
+        const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
+        const sameSite = isSecure ? 'None' : 'Lax';
         res.setHeader('Set-Cookie', [
-          'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-          'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-          'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
+          `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+          `refreshToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+          `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
         ]);
 
         return res.status(200).json({

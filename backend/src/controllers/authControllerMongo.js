@@ -627,8 +627,8 @@ class AuthController {
       // Set new access token cookie
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         // Remove domain restriction to allow cross-site cookies
         // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
@@ -664,8 +664,8 @@ class AuthController {
       // Clear authentication cookies
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         // Remove domain restriction to allow cross-site cookies
         // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
       };
