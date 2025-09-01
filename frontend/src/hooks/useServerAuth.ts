@@ -70,8 +70,8 @@ function determineRedirectPath(user: AuthUser): string | null {
 
 // Cache management utilities
 const CACHE_KEY = 'auth_cache';
-const CACHE_DURATION = 10 * 60 * 1000; // Increased to 10 minutes for better caching
-const MIN_REQUEST_INTERVAL = 60 * 1000; // Increased to 60 seconds minimum between requests
+const CACHE_DURATION = 2 * 60 * 1000; // Reduced to 2 minutes for better responsiveness
+const MIN_REQUEST_INTERVAL = 5 * 1000; // 5 seconds minimum between requests for better responsiveness
 
 interface AuthCache {
   user: AuthUser;
