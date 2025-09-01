@@ -3,6 +3,7 @@
 
 const jwt = require('jsonwebtoken');
 const config = require('../config');
+const { Session } = require('../models');
 
 // JWT Configuration
 // Do not use hard-coded secrets in source. Expect JWT_SECRET to be provided
@@ -13,6 +14,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
 // Active sessions store (in production, use Redis)
+// For now, we'll use database persistence
 const activeSessions = new Map();
 
 class JWTSessionManager {
@@ -37,14 +39,14 @@ class JWTSessionManager {
   }
 
   // Create session with both tokens
-  static createSession(user) {
+  static async createSession(user) {
     console.log('🔍 JWTSessionManager: Creating session for user:', {
       userId: user._id,
       userUuid: user.userUuid,
       email: user.email,
       role: user.role
     });
-    
+
     const payload = {
       userId: user._id.toString(), // Convert ObjectId to string
       userUuid: user.userUuid, // Include UUID for monitoring
@@ -61,16 +63,31 @@ class JWTSessionManager {
 
     console.log('🔍 JWTSessionManager: Tokens generated successfully');
 
-    // Store session
-    activeSessions.set(payload.sessionId, {
-      userId: payload.userId,
-      email: payload.email,
-      createdAt: new Date(),
-      lastAccessed: new Date(),
-      refreshToken
-    });
+    // Store session in database
+    try {
+      const sessionData = {
+        sessionId: payload.sessionId,
+        userId: payload.userId,
+        userUuid: payload.userUuid,
+        email: payload.email,
+        role: payload.role,
+        verified: payload.verified,
+        refreshToken,
+        accessToken,
+        createdAt: new Date(),
+        lastAccessed: new Date()
+      };
 
-    console.log('🔍 JWTSessionManager: Session stored, active sessions:', activeSessions.size);
+      await Session.create(sessionData);
+      console.log('🔍 JWTSessionManager: Session stored in database');
+
+      // Also store in memory for faster access
+      activeSessions.set(payload.sessionId, sessionData);
+
+    } catch (error) {
+      console.error('❌ JWTSessionManager: Failed to store session in database:', error);
+      throw error;
+    }
 
     return {
       accessToken,
@@ -107,10 +124,10 @@ class JWTSessionManager {
   }
 
   // Refresh access token
-  static refreshAccessToken(refreshToken) {
+  static async refreshAccessToken(refreshToken) {
     try {
       const decoded = this.verifyRefreshToken(refreshToken);
-      const session = activeSessions.get(decoded.sessionId);
+      const session = await this.getSession(decoded.sessionId);
 
       if (!session || session.refreshToken !== refreshToken) {
         throw new Error('Invalid refresh token session');
@@ -118,13 +135,20 @@ class JWTSessionManager {
 
       // Update last accessed time
       session.lastAccessed = new Date();
+      await Session.updateOne({ sessionId: decoded.sessionId }, { lastAccessed: new Date() });
 
       // Generate new access token
       const newPayload = {
         userId: decoded.userId,
+        userUuid: decoded.userUuid,
         email: decoded.email,
+        role: decoded.role,
         verified: decoded.verified,
-        sessionId: decoded.sessionId
+        sessionId: decoded.sessionId,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+        aud: 'shaadi-mantra-app',
+        iss: 'shaadi-mantra-api'
       };
 
       return this.generateAccessToken(newPayload);
@@ -134,16 +158,16 @@ class JWTSessionManager {
   }
 
   // Validate session
-  static validateSession(sessionId) {
-    const session = activeSessions.get(sessionId);
+  static async validateSession(sessionId) {
+    const session = await this.getSession(sessionId);
     if (!session) {
       return false;
     }
 
     // Check if session is too old (optional cleanup)
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-    if (Date.now() - session.createdAt.getTime() > maxAge) {
-      activeSessions.delete(sessionId);
+    if (Date.now() - new Date(session.createdAt).getTime() > maxAge) {
+      await this.deleteSession(sessionId);
       return false;
     }
 
@@ -161,19 +185,60 @@ class JWTSessionManager {
   }
 
   // Get session by ID
-  static getSession(sessionId) {
-    return activeSessions.get(sessionId);
+  static async getSession(sessionId) {
+    // First check in-memory cache
+    let session = activeSessions.get(sessionId);
+
+    if (!session) {
+      // If not in memory, check database
+      try {
+        session = await Session.findBySessionId(sessionId);
+        if (session) {
+          // Update last accessed time
+          session.lastAccessed = new Date();
+          await session.save();
+
+          // Cache in memory for faster future access
+          activeSessions.set(sessionId, session.toObject());
+        }
+      } catch (error) {
+        console.error('❌ JWTSessionManager: Error retrieving session from database:', error);
+        return null;
+      }
+    }
+
+    return session;
+  }
+
+  // Delete session
+  static async deleteSession(sessionId) {
+    try {
+      activeSessions.delete(sessionId);
+      await Session.deleteBySessionId(sessionId);
+      return true;
+    } catch (error) {
+      console.error('❌ JWTSessionManager: Error deleting session:', error);
+      return false;
+    }
   }
 
   // Clean expired sessions
-  static cleanExpiredSessions() {
-    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-    const now = Date.now();
+  static async cleanExpiredSessions() {
+    try {
+      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      const now = Date.now();
 
-    for (const [sessionId, session] of activeSessions.entries()) {
-      if (now - session.createdAt.getTime() > maxAge) {
-        activeSessions.delete(sessionId);
+      // Clean in-memory sessions
+      for (const [sessionId, session] of activeSessions.entries()) {
+        if (now - new Date(session.createdAt).getTime() > maxAge) {
+          activeSessions.delete(sessionId);
+        }
       }
+
+      // Clean database sessions
+      await Session.cleanupExpired();
+    } catch (error) {
+      console.error('❌ JWTSessionManager: Error cleaning expired sessions:', error);
     }
   }
 }
