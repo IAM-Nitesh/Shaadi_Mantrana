@@ -16,6 +16,9 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     logger.debug('🔍 Auth Status API: Starting authentication status check...');
+    logger.debug('🔍 Auth Status API: Request method:', req.method);
+    logger.debug('🔍 Auth Status API: Request headers:', req.headers);
+    logger.debug('🔍 Auth Status API: Request cookies:', req.cookies ? Object.keys(req.cookies) : 'None');
 
     // Get tokens from cookies (use correct cookie names from backend)
     const authToken = req.cookies.accessToken;
@@ -24,6 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
     logger.debug('🔍 Auth Status API: Auth token length:', authToken?.length || 0);
     logger.debug('🔍 Auth Status API: Refresh token found:', refreshToken ? 'Yes' : 'No');
+    logger.debug('🔍 Auth Status API: BACKEND_URL:', BACKEND_URL);
 
     if (!authToken) {
       logger.debug('ℹ️ Auth Status API: No authentication token found - returning graceful response');
@@ -55,8 +59,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         signal: controller.signal,
       });
+
+      logger.debug('🔍 Auth Status API: Fetch completed, response status:', response.status);
+      logger.debug('🔍 Auth Status API: Response headers:', Object.fromEntries(response.headers.entries()));
 
       clearTimeout(timeoutId);
       logger.debug('🔍 Auth Status API: Backend response status:', response.status);
@@ -84,6 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ refreshToken }),
+              credentials: 'include',
               signal: AbortSignal.timeout(5000), // 5 second timeout for refresh
             });
 
