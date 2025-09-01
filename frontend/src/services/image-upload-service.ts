@@ -1,8 +1,7 @@
 // Image Upload Service for Frontend
 // This service handles image uploads and validates that images contain faces
 
-// To configure the backend port, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
-// Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 (dev), https://your-production-domain.com (prod)
+// To configure the backend URL, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
 import { config as configService } from './configService';
 import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';

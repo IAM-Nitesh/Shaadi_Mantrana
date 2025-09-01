@@ -4,21 +4,23 @@
   "description": "Shaadi Mantrana - Full Stack Matrimonial Application",
   "private": true,
   "scripts": {
-    "dev:backend": "cd backend && npx cross-env NODE_ENV=development PORT=5500 node start.js",
-    "prod:backend": "cd backend && npx cross-env NODE_ENV=production PORT=4500 node start.js",
+    "dev:backend": "cd backend && npx cross-env NODE_ENV=development node start.js",
+    "prod:backend": "cd backend && npx cross-env NODE_ENV=production node start.js",
     "dev:frontend": "cd frontend && npx cross-env NODE_ENV=development npm run dev",
     "prod:frontend": "cd frontend && npx cross-env NODE_ENV=production npm run build && cd frontend && npx cross-env NODE_ENV=production PORT=2000 npm run start",
     "dev:all": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "prod:all": "concurrently \"npm run prod:frontend\" \"npm run prod:backend\"",
     "build": "cd frontend && npm run build && cd ../backend && npm install --production",
-    "start": "cd backend && npm start",
+    "start": "npm run prod:backend",
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
     "clean": "rm -rf frontend/.next frontend/out backend/node_modules frontend/node_modules",
     "test": "echo \"Tests not yet implemented\" && exit 0",
     "emails:add": "node scripts/manage-approved-emails.js add",
     "emails:remove": "node scripts/manage-approved-emails.js remove",
     "emails:list": "node scripts/manage-approved-emails.js list",
-    "emails:sync": "node scripts/manage-approved-emails.js sync"
+    "emails:sync": "node scripts/manage-approved-emails.js sync",
+    "keep-alive": "node scripts/keep-alive.js",
+    "keep-alive-bg": "node scripts/keep-alive.js &"
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.5",
