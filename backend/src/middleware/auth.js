@@ -9,9 +9,9 @@ const { Session } = require('../models');
 // Do not use hard-coded secrets in source. Expect JWT_SECRET to be provided
 // via environment variables. In production this must be set. For local
 // development you may set JWT_SECRET in `.env.development`.
-const JWT_SECRET = process.env.JWT_SECRET || '';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+const JWT_SECRET = process.env.JWT_SECRET || config.JWT.SECRET || '';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || config.JWT.EXPIRES_IN || '24h';
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || config.JWT.REFRESH_EXPIRES_IN || '7d';
 
 // Active sessions store (in production, use Redis)
 // For now, we'll use database persistence

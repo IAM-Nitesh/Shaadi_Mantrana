@@ -598,7 +598,7 @@ class AuthController {
       }
 
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, config.jwtSecret);
+      const decoded = jwt.verify(refreshToken, config.JWT.SECRET);
       const sessionData = JWTSessionManager.getSession(decoded.sessionId);
 
       if (!sessionData) {
@@ -618,7 +618,7 @@ class AuthController {
         sessionId: decoded.sessionId
       };
 
-      const newAccessToken = jwt.sign(payload, config.jwtSecret, { 
+      const newAccessToken = jwt.sign(payload, config.JWT.SECRET, { 
         expiresIn: '24h',
         issuer: 'shaadi-mantra-api',
         audience: 'shaadi-mantra-app'
@@ -729,7 +729,7 @@ class AuthController {
       if (token) {
         try {
           console.log('🔍 getAuthStatus: Verifying token...');
-          const decoded = jwt.verify(token, config.jwtSecret);
+          const decoded = jwt.verify(token, config.JWT.SECRET);
           console.log('🔍 getAuthStatus: Token decoded successfully:', {
             userId: decoded.userId,
             sessionId: decoded.sessionId,
@@ -800,7 +800,7 @@ class AuthController {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
         try {
-          const decoded = jwt.verify(token, config.jwtSecret);
+          const decoded = jwt.verify(token, config.JWT.SECRET);
           const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
@@ -818,7 +818,7 @@ class AuthController {
       const accessToken = req.cookies?.accessToken;
       if (accessToken) {
         try {
-          const decoded = jwt.verify(accessToken, config.jwtSecret);
+          const decoded = jwt.verify(accessToken, config.JWT.SECRET);
           const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
@@ -853,7 +853,7 @@ class AuthController {
               iss: 'shaadi-mantra-api'
             };
 
-            const newAccessToken = jwt.sign(payload, config.jwtSecret);
+            const newAccessToken = jwt.sign(payload, config.JWT.SECRET);
 
             return res.status(200).json({
               success: true,
