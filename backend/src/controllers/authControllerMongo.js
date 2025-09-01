@@ -729,7 +729,10 @@ class AuthController {
       if (token) {
         try {
           console.log('🔍 getAuthStatus: Verifying token...');
-          const decoded = jwt.verify(token, config.JWT.SECRET);
+          const decoded = jwt.verify(token, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
           console.log('🔍 getAuthStatus: Token decoded successfully:', {
             userId: decoded.userId,
             sessionId: decoded.sessionId,
@@ -800,7 +803,10 @@ class AuthController {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
         try {
-          const decoded = jwt.verify(token, config.JWT.SECRET);
+          const decoded = jwt.verify(token, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
           const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
@@ -818,7 +824,10 @@ class AuthController {
       const accessToken = req.cookies?.accessToken;
       if (accessToken) {
         try {
-          const decoded = jwt.verify(accessToken, config.JWT.SECRET);
+          const decoded = jwt.verify(accessToken, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
           const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
@@ -853,7 +862,10 @@ class AuthController {
               iss: 'shaadi-mantra-api'
             };
 
-            const newAccessToken = jwt.sign(payload, config.JWT.SECRET);
+            const newAccessToken = jwt.sign(payload, config.JWT.SECRET, {
+              issuer: config.JWT.ISSUER,
+              audience: config.JWT.AUDIENCE
+            });
 
             return res.status(200).json({
               success: true,
