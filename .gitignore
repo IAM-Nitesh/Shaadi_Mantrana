@@ -320,3 +320,5 @@ testsprite_tests/TC018_Session_Management_and_JWT_Token_Validation.py
 scripts/add-user-prod.js
 scripts/check-user-dev.js
 scripts/check-user-prod.js
+mongodb-insert.js
+playground-prod-admin.mongodb.js
