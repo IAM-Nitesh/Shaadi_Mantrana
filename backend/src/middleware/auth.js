@@ -164,9 +164,10 @@ class JWTSessionManager {
       return false;
     }
 
-    // Check if session is too old (optional cleanup)
+    // Check if session is too old (7 days of inactivity)
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-    if (Date.now() - new Date(session.createdAt).getTime() > maxAge) {
+    const lastActivity = new Date(session.lastAccessed || session.createdAt).getTime();
+    if (Date.now() - lastActivity > maxAge) {
       await this.deleteSession(sessionId);
       return false;
     }
@@ -225,18 +226,22 @@ class JWTSessionManager {
   // Clean expired sessions
   static async cleanExpiredSessions() {
     try {
-      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days of inactivity
       const now = Date.now();
 
-      // Clean in-memory sessions
+      // Clean in-memory sessions based on lastAccessed
       for (const [sessionId, session] of activeSessions.entries()) {
-        if (now - new Date(session.createdAt).getTime() > maxAge) {
+        if (now - new Date(session.lastAccessed || session.createdAt).getTime() > maxAge) {
           activeSessions.delete(sessionId);
         }
       }
 
-      // Clean database sessions
-      await Session.cleanupExpired();
+      // Clean database sessions (TTL will handle most, but this ensures consistency)
+      const expiredCount = await Session.deleteMany({
+        lastAccessed: { $lt: new Date(now - maxAge) }
+      });
+
+      console.log(`🧹 Cleaned up ${expiredCount.deletedCount} expired sessions`);
     } catch (error) {
       console.error('❌ JWTSessionManager: Error cleaning expired sessions:', error);
     }
