@@ -13,6 +13,7 @@
     "dev:local": "NODE_ENV=local nodemon start.js",
     "dev:debug": "NODE_ENV=development DEBUG=* nodemon start.js",
     "prod": "NODE_ENV=production node start.js",
+    "prod:backend": "NODE_ENV=production node start.js",
     "prod:static": "NODE_ENV=production DATA_SOURCE=static node start.js",
     "prod:mongodb": "NODE_ENV=production DATA_SOURCE=mongodb node start.js",
     "prod:legacy": "NODE_ENV=production node src/index.js",
