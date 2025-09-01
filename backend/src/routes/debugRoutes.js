@@ -1,4 +1,6 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const Message = require('../models/Message');
@@ -75,6 +77,159 @@ router.post('/chat/:connectionId/migrate', async (req, res) => {
   } catch (error) {
     console.error('Migration error:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// JWT Debug endpoint (no auth required to debug auth issues)
+router.get('/jwt-status', (req, res) => {
+  try {
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      environment: config.NODE_ENV,
+      isProduction: config.isProduction,
+      
+      // Configuration check (safe for production)
+      jwtConfig: {
+        hasSecret: !!config.JWT.SECRET,
+        secretLength: config.JWT.SECRET ? config.JWT.SECRET.length : 0,
+        issuer: config.JWT.ISSUER,
+        audience: config.JWT.AUDIENCE,
+        algorithm: config.JWT.ALGORITHM,
+        expiresIn: config.JWT.EXPIRES_IN
+      },
+      
+      // Request analysis
+      request: {
+        headers: {
+          hasAuthorization: !!req.headers.authorization,
+          authHeader: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : null,
+          hasCookies: !!req.headers.cookie,
+          cookieLength: req.headers.cookie ? req.headers.cookie.length : 0
+        },
+        cookies: {
+          hasAccessToken: !!req.cookies?.accessToken,
+          accessTokenLength: req.cookies?.accessToken ? req.cookies.accessToken.length : 0,
+          hasRefreshToken: !!req.cookies?.refreshToken,
+          hasSessionId: !!req.cookies?.sessionId,
+          cookieNames: Object.keys(req.cookies || {})
+        }
+      }
+    };
+
+    // If there's an access token, try to analyze it (without revealing sensitive info)
+    if (req.cookies?.accessToken) {
+      const token = req.cookies.accessToken;
+      
+      try {
+        // Try to decode without verification first to see the structure
+        const decoded = jwt.decode(token, { complete: true });
+        if (decoded) {
+          debugInfo.tokenAnalysis = {
+            header: decoded.header,
+            payload: {
+              iss: decoded.payload.iss,
+              aud: decoded.payload.aud,
+              exp: decoded.payload.exp,
+              iat: decoded.payload.iat,
+              hasUserId: !!decoded.payload.userId,
+              hasEmail: !!decoded.payload.email,
+              hasSessionId: !!decoded.payload.sessionId
+            }
+          };
+        }
+        
+        // Try actual verification
+        try {
+          const verified = jwt.verify(token, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
+          debugInfo.verification = {
+            success: true,
+            userId: verified.userId ? 'present' : 'missing',
+            email: verified.email ? 'present' : 'missing'
+          };
+        } catch (verifyError) {
+          debugInfo.verification = {
+            success: false,
+            error: verifyError.message,
+            errorType: verifyError.name
+          };
+        }
+        
+      } catch (decodeError) {
+        debugInfo.tokenAnalysis = {
+          error: decodeError.message,
+          tokenPreview: token.substring(0, 50) + '...'
+        };
+      }
+    }
+
+    res.json(debugInfo);
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'Debug endpoint error',
+      message: error.message
+    });
+  }
+});
+
+// Test endpoint to generate and verify a token (no auth required for debugging)
+router.post('/jwt-test', (req, res) => {
+  try {
+    const testPayload = {
+      userId: 'test-user-id',
+      userUuid: 'test-user-uuid',
+      email: 'test@example.com',
+      role: 'user',
+      verified: true,
+      sessionId: 'test-session-' + Date.now()
+    };
+
+    // Generate token with current config
+    const token = jwt.sign(testPayload, config.JWT.SECRET, {
+      expiresIn: config.JWT.EXPIRES_IN,
+      issuer: config.JWT.ISSUER,
+      audience: config.JWT.AUDIENCE
+    });
+
+    // Immediately try to verify it
+    try {
+      const verified = jwt.verify(token, config.JWT.SECRET, {
+        issuer: config.JWT.ISSUER,
+        audience: config.JWT.AUDIENCE
+      });
+
+      res.json({
+        success: true,
+        tokenLength: token.length,
+        generated: {
+          iss: config.JWT.ISSUER,
+          aud: config.JWT.AUDIENCE
+        },
+        verified: {
+          userId: verified.userId,
+          email: verified.email,
+          iss: verified.iss,
+          aud: verified.aud
+        }
+      });
+    } catch (verifyError) {
+      res.json({
+        success: false,
+        tokenGenerated: true,
+        tokenLength: token.length,
+        verificationError: verifyError.message
+      });
+    }
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      tokenGenerated: false,
+      error: error.message
+    });
   }
 });
 
