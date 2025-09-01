@@ -233,5 +233,48 @@ router.post('/jwt-test', (req, res) => {
   }
 });
 
+// Debug endpoint to check user profile completeness calculation
+router.get('/user-profile-debug/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const User = require('../models/User');
+    
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const profileCompleteness = user.profile?.profileCompleteness || user.profileCompleteness || 0;
+    
+    res.json({
+      userId: user._id,
+      email: user.email,
+      profileData: {
+        rootLevelProfileCompleteness: user.profileCompleteness,
+        nestedProfileCompleteness: user.profile?.profileCompleteness,
+        calculatedProfileCompleteness: profileCompleteness,
+        isFirstLogin: user.isFirstLogin,
+        profileCompleted: user.profileCompleted,
+        hasSeenOnboardingMessage: user.hasSeenOnboardingMessage
+      },
+      authResponse: {
+        userUuid: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        isFirstLogin: user.isFirstLogin,
+        isApprovedByAdmin: user.isApprovedByAdmin,
+        profileCompleteness: profileCompleteness,
+        hasSeenOnboardingMessage: user.hasSeenOnboardingMessage || false
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'Debug endpoint error',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
 
