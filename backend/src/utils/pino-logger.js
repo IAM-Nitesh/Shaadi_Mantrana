@@ -36,7 +36,13 @@ if (warnDest) streams.push({ level: 'warn', stream: warnDest });
 const baseLogger = pino(
   {
     level,
-    base: { service: 'shaadimantra-backend', env: process.env.NODE_ENV || 'development' },
+    base: { 
+      service: 'shaadimantra-backend', 
+      env: (process.env.NODE_ENV === 'production' || 
+            process.env.RENDER === 'true' || 
+            process.env.VERCEL === 'true' ||
+            process.env.HEROKU === 'true') ? 'production' : 'development'
+    },
     redact: {
       paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
       censor: '[REDACTED]',

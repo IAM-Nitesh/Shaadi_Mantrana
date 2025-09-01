@@ -11,7 +11,7 @@ const logger = {
 };
 
 // Backend API URL from env
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mantrana.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -42,10 +42,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Clear all authentication cookies
     logger.debug('🔍 Auth Logout API: Clearing authentication cookies');
 
+    const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
+    const sameSite = isSecure ? 'None' : 'Lax';
     res.setHeader('Set-Cookie', [
-      'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-      'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-      'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
+      `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+      `refreshToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+      `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
     ]);
 
     return res.status(200).json({
@@ -57,10 +59,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.error('❌ Auth Logout API: Logout error:', error);
 
     // Still clear cookies even if there's an error
+    const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
+    const sameSite = isSecure ? 'None' : 'Lax';
     res.setHeader('Set-Cookie', [
-      'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-      'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-      'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
+      `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+      `refreshToken=; HttpOnly; Secure; SameSite=${sameSite}; Max-Age=0; Path=/`,
+      `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
     ]);
 
     return res.status(200).json({

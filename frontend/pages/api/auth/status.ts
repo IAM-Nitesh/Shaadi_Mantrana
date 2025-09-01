@@ -1,6 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-
-// Simple logger for API routes
+import type { NextApiRequest, NextApiResponse } from 'next';// Simple logger for API routes
 const logger = {
   debug: (...args: any[]) => {
     if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ENABLE_DEBUG === 'true') {
@@ -11,11 +9,14 @@ const logger = {
 };
 
 // Backend API URL from env
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://shaadi-mantrana.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     logger.debug('🔍 Auth Status API: Starting authentication status check...');
+    logger.debug('🔍 Auth Status API: Request method:', req.method);
+    logger.debug('🔍 Auth Status API: Request headers:', req.headers);
+    logger.debug('🔍 Auth Status API: Request cookies:', req.cookies ? Object.keys(req.cookies) : 'None');
 
     // Get tokens from cookies (use correct cookie names from backend)
     const authToken = req.cookies.accessToken;
@@ -24,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Auth Status API: Auth token found:', authToken ? 'Yes' : 'No');
     logger.debug('🔍 Auth Status API: Auth token length:', authToken?.length || 0);
     logger.debug('🔍 Auth Status API: Refresh token found:', refreshToken ? 'Yes' : 'No');
+    logger.debug('🔍 Auth Status API: BACKEND_URL:', BACKEND_URL);
 
     if (!authToken) {
       logger.debug('ℹ️ Auth Status API: No authentication token found - returning graceful response');
@@ -41,14 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
     try {
-      logger.debug('🔍 Auth Status API: Making request to backend:', `${BACKEND_URL}/api/auth/profile`);
-      logger.debug('🔍 Auth Status API: Authorization header:', `Bearer ${authToken.substring(0, 20)}...`);
-      logger.debug('🔍 Auth Status API: Environment check:', {
-        NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-        backendUrl: BACKEND_URL,
-        authTokenLength: authToken.length
-      });
-
+      logger.debug('🔍 Auth Status API: Making request to backend:', `${BACKEND_URL}/api/auth/status`);
       const response = await fetch(`${BACKEND_URL}/api/auth/status`, {
         method: 'GET',
         headers: {
@@ -57,6 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         signal: controller.signal,
       });
+
+      logger.debug('🔍 Auth Status API: Fetch completed, response status:', response.status);
+      logger.debug('🔍 Auth Status API: Response headers:', Object.fromEntries(response.headers.entries()));
 
       clearTimeout(timeoutId);
       logger.debug('🔍 Auth Status API: Backend response status:', response.status);
@@ -93,9 +91,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
               // Set new cookies with the refreshed tokens
               if (refreshResult.accessToken) {
+                const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
+                const sameSite = isSecure ? 'None' : 'Lax';
                 res.setHeader('Set-Cookie', [
-                  `accessToken=${refreshResult.accessToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
-                  refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
+                  `accessToken=${refreshResult.accessToken}; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
+                  refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
                 ].filter(Boolean));
               }
 
@@ -113,10 +113,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Clear invalid cookies and return graceful response
+        const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
+        const sameSite = isSecure ? 'None' : 'Lax';
         res.setHeader('Set-Cookie', [
-          'accessToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-          'refreshToken=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-          'sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
+          `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+          `refreshToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
+          `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
         ]);
 
         return res.status(200).json({
@@ -127,9 +129,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const result = await response.json();
-      logger.debug('🔍 Auth Status API: Backend response:', result);
+      logger.debug('🔍 Auth Status API: Backend response:', {
+        authenticated: result.authenticated,
+        hasUser: !!result.user,
+        userRole: result.user?.role,
+        userEmail: result.user?.email,
+        userIsFirstLogin: result.user?.isFirstLogin,
+        redirectTo: result.redirectTo
+      });
 
-      if (result.success && result.user) {
+      if (result.authenticated && result.user) {
         const user = result.user;
         logger.debug('✅ Auth Status API: User authenticated successfully:', {
           email: user.email,
@@ -137,6 +146,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           isFirstLogin: user.isFirstLogin,
           profileCompleteness: user.profileCompleteness
         });
+
+        const finalRedirect = determineRedirectPath(user);
+        logger.debug('🔍 Auth Status API: Final redirect path:', finalRedirect);
 
         return res.status(200).json({
           authenticated: true,
@@ -149,7 +161,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             hasSeenOnboardingMessage: user.hasSeenOnboardingMessage,
             userUuid: user.userUuid
           },
-          redirectTo: determineRedirectPath(user)
+          redirectTo: finalRedirect
         });
       }
 
