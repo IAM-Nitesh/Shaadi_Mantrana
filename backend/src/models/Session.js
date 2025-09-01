@@ -41,7 +41,7 @@ const sessionSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 604800 // 7 days in seconds
+    expires: 86400 * 30 // 30 days absolute expiry
   },
   lastAccessed: {
     type: Date,
@@ -53,7 +53,7 @@ const sessionSchema = new mongoose.Schema({
 
 // Add indexes for performance
 sessionSchema.index({ userId: 1, createdAt: -1 });
-sessionSchema.index({ createdAt: 1 }, { expireAfterSeconds: 604800 }); // Auto-expire after 7 days
+sessionSchema.index({ lastAccessed: 1 }, { expireAfterSeconds: 86400 * 7 }); // Auto-expire after 7 days of inactivity
 
 // Static methods
 sessionSchema.statics.findBySessionId = function(sessionId) {

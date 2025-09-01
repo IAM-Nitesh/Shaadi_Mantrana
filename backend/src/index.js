@@ -223,11 +223,23 @@ app.get('/health', async (req, res) => {
     const dbHealth = await databaseService.healthCheck();
     const dbStats = await databaseService.getStats();
     
+    // Get session statistics if available
+    let sessionStats = null;
+    if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
+      try {
+        const sessionCleanupService = require('./services/sessionCleanupService');
+        sessionStats = await sessionCleanupService.getSessionStats();
+      } catch (error) {
+        console.warn('Could not get session stats:', error.message);
+      }
+    }
+    
     res.status(200).json({ 
       status: 'OK', 
       message: 'Shaadi Mantrana Backend API is running',
       timestamp: new Date().toISOString(),
       database: dbHealth,
+      sessions: sessionStats,
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0'
     });

@@ -71,6 +71,17 @@ async function startApplication() {
     const server = app.listen(config.PORT, () => {
       console.log(`✅ Server running on port ${config.PORT}`);
       
+      // Start session cleanup service if using MongoDB
+      if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
+        try {
+          const sessionCleanupService = require('./src/services/sessionCleanupService');
+          sessionCleanupService.start();
+          console.log('🧹 Session cleanup service started');
+        } catch (error) {
+          console.warn('⚠️  Could not start session cleanup service:', error.message);
+        }
+      }
+      
       // Production-friendly logging - less verbose
       if (config.isProduction) {
         console.log(`📍 Health check: /health`);
