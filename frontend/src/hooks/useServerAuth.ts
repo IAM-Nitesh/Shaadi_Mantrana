@@ -18,13 +18,19 @@ export interface UseServerAuthReturn {
 }
 
 function determineRedirectPath(user: AuthUser): string | null {
+  logger.debug('🔍 determineRedirectPath: Input user:', user);
+  logger.debug('🔍 determineRedirectPath: User role:', user.role);
+  logger.debug('🔍 determineRedirectPath: User isApprovedByAdmin:', user.isApprovedByAdmin);
+
   // If user is not approved, they shouldn't be authenticated
   if (!user.isApprovedByAdmin) {
+    logger.debug('🔄 determineRedirectPath: User not approved by admin, redirecting to /');
     return '/';
   }
 
   // Admin users go to admin dashboard
   if (user.role === 'admin') {
+    logger.debug('🔄 determineRedirectPath: Admin user detected, redirecting to /admin/dashboard');
     return '/admin/dashboard';
   }
 
@@ -271,12 +277,16 @@ export function useServerAuth(): UseServerAuthReturn {
 
       if (response.authenticated && response.user) {
         logger.info('✅ useServerAuth: User authenticated:', response.user);
+        logger.debug('🔍 useServerAuth: Backend redirectTo:', response.redirectTo);
+        logger.debug('🔍 useServerAuth: User role from backend:', response.user.role);
+        logger.debug('🔍 useServerAuth: User isFirstLogin from backend:', response.user.isFirstLogin);
+
         setUser(response.user);
         setIsAuthenticated(true);
         setError('');
 
         const redirectPath = response.redirectTo || determineRedirectPath(response.user);
-        logger.debug('🔍 useServerAuth: Redirect path:', redirectPath);
+        logger.debug('🔍 useServerAuth: Final redirect path:', redirectPath);
         setRedirectTo(redirectPath);
 
         setCachedAuth(response.user, redirectPath);

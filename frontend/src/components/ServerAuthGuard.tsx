@@ -39,7 +39,9 @@ export default function ServerAuthGuard({
       hasUser: !!user,
       hasError: !!error,
       redirectTo,
-      currentPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+      currentPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      userRole: user?.role,
+      userEmail: user?.email
     });
   }, [isClientInitialized, isAuthenticated, isLoading, user, error, redirectTo]);
 
@@ -84,6 +86,12 @@ export default function ServerAuthGuard({
   // Handle redirects
   useEffect(() => {
     if (!isClientInitialized || hasRedirected) return;
+
+    logger.debug('🔄 ServerAuthGuard: Checking redirect logic:', {
+      redirectTo,
+      currentPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      shouldRedirect: redirectTo && redirectTo !== (typeof window !== 'undefined' ? window.location.pathname : '')
+    });
 
     if (redirectTo && redirectTo !== window.location.pathname) {
       logger.debug(`🔄 ServerAuthGuard: Redirecting to ${redirectTo}`);
