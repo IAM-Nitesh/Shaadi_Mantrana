@@ -33,26 +33,38 @@ router.get('/token', (req, res) => authController.getToken(req, res));
 
 // Check if an email is preapproved
 router.get('/preapproved/check', (req, res, next) => {
+  // Disable caching for this endpoint
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   const email = req.query.email?.toLowerCase().trim();
   if (!email) return res.status(400).json({ preapproved: false });
+
+  console.log(`🔍 Checking preapproved status for email: ${email}`);
 
   const { User } = require('../models');
   User.findOne({ email })
     .then(user => {
+      console.log(`📊 User found:`, user ? { email: user.email, role: user.role, isApprovedByAdmin: user.isApprovedByAdmin } : 'NOT FOUND');
+
       if (user) {
         // Check if user is admin or approved by admin
         const isAdmin = user.role === 'admin';
         const isApproved = user.isApprovedByAdmin;
-        
+
+        console.log(`✅ User status - Admin: ${isAdmin}, Approved: ${isApproved}`);
+
         if (isAdmin || isApproved) {
           return res.json({ preapproved: true });
         }
       }
-      
+
+      console.log(`❌ User not preapproved`);
       return res.json({ preapproved: false });
     })
     .catch(err => {
-      console.error(err);
+      console.error('❌ Database error:', err);
       res.status(500).json({ error: 'Internal server error' });
     });
 });
