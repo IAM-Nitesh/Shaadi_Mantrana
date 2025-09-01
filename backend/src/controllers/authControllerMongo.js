@@ -760,6 +760,9 @@ class AuthController {
           console.log('🔍 getAuthStatus: Session data found:', !!sessionData);
 
           if (sessionData) {
+            // Update session lastAccessed time for TTL management
+            await JWTSessionManager.updateSessionLastAccessed(decoded.sessionId);
+            
             // Get full user data from database
             const dbUser = await User.findById(decoded.userId).select('-password');
             if (dbUser) {
