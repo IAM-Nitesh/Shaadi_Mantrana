@@ -7,6 +7,7 @@ const Connection = require('./Connection');
 const DailyLike = require('./DailyLike');
 const Message = require('./Message');
 const Conversation = require('./Conversation');
+const Session = require('./Session');
 
 module.exports = {
   User,
@@ -15,5 +16,6 @@ module.exports = {
   Connection,
   DailyLike,
   Message,
-  Conversation
+  Conversation,
+  Session
 };

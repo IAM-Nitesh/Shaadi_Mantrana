@@ -484,8 +484,8 @@ class AuthController {
       // Set HTTP-only cookies for the session
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         // Remove domain restriction to allow cross-site cookies
         // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
@@ -598,7 +598,7 @@ class AuthController {
       }
 
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, config.jwtSecret);
+      const decoded = jwt.verify(refreshToken, config.JWT.SECRET);
       const sessionData = JWTSessionManager.getSession(decoded.sessionId);
 
       if (!sessionData) {
@@ -618,7 +618,7 @@ class AuthController {
         sessionId: decoded.sessionId
       };
 
-      const newAccessToken = jwt.sign(payload, config.jwtSecret, { 
+      const newAccessToken = jwt.sign(payload, config.JWT.SECRET, { 
         expiresIn: '24h',
         issuer: 'shaadi-mantra-api',
         audience: 'shaadi-mantra-app'
@@ -627,8 +627,8 @@ class AuthController {
       // Set new access token cookie
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         // Remove domain restriction to allow cross-site cookies
         // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
@@ -664,8 +664,8 @@ class AuthController {
       // Clear authentication cookies
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         // Remove domain restriction to allow cross-site cookies
         // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
       };
@@ -693,6 +693,14 @@ class AuthController {
   // Get auth status (returns profile when authenticated, otherwise authenticated:false)
   async getAuthStatus(req, res) {
     try {
+      console.log('🔍 getAuthStatus: Starting auth status check...');
+      console.log('🔍 getAuthStatus: Environment:', process.env.NODE_ENV);
+      console.log('🔍 getAuthStatus: Request secure:', req.secure);
+      console.log('🔍 getAuthStatus: X-Forwarded-Proto:', req.headers['x-forwarded-proto']);
+      console.log('🔍 getAuthStatus: Cookies present:', !!req.cookies);
+      console.log('🔍 getAuthStatus: Cookie keys:', req.cookies ? Object.keys(req.cookies) : 'None');
+      console.log('🔍 getAuthStatus: Authorization header:', req.headers.authorization ? 'Present' : 'None');
+      
       // Set comprehensive cache control headers to prevent any caching
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.set('Pragma', 'no-cache');
@@ -708,16 +716,31 @@ class AuthController {
       // First try Authorization header
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
+        console.log('🔍 getAuthStatus: Using Authorization header token');
       }
       // Then try cookies
       else if (req.cookies?.accessToken) {
         token = req.cookies.accessToken;
+        console.log('🔍 getAuthStatus: Using cookie token');
+      } else {
+        console.log('🔍 getAuthStatus: No token found in headers or cookies');
       }
 
       if (token) {
         try {
-          const decoded = jwt.verify(token, config.jwtSecret);
+          console.log('🔍 getAuthStatus: Verifying token...');
+          const decoded = jwt.verify(token, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
+          console.log('🔍 getAuthStatus: Token decoded successfully:', {
+            userId: decoded.userId,
+            sessionId: decoded.sessionId,
+            email: decoded.email
+          });
+          
           const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          console.log('🔍 getAuthStatus: Session data found:', !!sessionData);
 
           if (sessionData) {
             // Get full user data from database
@@ -732,14 +755,30 @@ class AuthController {
                 profileCompleteness: dbUser.profileCompleteness || 0,
                 hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false
               };
+              console.log('✅ getAuthStatus: User authenticated successfully:', {
+                email: user.email,
+                role: user.role,
+                isFirstLogin: user.isFirstLogin,
+                isApprovedByAdmin: user.isApprovedByAdmin
+              });
+            } else {
+              console.log('❌ getAuthStatus: User not found in database');
             }
+          } else {
+            console.log('❌ getAuthStatus: Session not found or invalid');
           }
         } catch (tokenError) {
-          console.log('Token verification failed:', tokenError.message);
+          console.log('❌ getAuthStatus: Token verification failed:', tokenError.message);
         }
       }
 
       if (user) {
+        console.log('📤 getAuthStatus: Sending authentication response:', {
+          authenticated: true,
+          userRole: user.role,
+          userEmail: user.email,
+          redirectTo: '/dashboard'
+        });
         return res.status(200).json({
           authenticated: true,
           user: user,
@@ -749,6 +788,7 @@ class AuthController {
       }
 
       // Not authenticated
+      console.log('🔍 getAuthStatus: User not authenticated, returning anonymous status');
       return res.status(200).json({
         authenticated: false,
         redirectTo: '/',
@@ -756,7 +796,7 @@ class AuthController {
         timestamp: Date.now() // Add timestamp to ensure uniqueness
       });
     } catch (err) {
-      console.error('❌ Auth status error:', err);
+      console.error('❌ getAuthStatus: Error:', err);
       return res.status(500).json({ 
         authenticated: false, 
         redirectTo: '/',
@@ -774,8 +814,11 @@ class AuthController {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
         try {
-          const decoded = jwt.verify(token, config.jwtSecret);
-          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          const decoded = jwt.verify(token, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
+          const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
             return res.status(200).json({
@@ -788,34 +831,60 @@ class AuthController {
         }
       }
 
-      // Try to get from cookies
-      const sessionToken = req.cookies?.sessionToken;
-      if (sessionToken) {
+      // Try to get from accessToken cookie (primary method)
+      const accessToken = req.cookies?.accessToken;
+      if (accessToken) {
         try {
-          const decoded = jwt.verify(sessionToken, config.jwtSecret);
-          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          const decoded = jwt.verify(accessToken, config.JWT.SECRET, {
+            issuer: config.JWT.ISSUER,
+            audience: config.JWT.AUDIENCE
+          });
+          const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           
           if (sessionData) {
-            // Generate a new access token
-            const payload = {
-              userId: sessionData.userId,
-              email: sessionData.email,
-              sessionId: decoded.sessionId
-            };
-
-            const accessToken = jwt.sign(payload, config.jwtSecret, { 
-              expiresIn: '24h',
-              issuer: 'shaadi-mantra-api',
-              audience: 'shaadi-mantra-app'
-            });
-
             return res.status(200).json({
               success: true,
               token: accessToken
             });
           }
         } catch (tokenError) {
-          console.log('Session token verification failed:', tokenError.message);
+          console.log('Access token verification failed:', tokenError.message);
+        }
+      }
+
+      // Try to get from sessionId cookie (fallback method)
+      const sessionId = req.cookies?.sessionId;
+      if (sessionId) {
+        try {
+          const sessionData = await JWTSessionManager.getSession(sessionId);
+          
+          if (sessionData) {
+            // Generate a new access token from session data
+            const payload = {
+              userId: sessionData.userId,
+              userUuid: sessionData.userUuid,
+              email: sessionData.email,
+              role: sessionData.role,
+              verified: sessionData.verified,
+              sessionId: sessionId,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+              aud: 'shaadi-mantra-app',
+              iss: 'shaadi-mantra-api'
+            };
+
+            const newAccessToken = jwt.sign(payload, config.JWT.SECRET, {
+              issuer: config.JWT.ISSUER,
+              audience: config.JWT.AUDIENCE
+            });
+
+            return res.status(200).json({
+              success: true,
+              token: newAccessToken
+            });
+          }
+        } catch (tokenError) {
+          console.log('Session ID verification failed:', tokenError.message);
         }
       }
 

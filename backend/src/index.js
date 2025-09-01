@@ -30,19 +30,19 @@ app.set('trust proxy', 1);
 const corsOptions = {
   origin: function(origin, callback) {
     const allowedOrigins = [
-      'https://shaadi-mantrana-app-frontend.vercel.app', // Production frontend
-      'https://shaadi-mantrana.onrender.com', // Production backend (for health checks)
+      config.FRONTEND_URL, // Production frontend from config
+      config.FRONTEND_FALLBACK_URL, // Fallback frontend URL
       'http://localhost:3000', // Local development
-      'http://localhost:3001', // Local backend
-      'http://127.0.0.1:3000', // Local development alternative
-      'http://127.0.0.1:3001'  // Local backend alternative
-    ];
+      'http://localhost:3001', // Alternative local port
+      'https://shaadi-mantrana.vercel.app', // Explicit new frontend URL
+    ].filter(Boolean); // Remove empty strings
     
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.log(`CORS blocked origin: ${origin}`);
+      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(null, false);
     }
   },
@@ -70,7 +70,7 @@ app.use(cors(corsOptions));
 // Handle OPTIONS preflight requests explicitly
 app.options('*', cors(corsOptions));
 
-// Security middleware - Helmet with relaxed CSP
+// Enhanced Security middleware - Helmet with comprehensive security headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -80,23 +80,63 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
         "'self'", 
-        "https://shaadi-mantrana-app-frontend.vercel.app",
-        "https://shaadi-mantrana.onrender.com",
+        config.FRONTEND_URL,
+        config.FRONTEND_FALLBACK_URL,
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001"
-      ],
+        "http://127.0.0.1:3001",
+        "https://shaadi-mantrana.vercel.app"
+      ].filter(Boolean), // Remove empty strings
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: []
     },
   },
-  // Allow cross-origin resource sharing
+  // Enhanced security policies
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
+  // Additional security headers
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  permissionsPolicy: {
+    features: {
+      geolocation: [],
+      microphone: [],
+      camera: [],
+      payment: [],
+      usb: [],
+      magnetometer: [],
+      gyroscope: [],
+      accelerometer: []
+    }
+  }
 }));
+
+// Additional security headers
+app.use((req, res, next) => {
+  res.set('X-Permitted-Cross-Domain-Policies', 'none');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
+// Add environment info to response headers for debugging
+app.use((req, res, next) => {
+  res.set('X-Environment', config.NODE_ENV);
+  res.set('X-Is-Production', config.isProduction.toString());
+  next();
+});
 
 // Rate limiting - more lenient for development
 const limiter = rateLimit({
@@ -183,11 +223,23 @@ app.get('/health', async (req, res) => {
     const dbHealth = await databaseService.healthCheck();
     const dbStats = await databaseService.getStats();
     
+    // Get session statistics if available
+    let sessionStats = null;
+    if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
+      try {
+        const sessionCleanupService = require('./services/sessionCleanupService');
+        sessionStats = await sessionCleanupService.getSessionStats();
+      } catch (error) {
+        console.warn('Could not get session stats:', error.message);
+      }
+    }
+    
     res.status(200).json({ 
       status: 'OK', 
       message: 'Shaadi Mantrana Backend API is running',
       timestamp: new Date().toISOString(),
       database: dbHealth,
+      sessions: sessionStats,
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0'
     });
