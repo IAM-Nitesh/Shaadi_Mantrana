@@ -590,6 +590,22 @@ class AuthController {
         refreshToken = req.cookies.refreshToken;
       }
 
+      // If still no refresh token, try Authorization header (for frontend compatibility)
+      if (!refreshToken && req.headers.authorization?.startsWith('Bearer ')) {
+        // For refresh requests, the Authorization header might contain the access token
+        // But we need the refresh token. Let's try to get it from the session
+        try {
+          const accessToken = req.headers.authorization.substring(7);
+          const decoded = jwt.verify(accessToken, config.JWT.SECRET);
+          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          if (sessionData?.refreshToken) {
+            refreshToken = sessionData.refreshToken;
+          }
+        } catch (error) {
+          console.log('Could not extract refresh token from access token');
+        }
+      }
+
       if (!refreshToken) {
         return res.status(400).json({
           success: false,
@@ -608,8 +624,9 @@ class AuthController {
         });
       }
 
-      // Update session
-      sessionData.lastAccess = Date.now();
+      // Update session lastAccessed time
+      sessionData.lastAccessed = new Date();
+      await JWTSessionManager.updateSessionLastAccessed(decoded.sessionId);
 
       // Generate new access token
       const payload = {
@@ -773,16 +790,22 @@ class AuthController {
       }
 
       if (user) {
+        // Determine redirect path based on user role
+        let redirectTo = '/dashboard';
+        if (user.role === 'admin') {
+          redirectTo = '/admin/dashboard';
+        }
+
         console.log('📤 getAuthStatus: Sending authentication response:', {
           authenticated: true,
           userRole: user.role,
           userEmail: user.email,
-          redirectTo: '/dashboard'
+          redirectTo: redirectTo
         });
         return res.status(200).json({
           authenticated: true,
           user: user,
-          redirectTo: '/dashboard',
+          redirectTo: redirectTo,
           timestamp: Date.now() // Add timestamp to ensure uniqueness
         });
       }
