@@ -197,9 +197,9 @@ const matchRoutes = require('./routes/matchRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
 const chatRoutes = require('./routes/chatRoutes');
-// Dev-only debug routes
+// Debug routes - JWT debugging enabled in production for auth troubleshooting
 let debugRoutes = null;
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_JWT_DEBUG === 'true') {
   debugRoutes = require('./routes/debugRoutes');
 }
 

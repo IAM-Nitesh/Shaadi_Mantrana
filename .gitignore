@@ -322,3 +322,9 @@ scripts/check-user-dev.js
 scripts/check-user-prod.js
 mongodb-insert.js
 playground-prod-admin.mongodb.js
+auth-debug.js
+config-debug.js
+cookie-debug.js
+jwt-test.js
+production-flow-debug.js
+AUTH_FIX_SUMMARY.md

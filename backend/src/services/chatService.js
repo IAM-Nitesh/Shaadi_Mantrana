@@ -32,7 +32,7 @@ class ChatService {
 
   // Setup Socket.IO event handlers
   setupEventHandlers() {
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', async (socket) => {
       console.log(`🔌 User connected: ${socket.id}`);
 
       // Attempt automatic authentication from handshake auth (if provided)
@@ -40,7 +40,7 @@ class ChatService {
       if (handshakeToken) {
         try {
           const decoded = JWTSessionManager.verifyAccessToken(handshakeToken);
-          if (!JWTSessionManager.validateSession(decoded.sessionId)) {
+          if (!(await JWTSessionManager.validateSession(decoded.sessionId))) {
             throw new Error('Invalid session');
           }
 
@@ -58,7 +58,7 @@ class ChatService {
       }
 
       // Handle user authentication (client can emit authenticate)
-      socket.on('authenticate', (data) => {
+      socket.on('authenticate', async (data) => {
         const token = data && (data.token || data.authToken);
 
         if (!token) {
@@ -69,7 +69,7 @@ class ChatService {
 
         try {
           const decoded = JWTSessionManager.verifyAccessToken(token);
-          if (!JWTSessionManager.validateSession(decoded.sessionId)) {
+          if (!(await JWTSessionManager.validateSession(decoded.sessionId))) {
             throw new Error('Invalid session');
           }
 

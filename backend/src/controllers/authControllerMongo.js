@@ -457,7 +457,7 @@ class AuthController {
       }
 
       // Create JWT session using the same system as the main auth controller
-      const session = JWTSessionManager.createSession(user);
+      const session = await JWTSessionManager.createSession(user);
 
       // Prepare response with user data for frontend redirection logic
       const userData = user.toPublicJSON();
@@ -599,7 +599,7 @@ class AuthController {
 
       // Verify refresh token
       const decoded = jwt.verify(refreshToken, config.JWT.SECRET);
-      const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+      const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
 
       if (!sessionData) {
         return res.status(401).json({
@@ -739,7 +739,7 @@ class AuthController {
             email: decoded.email
           });
           
-          const sessionData = JWTSessionManager.getSession(decoded.sessionId);
+          const sessionData = await JWTSessionManager.getSession(decoded.sessionId);
           console.log('🔍 getAuthStatus: Session data found:', !!sessionData);
 
           if (sessionData) {

@@ -285,7 +285,7 @@ const authenticateToken = async (req, res, next) => {
     console.log('🔍 AuthMiddleware: Active sessions count:', activeSessions.size);
     console.log('🔍 AuthMiddleware: Active session IDs:', Array.from(activeSessions.keys()));
     
-    if (!JWTSessionManager.validateSession(decoded.sessionId)) {
+    if (!(await JWTSessionManager.validateSession(decoded.sessionId))) {
       console.log('❌ AuthMiddleware: Session not found or invalid');
       console.log('❌ AuthMiddleware: Session validation failed');
       return res.status(401).json({
@@ -356,7 +356,7 @@ const authenticateToken = async (req, res, next) => {
 };
 
 // Optional authentication middleware (doesn't fail if no token)
-const optionalAuth = (req, res, next) => {
+const optionalAuth = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -368,7 +368,7 @@ const optionalAuth = (req, res, next) => {
   try {
     const decoded = JWTSessionManager.verifyAccessToken(token);
     
-    if (JWTSessionManager.validateSession(decoded.sessionId)) {
+    if (await JWTSessionManager.validateSession(decoded.sessionId)) {
       req.user = {
         userId: decoded.userId,
         email: decoded.email,
