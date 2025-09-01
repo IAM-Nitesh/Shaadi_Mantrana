@@ -17,7 +17,7 @@ import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useAndroidBackButton } from '../../hooks/useAndroidBackButton';
-import { getAuthStatus } from '../../utils/client-auth';
+import { useServerAuth } from '../../hooks/useServerAuth';
 import ToastService from '../../services/toastService';
 
 import { safeGsap } from '../../components/SafeGsap';
@@ -26,6 +26,7 @@ import logger from '../../utils/logger';
 
 function DashboardContent() {
   const router = useRouter();
+  const { user } = useServerAuth();
   const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showFilter, setShowFilter] = useState(false);
@@ -42,8 +43,6 @@ function DashboardContent() {
     selectedState: ''
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [profileCompleteness, setProfileCompleteness] = useState(0);
-  const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [matchName, setMatchName] = useState('');
   const [connectionId, setConnectionId] = useState('');
@@ -76,42 +75,11 @@ function DashboardContent() {
   const cardRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
 
-  // Access Control: Check if user can access dashboard
+  // Initialize user state from ServerAuthGuard
   useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        const authStatus = await getAuthStatus();
-        if (!authStatus?.authenticated) {
-          router.push('/');
-          return;
-        }
-
-        const user = authStatus.user;
-        if (!user) {
-          router.push('/');
-          return;
-        }
-
-        // Access Control Logic: Only allow access if profileCompleteness is 100%
-        if (user.profileCompleteness < 100) {
-          logger.debug('🚫 Access denied: Profile incomplete - redirecting to profile');
-          router.replace('/profile');
-          return;
-        }
-
-        // Set user state
-        setProfileCompleteness(user.profileCompleteness || 0);
-        setIsFirstLogin(user.isFirstLogin || false);
-
-        logger.debug('✅ Dashboard access granted - Profile complete');
-      } catch (error) {
-        logger.error('Error checking dashboard access:', error);
-        router.push('/');
-      }
-    };
-
-    checkAccess();
-  }, [router]);
+    // Authentication and profile completeness checks are now handled by ServerAuthGuard
+    logger.debug('✅ Dashboard: Component mounted with authenticated user');
+  }, []);
 
   // Reset interacted profiles when profiles change
   useEffect(() => {
@@ -518,11 +486,11 @@ function DashboardContent() {
   // Filter profiles based on current filters (client-side backup)
   const filteredProfiles = profiles.filter(profile => {
     // Age filter
-    const ageInRange = profile.profile.age >= filters.ageRange[0] && profile.profile.age <= filters.ageRange[1];
-    
+    const ageInRange = profile.profile?.age ? profile.profile.age >= filters.ageRange[0] && profile.profile.age <= filters.ageRange[1] : true;
+
     // Profession filter
-    const professionMatch = filters.selectedProfessions.length === 0 || 
-                           filters.selectedProfessions.includes(profile.profile.profession);
+    const professionMatch = filters.selectedProfessions.length === 0 ||
+                           (profile.profile?.profession && filters.selectedProfessions.includes(profile.profile.profession));
     
     // Location filter
     let locationMatch = true;

@@ -22,13 +22,28 @@ export default function ServerAuthGuard({
   fallbackPath = '/'
 }: ServerAuthGuardProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, error, redirectTo, checkAuth } = useServerAuth();
+  const { user, isAuthenticated, isLoading, error, redirectTo, checkAuth, forceRefresh } = useServerAuth();
   
   // Add client-side initialization state to prevent hydration mismatches
   const [isClientInitialized, setIsClientInitialized] = useState(false);
   const [hasRedirected, setHasRedirected] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const [authTimeout, setAuthTimeout] = useState(false);
+
+  // Debug current state
+  useEffect(() => {
+    logger.debug('🔍 ServerAuthGuard: State update:', {
+      isClientInitialized,
+      isAuthenticated,
+      isLoading,
+      hasUser: !!user,
+      hasError: !!error,
+      redirectTo,
+      currentPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      userRole: user?.role,
+      userEmail: user?.email
+    });
+  }, [isClientInitialized, isAuthenticated, isLoading, user, error, redirectTo]);
 
   // Initialize client-side state
   useEffect(() => {
@@ -47,27 +62,36 @@ export default function ServerAuthGuard({
     return () => clearTimeout(timeoutId);
   }, [isLoading, isAuthenticated]);
 
-  // Handle authentication check
+  // Handle authentication check - force fresh check on every page load
   useEffect(() => {
     if (!isClientInitialized) return;
 
     const performAuthCheck = async () => {
       try {
-        await checkAuth();
+        logger.debug('🔍 ServerAuthGuard: Performing fresh authentication check');
+        await forceRefresh();
+        logger.debug('🔍 ServerAuthGuard: Authentication check completed');
       } catch (error) {
         logger.error('❌ ServerAuthGuard: Authentication check failed:', error);
         setShowFallback(true);
       }
     };
 
-    if (requireAuth && !isAuthenticated && !isLoading) {
+    if (requireAuth) {
+      // Always perform auth check on page load, regardless of current state
       performAuthCheck();
     }
-  }, [isClientInitialized, requireAuth, isAuthenticated, isLoading, checkAuth]);
+  }, [isClientInitialized, requireAuth, checkAuth]);
 
   // Handle redirects
   useEffect(() => {
     if (!isClientInitialized || hasRedirected) return;
+
+    logger.debug('🔄 ServerAuthGuard: Checking redirect logic:', {
+      redirectTo,
+      currentPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      shouldRedirect: redirectTo && redirectTo !== (typeof window !== 'undefined' ? window.location.pathname : '')
+    });
 
     if (redirectTo && redirectTo !== window.location.pathname) {
       logger.debug(`🔄 ServerAuthGuard: Redirecting to ${redirectTo}`);
@@ -92,9 +116,12 @@ export default function ServerAuthGuard({
       }
     }
 
-    // Handle onboarding message for users
-    if (user && user.role === 'user' && !user.hasSeenOnboardingMessage && user.isFirstLogin) {
-      logger.debug('🎯 ServerAuthGuard: Showing onboarding message for first-time user');
+    // Handle profile completeness requirement
+    if (requireCompleteProfile && user && user.profileCompleteness < 100) {
+      logger.debug('🚫 ServerAuthGuard: Profile incomplete - redirecting to profile');
+      setHasRedirected(true);
+      router.push('/profile');
+      return;
     }
 
   }, [isClientInitialized, isAuthenticated, user, redirectTo, requireAuth, requireAdmin, requireCompleteProfile, fallbackPath, router, hasRedirected, authTimeout]);
