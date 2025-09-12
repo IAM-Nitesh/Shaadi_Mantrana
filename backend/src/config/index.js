@@ -112,7 +112,12 @@ module.exports = {
     SMTP_PASS: process.env.SMTP_PASS || '',
     FROM_EMAIL: process.env.EMAIL_FROM || process.env.SMTP_USER || '',
     FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shaadi Mantrana Support',
-    ENABLED: process.env.ENABLE_EMAIL === 'true'
+    ENABLED: process.env.ENABLE_EMAIL === 'true',
+    // Timeouts to prevent request hangs in environments that block SMTP (e.g., some PaaS)
+    SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || 5000,
+    CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || 4000,
+    SOCKET_TIMEOUT_MS: parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '') || 5000,
+    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || 5000
   },
   
   // File upload configuration
