@@ -461,6 +461,15 @@ class AuthController {
 
       // Prepare response with user data for frontend redirection logic
       const userData = user.toPublicJSON();
+
+      // Compute redirect based on business rules
+      const isAdminUser = user.role === 'admin';
+      const completeness = user.profile?.profileCompleteness || 0;
+      const redirectTo = isAdminUser
+        ? '/admin/dashboard'
+        : (user.isFirstLogin || completeness < 100)
+          ? '/profile'
+          : '/dashboard';
       
       // Add additional fields needed for frontend redirection logic
       const responseData = {
@@ -470,9 +479,10 @@ class AuthController {
           ...userData,
           isFirstLogin: user.isFirstLogin,
           isApprovedByAdmin: user.isApprovedByAdmin,
-          profileCompleteness: user.profile?.profileCompleteness || 0,
+          profileCompleteness: completeness,
           hasSeenOnboardingMessage: user.hasSeenOnboardingMessage || false
         },
+        redirectTo,
         session: {
           accessToken: session.accessToken,
           refreshToken: session.refreshToken,
@@ -797,11 +807,14 @@ class AuthController {
       }
 
       if (user) {
-        // Determine redirect path based on user role
-        let redirectTo = '/dashboard';
-        if (user.role === 'admin') {
-          redirectTo = '/admin/dashboard';
-        }
+        // Determine redirect path based on business rules
+        const isAdminUser = user.role === 'admin';
+        const completeness = user.profileCompleteness || 0;
+        const redirectTo = isAdminUser
+          ? '/admin/dashboard'
+          : (user.isFirstLogin || completeness < 100)
+            ? '/profile'
+            : '/dashboard';
 
         console.log('📤 getAuthStatus: Sending authentication response:', {
           authenticated: true,
