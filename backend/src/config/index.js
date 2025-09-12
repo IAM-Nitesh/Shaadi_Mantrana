@@ -113,6 +113,10 @@ module.exports = {
     FROM_EMAIL: process.env.EMAIL_FROM || process.env.SMTP_USER || '',
     FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shaadi Mantrana Support',
     ENABLED: process.env.ENABLE_EMAIL === 'true',
+    // Prefer HTTPS email APIs in PaaS where SMTP is blocked
+    PROVIDER: process.env.EMAIL_PROVIDER || (process.env.RESEND_API_KEY ? 'resend' : (process.env.SENDGRID_API_KEY ? 'sendgrid' : 'smtp')),
+    RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
     // Timeouts to prevent request hangs in environments that block SMTP (e.g., some PaaS)
     SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || 5000,
     CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || 4000,
