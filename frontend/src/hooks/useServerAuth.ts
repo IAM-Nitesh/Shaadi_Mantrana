@@ -312,7 +312,7 @@ export function useServerAuth(): UseServerAuthReturn {
       // Handle timeout specifically
       if (error.name === 'AbortError') {
         logger.error('⏰ useServerAuth: Authentication request timed out');
-        setError('Authentication check timed out. Please refresh the page.');
+        setError('Authentication check timed out. Please try again or refresh the page.');
       } else {
         setError(error instanceof Error ? error.message : 'Authentication failed');
       }
@@ -418,10 +418,17 @@ export function useServerAuth(): UseServerAuthReturn {
           return;
         }
         
+        // If user is already authenticated and we have recent auth data, don't force a new check
+        if (isAuthenticated && user && lastCheckTime && (Date.now() - lastCheckTime < 30000)) {
+          logger.debug('✅ useServerAuth: Recent auth check found, skipping new check');
+          setIsLoading(false);
+          return;
+        }
+        
         // Set a timeout for the auth check
         const authPromise = checkAuth(false); // Don't force refresh on initial load
         const timeoutPromise = new Promise((_, reject) => {
-          authTimeout = setTimeout(() => reject(new Error('Authentication timeout')), 5000); // 5 second timeout
+          authTimeout = setTimeout(() => reject(new Error('Authentication timeout')), 15000); // 15 second timeout
         });
         
         await Promise.race([authPromise, timeoutPromise]);
@@ -453,7 +460,7 @@ export function useServerAuth(): UseServerAuthReturn {
         setIsLoading(false);
         setError('Authentication check timed out. Please refresh the page.');
       }
-    }, 10000); // 10 second maximum wait
+    }, 30000); // 30 second maximum wait
 
     performAuthCheck();
 

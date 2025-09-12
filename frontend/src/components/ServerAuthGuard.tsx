@@ -22,7 +22,15 @@ export default function ServerAuthGuard({
   fallbackPath = '/'
 }: ServerAuthGuardProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, error, redirectTo, checkAuth, forceRefresh } = useServerAuth();
+  const { user, isAuthenticated, isLoading, error: hookError, redirectTo, checkAuth, forceRefresh } = useServerAuth();
+  
+  // Local error state to allow clearing error
+  const [error, setError] = useState<string>(hookError || '');
+
+  // Sync error from hook to local error state
+  useEffect(() => {
+    setError(hookError || '');
+  }, [hookError]);
   
   // Add client-side initialization state to prevent hydration mismatches
   const [isClientInitialized, setIsClientInitialized] = useState(false);
@@ -57,7 +65,7 @@ export default function ServerAuthGuard({
         logger.debug('⏰ ServerAuthGuard: Authentication timeout reached');
         setAuthTimeout(true);
       }
-    }, 15000); // 15 seconds timeout
+    }, 30000); // 30 seconds timeout
 
     return () => clearTimeout(timeoutId);
   }, [isLoading, isAuthenticated]);
@@ -156,8 +164,17 @@ export default function ServerAuthGuard({
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Connection Timeout</h3>
-          <p className="text-gray-600 mb-6">Authentication is taking longer than expected. Pull down to refresh or try again later.</p>
+          <p className="text-gray-600 mb-6">Authentication is taking longer than expected. This might be due to network issues or server load.</p>
           <div className="space-x-4">
+            <button
+              onClick={() => {
+                setAuthTimeout(false);
+                forceRefresh();
+              }}
+              className="bg-blue-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-600 transition-all duration-300 shadow-lg"
+            >
+              Try Again
+            </button>
             <button
               onClick={() => router.push('/')}
               className="bg-white border-2 border-gray-500 text-gray-500 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition-all duration-300 shadow-lg"
@@ -183,6 +200,15 @@ export default function ServerAuthGuard({
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Authentication Error</h3>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-x-4">
+            <button
+              onClick={() => {
+                setError('');
+                forceRefresh();
+              }}
+              className="bg-blue-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-600 transition-all duration-300 shadow-lg"
+            >
+              Try Again
+            </button>
             <button
               onClick={() => router.push('/')}
               className="bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
