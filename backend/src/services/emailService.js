@@ -21,13 +21,22 @@ class EmailService {
         return;
       }
 
-      // Create transporter with Gmail configuration
+      // Create transporter with explicit SMTP configuration and safe timeouts
+      const port = Number(config.EMAIL.SMTP_PORT) || 587;
+      const secure = port === 465; // true for 465, false for other ports
       this.transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: config.EMAIL.SMTP_HOST || 'smtp.gmail.com',
+        port,
+        secure,
         auth: {
           user: config.EMAIL.SMTP_USER,
           pass: config.EMAIL.SMTP_PASS
         },
+        // Important: set timeouts so sendMail doesn't hang for minutes
+        connectionTimeout: config.EMAIL.CONNECT_TIMEOUT_MS || 4000,
+        greetingTimeout: config.EMAIL.GREETING_TIMEOUT_MS || 5000,
+        socketTimeout: config.EMAIL.SOCKET_TIMEOUT_MS || 5000,
+        // TLS options
         tls: {
           rejectUnauthorized: false
         }
@@ -96,7 +105,13 @@ class EmailService {
       };
 
       console.log(`📧 Attempting to send OTP email to ${email}...`);
-      const info = await this.transporter.sendMail(mailOptions);
+
+      // Cap the time we wait for nodemailer with Promise.race
+      const sendPromise = this.transporter.sendMail(mailOptions);
+      const timeoutMs = config.EMAIL.SEND_TIMEOUT_MS || 5000;
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), timeoutMs));
+
+      const info = await Promise.race([sendPromise, timeoutPromise]);
       
       console.log(`✅ OTP email sent to ${email}: ${info.messageId}`);
       
