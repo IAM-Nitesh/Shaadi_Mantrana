@@ -118,6 +118,11 @@ class EmailService {
       // Set initialized flag immediately
       this.initialized = true;
       console.log('✅ Email service initialized successfully');
+      
+      // Test connection in production to help diagnose issues
+      if (process.env.NODE_ENV === 'production') {
+        this.testConnection();
+      }
 
     } catch (error) {
       console.error('❌ Failed to initialize email service:', error.message);
@@ -180,10 +185,13 @@ class EmailService {
       };
 
       console.log(`📧 Attempting SMTP send to ${email}...`);
-      const timeoutMs = config.EMAIL.SEND_TIMEOUT_MS || 5000;
+      const timeoutMs = config.EMAIL.SEND_TIMEOUT_MS || 15000;
       const sendPromise = this.transporter.sendMail(mailOptions);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), timeoutMs));
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(`SMTP connection timeout after ${timeoutMs}ms`)), timeoutMs)
+      );
       const info = await Promise.race([sendPromise, timeoutPromise]);
+      console.log(`✅ SMTP send successful to ${email}, messageId: ${info.messageId}`);
       return { success: true, method: 'email', messageId: info.messageId };
     };
 
@@ -192,13 +200,17 @@ class EmailService {
 
     // Try preferred provider first
     try {
+      console.log(`📧 Using preferred email provider: ${preferred}`);
       if (preferred === 'resend' && config.EMAIL.RESEND_API_KEY) {
+        console.log('📧 Attempting Resend API...');
         return await this.sendViaResend(email, subject, htmlContent);
       }
       if (preferred === 'sendgrid' && config.EMAIL.SENDGRID_API_KEY) {
+        console.log('📧 Attempting SendGrid API...');
         return await this.sendViaSendGrid(email, subject, htmlContent);
       }
       if (preferred === 'smtp') {
+        console.log('📧 Attempting SMTP...');
         return await trySmtp();
       }
     } catch (e) {
@@ -236,6 +248,24 @@ class EmailService {
       error: 'All email providers failed',
       method: 'console_fallback'
     };
+  }
+
+  // Test connection (async, non-blocking)
+  async testConnection() {
+    try {
+      if (!this.transporter) {
+        console.log('⚠️ Cannot test connection: transporter not initialized');
+        return;
+      }
+
+      console.log('🔍 Testing SMTP connection...');
+      const startTime = Date.now();
+      await this.transporter.verify();
+      const duration = Date.now() - startTime;
+      console.log(`✅ SMTP connection test successful (${duration}ms)`);
+    } catch (error) {
+      console.error('❌ SMTP connection test failed:', error.message);
+    }
   }
 
   // Test email service
