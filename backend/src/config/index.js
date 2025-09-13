@@ -118,10 +118,11 @@ module.exports = {
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
     SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
     // Timeouts to prevent request hangs in environments that block SMTP (e.g., some PaaS)
-    SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || 5000,
-    CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || 4000,
-    SOCKET_TIMEOUT_MS: parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '') || 5000,
-    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || 5000
+    // Increased timeouts for better reliability in production environments
+    SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || 15000, // 15 seconds
+    CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || 10000, // 10 seconds
+    SOCKET_TIMEOUT_MS: parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '') || 15000, // 15 seconds
+    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || 10000 // 10 seconds
   },
   
   // File upload configuration
