@@ -251,7 +251,16 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               isOwn: msg.senderId === (await getCurrentUserId()),
               status: (msg as any).status || 'sent'
             };
-            setMessages(prev => [...prev, incoming]);
+            
+            // Prevent duplicate messages by checking if message ID already exists
+            setMessages(prev => {
+              const exists = prev.some(m => m.id === incoming.id);
+              if (exists) {
+                console.log('Duplicate message detected, skipping:', incoming.id);
+                return prev;
+              }
+              return [...prev, incoming];
+            });
           } catch (e) {
             logger.error('Error handling incoming socket message', e);
           }
@@ -281,16 +290,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       const response = await ChatService.sendMessage(connectionId, messageText);
       
       if (response.success) {
-        // Add message to local state
-        const newMessage: ChatMessageUI = {
-          id: Date.now().toString(),
-          text: messageText,
-          timestamp: new Date(),
-          isOwn: true,
-          status: 'sent'
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
+        // Don't add message to local state here - it will be received via Socket.IO
+        // This prevents duplicate messages from appearing
+        console.log('Message sent successfully, waiting for Socket.IO broadcast');
       } else {
         logger.error('Failed to send message:', response.message);
       }
