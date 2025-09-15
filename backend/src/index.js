@@ -19,9 +19,9 @@ const chatService = require('./services/chatService');
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
 // Import configuration
 const config = require('./config');
+const PORT = config.PORT; // Always use env-provided PORT (Render/Heroku)
 
 // Trust proxy for rate limiting behind reverse proxies (like Render)
 app.set('trust proxy', 1);
