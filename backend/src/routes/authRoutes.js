@@ -13,6 +13,30 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Email service health check endpoint
+router.get('/email/health', async (req, res) => {
+  try {
+    const emailService = require('../services/emailService');
+    const emailHealth = await emailService.testService();
+    
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'email-service',
+      email: emailHealth,
+      version: '1.0.0'
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      service: 'email-service',
+      error: error.message,
+      version: '1.0.0'
+    });
+  }
+});
+
 // OTP endpoints
 router.post('/send-otp', (req, res) => authController.sendOTP(req, res));
 router.post('/verify-otp', (req, res) => authController.verifyOTP(req, res));

@@ -118,11 +118,11 @@ module.exports = {
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
     SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
     // Timeouts to prevent request hangs in environments that block SMTP (e.g., some PaaS)
-    // Increased timeouts for better reliability in production environments
-    SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || 15000, // 15 seconds
-    CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || 10000, // 10 seconds
-    SOCKET_TIMEOUT_MS: parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '') || 15000, // 15 seconds
-    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || 10000 // 10 seconds
+    // Aggressive timeouts for production environments to prevent 502 errors
+    SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || (process.env.NODE_ENV === 'production' ? 5000 : 15000), // 5s prod, 15s dev
+    CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || (process.env.NODE_ENV === 'production' ? 3000 : 10000), // 3s prod, 10s dev
+    SOCKET_TIMEOUT_MS: parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '') || (process.env.NODE_ENV === 'production' ? 5000 : 15000), // 5s prod, 15s dev
+    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || (process.env.NODE_ENV === 'production' ? 3000 : 10000) // 3s prod, 10s dev
   },
   
   // File upload configuration
