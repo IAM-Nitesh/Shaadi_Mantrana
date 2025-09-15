@@ -213,7 +213,7 @@ export default function Home() {
   const sendOtpToBackend = async (email: string) => {
     try {
       const response = await apiClient.post('/api/auth/send-otp', { email }, {
-        timeout: 15000
+        timeout: 25000
       });
 
       if (!response.ok) {
@@ -538,6 +538,13 @@ export default function Home() {
           }
         } catch (animErr) {
           logger.warn('GSAP animation failed or target missing:', animErr);
+        }
+        // Start background token refresh to keep user logged in
+        try {
+          const { ServerAuthService } = await import('../services/server-auth-service');
+          ServerAuthService.initializeTokenRefresh();
+        } catch (e) {
+          logger.warn('Token refresh service init failed (non-fatal):', e);
         }
         // Handle redirection
   // If server provided a redirect path (non-null, non-empty), use it.

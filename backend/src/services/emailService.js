@@ -120,7 +120,7 @@ class EmailService {
       console.log('✅ Email service initialized successfully');
       
       // Test connection in production to help diagnose issues
-      if (process.env.NODE_ENV === 'production') {
+      if (config.isProduction) {
         this.testConnection();
       }
 
@@ -157,8 +157,8 @@ class EmailService {
     const subject = 'Verify Your Shaadi Mantrana Account - OTP Code';
     const htmlContent = await this.generateOTPEmailTemplate(otp, email);
 
-    // In production, send email asynchronously to prevent 502 errors
-    if (process.env.NODE_ENV === 'production') {
+    // In production, send email asynchronously to prevent 502/timeouts
+    if (config.isProduction) {
       // Start email sending in background without awaiting
       this.sendOTPAsync(email, subject, htmlContent, otp).catch(error => {
         console.error(`❌ Background email send failed for ${email}:`, error.message);
