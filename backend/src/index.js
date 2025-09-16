@@ -236,11 +236,15 @@ app.get('/health', async (req, res) => {
       }
     }
     
-    // Get email service health
-    let emailHealth = null;
+    // Get email service health with a short timeout so /health stays responsive
+    let emailHealth = { status: 'unknown' };
     try {
       const emailService = require('./services/emailService');
-      emailHealth = await emailService.testService();
+      const emailHealthTimeout = (config && config.EMAIL && config.EMAIL.MASTER_TIMEOUT_MS) || 2000;
+      emailHealth = await Promise.race([
+        emailService.testService(),
+        new Promise((resolve) => setTimeout(() => resolve({ success: false, message: 'email health check timeout' }), emailHealthTimeout))
+      ]);
     } catch (error) {
       console.warn('Could not get email service health:', error.message);
       emailHealth = { status: 'unknown', error: error.message };
