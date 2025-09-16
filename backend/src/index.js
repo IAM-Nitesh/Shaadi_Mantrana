@@ -9,6 +9,9 @@ const path = require('path');
 // Load environment variables
 dotenv.config();
 
+// Import configuration (centralized env handling)
+const config = require('./config');
+
 // Import database service
 const databaseService = require('./services/databaseService');
 
@@ -19,9 +22,8 @@ const chatService = require('./services/chatService');
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
-// Import configuration
-const config = require('./config');
+// Use centralized config for PORT to keep defaults consistent
+const PORT = config.PORT || process.env.PORT || 5001;
 
 // Trust proxy for rate limiting behind reverse proxies (like Render)
 app.set('trust proxy', 1);
