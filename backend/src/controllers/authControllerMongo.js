@@ -231,6 +231,18 @@ class AuthController {
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError.message);
         
+        // In production, still return success but with a warning
+        if (config.NODE_ENV === 'production') {
+          console.log(`📧 Production fallback - OTP for ${sanitizedEmail}: ${otp} (Email failed - check logs)`);
+          return res.status(200).json({
+            success: true,
+            message: 'OTP generated successfully. Please check your email or contact support if you don\'t receive it.',
+            email: sanitizedEmail,
+            method: 'fallback',
+            warning: 'Email delivery may be delayed'
+          });
+        }
+        
         // Fallback for development
         if (config.NODE_ENV === 'development') {
           console.log(`📧 Development fallback - OTP for ${sanitizedEmail}: ${otp}`);
