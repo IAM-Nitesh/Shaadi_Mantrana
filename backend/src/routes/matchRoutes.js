@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { User, Match } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
+const { ensureProfileComplete } = require('../middleware/profileAccess');
 
 // Middleware to check if user is authenticated
 const userMiddleware = async (req, res, next) => {
@@ -26,7 +27,7 @@ const userMiddleware = async (req, res, next) => {
 };
 
 // Swipe right (like) on a user
-router.post('/swipe', authenticateToken, userMiddleware, async (req, res) => {
+router.post('/swipe', authenticateToken, userMiddleware, ensureProfileComplete, async (req, res) => {
   try {
     const { likedUserId, action = 'like' } = req.body;
     const userId = req.user.userId;
@@ -129,7 +130,7 @@ router.post('/swipe', authenticateToken, userMiddleware, async (req, res) => {
 });
 
 // Get all matches for the current user
-router.get('/matches', authenticateToken, userMiddleware, async (req, res) => {
+router.get('/matches', authenticateToken, userMiddleware, ensureProfileComplete, async (req, res) => {
   try {
     const userId = req.user.userId;
     const page = parseInt(req.query.page) || 1;
