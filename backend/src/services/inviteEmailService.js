@@ -27,7 +27,15 @@ class InviteEmailService {
         return;
       }
 
-      // Create transporter with Gmail configuration
+      // If provider is not SMTP (e.g. resend), skip creating SMTP transporter
+      const provider = (config.EMAIL.PROVIDER || 'smtp').toLowerCase();
+      if (provider !== 'smtp') {
+        console.log(`📧 Invite email: skipping SMTP transporter because provider is '${provider}'`);
+        this.initialized = true;
+        return;
+      }
+
+      // Create transporter with SMTP configuration (Gmail or other)
       this.transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -70,6 +78,43 @@ class InviteEmailService {
     }
   }
 
+  // Send using Resend HTTP API
+  async sendViaResend(toEmail, subject, html) {
+    const apiKey = config.EMAIL.RESEND_API_KEY || process.env.RESEND_API_KEY;
+    if (!apiKey) throw new Error('RESEND_API_KEY not configured');
+
+    const controller = new AbortController();
+    const timeoutMs = config.EMAIL.SEND_TIMEOUT_MS || 5000;
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: `${this.fromName} <${config.EMAIL.FROM_EMAIL || config.EMAIL.SMTP_USER}>`,
+          to: toEmail,
+          subject,
+          html
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Resend API error: HTTP ${res.status} ${res.statusText} ${errText}`);
+      }
+      const data = await res.json().catch(() => ({}));
+      const messageId = data.id || `resend-${Date.now()}`;
+      return { success: true, method: 'resend', messageId };
+    } catch (e) {
+      clearTimeout(timeout);
+      throw e;
+    }
+  }
+
 
 
   // Send onboarding email
@@ -85,7 +130,7 @@ class InviteEmailService {
       const inviteLink = `${baseUrl}?invite=${userUuid}&email=${encodeURIComponent(userEmail)}`;
 
       // If email service is disabled or not working, just log the link
-      if (!this.transporter || !config.EMAIL.ENABLED) {
+      if (!config.EMAIL.ENABLED) {
         console.log(`📧 Onboarding link for ${userEmail}: ${inviteLink} (Email service disabled - using console)`);
         return {
           success: true,
@@ -93,6 +138,26 @@ class InviteEmailService {
           inviteLink: inviteLink,
           method: 'console'
         };
+      }
+
+      // If provider is Resend, use its HTTP API
+      const provider = (config.EMAIL.PROVIDER || 'smtp').toLowerCase();
+      if (provider === 'resend') {
+        try {
+          const subject = '🎉 Welcome to Shaadi Mantrana - Your Journey Begins!';
+          const htmlContent = await this.generateOnboardingEmailHTML(userEmail, inviteLink, userUuid);
+          const result = await this.sendViaResend(userEmail, subject, htmlContent);
+          console.log(`✅ Onboarding email sent via Resend to ${userEmail}`);
+          return {
+            success: true,
+            messageId: result.messageId,
+            inviteLink,
+            method: 'resend'
+          };
+        } catch (error) {
+          console.error(`❌ Resend send failed for ${userEmail}:`, error.message);
+          // fall through to transporter or console fallback
+        }
       }
 
       // Email content
@@ -163,7 +228,7 @@ class InviteEmailService {
       const inviteLink = `${baseUrl}?invite=${userUuid}&email=${encodeURIComponent(userEmail)}`;
 
       // If email service is disabled or not working, just log the link
-      if (!this.transporter || !config.EMAIL.ENABLED) {
+      if (!config.EMAIL.ENABLED) {
         console.log(`📧 Invitation link for ${userEmail}: ${inviteLink} (Email service disabled - using console)`);
         return {
           success: true,
@@ -171,6 +236,26 @@ class InviteEmailService {
           inviteLink: inviteLink,
           method: 'console'
         };
+      }
+
+      // If provider is Resend, use its HTTP API
+      const provider2 = (config.EMAIL.PROVIDER || 'smtp').toLowerCase();
+      if (provider2 === 'resend') {
+        try {
+          const subject = '🎉 Welcome to Shaadi Mantrana - Your Exclusive Invitation';
+          const htmlContent = await this.generateInviteEmailHTML(userEmail, inviteLink, userUuid);
+          const result = await this.sendViaResend(userEmail, subject, htmlContent);
+          console.log(`✅ Invitation email sent via Resend to ${userEmail}`);
+          return {
+            success: true,
+            messageId: result.messageId,
+            inviteLink,
+            method: 'resend'
+          };
+        } catch (error) {
+          console.error(`❌ Resend send failed for ${userEmail}:`, error.message);
+          // fall through to transporter or console fallback
+        }
       }
 
       // Email content
