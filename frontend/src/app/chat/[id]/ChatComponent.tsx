@@ -206,7 +206,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 } else {
                   date = new Date(ts as any);
                 }
-                if (Number.isNaN(date.getTime())) date = null;
+                if (date && Number.isNaN(date.getTime())) date = null;
               } catch (e) {
                 date = null;
               }
