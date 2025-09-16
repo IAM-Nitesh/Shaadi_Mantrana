@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!response.ok) {
         logger.debug(`❌ Auth Status API: Backend returned ${response.status}`);
 
-        // Try to get error details
+        // Try to get error details for debugging
         try {
           const errorData = await response.text();
           logger.debug('❌ Auth Status API: Backend error response:', errorData);
@@ -70,61 +70,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           logger.debug('❌ Auth Status API: Could not read error response');
         }
 
-        // If it's a 401 error and we have a refresh token, try to refresh
-        if (response.status === 401 && refreshToken) {
-          logger.debug('🔄 Auth Status API: Token expired, attempting refresh...');
-
-          try {
-            const refreshResponse = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ refreshToken }),
-              signal: AbortSignal.timeout(5000), // 5 second timeout for refresh
-            });
-
-            if (refreshResponse.ok) {
-              const refreshResult = await refreshResponse.json();
-              logger.debug('✅ Auth Status API: Token refresh successful');
-
-              // Set new cookies with the refreshed tokens
-              if (refreshResult.accessToken) {
-                const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
-                const sameSite = isSecure ? 'None' : 'Lax';
-                res.setHeader('Set-Cookie', [
-                  `accessToken=${refreshResult.accessToken}; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 7}; Path=/`,
-                  refreshResult.refreshToken ? `refreshToken=${refreshResult.refreshToken}; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 30}; Path=/` : ''
-                ].filter(Boolean));
-              }
-
-              return res.status(200).json({
-                authenticated: true,
-                user: refreshResult.user || null,
-                redirectTo: refreshResult.user ? determineRedirectPath(refreshResult.user) : '/'
-              });
-            } else {
-              logger.debug('❌ Auth Status API: Token refresh failed, status:', refreshResponse.status);
-            }
-          } catch (refreshError) {
-            logger.error('❌ Auth Status API: Token refresh error:', refreshError);
-          }
-        }
-
-        // Clear invalid cookies and return graceful response
-        const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
-        const sameSite = isSecure ? 'None' : 'Lax';
-        res.setHeader('Set-Cookie', [
-          `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
-          `refreshToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
-          `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
-        ]);
-
+        // If backend returned non-OK, return a graceful unauthenticated response
+        // without clearing cookies. Clearing cookies here can cause the user
+        // to be logged out unexpectedly on transient backend failures.
         return res.status(200).json({
           authenticated: false,
           redirectTo: '/',
-          message: 'Invalid or expired token'
+          message: 'Authentication check failed'
         });
       }
 
