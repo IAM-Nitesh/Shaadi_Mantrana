@@ -94,6 +94,15 @@ class EmailService {
         return;
       }
 
+      // If provider is not SMTP (e.g. 'resend' or 'sendgrid'), skip creating an SMTP transporter
+      const provider = (config.EMAIL.PROVIDER || 'smtp').toLowerCase();
+      if (provider !== 'smtp') {
+        console.log(`📧 SMTP transporter skipped because provider is '${provider}'`);
+        // mark initialized so we don't try to re-init repeatedly for non-SMTP providers
+        this.initialized = true;
+        return;
+      }
+
       // Create transporter with explicit SMTP configuration and safe timeouts
       const port = Number(config.EMAIL.SMTP_PORT) || 587;
       const secure = port === 465; // true for 465, false for other ports
