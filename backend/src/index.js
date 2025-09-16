@@ -236,12 +236,23 @@ app.get('/health', async (req, res) => {
       }
     }
     
+    // Get email service health
+    let emailHealth = null;
+    try {
+      const emailService = require('./services/emailService');
+      emailHealth = await emailService.testService();
+    } catch (error) {
+      console.warn('Could not get email service health:', error.message);
+      emailHealth = { status: 'unknown', error: error.message };
+    }
+    
     res.status(200).json({ 
       status: 'OK', 
       message: 'Shaadi Mantrana Backend API is running',
       timestamp: new Date().toISOString(),
       database: dbHealth,
       sessions: sessionStats,
+      email: emailHealth,
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0'
     });
