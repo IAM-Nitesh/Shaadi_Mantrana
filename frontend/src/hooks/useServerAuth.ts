@@ -235,11 +235,9 @@ export function useServerAuth(): UseServerAuthReturn {
 
         if (!freshRes.ok) {
           logger.info('ℹ️ useServerAuth: Fresh auth check failed');
-          setUser(null);
-          setIsAuthenticated(false);
-          clearCachedAuth();
-          setRedirectTo('/');
-          setError('');
+          // Keep existing cached auth rather than clearing it on transient failures
+          setError('Authentication service unavailable');
+          setIsLoading(false);
           return;
         }
 
@@ -271,11 +269,10 @@ export function useServerAuth(): UseServerAuthReturn {
 
       if (!res.ok) {
         logger.info('ℹ️ useServerAuth: User not authenticated or status check failed');
-        setUser(null);
-        setIsAuthenticated(false);
-        clearCachedAuth();
-        setRedirectTo('/');
-        setError('');
+        // Don't aggressively clear cached auth on transient non-OK responses
+        // to avoid logging out users during brief backend issues.
+        setError('Authentication service unavailable');
+        setIsLoading(false);
         return;
       }
 
