@@ -106,7 +106,8 @@ class JWTSessionManager {
         audience: 'shaadi-mantra-app'
       });
     } catch (error) {
-      throw new Error('Invalid or expired access token');
+      // Re-throw the original jwt error so callers can distinguish expiry vs invalid
+      throw error;
     }
   }
 
@@ -280,7 +281,18 @@ const authenticateToken = async (req, res, next) => {
 
   try {
     console.log('🔍 AuthMiddleware: Verifying token...');
-    const decoded = JWTSessionManager.verifyAccessToken(token);
+    let decoded;
+    try {
+      decoded = JWTSessionManager.verifyAccessToken(token);
+    } catch (err) {
+      // Distinguish token expired vs invalid
+      if (err && err.name === 'TokenExpiredError') {
+        console.log('❌ AuthMiddleware: Token expired');
+        return res.status(401).json({ success: false, error: 'Access token expired', code: 'TOKEN_EXPIRED' });
+      }
+      console.log('❌ AuthMiddleware: Token invalid');
+      return res.status(401).json({ success: false, error: 'Invalid access token', code: 'TOKEN_INVALID' });
+    }
     console.log('🔍 AuthMiddleware: Token verified, decoded:', {
       userId: decoded.userId,
       email: decoded.email,
@@ -350,17 +362,8 @@ const authenticateToken = async (req, res, next) => {
     console.log('✅ AuthMiddleware: Authentication successful');
     next();
   } catch (error) {
-    console.error('❌ AuthMiddleware: Token verification error:', error);
-    console.error('❌ AuthMiddleware: Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-    return res.status(401).json({
-      success: false,
-      error: error.message,
-      code: 'TOKEN_INVALID'
-    });
+    console.error('❌ AuthMiddleware: Unexpected error during authentication:', error);
+    return res.status(500).json({ success: false, error: 'Authentication failed' });
   }
 };
 
