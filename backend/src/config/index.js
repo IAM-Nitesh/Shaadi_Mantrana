@@ -121,7 +121,10 @@ module.exports = {
     SEND_TIMEOUT_MS: parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '') || 5000,
     CONNECT_TIMEOUT_MS: parseInt(process.env.EMAIL_CONNECT_TIMEOUT_MS || '') || 4000,
     SOCKET_TIMEOUT_MS: parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '') || 5000,
-    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || 5000
+    GREETING_TIMEOUT_MS: parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '') || 5000,
+    // Cap total attempts/time for email sending to avoid client timeouts
+    MAX_ATTEMPTS: parseInt(process.env.EMAIL_MAX_ATTEMPTS || '') || 2,
+    MASTER_TIMEOUT_MS: parseInt(process.env.EMAIL_MASTER_TIMEOUT_MS || '') || 8000
   },
   
   // File upload configuration
