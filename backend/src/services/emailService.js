@@ -187,55 +187,72 @@ class EmailService {
       return { success: true, method: 'email', messageId: info.messageId };
     };
 
-    // Provider preference
+    // Build ordered provider list without duplicates
     const preferred = (config.EMAIL.PROVIDER || 'smtp').toLowerCase();
+    const available = new Set();
+    const order = [];
 
-    // Try preferred provider first
-    try {
-      if (preferred === 'resend' && config.EMAIL.RESEND_API_KEY) {
-        return await this.sendViaResend(email, subject, htmlContent);
-      }
-      if (preferred === 'sendgrid' && config.EMAIL.SENDGRID_API_KEY) {
-        return await this.sendViaSendGrid(email, subject, htmlContent);
-      }
-      if (preferred === 'smtp') {
-        return await trySmtp();
-      }
-    } catch (e) {
-      console.error(`❌ Preferred provider (${preferred}) failed:`, e.message);
-    }
+    const canResend = !!config.EMAIL.RESEND_API_KEY;
+    const canSendGrid = !!config.EMAIL.SENDGRID_API_KEY;
 
-    // Fallback order: Resend -> SendGrid -> SMTP
-    try {
-      if (config.EMAIL.RESEND_API_KEY) {
-        return await this.sendViaResend(email, subject, htmlContent);
-      }
-    } catch (e) {
-      console.error('❌ Resend fallback failed:', e.message);
-    }
-
-    try {
-      if (config.EMAIL.SENDGRID_API_KEY) {
-        return await this.sendViaSendGrid(email, subject, htmlContent);
-      }
-    } catch (e) {
-      console.error('❌ SendGrid fallback failed:', e.message);
-    }
-
-    try {
-      return await trySmtp();
-    } catch (e) {
-      console.error('❌ SMTP fallback failed:', e.message);
-    }
-
-    // Last resort: console fallback
-    console.log(`📧 OTP for ${email}: ${otp} (Email failed - using console fallback)`);
-    return {
-      success: true,
-      message: 'OTP delivery attempted (email providers failed, using console fallback)',
-      error: 'All email providers failed',
-      method: 'console_fallback'
+    const pushIfAvailable = (p) => {
+      if (p === 'resend' && canResend && !available.has('resend')) { order.push('resend'); available.add('resend'); }
+      if (p === 'sendgrid' && canSendGrid && !available.has('sendgrid')) { order.push('sendgrid'); available.add('sendgrid'); }
+      if (p === 'smtp' && !available.has('smtp')) { order.push('smtp'); available.add('smtp'); }
     };
+
+    // Preferred first
+    pushIfAvailable(preferred);
+    // Then fallback priority
+    pushIfAvailable('resend');
+    pushIfAvailable('sendgrid');
+    pushIfAvailable('smtp');
+
+    // Respect max attempts and master timeout
+    const maxAttempts = config.EMAIL.MAX_ATTEMPTS || 2;
+    const masterTimeoutMs = config.EMAIL.MASTER_TIMEOUT_MS || 8000;
+
+    const attemptProviders = async () => {
+      let attempts = 0;
+      let lastError;
+      for (const provider of order) {
+        if (attempts >= maxAttempts) break;
+        attempts++;
+        try {
+          if (provider === 'resend') {
+            return await this.sendViaResend(email, subject, htmlContent);
+          } else if (provider === 'sendgrid') {
+            return await this.sendViaSendGrid(email, subject, htmlContent);
+          } else if (provider === 'smtp') {
+            return await trySmtp();
+          }
+        } catch (e) {
+          lastError = e;
+          console.error(`❌ Email provider attempt failed (${provider}):`, e.message);
+        }
+      }
+      // If all attempts failed, return console fallback but include last error
+      console.log(`📧 OTP for ${email}: ${otp} (All providers failed after ${attempts} attempts - using console fallback)`);
+      return {
+        success: true,
+        message: 'OTP delivery attempted (providers failed, console fallback)',
+        error: lastError?.message || 'All email providers failed',
+        method: 'console_fallback'
+      };
+    };
+
+    // Master timeout wrapper ensures we never exceed client timeouts
+    return await Promise.race([
+      attemptProviders(),
+      new Promise((resolve) => setTimeout(() => {
+        console.warn(`⏰ Email send master timeout reached (${masterTimeoutMs}ms). Falling back to console.`);
+        resolve({
+          success: true,
+          message: 'OTP delivery timed out (console fallback)',
+          method: 'console_fallback'
+        });
+      }, masterTimeoutMs))
+    ]);
   }
 
   // Test email service
