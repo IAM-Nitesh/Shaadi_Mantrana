@@ -57,7 +57,17 @@ class ApiClient {
       retries = this.config.retries
     } = options;
 
-    const url = `${this.config.baseUrl}${endpoint}`;
+    // If endpoint is a full URL, use it as-is.
+    // If endpoint is a same-origin API route (starts with `/api/`), call it without prefixing baseUrl.
+    // Otherwise, prefix with configured baseUrl.
+    let url: string;
+    if (/^https?:\/\//i.test(endpoint)) {
+      url = endpoint;
+    } else if (endpoint.startsWith('/api/')) {
+      url = endpoint;
+    } else {
+      url = `${this.config.baseUrl}${endpoint}`;
+    }
     
     // Create timeout signal
     const timeoutSignal = AbortSignal.timeout(timeout);

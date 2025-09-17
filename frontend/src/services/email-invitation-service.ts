@@ -124,7 +124,7 @@ export class EmailInvitationService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
          method: 'GET',
          headers: { 'Content-Type': 'application/json' },
        });
@@ -156,7 +156,7 @@ export class EmailInvitationService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
          method: 'GET',
          headers: { 'Content-Type': 'application/json' },
        });
