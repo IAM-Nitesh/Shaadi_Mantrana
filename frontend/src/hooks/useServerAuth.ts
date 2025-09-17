@@ -77,8 +77,8 @@ function determineRedirectPath(user: AuthUser): string | null {
 
 // Cache management utilities
 const CACHE_KEY = 'auth_cache';
-const CACHE_DURATION = 5 * 60 * 1000; // Increased to 5 minutes for better user experience
-const MIN_REQUEST_INTERVAL = 5 * 1000; // 5 seconds minimum between requests for better responsiveness
+const CACHE_DURATION = 60 * 1000; // 1 minute cache for auth
+const MIN_REQUEST_INTERVAL = 10 * 1000; // 10 seconds minimum between requests
 
 interface AuthCache {
   user: AuthUser;
@@ -163,7 +163,7 @@ export function useServerAuth(): UseServerAuthReturn {
 
   // Check authentication status with persistent caching
   const checkAuth = useCallback(async (forceRefresh = false) => {
-  logger.debug('🔍 useServerAuth: Starting authentication check...');
+  // Start auth check
     
     // Prevent multiple simultaneous auth checks
     if (isAuthCheckInProgress.current) {
@@ -206,8 +206,8 @@ export function useServerAuth(): UseServerAuthReturn {
     
     try {
       // Call the auth status API directly from the client with cache-busting headers
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 40000); // Increased to 40 second timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       const res = await fetch('/api/auth/status', {
         method: 'GET',
@@ -219,6 +219,7 @@ export function useServerAuth(): UseServerAuthReturn {
         }
       });
 
+      // Production: avoid verbose header logging
       clearTimeout(timeoutId);
 
       // Handle 304 Not Modified - this means we need fresh data
@@ -278,6 +279,24 @@ export function useServerAuth(): UseServerAuthReturn {
 
       const response = await res.json();
       logger.debug('🔍 useServerAuth: Auth status response:', response);
+
+      // Detect token expiry signaled by the server/proxy and attempt client-side refresh
+      const tokenExpiredSignal = response && (response.code === 'TOKEN_EXPIRED' || /expired/i.test(response.message || ''));
+      if (tokenExpiredSignal) {
+        logger.debug('🔄 useServerAuth: Detected token expired signal from server/proxy, attempting client-side refresh');
+        try {
+          const refreshResp = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+          logger.debug('🔄 useServerAuth: Client refresh response status:', refreshResp.status);
+          if (refreshResp.ok) {
+            logger.info('🔄 useServerAuth: Client refresh succeeded, retrying auth status');
+            // Retry the status check once
+            await checkAuth(true);
+            return;
+          }
+        } catch (e) {
+          logger.error('❌ useServerAuth: Client-side refresh attempt failed:', e);
+        }
+      }
 
       if (response.authenticated && response.user) {
         logger.info('✅ useServerAuth: User authenticated:', response.user);
