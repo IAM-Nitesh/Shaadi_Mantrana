@@ -20,15 +20,18 @@
     "emails:list": "node scripts/manage-approved-emails.js list",
     "emails:sync": "node scripts/manage-approved-emails.js sync",
     "keep-alive": "node scripts/keep-alive.js",
-    "keep-alive-bg": "node scripts/keep-alive.js &"
+    "keep-alive-bg": "node scripts/keep-alive.js &",
+    "test:e2e:playwright": "npx playwright test --config=playwright.config.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "@jridgewell/sourcemap-codec": "^1.5.5",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/nodemailer": "^6.4.17",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3"
   },
+ 
   "workspaces": [
     "frontend",
     "backend"
