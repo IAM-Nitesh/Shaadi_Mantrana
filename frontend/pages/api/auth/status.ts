@@ -51,6 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
+          // Forward incoming cookies so backend can validate session using cookies too
+          'Cookie': req.headers.cookie || ''
         },
         signal: controller.signal,
       });
@@ -99,11 +101,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             // Forward any Set-Cookie headers from refresh response to the browser
             try {
-              const setCookieHeader = refreshResp.headers.get('set-cookie');
-              if (setCookieHeader) {
-                // If multiple cookies are present they may be comma-separated; set as single header
-                res.setHeader('Set-Cookie', setCookieHeader as any);
-                logger.debug('🔄 Auth Status API: Forwarded Set-Cookie from refresh response');
+              // Collect all Set-Cookie header values (handle multiple Set-Cookie headers)
+              const setCookies: string[] = [];
+              for (const [k, v] of refreshResp.headers.entries()) {
+                if (k.toLowerCase() === 'set-cookie') setCookies.push(v);
+              }
+              if (setCookies.length > 0) {
+                res.setHeader('Set-Cookie', setCookies as any);
+                logger.debug('🔄 Auth Status API: Forwarded Set-Cookie(s) from refresh response');
               }
             } catch (e) {
               logger.debug('🔄 Auth Status API: Could not forward Set-Cookie header:', e);
