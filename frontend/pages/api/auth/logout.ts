@@ -24,31 +24,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get auth token from cookies
     const authToken = req.cookies.accessToken;
 
-    if (authToken) {
-      // Call backend logout endpoint
+    let backendSetCookie: string | null = null;
+    if (authToken || req.headers.cookie) {
+      // Call backend logout endpoint and forward cookies so backend can revoke session
       const backendUrl = BACKEND_URL;
-      await fetch(`${backendUrl}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-      }).catch(() => {
-        // Ignore backend errors during logout
-        logger.debug('🔍 Auth Logout API: Backend logout call completed (errors ignored)');
-      });
+      try {
+        const backendResp = await fetch(`${backendUrl}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': authToken ? `Bearer ${authToken}` : '',
+            'Content-Type': 'application/json',
+            'Cookie': req.headers.cookie || ''
+          },
+        });
+        // Capture any Set-Cookie headers from backend so we can forward them
+        try {
+          backendSetCookie = backendResp.headers.get('set-cookie');
+          if (backendSetCookie) {
+            // Forward backend cookies as-is and avoid overriding them later
+            res.setHeader('Set-Cookie', backendSetCookie as any);
+            logger.debug('🔄 Auth Logout API: Forwarded Set-Cookie from backend logout');
+          }
+        } catch (e) {
+          logger.debug('🔄 Auth Logout API: Could not read Set-Cookie header from backend:', e);
+          backendSetCookie = null;
+        }
+      } catch (e) {
+        logger.debug('🔍 Auth Logout API: Backend logout call failed (errors ignored)', e);
+      }
     }
-
-    // Clear all authentication cookies
-    logger.debug('🔍 Auth Logout API: Clearing authentication cookies');
+    // Clear all authentication cookies (only if backend didn't already set cookies)
+    logger.debug('🔍 Auth Logout API: Clearing authentication cookies (if backend did not)');
 
     const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
     const sameSite = isSecure ? 'None' : 'Lax';
-    res.setHeader('Set-Cookie', [
-      `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
-      `refreshToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
-      `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
-    ]);
+
+    // Helper to build cookie string correctly (include Secure token only when needed)
+    const buildClearCookie = (name: string) => `${name}=; HttpOnly; ${isSecure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0; Path=/`;
+
+    if (!backendSetCookie) {
+      res.setHeader('Set-Cookie', [
+        buildClearCookie('accessToken'),
+        buildClearCookie('refreshToken'),
+        buildClearCookie('sessionId')
+      ]);
+    }
 
     return res.status(200).json({
       success: true,
@@ -58,13 +78,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error: any) {
     logger.error('❌ Auth Logout API: Logout error:', error);
 
-    // Still clear cookies even if there's an error
+    // Still clear cookies even if there's an error. Use the same helper to
+    // build cookie strings so formatting is consistent with the success path.
     const isSecure = process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https';
     const sameSite = isSecure ? 'None' : 'Lax';
+    const buildClearCookie = (name: string) => `${name}=; HttpOnly; ${isSecure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0; Path=/`;
     res.setHeader('Set-Cookie', [
-      `accessToken=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`,
-      `refreshToken=; HttpOnly; Secure; SameSite=${sameSite}; Max-Age=0; Path=/`,
-      `sessionId=; HttpOnly; Secure=${isSecure}; SameSite=${sameSite}; Max-Age=0; Path=/`
+      buildClearCookie('accessToken'),
+      buildClearCookie('refreshToken'),
+      buildClearCookie('sessionId')
     ]);
 
     return res.status(200).json({
