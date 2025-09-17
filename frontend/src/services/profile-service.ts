@@ -406,7 +406,7 @@ export class ProfileService {
       }
       
       // Trigger a fresh authentication check
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
+      const response = await fetch(`/api/auth/status`, {
          method: 'GET',
          credentials: 'include',
          headers: {
