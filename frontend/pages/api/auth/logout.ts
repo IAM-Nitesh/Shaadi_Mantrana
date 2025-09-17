@@ -34,16 +34,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           headers: {
             'Authorization': authToken ? `Bearer ${authToken}` : '',
             'Content-Type': 'application/json',
+            // Forward incoming cookies so backend can revoke the correct session
             'Cookie': req.headers.cookie || ''
           },
         });
         // Capture any Set-Cookie headers from backend so we can forward them
         try {
-          backendSetCookie = backendResp.headers.get('set-cookie');
-          if (backendSetCookie) {
-            // Forward backend cookies as-is and avoid overriding them later
-            res.setHeader('Set-Cookie', backendSetCookie as any);
-            logger.debug('🔄 Auth Logout API: Forwarded Set-Cookie from backend logout');
+          const setCookies: string[] = [];
+          for (const [k, v] of backendResp.headers.entries()) {
+            if (k.toLowerCase() === 'set-cookie') setCookies.push(v);
+          }
+          if (setCookies.length > 0) {
+            res.setHeader('Set-Cookie', setCookies as any);
+            logger.debug('🔄 Auth Logout API: Forwarded Set-Cookie(s) from backend logout');
+            backendSetCookie = setCookies.join(',');
           }
         } catch (e) {
           logger.debug('🔄 Auth Logout API: Could not read Set-Cookie header from backend:', e);
