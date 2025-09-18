@@ -1,5 +1,4 @@
 import { apiClient } from './api-client';
-import { getClientToken } from './client-auth';
 
 type AdminStatsResponse = {
   stats: any;
@@ -24,14 +23,8 @@ export async function getAdminStats(): Promise<AdminStatsResponse> {
   }
 
   statsInflight = (async () => {
-    const token = await getClientToken();
-    if (!token) {
-      // do not cache negative — let callers handle unauth
-      throw new Error('No auth token');
-    }
-
+    // Use apiClient directly - it will handle authentication via cookies
     const res = await apiClient.get('/api/admin/stats', {
-      headers: { Authorization: `Bearer ${token}` },
       timeout: 15000,
     });
 

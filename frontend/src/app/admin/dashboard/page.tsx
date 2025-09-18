@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
 // AdminRouteGuard and ToastService are unused here
-import { getClientToken } from '../../../utils/client-auth';
 import { getAdminStats } from '../../../utils/admin-stats';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { safeGsap } from '../../../components/SafeGsap';
@@ -37,13 +36,8 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = await getClientToken();
-      if (!token) {
-        logger.debug('🔍 Dashboard: No auth token found');
-        router.push('/');
-        return;
-      }
-
+      // No need to check token here - AdminLayout already handles authentication
+      // The user is already authenticated if they reached this page
       logger.debug('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
       const data = await getAdminStats();
       logger.debug('🔍 Dashboard: Response received');

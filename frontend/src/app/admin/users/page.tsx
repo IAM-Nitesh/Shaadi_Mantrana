@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import Image from 'next/image';
@@ -122,18 +121,11 @@ export default function AdminUsers() {
 
   const fetchUsers = async (forceRefresh = false) => {
     try {
-    const token = await getClientToken();
-      if (!token) {
-        logger.debug('🔍 Users: No auth token found');
-        router.push('/');
-        return;
-      }
-
+      // No need to check token here - AdminLayout already handles authentication
       logger.debug('🔍 Users: Fetching users from /api/admin/users', forceRefresh ? '(force refresh)' : '');
 
       const response = await apiClient.get('/api/admin/users', {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Cache-Control': forceRefresh ? 'no-cache' : 'max-age=300' // 5 minutes cache unless force refresh
         },
         timeout: 15000
@@ -174,11 +166,7 @@ export default function AdminUsers() {
       setImagesLoading(true);
       const newProfileImages = new Map<string, string>();
       
-      // Debug: Check admin authentication token
-  const adminToken = await getClientToken();
-      logger.debug('🔍 Admin auth token available:', !!adminToken);
-      logger.debug('🔍 Admin auth token length:', adminToken?.length);
-      logger.debug('🔍 Admin auth token preview:', adminToken?.substring(0, 20) + '...');
+      // Admin authentication is already handled by AdminLayout
       
       // Use batch processing for better performance
       if (data.users && data.users.length > 0) {
@@ -282,11 +270,7 @@ export default function AdminUsers() {
 
   const resumeUser = async (userId: string) => {
     try {
-      const token = await getClientToken();
-      if (!token) {
-        router.push('/');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
 
       // Show loading state
       setUsers(prevUsers => 
@@ -299,7 +283,6 @@ export default function AdminUsers() {
 
       const response = await apiClient.patch(`/api/admin/users/${userId}/resume`, { approvedByAdmin: true }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -354,11 +337,7 @@ export default function AdminUsers() {
 
   const pauseUser = async (userId: string) => {
     try {
-  const token = await getClientToken();
-      if (!token) {
-        router.push('/');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
 
       // Show loading state
       setUsers(prevUsers => 
@@ -371,7 +350,6 @@ export default function AdminUsers() {
 
       const response = await apiClient.patch(`/api/admin/users/${userId}/pause`, { approvedByAdmin: false }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -426,15 +404,10 @@ export default function AdminUsers() {
 
   const resendInvite = async (userId: string, userEmail: string) => {
     try {
-      const token = await getClientToken();
-      if (!token) {
-        router.push('/');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
 
       const response = await apiClient.post(`/api/admin/users/${userId}/resend-invite`, { email: userEmail }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         timeout: 15000
