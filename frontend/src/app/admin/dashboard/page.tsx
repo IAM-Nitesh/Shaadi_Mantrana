@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
 // AdminRouteGuard and ToastService are unused here
 import { getClientToken } from '../../../utils/client-auth';
+import { getAdminStats } from '../../../utils/admin-stats';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
@@ -44,38 +45,22 @@ export default function AdminDashboard() {
       }
 
       logger.debug('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
-      
-      // Fetch admin stats (includes storage stats)
-      const statsResponse = await apiClient.get('/api/admin/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        timeout: 15000
-      });
-
-      logger.debug('🔍 Dashboard: Response status:', statsResponse.status);
-
-      if (!statsResponse.ok) {
-        const errorText = JSON.stringify(statsResponse.data);
-        logger.error('🔍 Dashboard: API error response:', errorText);
-        throw new Error(`Failed to fetch dashboard data: ${statsResponse.status} ${errorText}`);
-      }
-
-      const data = statsResponse.data;
+      const data = await getAdminStats();
+      logger.debug('🔍 Dashboard: Response received');
       logger.debug('🔍 Dashboard: Received data:', data);
       
       // Transform the data to match the expected format
       const dashboardData: DashboardData = {
         storageStats: {
-          b2Usage: data.storageStats?.b2Usage || '0 Bytes',
-          b2Total: data.storageStats?.b2Total || '10 GB',
-          b2Files: data.storageStats?.b2Files || 0,
-          b2AverageSize: data.storageStats?.b2AverageSize || '0 Bytes',
-          b2OrphanedFiles: data.storageStats?.b2OrphanedFiles || 0,
-          b2OrphanedSize: data.storageStats?.b2OrphanedSize || '0 Bytes',
-          mongoUsage: data.storageStats?.mongoUsage || '0 Bytes',
-          mongoTotal: data.storageStats?.mongoTotal || '512 MB',
-          mongoProfiles: data.storageStats?.mongoProfiles || 0
+          b2Usage: data.stats?.storageStats?.b2Usage || '0 Bytes',
+          b2Total: data.stats?.storageStats?.b2Total || '10 GB',
+          b2Files: data.stats?.storageStats?.b2Files || 0,
+          b2AverageSize: data.stats?.storageStats?.b2AverageSize || '0 Bytes',
+          b2OrphanedFiles: data.stats?.storageStats?.b2OrphanedFiles || 0,
+          b2OrphanedSize: data.stats?.storageStats?.b2OrphanedSize || '0 Bytes',
+          mongoUsage: data.stats?.storageStats?.mongoUsage || '0 Bytes',
+          mongoTotal: data.stats?.storageStats?.mongoTotal || '512 MB',
+          mongoProfiles: data.stats?.storageStats?.mongoProfiles || 0
         }
       };
 
