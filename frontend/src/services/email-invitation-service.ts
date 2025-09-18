@@ -124,16 +124,15 @@ export class EmailInvitationService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
-         method: 'GET',
-         headers: { 'Content-Type': 'application/json' },
-       });
-      
+      const response = await apiClient.get(`/api/auth/preapproved/check?email=${encodeURIComponent(email)}`,
+        { timeout: 10000 }
+      );
+
       if (!response.ok) {
         return false;
       }
-      
-      const data = await response.json();
+
+      const data = response.data;
       return data.preapproved || false;
     } catch (error) {
       logger.error('EmailInvitationService.checkEmailApproval error:', error);
@@ -156,16 +155,13 @@ export class EmailInvitationService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, {
-         method: 'GET',
-         headers: { 'Content-Type': 'application/json' },
-       });
-      
+      const response = await apiClient.get(`/api/auth/preapproved/check?email=${encodeURIComponent(email)}`, { timeout: 10000 });
+
       if (!response.ok) {
         return null;
       }
-      
-      const data = await response.json();
+
+      const data = response.data;
       
       // The API now returns user data if approved
       if (data.preapproved && data.user) {
