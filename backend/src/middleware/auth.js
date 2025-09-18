@@ -59,12 +59,12 @@ class JWTSessionManager {
       sessionId: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
     };
 
-  if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Creating payload:', payload);
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Creating payload:', payload);
 
     const accessToken = this.generateAccessToken(payload);
     const refreshToken = this.generateRefreshToken(payload);
 
-  if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Tokens generated successfully');
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Tokens generated successfully');
 
     // Store session in database
     try {
@@ -81,11 +81,40 @@ class JWTSessionManager {
         lastAccessed: new Date()
       };
 
-  await Session.create(sessionData);
-  if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Session stored in database');
+      const createdSession = await Session.create(sessionData);
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Session stored in database:', payload.sessionId);
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Created session details:', {
+        _id: createdSession._id,
+        sessionId: createdSession.sessionId,
+        userId: createdSession.userId,
+        email: createdSession.email,
+        createdAt: createdSession.createdAt,
+        lastAccessed: createdSession.lastAccessed
+      });
 
       // Also store in memory for faster access
-      activeSessions.set(payload.sessionId, sessionData);
+      // Use the created session data from database to ensure consistency
+      const sessionForCache = {
+        ...sessionData,
+        _id: createdSession._id,
+        createdAt: createdSession.createdAt,
+        lastAccessed: createdSession.lastAccessed
+      };
+      activeSessions.set(payload.sessionId, sessionForCache);
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Session cached in memory:', payload.sessionId);
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Current active sessions count:', activeSessions.size);
+      
+      // Verify the session can be retrieved immediately after creation
+      try {
+        const verifySession = await this.getSession(payload.sessionId);
+        if (verifySession) {
+          if (AUTH_DEBUG) console.log('✅ JWTSessionManager: Session verification successful after creation');
+        } else {
+          if (AUTH_DEBUG) console.log('❌ JWTSessionManager: Session verification failed after creation');
+        }
+      } catch (verifyError) {
+        if (AUTH_DEBUG) console.log('❌ JWTSessionManager: Session verification error after creation:', verifyError.message);
+      }
 
     } catch (error) {
       console.error('❌ JWTSessionManager: Failed to store session in database:', error);
@@ -163,20 +192,62 @@ class JWTSessionManager {
 
   // Validate session
   static async validateSession(sessionId) {
-    const session = await this.getSession(sessionId);
-    if (!session) {
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: validateSession called for:', sessionId);
+    
+    try {
+      const session = await this.getSession(sessionId);
+      if (!session) {
+        if (AUTH_DEBUG) console.log('❌ JWTSessionManager: validateSession - session not found');
+        return false;
+      }
+
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: validateSession - session found:', {
+        sessionId: session.sessionId,
+        userId: session.userId,
+        email: session.email,
+        createdAt: session.createdAt,
+        lastAccessed: session.lastAccessed
+      });
+
+      // Check if session is too old (7 days of inactivity)
+      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      const lastActivity = new Date(session.lastAccessed || session.createdAt).getTime();
+      const timeSinceLastActivity = Date.now() - lastActivity;
+      
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: validateSession - time check:', {
+        lastActivity: new Date(lastActivity).toISOString(),
+        timeSinceLastActivity: timeSinceLastActivity,
+        maxAge: maxAge,
+        isExpired: timeSinceLastActivity > maxAge
+      });
+      
+      // Be more lenient for recently created sessions (within 1 minute)
+      const isRecentlyCreated = timeSinceLastActivity < 60000; // 1 minute
+      if (timeSinceLastActivity > maxAge && !isRecentlyCreated) {
+        if (AUTH_DEBUG) console.log('❌ JWTSessionManager: validateSession - session expired, deleting');
+        await this.deleteSession(sessionId);
+        return false;
+      }
+      
+      if (isRecentlyCreated) {
+        if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: validateSession - session is recently created, allowing');
+      }
+
+      // Update lastAccessed time to keep session alive
+      try {
+        await this.updateSessionLastAccessed(sessionId);
+        if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: validateSession - lastAccessed updated');
+      } catch (updateError) {
+        if (AUTH_DEBUG) console.log('⚠️ JWTSessionManager: validateSession - failed to update lastAccessed:', updateError.message);
+        // Don't fail validation just because we couldn't update lastAccessed
+      }
+
+      if (AUTH_DEBUG) console.log('✅ JWTSessionManager: validateSession - session valid');
+      return true;
+    } catch (error) {
+      if (AUTH_DEBUG) console.log('❌ JWTSessionManager: validateSession - error:', error.message);
       return false;
     }
-
-    // Check if session is too old (7 days of inactivity)
-    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-    const lastActivity = new Date(session.lastAccessed || session.createdAt).getTime();
-    if (Date.now() - lastActivity > maxAge) {
-      await this.deleteSession(sessionId);
-      return false;
-    }
-
-    return true;
   }
 
   // Revoke session (logout)
@@ -200,13 +271,24 @@ class JWTSessionManager {
 
   // Get session by ID
   static async getSession(sessionId) {
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: getSession called for:', sessionId);
+    
     // First check in-memory cache
     let session = activeSessions.get(sessionId);
+    
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: getSession - in-memory cache check:', {
+      foundInCache: !!session,
+      cacheSize: activeSessions.size,
+      cacheKeys: Array.from(activeSessions.keys())
+    });
 
     if (!session) {
+      if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: getSession - not in cache, checking database');
       // If not in memory, check database
       try {
         session = await Session.findBySessionId(sessionId);
+        if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: getSession - database check result:', !!session);
+        
         if (session) {
           // Update last accessed time
           session.lastAccessed = new Date();
@@ -214,6 +296,7 @@ class JWTSessionManager {
 
           // Cache in memory for faster future access
           activeSessions.set(sessionId, session.toObject());
+          if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: getSession - session cached in memory');
         }
       } catch (error) {
         console.error('❌ JWTSessionManager: Error retrieving session from database:', error);
@@ -221,6 +304,7 @@ class JWTSessionManager {
       }
     }
 
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: getSession - returning session:', !!session);
     return session;
   }
 
@@ -242,19 +326,27 @@ class JWTSessionManager {
       const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days of inactivity
       const now = Date.now();
 
+      if (AUTH_DEBUG) console.log('🧹 JWTSessionManager: Starting session cleanup...');
+
       // Clean in-memory sessions based on lastAccessed
+      let cleanedFromMemory = 0;
       for (const [sessionId, session] of activeSessions.entries()) {
-        if (now - new Date(session.lastAccessed || session.createdAt).getTime() > maxAge) {
+        const lastActivity = new Date(session.lastAccessed || session.createdAt).getTime();
+        if (now - lastActivity > maxAge) {
           activeSessions.delete(sessionId);
+          cleanedFromMemory++;
         }
       }
 
+      if (AUTH_DEBUG) console.log(`🧹 JWTSessionManager: Cleaned ${cleanedFromMemory} sessions from memory`);
+
       // Clean database sessions (TTL will handle most, but this ensures consistency)
+      // Be more conservative - only clean sessions that are definitely expired
       const expiredCount = await Session.deleteMany({
         lastAccessed: { $lt: new Date(now - maxAge) }
       });
 
-      if (AUTH_DEBUG) console.log(`🧹 Cleaned up ${expiredCount.deletedCount} expired sessions`);
+      if (AUTH_DEBUG) console.log(`🧹 JWTSessionManager: Cleaned up ${expiredCount.deletedCount} expired sessions from database`);
     } catch (error) {
       console.error('❌ JWTSessionManager: Error cleaning expired sessions:', error);
     }
