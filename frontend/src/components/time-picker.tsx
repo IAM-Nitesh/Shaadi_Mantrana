@@ -70,7 +70,7 @@ export function TimePicker({
             value={hour}
             onChange={e => setHour(Number(e.target.value))}
           >
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((h: number) => (
               <option key={h} value={h}>{pad(h)}</option>
             ))}
           </select>
@@ -80,7 +80,7 @@ export function TimePicker({
             value={minute}
             onChange={e => setMinute(Number(e.target.value))}
           >
-            {Array.from({ length: 60 }, (_, i) => i).map(m => (
+            {Array.from({ length: 60 }, (_, i) => i).map((m: number) => (
               <option key={m} value={m}>{pad(m)}</option>
             ))}
           </select>

@@ -9,6 +9,7 @@ import { safeGsap } from '../../components/SafeGsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useServerAuth } from '../../hooks/useServerAuth';
 import { getClientToken } from '../../utils/client-auth';
+import { getAdminStats, invalidateAdminStats } from '../../utils/admin-stats';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
@@ -17,6 +18,7 @@ import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 const EllipsisVerticalIconTyped = EllipsisVerticalIcon as React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import logger from '../../utils/logger';
+import { apiClient } from '../../utils/api-client';
 
 interface User {
   _id: string;
@@ -117,22 +119,8 @@ function AdminPageContent() {
 
   const fetchStats = async () => {
     try {
-    const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
-      const response = await fetch('/api/admin/stats', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats);
-      }
+      const data = await getAdminStats();
+      setStats(data.stats);
     } catch (error) {
       logger.error('Error fetching stats:', error);
     }
@@ -145,16 +133,15 @@ function AdminPageContent() {
         logger.error('No auth token available');
         return;
       }
-      const response = await fetch('/api/admin/users', {
+      const response = await apiClient.get('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        timeout: 15000
       });
       if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
+        setUsers(response.data.users || []);
       }
     } catch (error) {
       logger.error('Error fetching users:', error);
@@ -213,30 +200,30 @@ function AdminPageContent() {
         logger.error('No auth token available');
         return;
       }
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
+      const response = await apiClient.post('/api/admin/users', {
+        email: newUserEmail.trim(),
+        firstName: 'User',
+        lastName: 'Name'
+      }, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: newUserEmail.trim(),
-          firstName: 'User',
-          lastName: 'Name'
-        }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (response.ok) {
         setSuccess('User added successfully!');
         setNewUserEmail('');
         setShowAddUserModal(false);
+        // Invalidate cached stats so we fetch fresh counts
+        invalidateAdminStats();
         await Promise.all([fetchUsers(), fetchStats()]);
         
         // Auto-clear success message
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        const errorData = await response.json();
+        const errorData: any = response.data || {};
         setError(errorData.error || 'Failed to add user');
       }
     } catch (error) {
@@ -258,19 +245,20 @@ function AdminPageContent() {
       }
       
       const endpoint = currentlyPaused ? 'resume' : 'pause';
-      const response = await fetch(`/api/admin/users/${userId}/${endpoint}`, {
-        method: 'POST',
+      const response = await apiClient.post(`/api/admin/users/${userId}/${endpoint}`, {}, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
-      const responseData = await response.json();
+      const responseData: any = response.data || {};
 
       if (response.ok) {
         setSuccess(`User ${currentlyPaused ? 'resumed' : 'paused'} successfully!`);
+        // Invalidate cached stats to reflect changes
+        invalidateAdminStats();
         await Promise.all([fetchUsers(), fetchStats()]);
         
         // Auto-clear success message
@@ -295,16 +283,12 @@ function AdminPageContent() {
         logger.error('No auth token available');
         return;
       }
-      const response = await fetch(`/api/admin/users/${userId}/invite`, {
-        method: 'POST',
+      const response = await apiClient.post(`/api/admin/users/${userId}/invite`, { email: userEmail }, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: userEmail
-        }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (response.ok) {
@@ -321,7 +305,7 @@ function AdminPageContent() {
         // Auto-clear success message
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        const errorData = await response.json();
+        const errorData: any = response.data || {};
         setError(errorData.error || 'Failed to send invitation');
       }
     } catch (error) {

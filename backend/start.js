@@ -29,9 +29,11 @@ async function startApplication() {
   
   // Display environment information (production-safe)
   console.log('🔧 Environment Configuration:');
-  console.log(`   Environment: ${config.NODE_ENV}`);
-  console.log(`   Data Source: ${config.DATA_SOURCE.toUpperCase()}`);
-  console.log(`   Port: ${config.PORT}`);
+    const { logger } = require('./src/utils/pino-logger');
+    logger.info('🚀 Starting ShaadiMantrana Backend...');
+  
+    // Display environment information (production-safe)
+    logger.info({ env: config.NODE_ENV, data_source: config.DATA_SOURCE, port: config.PORT }, 'Environment configuration');
   
   // Only show database details in development
   if (!config.isProduction) {
@@ -69,16 +71,16 @@ async function startApplication() {
     const app = require('./src/index');
     
     const server = app.listen(config.PORT, () => {
-      console.log(`✅ Server running on port ${config.PORT}`);
+      logger.info({ port: config.PORT }, 'Server running');
       
       // Start session cleanup service if using MongoDB
       if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
         try {
           const sessionCleanupService = require('./src/services/sessionCleanupService');
           sessionCleanupService.start();
-          console.log('🧹 Session cleanup service started');
+          logger.info('Session cleanup service started');
         } catch (error) {
-          console.warn('⚠️  Could not start session cleanup service:', error.message);
+          logger.warn({ err: error && error.message }, 'Could not start session cleanup service');
         }
       }
       
@@ -135,10 +137,7 @@ async function startApplication() {
         console.log('   PATCH /api/connections/:id - Update connection status');
         
         if (config.FEATURES.DEBUG_MODE) {
-          console.log('\n🐛 Debug mode is enabled');
-          console.log('   - Detailed error messages');
-          console.log('   - Request/response logging');
-          console.log('   - Development OTP responses');
+          logger.info('Debug mode is enabled', { debug_mode: true });
         }
         
         console.log('\n🔐 Admin Approval System:');
@@ -154,10 +153,7 @@ async function startApplication() {
         console.log('   4. Admin can manage user status via admin endpoints');
         
         console.log('\n🧪 Testing:');
-        console.log('   npm run test:admin-approval - Test admin approval workflow');
-        console.log('   npm run test:auth-flow - Test authentication with admin approval');
-        console.log(`   curl http://localhost:${config.PORT}/health - Health check`);
-        console.log(`   curl http://localhost:${config.PORT}/api/auth/preapproved/check?email=test@example.com - Test approval check`);
+        logger.info('Testing scripts available');
       }
     });
 
@@ -185,7 +181,7 @@ async function startApplication() {
         const chatService = require('./src/services/chatService');
         if (chatService && chatService.io && typeof chatService.io.close === 'function') {
           chatService.io.close(() => {
-            console.log('🛑 Socket.IO server closed');
+            logger.info('Socket.IO server closed');
           });
         }
       } catch (e) {
@@ -193,18 +189,18 @@ async function startApplication() {
       }
 
       server.close(async () => {
-        console.log('🛑 HTTP server closed');
+        logger.info('HTTP server closed');
         
         if (config.DATABASE.URI) {
           try {
             await databaseService.disconnect();
-            console.log('📊 Database disconnected');
+            logger.info('Database disconnected');
           } catch (error) {
-            console.error('❌ Error disconnecting database:', error.message);
+            logger.error({ err: error && error.message }, 'Error disconnecting database');
           }
         }
         
-        console.log('✅ Graceful shutdown completed');
+        logger.info('Graceful shutdown completed');
         process.exit(0);
       });
 
@@ -221,21 +217,21 @@ async function startApplication() {
 
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
-      console.error('❌ Uncaught Exception:', error);
+      logger.error({ err: error }, 'Uncaught Exception');
       gracefulShutdown('uncaughtException');
     });
 
     process.on('unhandledRejection', (reason, promise) => {
-      console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+      logger.error({ promise, reason }, 'Unhandled Rejection');
       gracefulShutdown('unhandledRejection');
     });
 
   } catch (error) {
-    console.error('❌ Failed to start application:', error.message);
+    logger.error({ err: error && error.message }, 'Failed to start application');
     
     // Don't log full stack trace in production
     if (!config.isProduction) {
-      console.error('Stack:', error.stack);
+      logger.error({ stack: error && error.stack }, 'Stack trace');
     }
     
     if (error.message.includes('connect')) {

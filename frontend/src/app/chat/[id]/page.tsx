@@ -9,6 +9,7 @@ import { getAuthStatus, getClientToken } from '../../../utils/client-auth';
 import CustomIcon from '../../../components/CustomIcon';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import logger from '../../../utils/logger';
+import { apiClient } from '../../../utils/api-client';
 
 // Chat page for matched profiles
 
@@ -47,23 +48,20 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       try {
         // Fetch connection and other user's profile from MongoDB
   const token = await getClientToken();
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/connections/${id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
-        );
-        
+        const response = await apiClient.get(`/api/connections/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000
+        });
+
         if (!response.ok) {
           setError('Connection not found');
           return;
         }
-        
-        const data = await response.json();
+
+        const data = response.data;
         
         // Get the other user's profile from the connection
         // Extract current user ID from server auth

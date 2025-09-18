@@ -233,20 +233,18 @@ export class ImageUploadService {
         throw new Error('Authentication required. Please log in first.');
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/upload/single`, {
-        method: 'POST',
+      const response = await apiClient.upload(`/api/upload/single`, formData, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'Authorization': `Bearer ${bearerToken}`
         },
-        body: formData,
-        credentials: 'include',
+        timeout: 30000
       });
 
   // logger.debug('Upload response status:', response.status);
   // logger.debug('Upload response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = response.data || {};
         const errorMessage = errorData.error || errorData.message || `Upload failed with status ${response.status}`;
         
         // Special handling for authentication errors
@@ -258,8 +256,7 @@ export class ImageUploadService {
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      
+      const result = response.data;
       return {
         success: true,
         imageUrl: result.imageUrl,
@@ -306,14 +303,13 @@ export class ImageUploadService {
         return false;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/upload/delete-image`, {
-        method: 'DELETE',
+      const response = await apiClient.delete('/api/upload/delete-image', {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${bearerToken}`,
+          'Authorization': `Bearer ${bearerToken}`
         },
-        body: JSON.stringify({ imageUrl }),
-        credentials: 'include',
+        body: { imageUrl },
+        timeout: 15000
       });
 
       return response.ok;
@@ -338,20 +334,15 @@ export class ImageUploadService {
         return [];
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/upload/profile-images`, {
-        method: 'GET',
+      const response = await apiClient.get('/api/upload/profile-images', {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'Authorization': `Bearer ${bearerToken}`
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile images');
-      }
-
-      const data = await response.json();
-      return data.images || [];
+      if (!response.ok) throw new Error('Failed to fetch profile images');
+      return response.data.images || [];
 
     } catch (error: unknown) {
       // console.error('Error fetching profile images:', error);
@@ -449,17 +440,15 @@ export class ImageUploadService {
       formData.append('image', compressionResult.file);
 
       // Upload to B2 via backend
-      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture`, {
-        method: 'POST',
+      const response = await apiClient.upload('/api/upload/profile-picture', formData, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'Authorization': `Bearer ${bearerToken}`
         },
-        body: formData,
-        credentials: 'include',
+        timeout: 30000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = response.data || {};
         const errorMessage = errorData.error || errorData.message || `Upload failed with status ${response.status}`;
         
         if (response.status === 401 || response.status === 403) {
@@ -469,8 +458,7 @@ export class ImageUploadService {
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      
+      const result = response.data;
       return {
         success: true,
         imageUrl: result.data.url,
@@ -511,12 +499,11 @@ export class ImageUploadService {
         return false;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture`, {
-        method: 'DELETE',
+      const response = await apiClient.delete('/api/upload/profile-picture', {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'Authorization': `Bearer ${bearerToken}`
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       return response.ok;
@@ -539,14 +526,9 @@ export class ImageUploadService {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/upload/profile-picture/${userId}/url?expiry=${expiry}`);
-      
-      if (!response.ok) {
-        return null;
-      }
-
-      const result = await response.json();
-      return result.data.url;
+  const response = await apiClient.get(`/api/upload/profile-picture/${userId}/url?expiry=${expiry}`, { timeout: 15000 });
+  if (!response.ok) return null;
+  return response.data?.data?.url || null;
     } catch (error) {
       return null;
     }
@@ -680,21 +662,15 @@ export class ImageUploadService {
         return null;
       }
 
-      const url = `${configService.apiBaseUrl}/api/upload/profile-picture/${userId}/url?expiry=${expiry}`;
-      logger.debug('🔍 Fetching signed URL from:', url);
-
-      const response = await fetch(url, {
+      const response = await apiClient.get(`/api/upload/profile-picture/${userId}/url?expiry=${expiry}`, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          'Authorization': `Bearer ${bearerToken}`
         },
-        credentials: 'include',
+        timeout: 15000
       });
-      
-  logger.debug('🔍 Response status:', response.status);
-  logger.debug('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
-      
+
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = JSON.stringify(response.data || {});
 
         // Treat missing profile picture (404) as a non-error case for consumers
         if (response.status === 404) {
@@ -713,10 +689,10 @@ export class ImageUploadService {
         return null;
       }
 
-      const result = await response.json();
+    const result = response.data;
   logger.info('✅ Signed URL result:', result);
       
-      if (result.success && result.data && result.data.url) {
+    if (result && result.success && result.data && result.data.url) {
   logger.info('✅ Valid signed URL received for user:', userId);
         return result.data.url;
       } else {

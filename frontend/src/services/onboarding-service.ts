@@ -3,6 +3,7 @@ import { config as configService } from './configService';
 import { getBearerToken, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { getUserCompleteness } from '../utils/user-utils';
+import { apiClient } from '../utils/api-client';
 
 export interface OnboardingFlags {
   isFirstLogin: boolean;
@@ -31,22 +32,16 @@ export class OnboardingService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${configService.apiBaseUrl}/api/profiles/onboarding-flag`, {
-        method: 'PUT',
+      const response = await apiClient.put('/api/profiles/onboarding-flag', { hasSeenOnboardingMessage }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ hasSeenOnboardingMessage }),
-        credentials: 'include',
+        timeout: 15000
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.data;
     } catch (error) {
       logger.error('Error updating onboarding flag:', error);
       throw error;
@@ -70,22 +65,16 @@ export class OnboardingService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${configService.apiBaseUrl}/api/profiles/first-login-flag`, {
-        method: 'PUT',
+      const response = await apiClient.put('/api/profiles/first-login-flag', { isFirstLogin }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ isFirstLogin }),
-        credentials: 'include',
+        timeout: 15000
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.data;
     } catch (error) {
       logger.error('Error updating first login flag:', error);
       throw error;

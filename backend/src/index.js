@@ -9,6 +9,9 @@ const path = require('path');
 // Load environment variables
 dotenv.config();
 
+// Import configuration (centralized env handling)
+const config = require('./config');
+
 // Import database service
 const databaseService = require('./services/databaseService');
 
@@ -18,10 +21,12 @@ const chatService = require('./services/chatService');
 // Import request logging middleware
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
+// Central logger instance (single import to avoid redeclaration)
+const { logger } = require('./utils/pino-logger');
+
 const app = express();
-// Import configuration
-const config = require('./config');
-const PORT = config.PORT; // Always use env-provided PORT (Render/Heroku)
+// Use centralized config for PORT to keep defaults consistent
+const PORT = config.PORT || process.env.PORT || 5001;
 
 // Trust proxy for rate limiting behind reverse proxies (like Render)
 app.set('trust proxy', 1);
@@ -45,8 +50,7 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log(`CORS blocked origin: ${origin}`);
-      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+      logger.warn({ origin, allowedOrigins }, 'CORS blocked origin');
       callback(null, false);
     }
   },
@@ -176,9 +180,9 @@ app.use(cookieParser());
 app.use(requestLogger);
 
 // Metrics - expose Prometheus metrics if prom-client is installed
-try {
-  const { promClient } = require('./utils/metrics');
-  if (promClient) {
+  try {
+    const { promClient } = require('./utils/metrics');
+    if (promClient) {
     app.get('/metrics', async (req, res) => {
       try {
         res.set('Content-Type', promClient.register.contentType);
@@ -188,7 +192,7 @@ try {
       }
     });
   }
-} catch (e) {
+  } catch (e) {
   // ignore if prom-client not installed
 }
 
@@ -225,6 +229,40 @@ if (debugRoutes) {
   app.use('/api/debug', debugRoutes);
 }
 
+// Client log forwarding endpoint - forwards browser/app logs to server logger (rate-limited)
+const expressRateLimit = require('express-rate-limit');
+
+const clientLogLimiter = expressRateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: process.env.NODE_ENV === 'production' ? 60 : 600,
+  message: { error: 'Too many log requests' }
+});
+
+app.post('/api/logs', clientLogLimiter, (req, res) => {
+  try {
+    const apiKey = req.headers['x-client-log-key'] || req.query.key;
+    const expectedKey = process.env.LOKI_CLIENT_API_KEY;
+    if (!expectedKey || apiKey !== expectedKey) {
+      logger.warn({ event: 'client_log_unauthorized', ip: req.ip, headers: req.headers }, 'Unauthorized client log attempt');
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+  const payload = req.body || {};
+  // Extract user UUID when provided by client (prefer header, fallback to payload)
+  const clientUserUuid = req.headers['x-user-uuid'] || payload.user_uuid || payload.userUuid || 'anonymous';
+
+  // Sanitize sensitive fields
+  if (payload.email) payload.email = payload.email.replace(/(.{3})(.*)(@.*)/, '$1***$3');
+  if (payload.otp) payload.otp = '***';
+
+  logger.info({ event: 'client_log', user_uuid: clientUserUuid, payload, ip: req.ip, ua: req.headers['user-agent'] }, 'CLIENT LOG');
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    logger.error({ event: 'client_log_error', error: err && err.message }, 'Client log forwarding failed');
+    return res.status(500).json({ success: false, error: 'Internal error' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
@@ -236,19 +274,23 @@ app.get('/health', async (req, res) => {
     if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
       try {
         const sessionCleanupService = require('./services/sessionCleanupService');
-        sessionStats = await sessionCleanupService.getSessionStats();
-      } catch (error) {
-        console.warn('Could not get session stats:', error.message);
-      }
+          sessionStats = await sessionCleanupService.getSessionStats();
+        } catch (error) {
+        logger.warn({ err: error && error.message }, 'Could not get session stats');
+        }
     }
     
-    // Get email service health
-    let emailHealth = null;
+    // Get email service health with a short timeout so /health stays responsive
+    let emailHealth = { status: 'unknown' };
     try {
       const emailService = require('./services/emailService');
-      emailHealth = await emailService.testService();
+      const emailHealthTimeout = (config && config.EMAIL && config.EMAIL.MASTER_TIMEOUT_MS) || 2000;
+      emailHealth = await Promise.race([
+        emailService.testService(),
+        new Promise((resolve) => setTimeout(() => resolve({ success: false, message: 'email health check timeout' }), emailHealthTimeout))
+      ]);
     } catch (error) {
-      console.warn('Could not get email service health:', error.message);
+    logger.warn({ err: error && error.message }, 'Could not get email service health');
       emailHealth = { status: 'unknown', error: error.message };
     }
     
@@ -296,7 +338,7 @@ app.get('/api/database/status', async (req, res) => {
 // Error handling middleware
 app.use(errorLogger); // Log errors with UUID tracking
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error({ stack: err && err.stack }, 'Unhandled exception in request');
   res.status(500).json({ 
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
@@ -315,22 +357,17 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     // Connect to database first
-    console.log('🔌 Initializing database connection...');
+    logger.info('Initializing database connection');
     await databaseService.connect();
     
     // Start the server
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Backend server running on port ${PORT}`);
-      console.log(`📍 Health check: http://localhost:${PORT}/health`);
-      console.log(`📊 Database status: http://localhost:${PORT}/api/database/status`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`💾 Database: ${databaseService.getConnectionStatus().name || 'Not connected'}`);
-      console.log('✅ Server startup complete!');
+  logger.info({ port: PORT, health: `/health` }, 'Backend server running');
     });
 
     // Initialize Socket.IO chat service
     chatService.initialize(server);
-    console.log('💬 Socket.IO chat service initialized');
+  logger.info('Socket.IO chat service initialized');
 
     // Setup periodic cleanup for chat data
     setInterval(() => {
@@ -338,17 +375,15 @@ async function startServer() {
     }, 60 * 60 * 1000); // Run cleanup every hour
     
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+  logger.error({ err: error && error.message }, 'Failed to start server');
     
     if (process.env.NODE_ENV === 'production') {
-      console.error('💥 Production startup failed - exiting');
+  logger.error('Production startup failed - exiting');
       process.exit(1);
     } else {
-      console.log('🔄 Starting server without database connection (development mode)');
+  logger.warn('Starting server without database connection (development mode)');
       app.listen(PORT, () => {
-        console.log(`🚀 Backend server running on port ${PORT} (DB disconnected)`);
-        console.log(`📍 Health check: http://localhost:${PORT}/health`);
-        console.log(`⚠️  Warning: Database not connected`);
+  logger.info({ port: PORT, db_connected: false }, 'Backend server running (DB disconnected)');
       });
     }
   }
@@ -356,13 +391,13 @@ async function startServer() {
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('🛑 SIGTERM received, shutting down gracefully');
+  logger.warn('SIGTERM received, shutting down gracefully');
   await databaseService.disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('🛑 SIGINT received, shutting down gracefully');
+  logger.warn('SIGINT received, shutting down gracefully');
   await databaseService.disconnect();
   process.exit(0);
 });

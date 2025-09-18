@@ -10,6 +10,9 @@ const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
 const { User } = require('../models');
 
+const { logger } = require('../utils/pino-logger');
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
+
 // Session management - use JWTSessionManager's activeSessions
 // const sessions = new Map(); // Removed - using JWTSessionManager.activeSessions instead
 
@@ -18,7 +21,7 @@ const otpStore = require('../utils/otpStorage');
 
 // Ensure otpStore is properly initialized
 if (!otpStore || typeof otpStore.size !== 'function') {
-  console.error('❌ OTP Storage not properly initialized!');
+  logger.error('❌ OTP Storage not properly initialized!');
   throw new Error('OTP Storage initialization failed');
 }
 
@@ -85,13 +88,13 @@ const SecurityUtils = {
       clientInfo,
       createdAt: Date.now()
     });
-    console.log(`Storing OTP: ${otp} for ${email} (expires in ${expirationMinutes} minutes)`);
-    console.log(`Current store size: ${otpStore.size()}`);
+    if (AUTH_DEBUG) logger.debug({ event: 'store_otp', email, expiresInMinutes: expirationMinutes, otp }, 'Storing OTP');
+    if (AUTH_DEBUG) logger.debug({ storeSize: otpStore.size() }, 'Current OTP store size');
   },
 
   // Verify OTP
   verifyOTP: (email, otp) => {
-    console.log(`Verifying OTP for ${email}, Current store size: ${otpStore.size()}`);
+  if (AUTH_DEBUG) logger.debug({ event: 'verify_otp_start', email, storeSize: otpStore.size() }, 'Verifying OTP');
     const stored = otpStore.get(email);
     if (!stored) {
       return { valid: false, reason: 'OTP not found or expired' };
@@ -121,7 +124,7 @@ const SecurityUtils = {
 class AuthController {
   // Send OTP for email verification (No storage - for external service integration)
   async sendOTP(req, res) {
-    console.log('sendOTP received email:', req.body.email);
+  if (AUTH_DEBUG) logger.debug({ event: 'send_otp_received', email: req.body && req.body.email }, 'sendOTP received');
     try {
       const { email } = req.body;
 
@@ -150,7 +153,7 @@ class AuthController {
       const dailyRateLimit = SecurityUtils.checkRateLimit(`${clientIP}-daily-otp`, dailyLimit, dailyWindow);
       
       if (!dailyRateLimit.allowed) {
-        console.log('Returning 429: daily limit');
+        logger.warn({ event: 'otp_daily_limit', retryAfter: dailyRateLimit.retryAfter, clientIP }, 'Daily OTP limit exceeded');
         return res.status(429).json({
           success: false,
           error: 'Daily OTP limit exceeded',
@@ -165,7 +168,7 @@ class AuthController {
       const shortTermRateLimit = SecurityUtils.checkRateLimit(`${clientIP}-otp`, shortTermLimit, shortTermWindow);
       
       if (!shortTermRateLimit.allowed) {
-        console.log('Returning 429: short-term limit');
+        logger.warn({ event: 'otp_short_term_limit', retryAfter: shortTermRateLimit.retryAfter, clientIP }, 'Short-term OTP limit exceeded');
         return res.status(429).json({
           success: false,
           error: 'Too many OTP requests',
@@ -190,7 +193,7 @@ class AuthController {
       
       // Admin users don't need to be in preapproved emails collection
       if (isAdmin) {
-        console.log(`👑 Admin user ${sanitizedEmail} login attempt (bypassing preapproved check)`);
+        logger.info({ event: 'admin_login_attempt', email: sanitizedEmail }, 'Admin user login attempt');
       }
       
       // Check if user is paused (only for non-admin users)
@@ -217,7 +220,7 @@ class AuthController {
           userName: sanitizedEmail.split('@')[0]
         });
         
-        console.log(`✅ OTP sent to ${sanitizedEmail}: ${emailResult.messageId || 'console'}`);
+  logger.info({ event: 'otp_sent', email: sanitizedEmail, messageId: emailResult.messageId || 'console' }, 'OTP sent');
         
         res.status(200).json({
           success: true,
@@ -229,11 +232,11 @@ class AuthController {
         });
         
       } catch (emailError) {
-        console.error('❌ Email sending failed:', emailError.message);
+  logger.error({ event: 'email_send_failed', err: emailError && emailError.message }, 'Email sending failed');
         
         // In production, still return success but with a warning
         if (config.NODE_ENV === 'production') {
-          console.log(`📧 Production fallback - OTP for ${sanitizedEmail}: ${otp} (Email failed - check logs)`);
+          logger.warn({ email: sanitizedEmail }, 'Production fallback - OTP generated despite email failure');
           return res.status(200).json({
             success: true,
             message: 'OTP generated successfully. Please check your email or contact support if you don\'t receive it.',
@@ -245,7 +248,7 @@ class AuthController {
         
         // Fallback for development
         if (config.NODE_ENV === 'development') {
-          console.log(`📧 Development fallback - OTP for ${sanitizedEmail}: ${otp}`);
+          if (AUTH_DEBUG) logger.debug({ email: sanitizedEmail, otp }, 'Development fallback - OTP');
           return res.status(200).json({
             success: true,
             message: `Email service failed. Development OTP: ${otp}`,
@@ -259,7 +262,7 @@ class AuthController {
       }
 
     } catch (error) {
-      console.error('❌ Send OTP error:', error);
+      logger.error({ event: 'send_otp_error', err: error && error.message }, 'Send OTP error');
       res.status(500).json({
         success: false,
         error: 'Failed to send OTP'
@@ -526,7 +529,7 @@ class AuthController {
       // Set session ID cookie
       res.cookie('sessionId', session.sessionId, cookieOptions);
 
-      console.log('🍪 Cookies set for user:', sanitizedEmail);
+  logger.info({ event: 'cookies_set', email: sanitizedEmail }, 'Cookies set for user');
 
       res.status(200).json(responseData);
 
@@ -963,3 +966,21 @@ class AuthController {
 }
 
 module.exports = new AuthController();
+
+// Development-only helper to expose last OTP for an email (used by tests)
+if (process.env.NODE_ENV === 'development') {
+  module.exports.devGetLastOTP = async (req, res) => {
+    try {
+      const email = (req.query.email || (req.body && req.body.email) || '').toLowerCase().trim();
+      if (!email) return res.status(400).json({ success: false, error: 'email query param required' });
+
+      const otpData = otpStore.get(email);
+      if (!otpData) return res.status(404).json({ success: false, error: 'OTP not found' });
+
+      return res.status(200).json({ success: true, email, otp: otpData.otp, expiresAt: otpData.expiresAt });
+    } catch (err) {
+      console.error('devGetLastOTP error', err);
+      return res.status(500).json({ success: false, error: 'internal error' });
+    }
+  };
+}

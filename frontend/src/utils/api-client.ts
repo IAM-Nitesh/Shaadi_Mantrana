@@ -57,7 +57,26 @@ class ApiClient {
       retries = this.config.retries
     } = options;
 
-    const url = `${this.config.baseUrl}${endpoint}`;
+    // Normalize endpoint to allow same-origin proxying.
+    // If the caller passes a full URL that matches configured baseUrl, rewrite
+    // it to a same-origin `/api/...` path so browser receives Set-Cookie headers.
+    let url: string;
+    const configuredBase = this.config.baseUrl?.replace(/\/$/, '');
+
+    if (/^https?:\/\//i.test(endpoint)) {
+      // If endpoint points to the configured backend base, rewrite to same-origin
+      // e.g. https://api.example.com/api/auth/status -> /api/auth/status
+      if (configuredBase && endpoint.startsWith(configuredBase)) {
+        url = endpoint.replace(configuredBase, '');
+        if (!url.startsWith('/')) url = `/${url}`;
+      } else {
+        url = endpoint;
+      }
+    } else if (endpoint.startsWith('/api/')) {
+      url = endpoint;
+    } else {
+      url = `${this.config.baseUrl}${endpoint}`;
+    }
     
     // Create timeout signal
     const timeoutSignal = AbortSignal.timeout(timeout);

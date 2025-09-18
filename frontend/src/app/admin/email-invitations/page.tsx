@@ -7,6 +7,7 @@ import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
+import { apiClient } from '../../../utils/api-client';
 
 interface Invitation {
   _id: string;
@@ -38,18 +39,18 @@ export default function EmailInvitations() {
         return;
       }
 
-      const response = await fetch('/api/admin/invitations', {
+      const response = await apiClient.get('/api/admin/invitations', {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok) {
         throw new Error('Failed to fetch invitations');
       }
 
-      const data = await response.json();
+      const data = response.data;
       logger.debug('Received invitations data:', data.invitations);
       setInvitations(data.invitations || []);
 
@@ -74,26 +75,24 @@ export default function EmailInvitations() {
       logger.debug('Sending invitation to:', newEmail.trim());
       logger.debug('Using token:', token ? 'Token exists' : 'No token');
       
-      const response = await fetch('/api/admin/invitations', {
-        method: 'POST',
+      const response = await apiClient.post('/api/admin/invitations', { email: newEmail.trim() }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email: newEmail.trim() }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       logger.debug('Response status:', response.status);
       logger.debug('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.ok) {
-        const responseData = await response.json();
+        const responseData = response.data;
         logger.debug('Success response:', responseData);
         setNewEmail('');
         await fetchInvitations();
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const errorData: any = response.data || { error: 'Unknown error' };
         logger.error('Error response:', errorData);
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to send invitation`);
       }
@@ -110,12 +109,11 @@ export default function EmailInvitations() {
       setResendingInvitation(invitationId);
   const token = await getClientToken();
       
-      const response = await fetch(`/api/admin/invitations/${invitationId}/resend`, {
-        method: 'POST',
+      const response = await apiClient.post(`/api/admin/invitations/${invitationId}/resend`, {}, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (response.ok) {

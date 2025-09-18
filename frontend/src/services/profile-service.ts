@@ -144,18 +144,16 @@ export class ProfileService {
         return false;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/interactions`, {
-        method: 'POST',
+      const response = await apiClient.post('/api/interactions', {
+        profileId,
+        action,
+        timestamp: new Date().toISOString(),
+      }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          profileId,
-          action,
-          timestamp: new Date().toISOString(),
-        }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       return response.ok;
@@ -256,9 +254,9 @@ export class ProfileService {
     const apiBaseUrl = configService.apiBaseUrl;
     if (!apiBaseUrl) return null;
     try {
-      const response = await fetch(`${apiBaseUrl}/api/profiles/uuid/${uuid}`);
+      const response = await apiClient.get(`/api/profiles/uuid/${uuid}`);
       if (!response.ok) throw new Error('Failed to fetch profile by UUID');
-      const data = await response.json();
+      const data = response.data;
       return data.profile || null;
     } catch (error) {
       // console.error('Error fetching profile by UUID:', error);
@@ -284,14 +282,14 @@ export class ProfileService {
         return false;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
-        method: 'DELETE',
+      const response = await apiClient.delete('/api/profiles/me', {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        timeout: 15000
       });
+
       return response.ok;
     } catch (error) {
       // console.error('Error deleting profile:', error);
@@ -357,32 +355,27 @@ export class ProfileService {
         return false;
       }
 
-      const apiUrl = configService.apiBaseUrl + '/api/profiles/me/onboarding';
-      
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
       if (!bearerToken) {
         return false;
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'PATCH',
+      const response = await apiClient.patch('/api/profiles/me/onboarding', { hasSeenOnboardingMessage }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ hasSeenOnboardingMessage }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        logger.error('❌ Failed to update onboarding message:', errorData);
+        logger.error('❌ Failed to update onboarding message:', response.status);
         return false;
       }
 
-      const result = await response.json();
-      if (result.success) {
+      const result = response.data;
+      if (result && result.success) {
         logger.debug('✅ Onboarding message flag updated successfully:', hasSeenOnboardingMessage);
         return true;
       }
@@ -406,15 +399,14 @@ export class ProfileService {
       }
       
       // Trigger a fresh authentication check
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/status`, {
-         method: 'GET',
-         credentials: 'include',
-         headers: {
-           'Cache-Control': 'no-cache',
-           'Pragma': 'no-cache'
-         }
-       });
-      
+      const response = await apiClient.get('/api/auth/status', {
+        timeout: 10000,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+
       if (response.ok) {
         logger.debug('✅ ProfileService: Authentication refresh successful');
       } else {
@@ -435,31 +427,26 @@ export class ProfileService {
         return { success: false, error: 'Not authenticated' };
       }
 
-      const apiUrl = configService.apiBaseUrl + '/api/profiles/me';
-      
       // Get Bearer token for backend API call
       const bearerToken = await getBearerToken();
       if (!bearerToken) {
         return { success: false, error: 'No bearer token' };
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'PATCH',
+      const response = await apiClient.patch('/api/profiles/me', profileData, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(profileData),
-        credentials: 'include',
+        timeout: 20000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        logger.error('❌ Failed to update profile:', errorData);
-        return { success: false, error: errorData };
+        logger.error('❌ Failed to update profile:', response.status);
+        return { success: false, error: response.data || response.status };
       }
 
-      const result = await response.json();
+      const result = response.data;
       logger.debug('✅ Profile updated successfully');
       return { success: true, data: result };
     } catch (error) {
