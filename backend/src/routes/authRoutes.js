@@ -55,6 +55,15 @@ router.get('/status', (req, res) => authController.getAuthStatus(req, res));
 // Token endpoint for frontend
 router.get('/token', (req, res) => authController.getToken(req, res));
 
+// Development-only helper to fetch last OTP for an email (used by E2E tests)
+if (process.env.NODE_ENV === 'development') {
+  router.get('/_dev/last-otp', (req, res) => {
+    if (typeof authController.devGetLastOTP === 'function') {
+      return authController.devGetLastOTP(req, res);
+    }
+    return res.status(404).json({ success: false, error: 'dev endpoint not available' });
+  });
+}
 // Check if an email is preapproved
 router.get('/preapproved/check', (req, res, next) => {
   // Disable caching for this endpoint

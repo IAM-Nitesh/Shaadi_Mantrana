@@ -33,9 +33,9 @@ export function DatePicker({ date, onChange, className }: {
   };
 
   // Generate year options (1900 to 18 years ago)
-  const yearOptions = [];
+  const yearOptions: number[] = [];
   for (let year = 1900; year <= eighteenYearsAgo.getFullYear(); year++) {
-    yearOptions.push(year);
+    yearOptions.push(year as number);
   }
 
   // Generate month options

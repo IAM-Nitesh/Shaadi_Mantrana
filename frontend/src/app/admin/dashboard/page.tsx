@@ -8,6 +8,7 @@ import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
+import { apiClient } from '../../../utils/api-client';
 
 interface DashboardData {
   storageStats: {
@@ -45,22 +46,22 @@ export default function AdminDashboard() {
       logger.debug('🔍 Dashboard: Fetching admin stats from /api/admin/stats');
       
       // Fetch admin stats (includes storage stats)
-      const statsResponse = await fetch('/api/admin/stats', {
+      const statsResponse = await apiClient.get('/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       logger.debug('🔍 Dashboard: Response status:', statsResponse.status);
 
       if (!statsResponse.ok) {
-        const errorText = await statsResponse.text();
+        const errorText = JSON.stringify(statsResponse.data);
         logger.error('🔍 Dashboard: API error response:', errorText);
         throw new Error(`Failed to fetch dashboard data: ${statsResponse.status} ${errorText}`);
       }
 
-      const data = await statsResponse.json();
+      const data = statsResponse.data;
       logger.debug('🔍 Dashboard: Received data:', data);
       
       // Transform the data to match the expected format

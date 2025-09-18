@@ -963,3 +963,21 @@ class AuthController {
 }
 
 module.exports = new AuthController();
+
+// Development-only helper to expose last OTP for an email (used by tests)
+if (process.env.NODE_ENV === 'development') {
+  module.exports.devGetLastOTP = async (req, res) => {
+    try {
+      const email = (req.query.email || (req.body && req.body.email) || '').toLowerCase().trim();
+      if (!email) return res.status(400).json({ success: false, error: 'email query param required' });
+
+      const otpData = otpStore.get(email);
+      if (!otpData) return res.status(404).json({ success: false, error: 'OTP not found' });
+
+      return res.status(200).json({ success: true, email, otp: otpData.otp, expiresAt: otpData.expiresAt });
+    } catch (err) {
+      console.error('devGetLastOTP error', err);
+      return res.status(500).json({ success: false, error: 'internal error' });
+    }
+  };
+}

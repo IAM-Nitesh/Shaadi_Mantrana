@@ -24,6 +24,7 @@ import OnboardingOverlay from '../../components/OnboardingOverlay';
 import { useServerAuth } from '../../hooks/useServerAuth';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
+import { apiClient } from '../../utils/api-client';
 
 // Type definition for field configuration
 interface FieldConfig {
@@ -1251,26 +1252,22 @@ function ProfileContent() {
       }
 
       // Call backend API to update profile
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
-      const response = await fetch(`${apiBaseUrl}/api/profiles/me`, {
-        method: 'PUT',
+      const response = await apiClient.put('/api/profiles/me', {
+        ...profileData,
+        images: uploadedImageUrl || profileData.images
+      }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getClientToken()}`,
+          'Authorization': `Bearer ${await getClientToken()}`
         },
-        body: JSON.stringify({
-          ...profileData,
-          images: uploadedImageUrl || profileData.images
-        }),
-        credentials: 'include',
+        timeout: 20000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `Failed to save profile (${response.status})`);
+        throw new Error(response.data?.error || `Failed to save profile (${response.status})`);
       }
 
-      const result = await response.json();
+      const result = response.data;
       
       logger.debug('📥 Backend response after save:', result);
       
@@ -1286,19 +1283,17 @@ function ProfileContent() {
         let refreshedProfile: Record<string, any> | null = null;
         try {
           // Add cache-busting parameter to ensure fresh data
-          const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
-          const response = await fetch(`${apiBaseUrl}/api/profiles/me?t=${Date.now()}`, {
-            method: 'GET',
+          const response = await apiClient.get(`/api/profiles/me?t=${Date.now()}`, {
             headers: {
               'Authorization': `Bearer ${await getClientToken()}`,
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache'
             },
-            credentials: 'include',
+            timeout: 15000
           });
-          
+
           if (response.ok) {
-            const data = await response.json();
+            const data = response.data;
             logger.debug('📥 Raw backend response after refresh:', data);
             if (data.profile && data.profile.profile) {
               refreshedProfile = {
