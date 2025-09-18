@@ -512,8 +512,8 @@ class AuthController {
         secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
         sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        // Remove domain restriction to allow cross-site cookies
-        // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        // For cross-origin requests, don't set domain to allow cookies to work across different domains
+        // The browser will handle the domain automatically for sameSite: 'none'
       };
 
       // Set access token cookie
@@ -672,8 +672,8 @@ class AuthController {
         secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
         sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        // Remove domain restriction to allow cross-site cookies
-        // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        // For cross-origin requests, don't set domain to allow cookies to work across different domains
+        // The browser will handle the domain automatically for sameSite: 'none'
       };
 
       res.cookie('accessToken', newAccessToken, cookieOptions);
@@ -708,8 +708,8 @@ class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
         sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        // Remove domain restriction to allow cross-site cookies
-        // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        // For cross-origin requests, don't set domain to allow cookies to work across different domains
+        // The browser will handle the domain automatically for sameSite: 'none'
       };
 
       res.clearCookie('accessToken', cookieOptions);
