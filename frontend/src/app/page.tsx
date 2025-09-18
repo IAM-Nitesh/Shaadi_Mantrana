@@ -434,21 +434,16 @@ export default function Home() {
   // server-only service code into a client component (prevents bundler/runtime errors).
   const verifyOtpWithBackend = async (email: string, otpCode: string) => {
     try {
-      const response = await fetch(`${configService.apiBaseUrl}/api/auth/verify-otp`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email, otp: otpCode }),
-         credentials: 'include',
-       });
+      const response = await apiClient.post('/api/auth/verify-otp', { email, otp: otpCode }, { timeout: 15000 });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(err.error || `HTTP ${response.status}: ${response.statusText}`);
+        const errData: any = response.data || {};
+        const errMsg = errData.error || errData.message || `HTTP ${response.status}`;
+        throw new Error(String(errMsg));
       }
 
-      return await response.json();
+      return response.data;
     } catch (error) {
-      // Normalize error to match previous ServerAuthService shape
       const message = error instanceof Error ? error.message : String(error ?? 'Verification failed');
       return { success: false, redirectTo: '/', error: message };
     }

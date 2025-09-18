@@ -26,6 +26,14 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const { user, isAuthenticated } = useServerAuth();
 
   const handleNavigation = (href: string) => {
+    // If auth state isn't ready yet, avoid aggressive redirects that may trigger logout
+    if (!isAuthenticated && !user) {
+      logger.debug('ModernNavigation: Auth state not ready, delaying navigation');
+      startTransition(() => {
+        router.push(href);
+      });
+      return;
+    }
     // Check if user is trying to access restricted features
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
     
