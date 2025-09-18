@@ -17,8 +17,11 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [retryOnce, setRetryOnce] = useState(false);
 
   useEffect(() => {
+    // Reset retry flag on path change to allow a fresh forced check
+    setRetryOnce(false);
     checkAuthentication();
   }, [pathname]);
 
@@ -32,10 +35,21 @@ export default function AdminLayout({
       }
 
   // Check if user is authenticated using server API
-  const authStatus = await getAuthStatus();
+      // Force a fresh check to avoid any stale negative cache right after login
+      const authStatus = await getAuthStatus(true);
       if (!authStatus.authenticated) {
-        router.replace('/'); // Redirect to main app login
-        return;
+        // Perform one quick retry to avoid transient unauthenticated state
+        if (!retryOnce) {
+          setRetryOnce(true);
+          const retryStatus = await getAuthStatus(true);
+          if (!retryStatus.authenticated) {
+            router.replace('/');
+            return;
+          }
+        } else {
+          router.replace('/');
+          return;
+        }
       }
 
       // Verify admin access
