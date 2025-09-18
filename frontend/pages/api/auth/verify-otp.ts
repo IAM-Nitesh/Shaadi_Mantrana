@@ -18,13 +18,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Forward Set-Cookie headers from backend to client (handle multiple)
     try {
-      const setCookies: string[] = [];
+      // Node fetch may expose multiple Set-Cookie headers via `raw()` (node-fetch) or
+      // as repeated header entries. Try both methods for robustness across runtimes.
+      let setCookies: string[] = [];
+
+      // Prefer `raw` if available (preserves multiple Set-Cookie values)
+      try {
+        // @ts-ignore
+        const raw = (backendResp.headers as any).raw && (backendResp.headers as any).raw();
+        if (raw && raw['set-cookie']) {
+          setCookies = setCookies.concat(raw['set-cookie']);
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // Fallback: iterate header entries and collect any Set-Cookie values
       for (const [k, v] of backendResp.headers.entries()) {
         if (k.toLowerCase() === 'set-cookie') setCookies.push(v);
       }
-      if (setCookies.length > 0) res.setHeader('Set-Cookie', setCookies as any);
+
+      if (setCookies.length > 0) {
+        // Ensure we forward all Set-Cookie headers to the browser
+        res.setHeader('Set-Cookie', setCookies as any);
+      }
     } catch (e) {
-      // swallow
+      // swallow - don't fail the request if we can't forward cookies
     }
 
     const text = await backendResp.text();
