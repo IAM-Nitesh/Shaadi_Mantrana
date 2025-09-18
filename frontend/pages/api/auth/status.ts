@@ -13,6 +13,12 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    // Enforce no-store on auth status responses to avoid any caching layers
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('Vary', 'Cookie, Authorization');
     if (process.env.NODE_ENV !== 'production') {
       logger.debug('🔍 Auth Status API: Starting authentication status check...');
       logger.debug('🔍 Auth Status API: Request method:', req.method);
@@ -30,7 +36,81 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     logger.debug('🔍 Auth Status API: BACKEND_URL:', BACKEND_URL);
 
     if (!authToken) {
-      logger.debug('ℹ️ Auth Status API: No authentication token found - returning graceful response');
+      logger.debug('ℹ️ Auth Status API: No access token found');
+      // If we have a refresh token cookie, try server-side refresh once
+      if (refreshToken) {
+        logger.debug('🔄 Auth Status API: Refresh token present, attempting refresh before failing');
+        try {
+          const refreshResp = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cookie': req.headers.cookie || ''
+            }
+          });
+
+          // Forward any Set-Cookie headers from refresh to the browser
+          try {
+            let setCookies: string[] = [];
+            // @ts-ignore
+            const raw = (refreshResp.headers as any).raw && (refreshResp.headers as any).raw();
+            if (raw && raw['set-cookie']) setCookies = setCookies.concat(raw['set-cookie']);
+            for (const [k, v] of refreshResp.headers.entries()) {
+              if (k.toLowerCase() === 'set-cookie') setCookies.push(v);
+            }
+            if (setCookies.length > 0) {
+              res.setHeader('Set-Cookie', setCookies as any);
+              logger.debug('🔄 Auth Status API: Forwarded Set-Cookie(s) from refresh response');
+            }
+          } catch (e) {
+            logger.debug('🔄 Auth Status API: Could not forward Set-Cookie header from refresh:', e);
+          }
+
+          if (refreshResp.ok) {
+            // Parse the new access token and retry status immediately using it
+            let newToken: string | null = null;
+            try {
+              const refreshJson = await refreshResp.json();
+              newToken = refreshJson?.accessToken || null;
+              logger.debug('🔄 Auth Status API: Refresh succeeded, retrying status with new token');
+            } catch (_) {
+              logger.debug('🔄 Auth Status API: Could not parse refresh JSON, proceeding to retry without explicit token');
+            }
+
+            const retryResp = await fetch(`${BACKEND_URL}/api/auth/status`, {
+              method: 'GET',
+              headers: {
+                'Authorization': newToken ? `Bearer ${newToken}` : '',
+                'Content-Type': 'application/json',
+                'Cookie': req.headers.cookie || ''
+              }
+            });
+
+            if (retryResp.ok) {
+              const retryResult = await retryResp.json();
+              logger.debug('🔄 Auth Status API: Retry result after refresh:', {
+                authenticated: retryResult?.authenticated,
+                hasUser: !!retryResult?.user,
+                userRole: retryResult?.user?.role
+              });
+              if (retryResult?.authenticated && retryResult?.user) {
+                const finalRedirect = determineRedirectPath(retryResult.user);
+                return res.status(200).json({ authenticated: true, user: retryResult.user, redirectTo: finalRedirect });
+              }
+            } else {
+              const retryText = await retryResp.text().catch(() => null);
+              logger.debug('🔄 Auth Status API: Retry after refresh failed:', retryText);
+            }
+          } else {
+            const text = await refreshResp.text().catch(() => null);
+            logger.debug('🔄 Auth Status API: Refresh failed:', text);
+          }
+        } catch (e) {
+          logger.error('❌ Auth Status API: Refresh attempt error:', e);
+        }
+      }
+
+      // If refresh missing or failed, return graceful unauthenticated
       return res.status(200).json({
         authenticated: false,
         redirectTo: '/',
