@@ -9,6 +9,7 @@ import { safeGsap } from '../../components/SafeGsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useServerAuth } from '../../hooks/useServerAuth';
 import { getClientToken } from '../../utils/client-auth';
+import { getAdminStats, invalidateAdminStats } from '../../utils/admin-stats';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
@@ -118,21 +119,8 @@ function AdminPageContent() {
 
   const fetchStats = async () => {
     try {
-    const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
-      const response = await apiClient.get('/api/admin/stats', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 15000
-      });
-      if (response.ok) {
-        setStats(response.data.stats);
-      }
+      const data = await getAdminStats();
+      setStats(data.stats);
     } catch (error) {
       logger.error('Error fetching stats:', error);
     }
@@ -228,6 +216,8 @@ function AdminPageContent() {
         setSuccess('User added successfully!');
         setNewUserEmail('');
         setShowAddUserModal(false);
+        // Invalidate cached stats so we fetch fresh counts
+        invalidateAdminStats();
         await Promise.all([fetchUsers(), fetchStats()]);
         
         // Auto-clear success message
@@ -267,6 +257,8 @@ function AdminPageContent() {
 
       if (response.ok) {
         setSuccess(`User ${currentlyPaused ? 'resumed' : 'paused'} successfully!`);
+        // Invalidate cached stats to reflect changes
+        invalidateAdminStats();
         await Promise.all([fetchUsers(), fetchStats()]);
         
         // Auto-clear success message
