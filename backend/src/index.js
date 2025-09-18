@@ -34,7 +34,11 @@ const corsOptions = {
       config.FRONTEND_FALLBACK_URL, // Fallback frontend URL
       'http://localhost:3000', // Local development
       'http://localhost:3001', // Alternative local port
-      'https://shaadi-mantrana.vercel.app', // Explicit new frontend URL
+      'https://shaadi-mantrana.vercel.app', // Vercel deployment
+      'https://www.shaadimantrana.app', // Production domain
+      'https://shaadimantrana.app', // Production domain without www
+      'https://www.shaadimantrana.live', // Live domain
+      'https://shaadimantrana.live', // Live domain without www
     ].filter(Boolean); // Remove empty strings
     
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
@@ -86,7 +90,11 @@ app.use(helmet({
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-        "https://shaadi-mantrana.vercel.app"
+        "https://shaadi-mantrana.vercel.app",
+        "https://www.shaadimantrana.app",
+        "https://shaadimantrana.app",
+        "https://www.shaadimantrana.live",
+        "https://shaadimantrana.live"
       ].filter(Boolean), // Remove empty strings
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
