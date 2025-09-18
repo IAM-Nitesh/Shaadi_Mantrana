@@ -19,7 +19,13 @@ class ChatService {
     this.io = new Server(server, {
       cors: {
         origin: process.env.NODE_ENV === 'production' 
-          ? ["https://shaadi-mantrana.vercel.app"] 
+          ? [
+              "https://shaadi-mantrana.vercel.app", 
+              "https://www.shaadimantrana.app", 
+              "https://shaadimantrana.app",
+              "https://www.shaadimantrana.live",
+              "https://shaadimantrana.live"
+            ] 
           : ["http://localhost:3000", "http://localhost:3001"],
         methods: ["GET", "POST"],
         credentials: true
