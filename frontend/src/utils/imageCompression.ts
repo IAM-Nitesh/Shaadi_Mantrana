@@ -330,7 +330,7 @@ export class ImageCompression {
     };
   }> {
     const qualities = [0.6, 0.75, 0.85, 0.95];
-    const results = [];
+  const results: Array<{ quality: number; result: CompressionResult; savings: number }> = [];
     
     // Get original dimensions
     const originalDimensions = await this.getImageDimensions(file);
