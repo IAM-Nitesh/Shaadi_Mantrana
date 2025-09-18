@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AuthUser } from '../services/server-auth-service';
 import logger from '../utils/logger';
+import { apiClient } from '../utils/api-client';
 // NOTE: This is a client-side hook — avoid importing server-only services.
 
 export interface UseServerAuthReturn {
@@ -206,28 +207,23 @@ export function useServerAuth(): UseServerAuthReturn {
     
     try {
       // Call the auth status API directly from the client with cache-busting headers
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const controller = new AbortController();
+  const timeoutMs = 15000;
 
-      const res = await fetch('/api/auth/status', {
-        method: 'GET',
-        credentials: 'include',
+      const res = await apiClient.get('/api/auth/status', {
         signal: controller.signal,
+        timeout: timeoutMs,
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
 
-      // Production: avoid verbose header logging
-      clearTimeout(timeoutId);
-
       // Handle 304 Not Modified - this means we need fresh data
       if (res.status === 304) {
         logger.debug('🔄 useServerAuth: Received 304, forcing fresh request');
-        const freshRes = await fetch(`/api/auth/status?t=${Date.now()}`, {
-          method: 'GET',
-          credentials: 'include',
+        const freshRes = await apiClient.get(`/api/auth/status?t=${Date.now()}`, {
+          timeout: timeoutMs,
           headers: {
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
@@ -236,13 +232,12 @@ export function useServerAuth(): UseServerAuthReturn {
 
         if (!freshRes.ok) {
           logger.info('ℹ️ useServerAuth: Fresh auth check failed');
-          // Keep existing cached auth rather than clearing it on transient failures
           setError('Authentication service unavailable');
           setIsLoading(false);
           return;
         }
 
-        const freshResponse = await freshRes.json();
+        const freshResponse = freshRes.data;
         logger.debug('🔍 useServerAuth: Fresh auth status response:', freshResponse);
 
         if (freshResponse.authenticated && freshResponse.user) {
@@ -270,14 +265,12 @@ export function useServerAuth(): UseServerAuthReturn {
 
       if (!res.ok) {
         logger.info('ℹ️ useServerAuth: User not authenticated or status check failed');
-        // Don't aggressively clear cached auth on transient non-OK responses
-        // to avoid logging out users during brief backend issues.
         setError('Authentication service unavailable');
         setIsLoading(false);
         return;
       }
 
-      const response = await res.json();
+      const response = res.data;
       logger.debug('🔍 useServerAuth: Auth status response:', response);
 
       // Detect token expiry signaled by the server/proxy and attempt client-side refresh
@@ -285,7 +278,7 @@ export function useServerAuth(): UseServerAuthReturn {
       if (tokenExpiredSignal) {
         logger.debug('🔄 useServerAuth: Detected token expired signal from server/proxy, attempting client-side refresh');
         try {
-          const refreshResp = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+          const refreshResp = await apiClient.post('/api/auth/refresh', undefined, { timeout: 15000 });
           logger.debug('🔄 useServerAuth: Client refresh response status:', refreshResp.status);
           if (refreshResp.ok) {
             logger.info('🔄 useServerAuth: Client refresh succeeded, retrying auth status');
@@ -352,11 +345,11 @@ export function useServerAuth(): UseServerAuthReturn {
       // Don't set loading state during logout to avoid interfering with UI animations
       // setIsLoading(true);
 
-      const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      const res = await apiClient.post('/api/auth/logout', undefined, { timeout: 10000 });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        setError(err.error || 'Logout failed');
-        throw new Error(err.error || 'Logout failed');
+        const errData: any = res.data || { error: 'Logout failed' };
+        setError(errData.error || 'Logout failed');
+        throw new Error(errData.error || 'Logout failed');
       } else {
         // Clear authentication state
         setUser(null);
