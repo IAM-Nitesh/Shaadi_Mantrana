@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
+import { apiClient } from '../utils/api-client';
 import { config as configService } from './configService';
 import { MatchingService } from './matching-service';
 import { getBearerToken, isAuthenticated } from './auth-utils';
@@ -53,21 +54,17 @@ export class ChatService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${configService.apiBaseUrl}/api/chat/${connectionId}`, {
-        method: 'POST',
+      const response = await apiClient.post(`/api/chat/${connectionId}`, { message }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message }),
-        credentials: 'include',
+        timeout: 15000
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-      const data = await response.json();
+      const data = response.data;
       
       // Clear cache for this chat when new message is sent
       MatchingService.clearChatCache(connectionId);

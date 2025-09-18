@@ -1,32 +1,24 @@
 // Client-side auth helpers that call server APIs.
+import { apiClient } from './api-client';
+
 export async function getAuthStatus() {
   try {
-    const res = await fetch('/api/auth/status', {
-      method: 'GET',
-      credentials: 'include',
+    const res = await apiClient.get('/api/auth/status', {
+      timeout: 15000,
       headers: {
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
       }
     });
 
-    // Handle 304 Not Modified - this means we need fresh data
     if (res.status === 304) {
-      // Force a fresh request by adding a timestamp
-      const freshRes = await fetch(`/api/auth/status?t=${Date.now()}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      const freshRes = await apiClient.get(`/api/auth/status?t=${Date.now()}`, { timeout: 15000 });
       if (!freshRes.ok) return { authenticated: false };
-      return await freshRes.json();
+      return freshRes.data;
     }
 
     if (!res.ok) return { authenticated: false };
-    return await res.json();
+    return res.data;
   } catch (err) {
     return { authenticated: false };
   }
@@ -34,10 +26,9 @@ export async function getAuthStatus() {
 
 export async function getClientToken(): Promise<string | null> {
   try {
-    const res = await fetch('/api/auth/token', { method: 'GET', credentials: 'include' });
+    const res = await apiClient.get('/api/auth/token', { timeout: 10000 });
     if (!res.ok) return null;
-    const data = await res.json();
-    return data?.token || null;
+    return res.data?.token || null;
   } catch (err) {
     return null;
   }
@@ -45,7 +36,7 @@ export async function getClientToken(): Promise<string | null> {
 
 export async function clientLogout() {
   try {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    await apiClient.post('/api/auth/logout', undefined, { timeout: 10000 });
   } catch (err) {
     // ignore
   }

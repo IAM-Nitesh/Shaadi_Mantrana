@@ -5,7 +5,8 @@ import SmoothNavigation from './SmoothNavigation';
 
 export default function BottomWrapper() {
   const pathname = usePathname();
-  const showNav = ['/dashboard', '/matches', '/profile', '/settings'].includes(pathname);
+  const p = pathname || '';
+  const showNav = ['/dashboard', '/matches', '/profile', '/settings'].includes(p);
   if (!showNav) return null;
   return (
     <div style={{ height: 0 }}>
