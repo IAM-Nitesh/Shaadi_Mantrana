@@ -126,7 +126,9 @@ const errorLogger = (err, req, res, next) => {
   const userUuid = req.user?.userUuid || 'anonymous';
   const requestId = req.requestId || 'unknown';
   
-  console.error(`❌ [${new Date().toISOString()}] ERROR`, {
+  const { logger } = require('../utils/pino-logger');
+  logger.error({
+    event: 'uncaught_error',
     requestId,
     userUuid,
     email: req.user?.email || 'none',
@@ -137,7 +139,7 @@ const errorLogger = (err, req, res, next) => {
       stack: err.stack,
       code: err.code
     }
-  });
+  }, 'Unhandled error');
   
   next(err);
 };
@@ -148,13 +150,8 @@ const logSuccess = (operation, details = {}) => {
     const userUuid = req.user?.userUuid || 'anonymous';
     const requestId = req.requestId || 'unknown';
     
-    console.log(`🎉 [${new Date().toISOString()}] SUCCESS: ${operation}`, {
-      requestId,
-      userUuid,
-      email: req.user?.email || 'none',
-      operation,
-      ...details
-    });
+    const { logger } = require('../utils/pino-logger');
+    logger.info({ requestId, userUuid, email: req.user?.email || 'none', operation, ...details }, `SUCCESS: ${operation}`);
     
     next();
   };
@@ -170,16 +167,8 @@ const logCritical = (operation, details = {}) => {
                      req.socket?.remoteAddress ||
                      '127.0.0.1';
     
-    console.warn(`🚨 [${new Date().toISOString()}] CRITICAL: ${operation}`, {
-      requestId,
-      userUuid,
-      email: req.user?.email || 'none',
-      operation,
-      clientIP,
-      userAgent: req.headers['user-agent'] || 'unknown',
-      timestamp: new Date().toISOString(),
-      ...details
-    });
+    const { logger } = require('../utils/pino-logger');
+    logger.warn({ requestId, userUuid, email: req.user?.email || 'none', operation, clientIP, userAgent: req.headers['user-agent'] || 'unknown', timestamp: new Date().toISOString(), ...details }, `CRITICAL: ${operation}`);
     
     next();
   };

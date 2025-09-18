@@ -51,6 +51,27 @@ if (isNode) {
   ];
   if (warnDest) streams.push({ level: 'warn', stream: warnDest });
 
+  // Add pino-loki stream when configured (supports GRAFANA_LOKI_* or legacy LOKI_*)
+  const grafanaLokiUrl = process.env.NEXT_PUBLIC_GRAFANA_LOKI_URL || process.env.GRAFANA_LOKI_URL || process.env.NEXT_PUBLIC_LOKI_URL || process.env.LOKI_URL;
+  const grafanaLokiUser = process.env.NEXT_PUBLIC_GRAFANA_LOKI_USER || process.env.GRAFANA_LOKI_USER || process.env.NEXT_PUBLIC_LOKI_USER || process.env.LOKI_USER;
+  const grafanaLokiPassword = process.env.NEXT_PUBLIC_GRAFANA_LOKI_PASSWORD || process.env.GRAFANA_LOKI_PASSWORD || process.env.NEXT_PUBLIC_LOKI_PASSWORD || process.env.LOKI_PASSWORD;
+  if (grafanaLokiUrl) {
+    try {
+      const pinoLoki = req('pino-loki');
+      const lokiStream = pinoLoki.createWriteStream({
+        host: grafanaLokiUrl,
+        basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
+        labels: { service: 'shaadimantra-frontend' },
+        timeout: 10000
+      });
+      streams.push({ level: 'info', stream: lokiStream });
+    } catch (e) {
+      // Do not crash the server if pino-loki is not available
+      // eslint-disable-next-line no-console
+      console.warn('pino-loki not configured for frontend logs:', e && e.message);
+    }
+  }
+
   const baseLogger = pino(
     {
       level,
