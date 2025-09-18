@@ -350,22 +350,17 @@ export class MatchingService {
         throw new Error('Authentication required');
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/matching/like`, {
-        method: 'POST',
+      const response = await apiClient.post('/api/matching/like', { targetUserId, type }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ targetUserId, type }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed, please login again');
-        }
-        
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+  if (response.status === 401) throw new Error('Authentication failed, please login again');
+  const errorData = response.data || { error: `HTTP ${response.status}` };
         
         // Handle specific error cases more gracefully
         if (errorData.error && errorData.error.includes('Profile already liked')) {
@@ -383,7 +378,7 @@ export class MatchingService {
         throw new Error(errorData.error || 'Failed to like profile');
       }
 
-      return await response.json();
+  return response.data;
     } catch (error) {
       // console.error('Error liking profile:', error);
       throw error;
@@ -412,22 +407,20 @@ export class MatchingService {
         throw new Error('Authentication required');
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/matching/pass`, {
-        method: 'POST',
+      const response = await apiClient.post('/api/matching/pass', { targetUserId }, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ targetUserId }),
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || 'Failed to pass profile');
+  const errorData = response.data || { error: `HTTP ${response.status}` };
+  throw new Error(errorData.error || 'Failed to pass profile');
       }
 
-      return await response.json();
+      return response.data;
     } catch (error) {
       // console.error('Error passing profile:', error);
       throw error;
@@ -451,17 +444,15 @@ export class MatchingService {
         if (payload.connectionId) body.connectionId = payload.connectionId;
       }
 
-      const response = await fetch(`${this.baseUrl}/api/matching/unmatch`, {
-        method: 'POST',
+      const response = await apiClient.post('/api/matching/unmatch', body, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(body),
-        credentials: 'include',
+        timeout: 15000
       });
 
-      const data = await response.json();
+      const data = response.data;
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to unmatch profile');
@@ -500,25 +491,23 @@ export class MatchingService {
         return { success: false, message: 'No access token available' };
       }
 
-      const response = await fetch(`${this.baseUrl}/api/matching/mark-toast-seen`, {
-        method: 'POST',
+      const response = await apiClient.post('/api/matching/mark-toast-seen', { targetUserId }, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ targetUserId }),
-        credentials: 'include',
+        timeout: 10000
       });
 
-      const data = await response.json();
+      const data = response.data;
       
       if (!response.ok) {
         try {
           const user = await getCurrentUser();
           const log = loggerForUser(user?.userUuid);
-          log.warn({ err: data?.error || response.statusText }, 'Failed to mark toast as seen');
+          log.warn({ err: data?.error || response.status }, 'Failed to mark toast as seen');
         } catch (e) {
-          logger.warn({ err: data?.error || response.statusText }, 'Failed to mark toast as seen');
+          logger.warn({ err: data?.error || response.status }, 'Failed to mark toast as seen');
         }
         return { success: false, message: data.error || 'Failed to mark match toast as seen' };
       }
@@ -551,17 +540,15 @@ export class MatchingService {
           return { success: false, message: 'No access token available' };
         }
 
-        const response = await fetch(`${this.baseUrl}/api/matching/mark-toast-seen-chat`, {
-          method: 'POST',
+        const response = await apiClient.post('/api/matching/mark-toast-seen-chat', { connectionId }, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ connectionId }),
-          credentials: 'include',
+          timeout: 10000
         });
 
-        const data = await response.json();
+        const data = response.data;
         
         if (!response.ok) {
           // If it's a 404 and we have more retries, try again
@@ -573,7 +560,6 @@ export class MatchingService {
           
           logger.warn('Failed to mark toast as seen:', {
             status: response.status,
-            statusText: response.statusText,
             error: data.error,
             data: data,
             attempt: attempt
@@ -636,13 +622,12 @@ export class MatchingService {
         };
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/matching/liked`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/matching/liked`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
@@ -653,10 +638,10 @@ export class MatchingService {
             mutualMatches: 0
           };
         }
-        throw new Error(`Failed to fetch liked profiles: ${response.statusText}`);
+        throw new Error(`Failed to fetch liked profiles: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       return {
         likedProfiles: data.likedProfiles || [],
         totalLikes: data.totalLikes || 0,
@@ -706,13 +691,12 @@ export class MatchingService {
         };
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/matching/matches`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/matching/matches`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
@@ -722,10 +706,10 @@ export class MatchingService {
             totalMatches: 0
           };
         }
-        throw new Error(`Failed to fetch mutual matches: ${response.statusText}`);
+        throw new Error(`Failed to fetch mutual matches: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       return {
         matches: data.matches || [],
         totalMatches: data.totalMatches || 0
@@ -780,13 +764,12 @@ export class MatchingService {
         ? `${apiBaseUrl}/api/matching/stats?date=${date}`
         : `${apiBaseUrl}/api/matching/stats`;
         
-      const response = await fetch(url, {
-        method: 'GET',
+      const response = await apiClient.get(url.replace(configService.apiBaseUrl || '', ''), {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok && response.status !== 304) {
@@ -798,10 +781,10 @@ export class MatchingService {
             dailyLimit: 5
           };
         }
-        throw new Error(`Failed to fetch daily like stats: ${response.statusText}`);
+        throw new Error(`Failed to fetch daily like stats: ${response.status}`);
       }
 
-      return await response.json();
+      return response.data;
     } catch (error) {
       // console.error('Error fetching daily like stats:', error);
       return {
@@ -976,20 +959,19 @@ export class MatchingService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${this.baseUrl}/api/chat/${connectionId}`, {
-        method: 'GET',
+      const response = await apiClient.get(`/api/chat/${connectionId}`, {
         headers: {
           'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        timeout: 15000
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       
       // Cache the result for 1 day
       cacheManager.set(cacheKey, data, 'chats');

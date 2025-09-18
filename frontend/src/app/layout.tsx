@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import React from 'react';
 
 // import NavigationGuard from '../components/NavigationGuard';
 import { Toaster } from 'react-hot-toast';
+const ToasterComponent = Toaster as unknown as React.ComponentType<any>;
 import PageTransitionProvider from '../components/PageTransitionProvider';
 import PageLoadingIndicator from '../components/PageLoadingIndicator';
 import LenisProvider from './LenisProvider';
@@ -90,7 +92,7 @@ export default function RootLayout({
           async
         />
 
-        <Toaster
+  <ToasterComponent
           position="top-center"
           reverseOrder={false}
           toastOptions={{

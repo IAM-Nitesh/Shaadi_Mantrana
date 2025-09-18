@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { ImageUploadService } from '../../../services/image-upload-service';
 import ToastService from '../../../services/toastService';
 import logger from '../../../utils/logger';
+import { apiClient } from '../../../utils/api-client';
 
 interface User {
   _id: string;
@@ -130,23 +131,23 @@ export default function AdminUsers() {
 
       logger.debug('🔍 Users: Fetching users from /api/admin/users', forceRefresh ? '(force refresh)' : '');
 
-      const response = await fetch('/api/admin/users', {
+      const response = await apiClient.get('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Cache-Control': forceRefresh ? 'no-cache' : 'max-age=300' // 5 minutes cache unless force refresh
         },
-        credentials: 'include'
+        timeout: 15000
       });
 
       logger.debug('🔍 Users: Response status:', response.status);
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = JSON.stringify(response.data);
         logger.error('🔍 Users: API error response:', errorText);
         throw new Error(`Failed to fetch users: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = response.data;
       logger.debug('🔍 Users: Received data:', data);
       logger.debug('🔍 Users: Number of users:', data.users?.length || 0);
       
@@ -296,22 +297,20 @@ export default function AdminUsers() {
         )
       );
 
-      const response = await fetch(`/api/admin/users/${userId}/resume`, {
-        method: 'PATCH',
+      const response = await apiClient.patch(`/api/admin/users/${userId}/resume`, { approvedByAdmin: true }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ approvedByAdmin: true }),
-        credentials: 'include'
+        timeout: 15000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to resume user' }));
+        const errorData: any = response.data || { error: 'Failed to resume user' };
         throw new Error(errorData.error || 'Failed to resume user');
       }
 
-      const result = await response.json();
+      const result = response.data;
 
       // Update local state with server response
       setUsers(prevUsers => 
@@ -370,22 +369,20 @@ export default function AdminUsers() {
         )
       );
 
-      const response = await fetch(`/api/admin/users/${userId}/pause`, {
-        method: 'PATCH',
+      const response = await apiClient.patch(`/api/admin/users/${userId}/pause`, { approvedByAdmin: false }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ approvedByAdmin: false }),
-        credentials: 'include'
+        timeout: 15000
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to pause user' }));
+        const errorData: any = response.data || { error: 'Failed to pause user' };
         throw new Error(errorData.error || 'Failed to pause user');
       }
 
-      const result = await response.json();
+      const result = response.data;
 
       // Update local state with server response
       setUsers(prevUsers => 
@@ -435,21 +432,19 @@ export default function AdminUsers() {
         return;
       }
 
-      const response = await fetch(`/api/admin/users/${userId}/resend-invite`, {
-        method: 'POST',
+      const response = await apiClient.post(`/api/admin/users/${userId}/resend-invite`, { email: userEmail }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email: userEmail }),
-        credentials: 'include'
+        timeout: 15000
       });
 
       if (!response.ok) {
         throw new Error('Failed to resend invitation');
       }
 
-      const result = await response.json();
+      const result = response.data;
       logger.debug('✅ Invitation resent successfully:', result);
 
       // Refetch users to update any invitation-related data
