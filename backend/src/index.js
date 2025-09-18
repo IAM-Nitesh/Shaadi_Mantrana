@@ -21,6 +21,9 @@ const chatService = require('./services/chatService');
 // Import request logging middleware
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
+// Central logger instance (single import to avoid redeclaration)
+const { logger } = require('./utils/pino-logger');
+
 const app = express();
 // Use centralized config for PORT to keep defaults consistent
 const PORT = config.PORT || process.env.PORT || 5001;
@@ -43,7 +46,6 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      const { logger } = require('./utils/pino-logger');
       logger.warn({ origin, allowedOrigins }, 'CORS blocked origin');
       callback(null, false);
     }
@@ -170,9 +172,9 @@ app.use(cookieParser());
 app.use(requestLogger);
 
 // Metrics - expose Prometheus metrics if prom-client is installed
-try {
-  const { promClient } = require('./utils/metrics');
-  if (promClient) {
+  try {
+    const { promClient } = require('./utils/metrics');
+    if (promClient) {
     app.get('/metrics', async (req, res) => {
       try {
         res.set('Content-Type', promClient.register.contentType);
@@ -182,7 +184,7 @@ try {
       }
     });
   }
-} catch (e) {
+  } catch (e) {
   // ignore if prom-client not installed
 }
 
@@ -221,7 +223,6 @@ if (debugRoutes) {
 
 // Client log forwarding endpoint - forwards browser/app logs to server logger (rate-limited)
 const expressRateLimit = require('express-rate-limit');
-const { logger } = require('./utils/pino-logger');
 
 const clientLogLimiter = expressRateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -265,11 +266,10 @@ app.get('/health', async (req, res) => {
     if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
       try {
         const sessionCleanupService = require('./services/sessionCleanupService');
-        sessionStats = await sessionCleanupService.getSessionStats();
-      } catch (error) {
-      const { logger } = require('./utils/pino-logger');
-      logger.warn({ err: error && error.message }, 'Could not get session stats');
-      }
+          sessionStats = await sessionCleanupService.getSessionStats();
+        } catch (error) {
+        logger.warn({ err: error && error.message }, 'Could not get session stats');
+        }
     }
     
     // Get email service health with a short timeout so /health stays responsive
@@ -282,7 +282,6 @@ app.get('/health', async (req, res) => {
         new Promise((resolve) => setTimeout(() => resolve({ success: false, message: 'email health check timeout' }), emailHealthTimeout))
       ]);
     } catch (error) {
-    const { logger } = require('./utils/pino-logger');
     logger.warn({ err: error && error.message }, 'Could not get email service health');
       emailHealth = { status: 'unknown', error: error.message };
     }
@@ -331,7 +330,6 @@ app.get('/api/database/status', async (req, res) => {
 // Error handling middleware
 app.use(errorLogger); // Log errors with UUID tracking
 app.use((err, req, res, next) => {
-  const { logger } = require('./utils/pino-logger');
   logger.error({ stack: err && err.stack }, 'Unhandled exception in request');
   res.status(500).json({ 
     error: 'Something went wrong!',
@@ -351,19 +349,16 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     // Connect to database first
-    const { logger } = require('./utils/pino-logger');
     logger.info('Initializing database connection');
     await databaseService.connect();
     
     // Start the server
     const server = app.listen(PORT, () => {
-  const { logger } = require('./utils/pino-logger');
   logger.info({ port: PORT, health: `/health` }, 'Backend server running');
     });
 
     // Initialize Socket.IO chat service
     chatService.initialize(server);
-  const { logger } = require('./utils/pino-logger');
   logger.info('Socket.IO chat service initialized');
 
     // Setup periodic cleanup for chat data
@@ -372,18 +367,14 @@ async function startServer() {
     }, 60 * 60 * 1000); // Run cleanup every hour
     
   } catch (error) {
-  const { logger } = require('./utils/pino-logger');
   logger.error({ err: error && error.message }, 'Failed to start server');
     
     if (process.env.NODE_ENV === 'production') {
-  const { logger } = require('./utils/pino-logger');
   logger.error('Production startup failed - exiting');
       process.exit(1);
     } else {
-  const { logger } = require('./utils/pino-logger');
   logger.warn('Starting server without database connection (development mode)');
       app.listen(PORT, () => {
-  const { logger } = require('./utils/pino-logger');
   logger.info({ port: PORT, db_connected: false }, 'Backend server running (DB disconnected)');
       });
     }
@@ -392,14 +383,12 @@ async function startServer() {
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  const { logger } = require('./utils/pino-logger');
   logger.warn('SIGTERM received, shutting down gracefully');
   await databaseService.disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  const { logger } = require('./utils/pino-logger');
   logger.warn('SIGINT received, shutting down gracefully');
   await databaseService.disconnect();
   process.exit(0);
