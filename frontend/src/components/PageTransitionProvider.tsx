@@ -9,7 +9,7 @@ interface PageTransitionContextType {
   isTransitioning: boolean;
   setTransitioning: (transitioning: boolean) => void;
   previousPath: string;
-  currentPath: string;
+  currentPath: string | null;
 }
 
 const PageTransitionContext = createContext<PageTransitionContextType | undefined>(undefined);
@@ -28,7 +28,7 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
   const pathname = usePathname();
   const [isTransitioning, setTransitioning] = useState(false);
   const [previousPath, setPreviousPath] = useState('');
-  const [currentPath, setCurrentPath] = useState(pathname);
+  const [currentPath, setCurrentPath] = useState<string | null>(pathname);
   // hardwareAccelerated is false during SSR to keep server HTML stable.
   // It will be enabled on the client after mount if allowed for the current path.
   const [hardwareAccelerated, setHardwareAccelerated] = useState(false);
@@ -46,7 +46,7 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
 
   useEffect(() => {
     if (pathname !== currentPath) {
-      setPreviousPath(currentPath);
+      setPreviousPath(currentPath || '');
       setCurrentPath(pathname);
       setTransitioning(true);
       

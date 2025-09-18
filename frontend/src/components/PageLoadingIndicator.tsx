@@ -10,17 +10,18 @@ export default function PageLoadingIndicator() {
   const { isTransitioning } = usePageTransition();
   const { isPageDataLoaded } = usePageDataLoading();
   const pathname = usePathname();
+  const p = pathname || '';
   const show = isTransitioning || !isPageDataLoaded;
 
   // Performance optimization: Memoized should hide logic
   const shouldHide = useMemo(() => {
         // Don't show on authentication loading pages (ServerAuthGuard)
-    if (pathname === '/' || pathname === '/login') {
+        if (p === '/' || p === '/login') {
       return true;
     }
     
     // Don't show on chat pages
-    if (pathname.startsWith('/chat/')) {
+        if (p.startsWith('/chat/')) {
       return true;
     }
     
@@ -30,12 +31,12 @@ export default function PageLoadingIndicator() {
     }
     
     // Don't show on onboarding pages
-    if (pathname === '/profile' && !isPageDataLoaded) {
+    if (p === '/profile' && !isPageDataLoaded) {
       return true;
     }
     
     // Don't show on initial app loading
-    if (pathname === '/' && !isPageDataLoaded) {
+    if (p === '/' && !isPageDataLoaded) {
       return true;
     }
     

@@ -33,6 +33,32 @@ const streams = [
 ];
 if (warnDest) streams.push({ level: 'warn', stream: warnDest });
 
+// Support both legacy `LOKI_*` env names and clearer `GRAFANA_LOKI_*` names.
+// Priority: `GRAFANA_LOKI_URL` > `LOKI_URL`. Same for user/password.
+const lokiUrl = process.env.GRAFANA_LOKI_URL || process.env.LOKI_URL;
+const lokiUser = process.env.GRAFANA_LOKI_USER || process.env.LOKI_USER;
+const lokiPassword = process.env.GRAFANA_LOKI_PASSWORD || process.env.LOKI_PASSWORD;
+
+// If a Loki push URL is provided, add a pino-loki stream so logs are forwarded to Grafana Cloud
+if (lokiUrl) {
+  try {
+    const pinoLoki = require('pino-loki');
+    const lokiStream = pinoLoki.createWriteStream({
+      host: lokiUrl,
+      basicAuth: lokiUser && lokiPassword ? `${lokiUser}:${lokiPassword}` : undefined,
+      labels: { service: 'shaadimantra-backend' },
+      timeout: 10000
+    });
+
+    // pino-loki exposes a writable stream we can push to
+    streams.push({ level: 'info', stream: lokiStream });
+  } catch (e) {
+    // If pino-loki isn't installed or fails, continue without crashing
+    // eslint-disable-next-line no-console
+    console.warn('pino-loki integration not available:', e && e.message);
+  }
+}
+
 const baseLogger = pino(
   {
     level,

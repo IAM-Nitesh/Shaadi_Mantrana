@@ -13,6 +13,9 @@ const JWT_SECRET = process.env.JWT_SECRET || config.JWT.SECRET || '';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || config.JWT.EXPIRES_IN || '24h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || config.JWT.REFRESH_EXPIRES_IN || '7d';
 
+// Debug flag: enable verbose auth logs in non-production or when AUTH_DEBUG=true
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
+
 // Active sessions store (in production, use Redis)
 // For now, we'll use database persistence
 const activeSessions = new Map();
@@ -40,7 +43,7 @@ class JWTSessionManager {
 
   // Create session with both tokens
   static async createSession(user) {
-    console.log('🔍 JWTSessionManager: Creating session for user:', {
+    if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Creating session for user:', {
       userId: user._id,
       userUuid: user.userUuid,
       email: user.email,
@@ -56,12 +59,12 @@ class JWTSessionManager {
       sessionId: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
     };
 
-    console.log('🔍 JWTSessionManager: Creating payload:', payload);
+  if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Creating payload:', payload);
 
     const accessToken = this.generateAccessToken(payload);
     const refreshToken = this.generateRefreshToken(payload);
 
-    console.log('🔍 JWTSessionManager: Tokens generated successfully');
+  if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Tokens generated successfully');
 
     // Store session in database
     try {
@@ -78,8 +81,8 @@ class JWTSessionManager {
         lastAccessed: new Date()
       };
 
-      await Session.create(sessionData);
-      console.log('🔍 JWTSessionManager: Session stored in database');
+  await Session.create(sessionData);
+  if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Session stored in database');
 
       // Also store in memory for faster access
       activeSessions.set(payload.sessionId, sessionData);
@@ -106,7 +109,8 @@ class JWTSessionManager {
         audience: 'shaadi-mantra-app'
       });
     } catch (error) {
-      throw new Error('Invalid or expired access token');
+      // Re-throw the original jwt error so callers can distinguish expiry vs invalid
+      throw error;
     }
   }
 
@@ -250,7 +254,7 @@ class JWTSessionManager {
         lastAccessed: { $lt: new Date(now - maxAge) }
       });
 
-      console.log(`🧹 Cleaned up ${expiredCount.deletedCount} expired sessions`);
+      if (AUTH_DEBUG) console.log(`🧹 Cleaned up ${expiredCount.deletedCount} expired sessions`);
     } catch (error) {
       console.error('❌ JWTSessionManager: Error cleaning expired sessions:', error);
     }
@@ -260,14 +264,36 @@ class JWTSessionManager {
 // Authentication middleware
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  let token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-  console.log('🔍 AuthMiddleware: Starting token verification...');
-  console.log('🔍 AuthMiddleware: Auth header present:', !!authHeader);
-  console.log('🔍 AuthMiddleware: Auth header value:', authHeader ? `${authHeader.substring(0, 30)}...` : 'None');
-  console.log('🔍 AuthMiddleware: Token extracted:', !!token);
-  console.log('🔍 AuthMiddleware: Token length:', token?.length || 0);
-  console.log('🔍 AuthMiddleware: Token preview:', token ? `${token.substring(0, 20)}...` : 'None');
+  // Fallback: try HttpOnly cookie 'accessToken' when Authorization header is missing
+  const cookieToken = req.cookies?.accessToken;
+  if (!token && cookieToken) {
+    token = cookieToken;
+  }
+
+  // Verbose request-context logs (only in dev or when AUTH_DEBUG=true)
+  if (AUTH_DEBUG) {
+    console.log('🔍 AuthMiddleware: Starting token verification...', {
+      method: req.method,
+      url: req.originalUrl,
+      authHeaderPresent: !!authHeader,
+      cookieObjectPresent: !!req.cookies,
+      cookieKeys: Object.keys(req.cookies || {}),
+    });
+
+    console.log('🔍 AuthMiddleware: Auth header present:', !!authHeader);
+    console.log('🔍 AuthMiddleware: Cookie token present:', !!cookieToken);
+    console.log('🔍 AuthMiddleware: Token source:', authHeader ? 'Authorization header' : (cookieToken ? 'cookie' : 'none'));
+    console.log('🔍 AuthMiddleware: Token extracted:', !!token);
+    console.log('🔍 AuthMiddleware: Token length:', token?.length || 0);
+    // Mask token preview for safety
+    if (token && token.length > 20) {
+      console.log('🔍 AuthMiddleware: Token preview:', `${token.substring(0, 10)}...${token.substring(token.length - 10)}`);
+    } else {
+      console.log('🔍 AuthMiddleware: Token preview:', token || 'None');
+    }
+  }
 
   if (!token) {
     console.log('❌ AuthMiddleware: No token provided');
@@ -279,9 +305,20 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    console.log('🔍 AuthMiddleware: Verifying token...');
-    const decoded = JWTSessionManager.verifyAccessToken(token);
-    console.log('🔍 AuthMiddleware: Token verified, decoded:', {
+  if (AUTH_DEBUG) console.log('🔍 AuthMiddleware: Verifying token...');
+    let decoded;
+    try {
+      decoded = JWTSessionManager.verifyAccessToken(token);
+    } catch (err) {
+      // Distinguish token expired vs invalid
+      if (err && err.name === 'TokenExpiredError') {
+        if (AUTH_DEBUG) console.log('❌ AuthMiddleware: Token expired');
+        return res.status(401).json({ success: false, error: 'Access token expired', code: 'TOKEN_EXPIRED' });
+      }
+      if (AUTH_DEBUG) console.log('❌ AuthMiddleware: Token invalid');
+      return res.status(401).json({ success: false, error: 'Invalid access token', code: 'TOKEN_INVALID' });
+    }
+    if (AUTH_DEBUG) console.log('🔍 AuthMiddleware: Token verified, decoded:', {
       userId: decoded.userId,
       email: decoded.email,
       sessionId: decoded.sessionId,
@@ -289,14 +326,16 @@ const authenticateToken = async (req, res, next) => {
     });
     
     // Validate session exists
-    console.log('🔍 AuthMiddleware: Validating session...');
-    console.log('🔍 AuthMiddleware: Session ID:', decoded.sessionId);
-    console.log('🔍 AuthMiddleware: Active sessions count:', activeSessions.size);
-    console.log('🔍 AuthMiddleware: Active session IDs:', Array.from(activeSessions.keys()));
+    if (AUTH_DEBUG) {
+      console.log('🔍 AuthMiddleware: Validating session...');
+      console.log('🔍 AuthMiddleware: Session ID:', decoded.sessionId);
+      console.log('🔍 AuthMiddleware: Active sessions count:', activeSessions.size);
+      console.log('🔍 AuthMiddleware: Active session IDs:', Array.from(activeSessions.keys()));
+    }
     
     if (!(await JWTSessionManager.validateSession(decoded.sessionId))) {
-      console.log('❌ AuthMiddleware: Session not found or invalid');
-      console.log('❌ AuthMiddleware: Session validation failed');
+      if (AUTH_DEBUG) console.log('❌ AuthMiddleware: Session not found or invalid');
+      if (AUTH_DEBUG) console.log('❌ AuthMiddleware: Session validation failed');
       return res.status(401).json({
         success: false,
         error: 'Session expired or invalid',
@@ -304,7 +343,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    console.log('✅ AuthMiddleware: Session validated successfully');
+  if (AUTH_DEBUG) console.log('✅ AuthMiddleware: Session validated successfully');
 
     // Add user info to request with UUID for monitoring
     req.user = {
@@ -320,7 +359,7 @@ const authenticateToken = async (req, res, next) => {
     res.set('X-User-UUID', decoded.userUuid);
     
     // Check if user is paused (for non-admin users) - only if needed
-    if (decoded.role !== 'admin') {
+  if (decoded.role !== 'admin') {
       try {
         const { User } = require('../models');
         const mongoose = require('mongoose');
@@ -333,7 +372,7 @@ const authenticateToken = async (req, res, next) => {
         const user = await User.findById(userId);
         
         if (user && (user.status === 'paused' || user.isApprovedByAdmin === false)) {
-          console.log('❌ AuthMiddleware: User account paused');
+          if (AUTH_DEBUG) console.log('❌ AuthMiddleware: User account paused');
           return res.status(403).json({
             success: false,
             error: 'Your account has been paused by admin. Please contact support to resume your account.',
@@ -347,27 +386,22 @@ const authenticateToken = async (req, res, next) => {
       }
     }
     
-    console.log('✅ AuthMiddleware: Authentication successful');
+    if (AUTH_DEBUG) console.log('✅ AuthMiddleware: Authentication successful');
     next();
   } catch (error) {
-    console.error('❌ AuthMiddleware: Token verification error:', error);
-    console.error('❌ AuthMiddleware: Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-    return res.status(401).json({
-      success: false,
-      error: error.message,
-      code: 'TOKEN_INVALID'
-    });
+    console.error('❌ AuthMiddleware: Unexpected error during authentication:', error);
+    return res.status(500).json({ success: false, error: 'Authentication failed' });
   }
 };
 
 // Optional authentication middleware (doesn't fail if no token)
 const optionalAuth = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  let token = authHeader && authHeader.split(' ')[1];
+  // optionalAuth: allow cookie fallback
+  if (!token && req.cookies?.accessToken) {
+    token = req.cookies.accessToken;
+  }
 
   if (!token) {
     req.user = null;
