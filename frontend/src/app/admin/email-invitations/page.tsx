@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import { getClientToken } from '../../../utils/client-auth';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
@@ -33,16 +32,8 @@ export default function EmailInvitations() {
 
   const fetchInvitations = async () => {
     try {
-  const token = await getClientToken();
-      if (!token) {
-        router.push('/');
-        return;
-      }
-
+      // Admin authentication is already handled by AdminLayout
       const response = await apiClient.get('/api/admin/invitations', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         timeout: 15000
       });
 
@@ -70,14 +61,12 @@ export default function EmailInvitations() {
 
     try {
       setSendingInvitation(true);
-  const token = await getClientToken();
+      // Admin authentication is already handled by AdminLayout
       
       logger.debug('Sending invitation to:', newEmail.trim());
-      logger.debug('Using token:', token ? 'Token exists' : 'No token');
       
       const response = await apiClient.post('/api/admin/invitations', { email: newEmail.trim() }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -107,12 +96,9 @@ export default function EmailInvitations() {
   const resendInvitation = async (invitationId: string) => {
     try {
       setResendingInvitation(invitationId);
-  const token = await getClientToken();
+      // Admin authentication is already handled by AdminLayout
       
       const response = await apiClient.post(`/api/admin/invitations/${invitationId}/resend`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         timeout: 15000
       });
 

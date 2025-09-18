@@ -8,7 +8,6 @@ import AdminRouteGuard from '../../components/AdminRouteGuard';
 import { safeGsap } from '../../components/SafeGsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useServerAuth } from '../../hooks/useServerAuth';
-import { getClientToken } from '../../utils/client-auth';
 import { getAdminStats, invalidateAdminStats } from '../../utils/admin-stats';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -128,14 +127,9 @@ function AdminPageContent() {
 
   const fetchUsers = async () => {
     try {
-    const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
       const response = await apiClient.get('/api/admin/users', {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         timeout: 15000
@@ -195,18 +189,13 @@ function AdminPageContent() {
     setError('');
     
     try {
-    const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
       const response = await apiClient.post('/api/admin/users', {
         email: newUserEmail.trim(),
         firstName: 'User',
         lastName: 'Name'
       }, {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         timeout: 15000
@@ -238,16 +227,11 @@ function AdminPageContent() {
     setError('');
     
     try {
-    const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
       
       const endpoint = currentlyPaused ? 'resume' : 'pause';
       const response = await apiClient.post(`/api/admin/users/${userId}/${endpoint}`, {}, {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         timeout: 15000
@@ -278,14 +262,9 @@ function AdminPageContent() {
     setError('');
     
     try {
-    const authToken = await getClientToken();
-      if (!authToken) {
-        logger.error('No auth token available');
-        return;
-      }
+      // Admin authentication is already handled by AdminLayout
       const response = await apiClient.post(`/api/admin/users/${userId}/invite`, { email: userEmail }, {
         headers: {
-          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         timeout: 15000
