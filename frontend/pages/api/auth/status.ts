@@ -102,10 +102,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Forward any Set-Cookie headers from refresh response to the browser
             try {
               // Collect all Set-Cookie header values (handle multiple Set-Cookie headers)
-              const setCookies: string[] = [];
+              let setCookies: string[] = [];
+
+              try {
+                // @ts-ignore
+                const raw = (refreshResp.headers as any).raw && (refreshResp.headers as any).raw();
+                if (raw && raw['set-cookie']) setCookies = setCookies.concat(raw['set-cookie']);
+              } catch (e) {
+                // ignore
+              }
+
               for (const [k, v] of refreshResp.headers.entries()) {
                 if (k.toLowerCase() === 'set-cookie') setCookies.push(v);
               }
+
               if (setCookies.length > 0) {
                 res.setHeader('Set-Cookie', setCookies as any);
                 logger.debug('🔄 Auth Status API: Forwarded Set-Cookie(s) from refresh response');
