@@ -7,7 +7,7 @@ import CustomIcon from '../../components/CustomIcon';
 import AdminRouteGuard from '../../components/AdminRouteGuard';
 import { safeGsap } from '../../components/SafeGsap';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useServerAuth } from '../../hooks/useServerAuth';
+// Removed useServerAuth import - AdminLayout handles authentication
 import { getAdminStats, invalidateAdminStats } from '../../utils/admin-stats';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -54,7 +54,7 @@ interface AdminStats {
 
 function AdminPageContent() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useServerAuth();
+  // AdminLayout handles authentication, so we don't need useServerAuth here
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,26 +81,18 @@ function AdminPageContent() {
   const modalRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is admin
+  // AdminLayout already handles authentication, so we can assume user is admin
   useEffect(() => {
-    if (user && user.role === 'admin') {
-      setIsAdmin(true);
-    }
-  }, [user]);
-
-  // Initialize admin data
-  useEffect(() => {
-    if (isAuthenticated && isAdmin) {
-      const initializeAdmin = async () => {
-        await Promise.all([fetchUsers(), fetchStats()]);
-      };
-      initializeAdmin();
-    }
-  }, [isAuthenticated, isAdmin]);
+    setIsAdmin(true);
+    const initializeAdmin = async () => {
+      await Promise.all([fetchUsers(), fetchStats()]);
+    };
+    initializeAdmin();
+  }, []);
 
   // GSAP animations
   useEffect(() => {
-    if (isAuthenticated && containerRef.current) {
+    if (containerRef.current) {
       // Initial page load animation (safe)
       safeGsap.fromTo?.(containerRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' });
 
@@ -114,7 +106,7 @@ function AdminPageContent() {
         safeGsap.to?.(logoRef.current, { scale: 1.1, duration: 1, repeat: -1, yoyo: true, ease: 'power2.inOut' });
       }
     }
-  }, [isAuthenticated]);
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -299,7 +291,16 @@ function AdminPageContent() {
 
     // Add delay for logout animation
     setTimeout(async () => {
-      await logout();
+      // Clear auth cache and redirect
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_cache');
+        // Clear cookies by calling logout API
+        try {
+          await apiClient.post('/api/auth/logout');
+        } catch (error) {
+          // Ignore errors, just clear local state
+        }
+      }
       router.push('/');
     }, 2000); // 2 second delay for animation
   };
@@ -311,7 +312,7 @@ function AdminPageContent() {
   const currentUsers = sortedUsers.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = Math.ceil(users.length / usersPerPage);
 
-  if (!isAuthenticated || !isAdmin) {
+  if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 

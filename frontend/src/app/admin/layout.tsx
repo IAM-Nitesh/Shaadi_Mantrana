@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getAuthStatus } from '../../utils/client-auth';
 import StandardHeader from '../../components/StandardHeader';
@@ -19,13 +19,7 @@ export default function AdminLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [retryOnce, setRetryOnce] = useState(false);
 
-  useEffect(() => {
-    // Reset retry flag on path change to allow a fresh forced check
-    setRetryOnce(false);
-    checkAuthentication();
-  }, [pathname]);
-
-  const checkAuthentication = async () => {
+  const checkAuthentication = useCallback(async () => {
     try {
       // Skip authentication check for login page
       if (pathname === '/admin/login') {
@@ -70,7 +64,13 @@ export default function AdminLayout({
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [pathname, router, retryOnce]);
+
+  useEffect(() => {
+    // Reset retry flag on path change to allow a fresh forced check
+    setRetryOnce(false);
+    checkAuthentication();
+  }, [pathname, router, checkAuthentication]);
 
   // Show loading while checking authentication
   if (isChecking) {
