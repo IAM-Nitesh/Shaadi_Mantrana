@@ -10,7 +10,7 @@
     "build:static": "next build",
     "export": "next export",
     "dev:remote-backend": "NEXT_PUBLIC_API_BASE_URL=https://shaadi-mantrana.onrender.com PORT=3000 next dev",
-    "build:web": "next build && next export -o out",
+    "build:web": "next build && next export",
     "cap:copy": "npm run build:web && npx cap copy",
     "cap:sync": "npm run build:web && npx cap sync"
   },
