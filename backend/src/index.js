@@ -229,6 +229,21 @@ if (debugRoutes) {
   app.use('/api/debug', debugRoutes);
 }
 
+// Internal logging ping route (non-production exposure is allowed by default; in prod require token)
+app.get('/internal/log-ping', (req, res) => {
+  const token = req.headers['x-internal-token'];
+  const required = process.env.INTERNAL_LOG_PING_TOKEN;
+  if (required) {
+    if (!token || token !== required) {
+      logger.warn({ event: 'log_ping_unauthorized', ip: req.ip }, 'Unauthorized log ping attempt');
+      return res.status(401).json({ ok: false, error: 'unauthorized' });
+    }
+  }
+  const pingId = require('crypto').randomUUID();
+  logger.info({ event: 'log_ping', ping_id: pingId, ts: new Date().toISOString() }, 'LOG PING');
+  res.json({ ok: true, ping_id: pingId });
+});
+
 // Client log forwarding endpoint - forwards browser/app logs to server logger (rate-limited)
 const expressRateLimit = require('express-rate-limit');
 

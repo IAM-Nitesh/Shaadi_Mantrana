@@ -35,6 +35,9 @@ if (isNode) {
   }
 
   const level = process.env.LOG_LEVEL || 'info';
+  const appVersion = process.env.APP_VERSION || (process as any).env?.npm_package_version || '0.0.0';
+  const gitSha = process.env.GIT_SHA || process.env.NEXT_PUBLIC_GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || '';
+  const sampleInfoRate = parseFloat(process.env.LOG_SAMPLE_INFO_RATE || '1');
   const tmpLogsDir = path ? path.resolve(process.cwd(), 'tmp-logs') : './tmp-logs';
   const importantLogFile = path ? path.join(tmpLogsDir, 'frontend-important.log') : './tmp-logs/frontend-important.log';
 
@@ -57,35 +60,77 @@ if (isNode) {
   const grafanaLokiPassword = process.env.NEXT_PUBLIC_GRAFANA_LOKI_PASSWORD || process.env.GRAFANA_LOKI_PASSWORD || process.env.NEXT_PUBLIC_LOKI_PASSWORD || process.env.LOKI_PASSWORD;
   if (grafanaLokiUrl) {
     try {
-      const pinoLoki = req('pino-loki');
-      const lokiStream = pinoLoki.createWriteStream({
-        host: grafanaLokiUrl,
-        basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
-        labels: { service: 'shaadimantra-frontend' },
-        timeout: 10000
-      });
-      streams.push({ level: 'info', stream: lokiStream });
+      const mod = req('pino-loki');
+      let lokiStream: any;
+      if (mod && typeof mod.createWriteStream === 'function') {
+        lokiStream = mod.createWriteStream({
+          host: grafanaLokiUrl,
+          basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
+          labels: { service: 'shaadimantra-frontend' },
+          timeout: 10000
+        });
+      } else if (typeof mod === 'function') {
+        lokiStream = mod({
+          host: grafanaLokiUrl,
+          basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
+          labels: { service: 'shaadimantra-frontend' },
+          timeout: 10000
+        });
+      }
+      if (lokiStream && typeof lokiStream.write === 'function') {
+        streams.push({ level: 'info', stream: lokiStream });
+        // eslint-disable-next-line no-console
+        console.log('[loki] attached frontend pino-loki stream');
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn('pino-loki not configured for frontend logs: invalid stream');
+      }
     } catch (e) {
-      // Do not crash the server if pino-loki is not available
       // eslint-disable-next-line no-console
-      console.warn('pino-loki not configured for frontend logs:', e && e.message);
+      console.warn('pino-loki not configured for frontend logs:', e && (e as any).message);
     }
   }
+
+  let emittedInfo = 0;
 
   const baseLogger = pino(
     {
       level,
-      base: { service: 'shaadimantra-api', env: process.env.NODE_ENV || 'development' },
+      base: {
+        service: 'shaadimantra-frontend',
+        env: process.env.NODE_ENV || 'development',
+        version: appVersion,
+        git_sha: gitSha,
+      },
       redact: {
         paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
         censor: '[REDACTED]',
       },
       timestamp: pino.stdTimeFunctions.isoTime,
+      hooks: sampleInfoRate >= 1 ? undefined : {
+        logMethod(args: any[], method: any) {
+          try {
+            const isInfo = method === baseLogger.info;
+            if (isInfo && sampleInfoRate < 1) {
+              emittedInfo += 1;
+              if ((emittedInfo % Math.round(1 / sampleInfoRate)) !== 0) {
+                return; // drop
+              }
+            }
+          } catch (_) { /* ignore sampling errors */ }
+          method.apply(this, args);
+        }
+      }
     },
     pino.multistream(streams)
   );
 
   logger = baseLogger;
+  try {
+    if (grafanaLokiUrl) {
+      logger.info({ event: 'logger_start', sink: 'loki', service: 'shaadimantra-frontend' }, 'Frontend logger initialized with Loki stream');
+    }
+  } catch { /* ignore */ }
 
   httpLogger = pinoHttp ? pinoHttp({
     logger: baseLogger,
