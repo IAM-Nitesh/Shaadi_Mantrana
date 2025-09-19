@@ -45,24 +45,25 @@ const sanitizeRequestBody = (body) => {
 
 // Request tracking middleware
 const requestLogger = (req, res, next) => {
-  const requestId = crypto.randomUUID();
+  // Reuse inbound IDs if provided (frontend correlation), else generate.
+  const inboundRequestId = req.headers['x-request-id'];
+  const requestId = (typeof inboundRequestId === 'string' && inboundRequestId.trim()) ? inboundRequestId.trim() : crypto.randomUUID();
+  const inboundUserUuid = req.headers['x-user-uuid'];
+  const derivedUserUuid = req.user?.userUuid || (typeof inboundUserUuid === 'string' && inboundUserUuid.trim()) || 'anonymous';
   const startTime = Date.now();
-  
-  // Add request ID to request object
-  req.requestId = requestId;
 
-  // Extract user UUID if available
-  const userUuid = req.user?.userUuid || 'anonymous';
+  req.requestId = requestId;
+  req.userUuid = derivedUserUuid;
+
   const email = req.user?.email || 'none';
   const sanitizedEmail = sanitizeEmailForLog(email);
 
-  // Use pino child logger for this request (includes requestId and user_uuid)
-  req.log = loggerForUser(userUuid).child({ request_id: requestId, user_uuid: userUuid });
+  req.log = loggerForUser(derivedUserUuid).child({ request_id: requestId, user_uuid: derivedUserUuid });
 
-  // Set response headers for tracking
+  // Always reflect IDs back so callers can confirm correlation
   res.set('X-Request-ID', requestId);
-  if (userUuid !== 'anonymous') {
-    res.set('X-User-UUID', userUuid);
+  if (derivedUserUuid !== 'anonymous') {
+    res.set('X-User-UUID', derivedUserUuid);
   }
   
   // Get client IP
@@ -75,7 +76,7 @@ const requestLogger = (req, res, next) => {
   req.log.info({
     event: 'request_start',
     request_id: requestId,
-    user_uuid: userUuid,
+    user_uuid: derivedUserUuid,
     email: sanitizedEmail,
     method: req.method,
     url: req.originalUrl,
@@ -93,7 +94,7 @@ const requestLogger = (req, res, next) => {
     req.log.info({
       event: 'request_end',
       request_id: requestId,
-      user_uuid: userUuid,
+      user_uuid: derivedUserUuid,
       method: req.method,
       url: req.originalUrl,
       status_code: res.statusCode,
@@ -123,14 +124,14 @@ const requestLogger = (req, res, next) => {
 
 // Error logging middleware
 const errorLogger = (err, req, res, next) => {
-  const userUuid = req.user?.userUuid || 'anonymous';
+  const userUuid = req.user?.userUuid || req.userUuid || 'anonymous';
   const requestId = req.requestId || 'unknown';
-  
+
   const { logger } = require('../utils/pino-logger');
   logger.error({
     event: 'uncaught_error',
-    requestId,
-    userUuid,
+    request_id: requestId,
+    user_uuid: userUuid,
     email: req.user?.email || 'none',
     method: req.method,
     url: req.originalUrl,
@@ -140,7 +141,7 @@ const errorLogger = (err, req, res, next) => {
       code: err.code
     }
   }, 'Unhandled error');
-  
+
   next(err);
 };
 
@@ -151,7 +152,7 @@ const logSuccess = (operation, details = {}) => {
     const requestId = req.requestId || 'unknown';
     
     const { logger } = require('../utils/pino-logger');
-    logger.info({ requestId, userUuid, email: req.user?.email || 'none', operation, ...details }, `SUCCESS: ${operation}`);
+  logger.info({ request_id: requestId, user_uuid: userUuid, email: req.user?.email || 'none', operation, ...details }, `SUCCESS: ${operation}`);
     
     next();
   };
@@ -168,7 +169,7 @@ const logCritical = (operation, details = {}) => {
                      '127.0.0.1';
     
     const { logger } = require('../utils/pino-logger');
-    logger.warn({ requestId, userUuid, email: req.user?.email || 'none', operation, clientIP, userAgent: req.headers['user-agent'] || 'unknown', timestamp: new Date().toISOString(), ...details }, `CRITICAL: ${operation}`);
+  logger.warn({ request_id: requestId, user_uuid: userUuid, email: req.user?.email || 'none', operation, clientIP, userAgent: req.headers['user-agent'] || 'unknown', timestamp: new Date().toISOString(), ...details }, `CRITICAL: ${operation}`);
     
     next();
   };

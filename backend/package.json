@@ -57,7 +57,11 @@
     "test:auth-flow": "NODE_ENV=development node scripts/test-auth-flow.js",
     "test:admin-user-creation": "NODE_ENV=development node scripts/test-admin-user-creation.js",
     "keep-alive": "node scripts/keep-alive.js",
-    "keep-alive-bg": "node scripts/keep-alive.js &"
+    "keep-alive-bg": "node scripts/keep-alive.js &",
+    "logs:test": "node scripts/test-logs-loki.js"
+    ,"logs:auth-test": "node scripts/test-loki-auth.js"
+    ,"logs:generate": "node scripts/generate-logs.js",
+    "logs:verify": "node scripts/verify-logging-readiness.js"
   },
   "dependencies": {
     "@babel/core": "^7.28.3",

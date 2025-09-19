@@ -1,5 +1,24 @@
 import { config as configService } from '../services/configService';
 import logger from './logger';
+import { setLastRequestId } from './request-context';
+
+// Simple UUID v4 generator fallback if crypto.randomUUID not available (browser older env)
+function generateRequestId(): string {
+  try {
+    // Prefer native crypto.randomUUID where available
+    // @ts-ignore
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      // @ts-ignore
+      return crypto.randomUUID();
+    }
+  } catch (_) { /* ignore */ }
+  // Fallback to RFC4122-ish random
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 // API Client configuration
 interface ApiClientConfig {
@@ -26,6 +45,7 @@ interface ApiResponse<T = any> {
   status: number;
   ok: boolean;
   headers: Headers;
+  requestId?: string | null;
 }
 
 class ApiClient {
@@ -94,6 +114,31 @@ class ApiClient {
       ...headers
     };
 
+    // Correlation headers: ensure a request id exists; reuse if caller provided.
+    if (!defaultHeaders['X-Request-ID'] && !defaultHeaders['x-request-id']) {
+      defaultHeaders['X-Request-ID'] = generateRequestId();
+    } else if (defaultHeaders['x-request-id'] && !defaultHeaders['X-Request-ID']) {
+      // Normalize case
+      defaultHeaders['X-Request-ID'] = defaultHeaders['x-request-id'];
+      delete defaultHeaders['x-request-id'];
+    }
+
+    // Attempt to attach user uuid if globally available (SSR-safe guard)
+    try {
+      // Allow explicit header override.
+      const hasUserHeader = !!(defaultHeaders['X-User-UUID'] || defaultHeaders['x-user-uuid']);
+      if (!hasUserHeader) {
+        const globalAny: any = (typeof window !== 'undefined') ? (window as any) : {};
+        const candidate = globalAny.CURRENT_USER_UUID || globalAny.currentUserUuid;
+        if (candidate && typeof candidate === 'string') {
+          defaultHeaders['X-User-UUID'] = candidate;
+        }
+      } else if (defaultHeaders['x-user-uuid'] && !defaultHeaders['X-User-UUID']) {
+        defaultHeaders['X-User-UUID'] = defaultHeaders['x-user-uuid'];
+        delete defaultHeaders['x-user-uuid'];
+      }
+    } catch (_) { /* ignore user uuid */ }
+
     // Remove Content-Type if no body or if it's FormData
     if (!body || body instanceof FormData) {
       delete defaultHeaders['Content-Type'];
@@ -122,7 +167,7 @@ class ApiClient {
     
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const response = await fetch(url, requestConfig);
+  const response = await fetch(url, requestConfig);
         
         logger.debug(`📡 API Client: Response status ${response.status} for ${url}`);
         
@@ -153,11 +198,17 @@ class ApiClient {
           data = await response.text() as T;
         }
 
+        const responseRequestId = response.headers.get('x-request-id');
+        if (responseRequestId) {
+          setLastRequestId(responseRequestId);
+        }
+
         return {
           data,
           status: response.status,
           ok: response.ok,
-          headers: response.headers
+          headers: response.headers,
+          requestId: responseRequestId
         };
 
       } catch (error) {
