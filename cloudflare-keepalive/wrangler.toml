@@ -1,0 +1,20 @@
+name = "shaadi-keepalive"
+main = "src/worker.js"
+compatibility_date = "2025-09-19"
+
+[triggers]
+# Every 10 minutes
+crons = ["*/10 * * * *"]
+
+[vars]
+HEALTH_URL = "https://shaadi-mantrana.onrender.com/health"
+RETRIES = "3"
+RETRY_DELAY_MS = "10000"
+TIMEOUT_MS = "30000"
+CONNECT_TIMEOUT_MS = "10000"
+# Optional Slack webhook (set as secret & remove here) uncomment variable name only if used
+SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
+
+[observability]
+# Enable Cloudflare tail / logs collection if desired
+enabled = true

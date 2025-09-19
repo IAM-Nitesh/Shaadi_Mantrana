@@ -312,3 +312,7 @@ JWT_DEBUG_SETUP.md
 test-profile-completeness.js
 localhost.har
 keystore.jks
+docs/CLOUDFLARE_KEEPALIVE.md
+docs/KEEPALIVE_MIGRATION_GHA_TO_CLOUDFLARE.md
+docs/KEEPALIVE_OPTIONS.md
+cloudflare-keepalive/README.md

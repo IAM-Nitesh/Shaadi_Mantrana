@@ -309,8 +309,8 @@ app.get('/health', async (req, res) => {
       emailHealth = { status: 'unknown', error: error.message };
     }
     
-    res.status(200).json({ 
-      status: 'OK', 
+    const responsePayload = {
+      status: 'OK',
       message: 'Shaadi Mantrana Backend API is running',
       timestamp: new Date().toISOString(),
       database: dbHealth,
@@ -318,7 +318,19 @@ app.get('/health', async (req, res) => {
       email: emailHealth,
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0'
-    });
+    };
+
+    try {
+      logger.info({
+        event: 'health_check',
+        source: req.get('X-Ping-Token') ? 'keepalive' : 'user',
+        database_status: dbHealth && dbHealth.status,
+        email_status: (emailHealth && (emailHealth.status || (emailHealth.success === false ? 'fail' : 'unknown'))) || 'unknown',
+        sessions_present: !!sessionStats
+      }, 'Health check');
+    } catch (logErr) {}
+
+    res.status(200).json(responsePayload);
   } catch (error) {
     res.status(503).json({
       status: 'Service Unavailable',
