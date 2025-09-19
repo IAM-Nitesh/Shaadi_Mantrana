@@ -18,18 +18,8 @@ frontend/dist/
 backend/dist/
 
 # Mobile build outputs
-android/app/build/
-android/app/release/
-android/build/
-android/.gradle/
-android/local.properties
-android/gradle/
-android/gradlew*
-ios/build/
-capacitor-cordova-android-plugins/build/
-*.apk
-*.aab
-*.ipa
+android/*
+
 
 # Environment variables (track only .env.example or .env.template)
 .env
@@ -61,17 +51,7 @@ playwright-report/
 *.spec.js
 
 # API Testing and Test Reports
-postman/test_report.json
-postman/security_performance_report.json
-postman/*_report.json
-postman/test-results/
-postman/coverage/
-postman/.nyc_output/
-postman/node_modules/
-postman/package-lock.json
-postman/yarn.lock
-postman/.env
-postman/.env.*
+postman/*
 
 # Keep important testing files (explicitly allow)
 !postman/api_testing_runner.js
@@ -331,3 +311,4 @@ AUTH_FIX_SUMMARY.md
 JWT_DEBUG_SETUP.md
 test-profile-completeness.js
 localhost.har
+keystore.jks
