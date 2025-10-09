@@ -1,4 +1,6 @@
 // Copied from https://ui.shadcn.com/docs/components/button
+'use client';
+
 import * as React from "react"
 
 import { cn } from "../../lib/utils"

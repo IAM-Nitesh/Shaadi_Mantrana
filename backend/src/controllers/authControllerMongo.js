@@ -13,6 +13,19 @@ const { User } = require('../models');
 const { logger } = require('../utils/pino-logger');
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
 
+// Shared cookie options helper function
+function getCookieOptions(req, options = {}) {
+  const isProduction = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+  
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
+    ...options
+  };
+}
+
 // Session management - use JWTSessionManager's activeSessions
 // const sessions = new Map(); // Removed - using JWTSessionManager.activeSessions instead
 
@@ -472,7 +485,51 @@ class AuthController {
       }
 
       // Create JWT session using the same system as the main auth controller
+      // CRITICAL FIX: Ensure session persistence for admin users
+      console.log('🔍 AuthController: Creating session for user:', {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        userUuid: user.userUuid
+      });
+      
       const session = await JWTSessionManager.createSession(user);
+      
+      // CRITICAL: Verify session was created successfully
+      console.log('✅ AuthController: Session created:', {
+        sessionId: session.sessionId,
+        accessToken: session.accessToken ? 'present' : 'missing',
+        refreshToken: session.refreshToken ? 'present' : 'missing'
+      });
+      
+      // Double-check session exists in database immediately after creation
+      try {
+        const verifySession = await JWTSessionManager.getSession(session.sessionId);
+        if (verifySession) {
+          console.log('✅ AuthController: Session verified in database after creation');
+        } else {
+          console.error('❌ AuthController: CRITICAL - Session missing from database after creation');
+          throw new Error('Session creation verification failed');
+        }
+      } catch (verifyError) {
+        console.error('❌ AuthController: Session verification failed:', verifyError);
+        throw new Error('Session verification failed: ' + verifyError.message);
+      }
+
+      // CRITICAL FIX: Add session persistence delay for admin users
+      if (user.role === 'admin') {
+        console.log('🔍 AuthController: Adding session persistence delay for admin user');
+        // Add a small delay to ensure session is fully persisted before redirect
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify session one more time after delay
+        const finalVerify = await JWTSessionManager.getSession(session.sessionId);
+        if (!finalVerify) {
+          console.error('❌ AuthController: CRITICAL - Session lost after persistence delay');
+          throw new Error('Admin session persistence failed');
+        }
+        console.log('✅ AuthController: Admin session persistence verified');
+      }
 
       // Prepare response with user data for frontend redirection logic
       const userData = user.toPublicJSON();
@@ -490,6 +547,7 @@ class AuthController {
       const responseData = {
         success: true,
         message: 'Authentication successful',
+        accessToken: session.accessToken, // Include access token at top level for frontend
         user: {
           ...userData,
           isFirstLogin: user.isFirstLogin,
@@ -506,24 +564,31 @@ class AuthController {
         }
       };
 
-      // Set HTTP-only cookies for the session
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        // For cross-origin requests, don't set domain to allow cookies to work across different domains
-        // The browser will handle the domain automatically for sameSite: 'none'
-      };
+      // Set HTTP-only cookies for the session with extended expiry - ADMIN SESSION FIX
+      // CRITICAL: Use longer expiry for admin sessions to prevent immediate logouts
+      // isAdminUser already defined above, reuse it
+      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 90 days for admin, 30 days for regular
+      
+      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      
+      // Define isProduction for logging
+      const isProduction = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+      console.log('🍪 AuthController: Setting cookies with options:', {
+        maxAge: cookieMaxAge,
+        maxAgeDays: cookieMaxAge / (24 * 60 * 60 * 1000),
+        secure: cookieOptions.secure,
+        sameSite: cookieOptions.sameSite,
+        isAdminUser,
+        isProduction
+      });
 
       // Set access token cookie
       res.cookie('accessToken', session.accessToken, cookieOptions);
       
-      // Set refresh token cookie with longer expiration
-      const refreshCookieOptions = {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      };
+      // Set refresh token cookie with even longer expiration for admin users
+      const refreshCookieMaxAge = isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000; // 180 days for admin, 90 days for regular
+      const refreshCookieOptions = getCookieOptions(req, { maxAge: refreshCookieMaxAge });
       res.cookie('refreshToken', session.refreshToken, refreshCookieOptions);
       
       // Set session ID cookie
@@ -666,15 +731,10 @@ class AuthController {
         audience: 'shaadi-mantra-app'
       });
 
-      // Set new access token cookie
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        // For cross-origin requests, don't set domain to allow cookies to work across different domains
-        // The browser will handle the domain automatically for sameSite: 'none'
-      };
+      // Set new access token cookie with extended expiry
+      const cookieOptions = getCookieOptions(req, { 
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days instead of 24 hours
+      });
 
       res.cookie('accessToken', newAccessToken, cookieOptions);
 
@@ -704,13 +764,7 @@ class AuthController {
       }
 
       // Clear authentication cookies
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        // For cross-origin requests, don't set domain to allow cookies to work across different domains
-        // The browser will handle the domain automatically for sameSite: 'none'
-      };
+      const cookieOptions = getCookieOptions(req);
 
       res.clearCookie('accessToken', cookieOptions);
       res.clearCookie('refreshToken', cookieOptions);

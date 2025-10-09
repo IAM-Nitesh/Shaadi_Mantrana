@@ -5,32 +5,30 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatComponent from './ChatComponent';
-import { getAuthStatus, getClientToken } from '../../../utils/client-auth';
 import CustomIcon from '../../../components/CustomIcon';
 import HeartbeatLoader from '../../../components/HeartbeatLoader';
 import logger from '../../../utils/logger';
 import { apiClient } from '../../../utils/api-client';
+import { useAuth } from '../../../contexts/AuthContext';
 
 // Chat page for matched profiles
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { id } = use(params);
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check authentication using server-side auth
+    // Check authentication using AuthContext
     const checkAuth = async () => {
       try {
-        const authStatus = await getAuthStatus();
-        if (!authStatus.authenticated) {
+        if (!isAuthenticated || !user) {
           router.push('/');
           return;
         }
-
-        const user = authStatus.user;
         if (user?.isFirstLogin && (user?.profileCompleteness || 0) < 100) {
           router.replace('/profile');
           return;
@@ -47,7 +45,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     async function loadMatch() {
       try {
         // Fetch connection and other user's profile from MongoDB
-  const token = await getClientToken();
+  const token = localStorage.getItem('accessToken') || '';
         const response = await apiClient.get(`/api/connections/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -65,7 +63,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         
         // Get the other user's profile from the connection
         // Extract current user ID from server auth
-  const authToken = await getClientToken();
+  const authToken = localStorage.getItem('accessToken') || '';
         let currentUserId = null;
         if (authToken) {
           try {

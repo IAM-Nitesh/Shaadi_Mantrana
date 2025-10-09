@@ -13,7 +13,6 @@ import CustomIcon from '../../../components/CustomIcon';
 import { ChatService } from '../../../services/chat-service';
 import { MatchingService } from '../../../services/matching-service';
 import ToastService from '../../../services/toastService';
-import { getClientToken } from '../../../utils/client-auth';
 import logger from '../../../utils/logger';
 
 interface Match {
@@ -80,7 +79,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
   // Get current user ID from JWT token
   const getCurrentUserId = async (): Promise<string | null> => {
-    const token = await getClientToken();
+    const token = await localStorage.getItem('accessToken') || '';
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));

@@ -317,9 +317,10 @@ export class ServerAuthService {
         timeout: 5000
       });
 
-      if (response.ok && response.data.success && response.data.token) {
-  logger.info('✅ ServerAuthService: Bearer token retrieved successfully');
-        return response.data.token;
+      if (response.ok && response.data.success) {
+        logger.info('✅ ServerAuthService: Bearer token refreshed successfully');
+        // Token is now stored as HttpOnly cookie, return a placeholder
+        return 'http-only-cookie';
       }
 
   logger.warn('❌ ServerAuthService: No token in response');

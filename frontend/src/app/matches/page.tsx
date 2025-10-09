@@ -12,14 +12,15 @@ import { safeGsap } from '../../components/SafeGsap';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import { config as configService } from '../../services/configService';
 import SmoothNavigation from '../../components/SmoothNavigation';
-import { useServerAuth } from '../../hooks/useServerAuth';
-import ServerAuthGuard from '../../components/ServerAuthGuard';
+import { userNavItems } from '../../config/navigation';
+import { useAuth } from '../../contexts/AuthContext';
+import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import ToastService from '../../services/toastService';
 import CelebratoryMatchToast from '../../components/CelebratoryMatchToast';
 import { MatchesListSkeleton } from '../../components/SkeletonLoader';
 import { ProfileImage } from '../../components/LazyImage';
-import { usePullToRefresh } from '../../hooks/usePullToRefresh';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+// import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+// import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import logger from '../../utils/logger';
 
 // Helper to decode JWT and get current user ID (for backward compatibility)
@@ -35,7 +36,7 @@ function getCurrentUserId() {
 
 function MatchesContent() {
   const router = useRouter();
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('matches');
   const [likedProfiles, setLikedProfiles] = useState<LikedProfile[]>([]);
   const [mutualMatches, setMutualMatches] = useState<MutualMatch[]>([]);
@@ -57,15 +58,15 @@ function MatchesContent() {
     selectedState: ''
   });
 
-  // Enhanced mobile features
-  const { haptics } = useHapticFeedback();
-  const { containerRef: pullToRefreshRef, isRefreshing } = usePullToRefresh({
-    onRefresh: async () => {
-      haptics.light();
-      await fetchMatches();
-    },
-    enabled: true,
-  });
+  // Enhanced mobile features - temporarily disabled for build
+  // const { haptics } = useHapticFeedback();
+  // const { containerRef: pullToRefreshRef, isRefreshing } = usePullToRefresh({
+  //   onRefresh: async () => {
+  //     haptics.light();
+  //     await fetchMatches();
+  //   },
+  //   enabled: true,
+  // });
 
   // GSAP refs for animations
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -319,7 +320,7 @@ function MatchesContent() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       
       {/* Main Content */}
-    <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
+  <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
         {/* Tabs */}
         <div ref={tabsRef} className="mb-6">
           <div className="flex bg-white rounded-2xl p-1 shadow-sm">
@@ -354,7 +355,7 @@ function MatchesContent() {
         </div>
 
         {/* Content with Pull-to-Refresh */}
-        <div ref={pullToRefreshRef} className="android-scroll">
+        <div className="android-scroll">
           {loading ? (
             <MatchesListSkeleton />
           ) : (
@@ -559,29 +560,16 @@ function MatchesContent() {
         />
       )}
 
-      {/* Modern Bottom Navigation */}
-      <SmoothNavigation 
-        items={[
-          { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
-          { 
-            href: '/matches', 
-            icon: 'ri-chat-3-line', 
-            label: 'Matches',
-            activeIcon: 'ri-chat-3-fill',
-            ...(matchesCount > 0 && { badge: matchesCount })
-          },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
-        ]}
-      />
+      {/* Bottom Navigation */}
+      <SmoothNavigation items={userNavItems} />
     </div>
   );
 }
 
 export default function Matches() {
   return (
-    <ServerAuthGuard requireAuth={true} requireCompleteProfile={true}>
+    <AuthGuardV2 requiresCompleteProfile={true}>
       <MatchesContent />
-    </ServerAuthGuard>
+    </AuthGuardV2>
   );
 }
