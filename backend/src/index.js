@@ -12,8 +12,9 @@ dotenv.config();
 // Import configuration (centralized env handling)
 const config = require('./config');
 
-// Import database service
+// Import database service and enhanced connection
 const databaseService = require('./services/databaseService');
+const enhancedDatabaseService = require('./services/enhanced-database-service');
 
 // Import chat service
 const chatService = require('./services/chatService');
@@ -63,7 +64,12 @@ const corsOptions = {
     'Accept',
     'Origin',
     'Cache-Control',
-    'X-File-Name'
+    'X-File-Name',
+    'x-request-id',
+    'x-admin-request',
+    'Expires',
+    'Pragma',
+    'X-User-UUID'
   ],
   exposedHeaders: [
     'Content-Length',
@@ -209,6 +215,7 @@ const matchRoutes = require('./routes/matchRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const healthRoutes = require('./routes/health'); // Enhanced health monitoring
 // Debug routes - JWT debugging enabled in production for auth troubleshooting
 let debugRoutes = null;
 if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_JWT_DEBUG === 'true') {
@@ -216,6 +223,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_JWT_DEBUG === 't
 }
 
 // API Routes with rate limiting
+app.use('/health', healthRoutes); // Enhanced health monitoring endpoints
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/profiles', profileRoutes);
@@ -262,15 +270,86 @@ app.post('/api/logs', clientLogLimiter, (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-  const payload = req.body || {};
-  // Extract user UUID when provided by client (prefer header, fallback to payload)
-  const clientUserUuid = req.headers['x-user-uuid'] || payload.user_uuid || payload.userUuid || 'anonymous';
+    // Handle both single log and batch logs (array)
+    let logs = Array.isArray(req.body) ? req.body : [req.body || {}];
+    
+    // Process each log entry
+    for (const payload of logs) {
+      // Extract user UUID when provided by client (prefer header, fallback to payload)
+      const clientUserUuid = req.headers['x-user-uuid'] || payload.user_uuid || payload.userUuid || 'anonymous';
+      const clientType = payload.client_type || 'web';
+      const platform = payload.platform || 'unknown';
+      
+      // Sanitize sensitive fields
+      const sanitizeField = (obj, field, mask = '***') => {
+        if (obj && obj[field]) {
+          if (field === 'email' && typeof obj[field] === 'string') {
+            obj[field] = obj[field].replace(/(.{3})(.*)(@.*)/, '$1***$3');
+          } else if (field === 'phone' && typeof obj[field] === 'string') {
+            obj[field] = obj[field].replace(/(\d{3})(\d+)(\d{2})/, '$1***$3');
+          } else {
+            obj[field] = mask;
+          }
+        }
+      };
 
-  // Sanitize sensitive fields
-  if (payload.email) payload.email = payload.email.replace(/(.{3})(.*)(@.*)/, '$1***$3');
-  if (payload.otp) payload.otp = '***';
-
-  logger.info({ event: 'client_log', user_uuid: clientUserUuid, payload, ip: req.ip, ua: req.headers['user-agent'] }, 'CLIENT LOG');
+      // Sanitize top-level sensitive fields
+      const sensitiveFields = ['email', 'otp', 'phone', 'password', 'token', 'auth', 'authorization', 
+                              'api_key', 'apiKey', 'access_token', 'refresh_token', 'secret', 'ssn', 
+                              'card_number', 'cvv', 'credit_card', 'cardNumber', 'birthdate'];
+      
+      sensitiveFields.forEach(field => sanitizeField(payload, field));
+      
+      // Sanitize sensitive fields in payload.data if present
+      if (payload.data && typeof payload.data === 'object') {
+        sensitiveFields.forEach(field => sanitizeField(payload.data, field));
+      }
+      
+      // Sanitize sensitive headers
+      if (req.headers.authorization) {
+        req.headers.authorization = '***';
+      }
+      if (req.headers['x-api-key']) {
+        req.headers['x-api-key'] = '***';
+      }
+      
+      // Create logger specific to this user
+      const userLogger = logger.child({ 
+        user_uuid: clientUserUuid, 
+        client_type: clientType, 
+        platform: platform 
+      });
+      
+      // Get log level from payload or default to info
+      const level = (payload.level || 'info').toLowerCase();
+      
+      // Generate log message
+      const logMessage = payload.message || 'Client log';
+      
+      // Log with appropriate level
+      if (level === 'error') {
+        userLogger.error(
+          { event: 'client_log', ...payload, ip: req.ip, ua: req.headers['user-agent'] }, 
+          `CLIENT ERROR: ${logMessage}`
+        );
+      } else if (level === 'warn') {
+        userLogger.warn(
+          { event: 'client_log', ...payload, ip: req.ip, ua: req.headers['user-agent'] }, 
+          `CLIENT WARN: ${logMessage}`
+        );
+      } else if (level === 'debug') {
+        userLogger.debug(
+          { event: 'client_log', ...payload, ip: req.ip, ua: req.headers['user-agent'] }, 
+          `CLIENT DEBUG: ${logMessage}`
+        );
+      } else {
+        userLogger.info(
+          { event: 'client_log', ...payload, ip: req.ip, ua: req.headers['user-agent'] }, 
+          `CLIENT INFO: ${logMessage}`
+        );
+      }
+    }
+    
     return res.status(200).json({ success: true });
   } catch (err) {
     logger.error({ event: 'client_log_error', error: err && err.message }, 'Client log forwarding failed');
@@ -383,9 +462,35 @@ app.use('*', (req, res) => {
 // Start server with database connection
 async function startServer() {
   try {
-    // Connect to database first
-    logger.info('Initializing database connection');
-    await databaseService.connect();
+    // Connect to database first with enhanced Atlas support
+    logger.info('Initializing enhanced database connection');
+    
+    // Try enhanced connection first for Atlas
+    let dbConnected = false;
+    try {
+      const enhancedSuccess = await enhancedDatabaseService.connect();
+      if (enhancedSuccess) {
+        logger.info('Enhanced Atlas connection established');
+        dbConnected = true;
+      }
+    } catch (enhancedError) {
+      logger.warn({ err: enhancedError.message }, 'Enhanced connection failed, trying standard connection');
+    }
+    
+    // Fallback to standard connection if enhanced failed
+    if (!dbConnected) {
+      try {
+        await databaseService.connect();
+        logger.info('Standard database connection established');
+        dbConnected = true;
+      } catch (standardError) {
+        logger.error({ 
+          err: standardError.message, 
+          error: standardError 
+        }, 'Standard database connection failed');
+        throw standardError;
+      }
+    }
     
     // Start the server
     const server = app.listen(PORT, () => {
@@ -400,6 +505,23 @@ async function startServer() {
     setInterval(() => {
       chatService.cleanup();
     }, 60 * 60 * 1000); // Run cleanup every hour
+    
+    // Start session management services
+    try {
+      // Import session services
+      const sessionCleanupService = require('./services/sessionCleanupService');
+      const sessionCacheWarmer = require('./services/sessionCacheWarmerService');
+      
+      // Start session cleanup service
+      sessionCleanupService.start();
+      logger.info('Session cleanup service started');
+      
+      // Start session cache warmer service
+      sessionCacheWarmer.start();
+      logger.info('Session cache warmer service started');
+    } catch (serviceError) {
+      logger.error({ err: serviceError }, 'Failed to start session management services');
+    }
     
   } catch (error) {
   logger.error({ err: error && error.message }, 'Failed to start server');

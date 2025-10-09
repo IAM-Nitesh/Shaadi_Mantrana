@@ -27,7 +27,7 @@ interface SwipeCardProps {
       isVerified: boolean;
     };
   };
-  onSwipe: (direction: 'left' | 'right') => void;
+  onSwipe: (direction: 'left' | 'right' | 'up') => void;
 }
 
 export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {

@@ -130,6 +130,7 @@ router.post('/swipe', authenticateToken, userMiddleware, ensureProfileComplete, 
 });
 
 // Get all matches for the current user
+// Primary route (legacy)
 router.get('/matches', authenticateToken, userMiddleware, ensureProfileComplete, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -165,6 +166,49 @@ router.get('/matches', authenticateToken, userMiddleware, ensureProfileComplete,
 
   } catch (error) {
     console.error('❌ Get matches error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch matches'
+    });
+  }
+});
+
+// Alias route: support clients calling GET /api/matches (without trailing /matches)
+// This keeps the public API intuitive and avoids double prefixing ("/api/matches/matches")
+router.get('/', authenticateToken, userMiddleware, ensureProfileComplete, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const matches = await Match.find({
+      userId: userId,
+      isMatch: true
+    })
+    .populate('likedUserId', 'profile.name profile.firstName profile.lastName profile.photos profile.location profile.age')
+    .sort({ matchedAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+    const totalMatches = await Match.countDocuments({
+      userId: userId,
+      isMatch: true
+    });
+
+    res.status(200).json({
+      success: true,
+      matches: matches,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalMatches / limit),
+        totalMatches: totalMatches,
+        hasNext: skip + limit < totalMatches,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('❌ Get matches alias error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch matches'

@@ -73,11 +73,27 @@ module.exports = {
       retryWrites: true,
       w: 'majority',
       maxPoolSize: process.env.NODE_ENV === 'production' ? 10 : 5,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+      minPoolSize: process.env.NODE_ENV === 'production' ? 2 : 1,
+      serverSelectionTimeoutMS: 5000, // Reduced for faster failure detection
+      socketTimeoutMS: 30000, // Reduced from 45000
+      connectTimeoutMS: 8000, // Reduced for faster failure detection
+      heartbeatFrequencyMS: 5000, // More frequent health checks
+      maxIdleTimeMS: 30000,
+      waitQueueTimeoutMS: 5000, // Reduced from 10000
       bufferCommands: false,
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      // Network resilience
+      family: 4, // Force IPv4
+      directConnection: false,
+      maxConnecting: 2,
+      // Retry configuration
+      retryReads: true,
+      compressors: 'snappy,zlib',
+      // Additional connection resilience options
+      ssl: true, // Force SSL for Atlas
+      authSource: 'admin', // Explicit auth source
+      appName: 'Shaadi-Mantrana-Backend'
     }
   },
   
@@ -88,12 +104,12 @@ module.exports = {
   FRONTEND_URL: process.env.FRONTEND_URL || process.env.PRODUCTION_FRONTEND_URL || '',
   FRONTEND_FALLBACK_URL: process.env.FRONTEND_FALLBACK_URL || process.env.PRODUCTION_FRONTEND_URL || '',
   
-  // JWT configuration with strong defaults
+  // JWT configuration with more reasonable expiry times
   JWT: {
     // Do not ship secrets in code. Provide JWT_SECRET in environment.
     SECRET: process.env.JWT_SECRET || '',
-    EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
-    REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    EXPIRES_IN: process.env.JWT_EXPIRES_IN || '15m', // 15 minutes for frequent refresh
+    REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d', // 30 days for refresh
     ALGORITHM: 'HS256',
     ISSUER: 'shaadi-mantra-api',
     AUDIENCE: 'shaadi-mantra-app'

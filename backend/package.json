@@ -58,9 +58,9 @@
     "test:admin-user-creation": "NODE_ENV=development node scripts/test-admin-user-creation.js",
     "keep-alive": "node scripts/keep-alive.js",
     "keep-alive-bg": "node scripts/keep-alive.js &",
-    "logs:test": "node scripts/test-logs-loki.js"
-    ,"logs:auth-test": "node scripts/test-loki-auth.js"
-    ,"logs:generate": "node scripts/generate-logs.js",
+    "logs:test": "node scripts/test-logs-loki.js",
+    "logs:auth-test": "node scripts/test-loki-auth.js",
+    "logs:generate": "node scripts/generate-logs.js",
     "logs:verify": "node scripts/verify-logging-readiness.js"
   },
   "dependencies": {
@@ -71,12 +71,13 @@
     "@react-email/components": "^0.3.3",
     "@react-email/render": "^1.1.4",
     "@react-email/tailwind": "^1.2.2",
+    "array-flatten": "^1.1.1",
     "backblaze-b2": "^1.7.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "express": "^4.21.2",
     "express-rate-limit": "^6.10.0",
     "express-validator": "^7.0.1",
     "helmet": "^7.0.0",

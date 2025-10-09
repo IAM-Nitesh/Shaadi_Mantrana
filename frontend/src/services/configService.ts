@@ -15,12 +15,22 @@ export const config = {
   b2BucketName: process.env.NEXT_PUBLIC_B2_BUCKET_NAME || '',
   b2BucketId: process.env.NEXT_PUBLIC_B2_BUCKET_ID || '',
   
-  // Grafana Loki Configuration (for client-side logging if needed)
-  grafanaLokiUser: process.env.NEXT_PUBLIC_GRAFANA_LOKI_USER || '',
-  grafanaLokiPassword: process.env.NEXT_PUBLIC_GRAFANA_LOKI_PASSWORD || '',
-  grafanaLokiUrl: process.env.NEXT_PUBLIC_GRAFANA_LOKI_URL || '',
+  // Grafana Loki Configuration (server-only credentials)
+  grafanaLokiUser: process.env.GRAFANA_LOKI_USER || '',
+  grafanaLokiPassword: process.env.GRAFANA_LOKI_PASSWORD || '',
+  grafanaLokiUrl: process.env.GRAFANA_LOKI_URL || '',
+  lokiClientApiKey: process.env.LOKI_CLIENT_API_KEY || '',
+  lokiUrl: process.env.LOKI_URL || '',
   
   // Security Configuration
   enableHttps: process.env.NEXT_PUBLIC_ENABLE_HTTPS === 'true',
   enableSecureCookies: process.env.NEXT_PUBLIC_ENABLE_SECURE_COOKIES === 'true',
+  
+  // Token Refresh Configuration
+  TOKEN_REFRESH_INTERVAL: 2 * 60 * 1000, // 2 minutes
+  TOKEN_REFRESH_THRESHOLD: 5 * 60 * 1000, // 5 minutes
+  TOKEN_HEALTH_CHECK_INTERVAL: 5 * 60 * 1000, // 5 minutes
+  TOKEN_MAX_RETRIES: 3,
+  TOKEN_RETRY_DELAY: 5000, // 5 seconds
+  TOKEN_GRACE_PERIOD: 60 * 1000, // 1 minute
 };

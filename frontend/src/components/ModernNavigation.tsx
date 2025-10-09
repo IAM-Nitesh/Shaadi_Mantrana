@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import CustomIcon from './CustomIcon';
-import { useServerAuth } from '../hooks/useServerAuth';
+import { useAuth } from '../contexts/AuthContext';
 import logger from '../utils/logger';
 
 interface NavItem {
@@ -23,7 +23,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const handleNavigation = (href: string) => {
     // If auth state isn't ready yet, avoid aggressive redirects that may trigger logout

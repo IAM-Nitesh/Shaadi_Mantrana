@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { useServerAuth } from '../hooks/useServerAuth';
+import { useAuth } from '../contexts/AuthContext';
 // Avoid importing server-only auth service in client components
 import { safeGsap } from './SafeGsap';
 import ToastService from '../services/toastService';
 
 export default function AdminBottomNavigation() {
   const pathname = usePathname();
-  const { logout } = useServerAuth();
+  const { logout } = useAuth();
 
   // Only show on admin pages
   if (!pathname?.startsWith('/admin')) {

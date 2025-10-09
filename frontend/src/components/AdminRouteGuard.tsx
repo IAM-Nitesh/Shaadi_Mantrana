@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import HeartbeatLoader from './HeartbeatLoader';
-import { useServerAuth } from '../hooks/useServerAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface AdminRouteGuardProps {
 
 export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, error } = useServerAuth();
+  const { user, isAuthenticated, isLoading, error } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {

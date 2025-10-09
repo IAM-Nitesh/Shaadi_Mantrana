@@ -24,6 +24,9 @@ router.get('/matches', matchingController.getMutualMatches.bind(matchingControll
 // Get daily like statistics
 router.get('/stats', matchingController.getDailyLikeStats.bind(matchingController));
 
+// Get recommendations (alias for discovery)
+router.get('/recommendations', matchingController.getDiscoveryProfiles.bind(matchingController));
+
 // Unmatch from a profile
 router.post('/unmatch', matchingController.unmatchProfile.bind(matchingController));
 

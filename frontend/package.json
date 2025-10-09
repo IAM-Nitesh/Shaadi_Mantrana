@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NEXT_PUBLIC_API_BASE_URL=http://localhost:5500 next dev",
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "next lint",
@@ -32,7 +32,7 @@
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.252.0",
     "mongodb": "^6.19.0",
-    "next": "15.5.0",
+    "next": "^15.0.3",
     "next-pwa": "^5.6.0",
     "party-js": "^2.2.0",
     "pino": "^9.9.0",
@@ -52,10 +52,20 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
-    "@types/react": "^18.3.24",
+    "@types/react": "18.3.1",
     "@types/react-dom": "^18.3.7",
     "eslint-config-next": "15.5.0",
     "typescript": "^5"
+  },
+  "resolutions": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }

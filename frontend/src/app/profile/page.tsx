@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InterestModal from './InterestModal';
 import { ImageUploadService, UploadResult } from '../../services/image-upload-service';
-import ServerAuthGuard from '../../components/ServerAuthGuard';
+import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import CustomIcon from '../../components/CustomIcon';
 import ImageCompression from '../../utils/imageCompression';
 import { safeGsap } from '../../components/SafeGsap';
@@ -17,11 +17,11 @@ import { TimePicker } from '../../components/time-picker';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import SmoothNavigation from '../../components/SmoothNavigation';
+import { userNavItems } from '../../config/navigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import ToastService from '../../services/toastService';
-import { getAuthStatus, getClientToken } from '../../utils/client-auth';
 import OnboardingOverlay from '../../components/OnboardingOverlay';
-import { useServerAuth } from '../../hooks/useServerAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
@@ -284,7 +284,7 @@ function toISODateString(date: string | Date | null): string | null {
 
 function ProfileContent() {
   const router = useRouter();
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -1258,7 +1258,7 @@ function ProfileContent() {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getClientToken()}`
+          'Authorization': `Bearer ${await localStorage.getItem('accessToken') || ''}`
         },
         timeout: 20000
       });
@@ -1285,7 +1285,7 @@ function ProfileContent() {
           // Add cache-busting parameter to ensure fresh data
           const response = await apiClient.get(`/api/profiles/me?t=${Date.now()}`, {
             headers: {
-              'Authorization': `Bearer ${await getClientToken()}`,
+              'Authorization': `Bearer ${await localStorage.getItem('accessToken') || ''}`,
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache'
             },
@@ -3297,22 +3297,6 @@ function ProfileContent() {
         />
       )}
 
-      {/* Modern Bottom Navigation */}
-      <SmoothNavigation 
-        items={[
-          { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
-          { 
-            href: '/matches', 
-            icon: 'ri-chat-3-line', 
-            label: 'Matches',
-            activeIcon: 'ri-chat-3-fill',
-            ...(matchesCount > 0 && { badge: matchesCount })
-          },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
-        ]}
-      />
-
       {/* Interest Modal */}
       {showInterestModal && (
         <InterestModal
@@ -3327,14 +3311,17 @@ function ProfileContent() {
         isVisible={showOnboarding}
         onComplete={handleOnboardingDismiss}
       />
+
+      {/* Bottom Navigation */}
+      <SmoothNavigation items={userNavItems} />
     </div>
   );
 }
 
 export default function Profile() {
   return (
-    <ServerAuthGuard requireAuth={true} requireCompleteProfile={false}>
+    <AuthGuardV2 requiresCompleteProfile={false}>
       <ProfileContent />
-    </ServerAuthGuard>
+    </AuthGuardV2>
   );
 }
