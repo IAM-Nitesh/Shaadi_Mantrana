@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
-import { useServerAuth } from '../hooks/useServerAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminNavigation() {
   const pathname = usePathname();
-  const { user, isAuthenticated, isLoading } = useServerAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {

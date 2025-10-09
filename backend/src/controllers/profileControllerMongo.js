@@ -53,7 +53,7 @@ class ProfileController {
       console.log(`✅ Profile retrieved for user: ${userUuid} (${user.email})`);
       res.status(200).json({
         success: true,
-        profile: {
+        user: {
           ...user.toPublicJSON(),
           isFirstLogin: isFirstLogin,
           profileCompleteness: user.profile.profileCompleteness || 0,

@@ -1,5 +1,5 @@
 {
-  "name": "shaadi-mantra",
+  "name": "shaadi-mantrana",
   "version": "1.0.0",
   "description": "Shaadi Mantrana - Full Stack Matrimonial Application",
   "private": true,
@@ -22,33 +22,31 @@
     "keep-alive": "node scripts/keep-alive.js",
     "keep-alive-bg": "node scripts/keep-alive.js &",
     "test:e2e:playwright": "npx playwright test --config=playwright.config.js",
-  "mobile:build:web": "cd frontend && npm run build:web",
-  "mobile:copy": "npx cap copy",
-  "mobile:sync": "npx cap sync android",
-  "mobile:open": "npx cap open android",
+    "mobile:build:web": "cd frontend && npm run build:web",
+    "mobile:copy": "npx cap copy",
+    "mobile:sync": "npx cap sync android",
+    "mobile:open": "npx cap open android",
     "mobile:add:android": "npx cap add android",
     "mobile:bundle": "cd android && ./gradlew bundleRelease"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
     "@jridgewell/sourcemap-codec": "^1.5.5",
+    "@playwright/test": "^1.40.0",
     "@rollup/plugin-terser": "^0.4.4",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/nodemailer": "^6.4.17",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3"
   },
- 
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "overrides": {
-    "react": "18.3.1",
-    "react-dom": "18.2.0"
+    "react-chat-elements": {
+      "react-dom": "^18.3.1"
+    }
   },
   "keywords": [
     "shaadi",
-    "mantra",
+    "mantrana",
     "matrimony",
     "matching",
     "fullstack",
@@ -63,6 +61,7 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
+    "@capacitor/device": "^7.0.2",
     "@radix-ui/react-icons": "^1.3.2",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-popover": "^1.1.14",
@@ -71,7 +70,7 @@
     "@react-email/render": "^1.1.4",
     "@shadcn/ui": "^0.0.4",
     "@studio-freight/lenis": "^1.0.42",
-    "axios": "^1.11.0",
+    "axios": "^1.12.2",
     "backblaze-b2": "^1.7.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
@@ -81,7 +80,7 @@
     "framer-motion": "^12.23.9",
     "lucide-react": "^0.525.0",
     "multer": "^2.0.2",
-    "next": "^15.5.0",
+    "next": "15.0.3",
     "nodemailer": "^7.0.5",
     "puppeteer": "^24.15.0",
     "react-chat-elements": "^12.0.18",

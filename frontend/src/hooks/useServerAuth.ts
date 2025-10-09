@@ -12,10 +12,12 @@ export interface UseServerAuthReturn {
   isLoading: boolean;
   error: string | null;
   redirectTo: string | null;
+  authState: AuthState; // Add state machine status
   checkAuth: () => Promise<void>;
   logout: () => Promise<void>;
   clearCache: () => void;
   forceRefresh: () => Promise<void>;
+  isExpired: boolean; // Helper for detecting expired sessions
 }
 
 function determineRedirectPath(user: AuthUser): string | null {
@@ -93,10 +95,10 @@ function getCachedAuth(): AuthCache | null {
     if (!cached) return null;
     
     const cache: AuthCache = JSON.parse(cached);
-    const now = Date.now();
+    const currentTime = Date.now();
     
     // Check if cache is still valid
-    if (now - cache.timestamp < CACHE_DURATION) {
+    if (currentTime - cache.timestamp < CACHE_DURATION) {
       return cache;
     }
     
@@ -131,11 +133,23 @@ function clearCachedAuth(): void {
   }
 }
 
+// Auth state machine types
+enum AuthState {
+  UNKNOWN = 'unknown',        // Initial state, not determined yet
+  CHECKING = 'checking',      // Actively checking authentication
+  AUTHENTICATED = 'authenticated',
+  UNAUTHENTICATED = 'unauthenticated',
+  REFRESHING = 'refreshing',  // Currently refreshing tokens
+  ERROR = 'error',            // Error state
+  EXPIRED = 'expired'         // Authentication expired
+}
+
 export function useServerAuth(): UseServerAuthReturn {
   // Hook initialized - debug logs removed for production cleanliness
   // Check if we're on the client side
   const [isClient, setIsClient] = useState(false);
   
+  // Traditional state
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,12 +157,30 @@ export function useServerAuth(): UseServerAuthReturn {
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [lastCheckTime, setLastCheckTime] = useState(0);
-
+  
+  // New state machine for auth flow
+  const [authState, setAuthState] = useState<AuthState>(AuthState.UNKNOWN);
+  const authStateRef = useRef<AuthState>(AuthState.UNKNOWN);
+  
+  // Update the ref whenever state changes to have accurate values in callbacks
+  useEffect(() => {
+    authStateRef.current = authState;
+  }, [authState]);
+  
+  // Activity tracking to detect active sessions
+  const lastActivityTime = useRef<number>(Date.now());
+  
   // Add a ref to track if we've already performed the initial auth check
   const initialAuthCheckRef = useRef(false);
   
   // Add a ref to track if we're currently performing an auth check
   const isAuthCheckInProgress = useRef(false);
+  
+  // Add abort controller to cancel in-flight requests when needed
+  const currentRequestController = useRef<AbortController | null>(null);
+  
+  // Track ongoing requests to prevent duplicates
+  const ongoingRequests = useRef<Set<string>>(new Set());
 
   // Check if cached authentication is still valid
   const isCacheValid = useCallback(() => {
@@ -162,53 +194,76 @@ export function useServerAuth(): UseServerAuthReturn {
     return isValid;
   }, []);
 
-  // Check authentication status with persistent caching
-  const checkAuth = useCallback(async (forceRefresh = false) => {
-  // Start auth check
+  // Cancel any in-flight requests on cleanup
+  const cancelInFlightRequests = useCallback(() => {
+    if (currentRequestController.current) {
+      currentRequestController.current.abort();
+      currentRequestController.current = null;
+    }
+  }, []);
+
+  // Check authentication status with simplified logic to prevent race conditions
+  const checkAuth = useCallback(async (forceRefresh = false, abortSignal?: AbortSignal) => {
+    // Start auth check
+    logger.debug('🔍 useServerAuth: checkAuth called', { forceRefresh });
     
     // Prevent multiple simultaneous auth checks
     if (isAuthCheckInProgress.current) {
-  logger.debug('🔍 useServerAuth: Auth check already in progress, skipping');
+      logger.debug('🔍 useServerAuth: Auth check already in progress, skipping');
       return;
     }
     
-    // Use cached authentication if valid and not forcing refresh
-    if (!forceRefresh && isCacheValid()) {
+    // Update state machine if appropriate
+    if (authStateRef.current !== AuthState.CHECKING && 
+        authStateRef.current !== AuthState.REFRESHING) {
+      setAuthState(AuthState.CHECKING);
+      logger.debug('🔍 useServerAuth: State → CHECKING');
+    }
+    
+    // Prevent too frequent requests - use cache if available and not forcing refresh
+    const currentTime = Date.now();
+    if (!forceRefresh && currentTime - lastCheckTime < MIN_REQUEST_INTERVAL) {
+      logger.debug('🔍 useServerAuth: Too soon since last check, using cache');
       const cached = getCachedAuth();
-      if (cached) {
-  logger.info('✅ useServerAuth: Using cached authentication');
+      if (cached && isCacheValid()) {
         setUser(cached.user);
         setIsAuthenticated(true);
-        setRedirectTo(cached.redirectTo);
-        setError('');
+        setError(null);
+        setRedirectTo(determineRedirectPath(cached.user));
+        setAuthState(AuthState.AUTHENTICATED);
         setIsLoading(false);
         return;
       }
     }
     
-    // Prevent too frequent requests - increased interval
-    const now = Date.now();
-    if (!forceRefresh && now - lastCheckTime < MIN_REQUEST_INTERVAL) { // 60 seconds minimum between requests
-  logger.debug('🔍 useServerAuth: Too soon since last check, using cache');
-      const cached = getCachedAuth();
-      if (cached) {
-        setUser(cached.user);
-        setIsAuthenticated(true);
-        setRedirectTo(cached.redirectTo);
-        setError('');
-        setIsLoading(false);
-        return;
-      }
-    }
+    // Cancel any existing requests before starting a new one
+    cancelInFlightRequests();
     
+    // Track when an auth check is in progress
     isAuthCheckInProgress.current = true;
     setIsLoading(true);
     setError('');
     
     try {
       // Call the auth status API directly from the client with cache-busting headers
+      // Use provided signal or create a new one
       const controller = new AbortController();
-  const timeoutMs = 15000;
+      // If an external signal is provided, listen to it and abort our controller too
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          controller.abort();
+          throw new Error('Request was aborted');
+        }
+        abortSignal.addEventListener('abort', () => {
+          controller.abort();
+        });
+      }
+      
+      const timeoutMs = 8000; // Increased timeout for better reliability
+      
+      // Update auth state for better user feedback
+      setAuthState(AuthState.CHECKING);
+      logger.debug('🔍 useServerAuth: State → CHECKING (API call)');
 
       const res = await apiClient.get('/api/auth/status', {
         signal: controller.signal,
@@ -300,13 +355,21 @@ export function useServerAuth(): UseServerAuthReturn {
         setUser(response.user);
         setIsAuthenticated(true);
         setError('');
+        
+        // Update state machine
+        setAuthState(AuthState.AUTHENTICATED);
+        logger.debug('🔍 useServerAuth: State → AUTHENTICATED');
 
         const redirectPath = response.redirectTo || determineRedirectPath(response.user);
         logger.debug('🔍 useServerAuth: Final redirect path:', redirectPath);
         setRedirectTo(redirectPath);
 
+        // Update cache and timestamp
         setCachedAuth(response.user, redirectPath);
         setLastCheckTime(Date.now());
+        
+        // Reset activity timestamp on successful auth
+        lastActivityTime.current = Date.now();
       } else {
         logger.info('ℹ️ useServerAuth: User not authenticated - this is normal for unauthenticated users');
         setUser(null);
@@ -314,66 +377,156 @@ export function useServerAuth(): UseServerAuthReturn {
         clearCachedAuth();
         setRedirectTo('/');
         setError('');
+        
+        // Update state machine
+        setAuthState(AuthState.UNAUTHENTICATED);
+        logger.debug('🔍 useServerAuth: State → UNAUTHENTICATED');
       }
     } catch (error) {
       logger.error('❌ useServerAuth: Authentication check failed:', error);
       
-      // Handle timeout specifically
+      // Handle different error types
       if (error.name === 'AbortError') {
-        logger.error('⏰ useServerAuth: Authentication request timed out');
+        logger.error('⏰ useServerAuth: Authentication request timed out or aborted');
         setError('Authentication check timed out. Please try again or refresh the page.');
-      } else {
-        setError(error instanceof Error ? error.message : 'Authentication failed');
-      }
-      
-      // Don't clear authentication state on timeout - user might still be logged in
-      if (error.name !== 'AbortError') {
+        
+        // Update state machine - but don't clear auth state on timeout
+        setAuthState(AuthState.ERROR);
+        logger.debug('🔍 useServerAuth: State → ERROR (timeout/abort)');
+      } else if (error.message?.includes('expired') || error.message?.includes('invalid token')) {
+        // Token issues - explicitly handle token expiration
+        logger.warn('⚠️ useServerAuth: Token appears expired or invalid');
+        setError('Your session has expired. Please log in again.');
+        
+        // Clear authentication on token errors
         setUser(null);
         setIsAuthenticated(false);
         clearCachedAuth();
         setRedirectTo('/');
+        
+        // Update state machine
+        setAuthState(AuthState.EXPIRED);
+        logger.debug('🔍 useServerAuth: State → EXPIRED');
+      } else {
+        // Generic errors
+        setError(error instanceof Error ? error.message : 'Authentication failed');
+        
+        // Clear authentication on other errors
+        setUser(null);
+        setIsAuthenticated(false);
+        clearCachedAuth();
+        setRedirectTo('/');
+        
+        // Update state machine
+        setAuthState(AuthState.ERROR);
+        logger.debug('🔍 useServerAuth: State → ERROR');
+      }
+      
+      // For network errors, keep existing state if we have one
+      if (error.name === 'NetworkError' && isAuthenticated && user) {
+        logger.warn('⚠️ useServerAuth: Network error, but keeping existing authenticated state');
+        // Don't clear state on network errors if already authenticated
       }
     } finally {
       setIsLoading(false);
       isAuthCheckInProgress.current = false;
+      ongoingRequests.current.delete('auth-status');
+      
+      // If we're in an error state but still have valid cached auth,
+      // transition back to authenticated with a warning
+      if (authStateRef.current === AuthState.ERROR && isCacheValid()) {
+        logger.warn('⚠️ useServerAuth: In error state but valid cache exists, keeping authenticated');
+        setAuthState(AuthState.AUTHENTICATED);
+        logger.debug('🔍 useServerAuth: State → AUTHENTICATED (recovery from error)');
+      }
     }
   }, [isCacheValid, lastCheckTime]);
 
   const logout = useCallback(async () => {
     try {
       logger.debug('🔍 useServerAuth: Starting logout...');
-      // Don't set loading state during logout to avoid interfering with UI animations
-      // setIsLoading(true);
-
-      const res = await apiClient.post('/api/auth/logout', undefined, { timeout: 10000 });
-      if (!res.ok) {
-        const errData: any = res.data || { error: 'Logout failed' };
-        setError(errData.error || 'Logout failed');
-        throw new Error(errData.error || 'Logout failed');
-      } else {
-        // Clear authentication state
-        setUser(null);
-        setIsAuthenticated(false);
-        clearCachedAuth();
-        setRedirectTo('/');
-        setError(null);
-        setRetryCount(0);
-
-        // Clear auth utils cache
-        if (typeof window !== 'undefined') {
-          const { clearAuthStatusCache } = await import('../services/auth-utils');
-          clearAuthStatusCache();
-        }
-
-        logger.debug('✅ useServerAuth: Logout successful');
+      
+      // Update state machine first for immediate UI feedback
+      setAuthState(AuthState.CHECKING);
+      logger.debug('🔍 useServerAuth: State → CHECKING (logout)');
+      
+      // Cancel any in-flight requests
+      if (currentRequestController.current) {
+        currentRequestController.current.abort();
+        currentRequestController.current = null;
       }
+      
+      // Create a new controller for logout request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const res = await apiClient.post('/api/auth/logout', undefined, { 
+          signal: controller.signal,
+          timeout: 10000 
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+          const errData: any = res.data || { error: 'Logout failed' };
+          setError(errData.error || 'Logout failed');
+          
+          // Even if server logout fails, still clear local state
+          logger.warn('⚠️ useServerAuth: Server logout failed, but clearing local state');
+          
+          // Update state machine
+          setAuthState(AuthState.ERROR);
+          logger.debug('🔍 useServerAuth: State → ERROR (logout failed)');
+          
+          throw new Error(errData.error || 'Logout failed');
+        } else {
+          logger.debug('✅ useServerAuth: Logout API call successful');
+        }
+      } catch (apiError) {
+        // Log but continue with local logout
+        logger.error('❌ useServerAuth: Logout API call failed:', apiError);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      
+      // Always clear local state regardless of API result
+      setUser(null);
+      setIsAuthenticated(false);
+      clearCachedAuth();
+      setRedirectTo('/');
+      setError(null);
+      setRetryCount(0);
+      initialAuthCheckRef.current = false;
+      
+      // Update state machine to finalize logout
+      setAuthState(AuthState.UNAUTHENTICATED);
+      logger.debug('🔍 useServerAuth: State → UNAUTHENTICATED (after logout)');
+
+      // Clear auth utils cache
+      if (typeof window !== 'undefined') {
+        const { clearAuthStatusCache } = await import('../services/auth-utils');
+        clearAuthStatusCache();
+      }
+
+      // Stop token refresh service
+      try {
+        const { default: tokenRefreshService } = await import('../services/token-refresh-service');
+        tokenRefreshService.stop();
+      } catch (err) {
+        logger.error('❌ useServerAuth: Failed to stop token refresh service:', err);
+      }
+
+      logger.info('✅ useServerAuth: Logout successful');
     } catch (err) {
       logger.error('❌ useServerAuth: Logout error:', err);
       setError('Failed to logout');
+      
+      // Update state machine
+      setAuthState(AuthState.ERROR);
+      logger.debug('🔍 useServerAuth: State → ERROR (logout exception)');
+      
       throw err; // Re-throw to allow calling component to handle the error
-    } finally {
-      // Don't set loading to false to avoid interfering with animations
-      // setIsLoading(false);
     }
   }, []);
 
@@ -397,32 +550,87 @@ export function useServerAuth(): UseServerAuthReturn {
     }
   }, [isClient]);
 
-  // Check authentication on mount with caching and optimized retry logic
+  // Track user activity to maintain session
   useEffect(() => {
     if (!isClient) return;
     
-  logger.debug('🔍 useServerAuth: useEffect triggered');
+    const updateActivityTimestamp = () => {
+      lastActivityTime.current = Date.now();
+    };
+    
+    // Track user activity events
+    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach(event => {
+      window.addEventListener(event, updateActivityTimestamp);
+    });
+    
+    // Initial timestamp
+    updateActivityTimestamp();
+    
+    return () => {
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, updateActivityTimestamp);
+      });
+    };
+  }, [isClient]);
+
+  // Check authentication on mount with state machine-based approach
+  useEffect(() => {
+    if (!isClient) return;
+    
+    logger.debug('🔍 useServerAuth: Auth state machine initialized');
     let mounted = true;
     let retryTimeout: NodeJS.Timeout;
     let authTimeout: NodeJS.Timeout;
     let maxWaitTimeout: NodeJS.Timeout;
+    let idleTimeout: NodeJS.Timeout;
+    
+  // Debounce authentication requests to prevent multiple concurrent calls
+  const debounceAuthRequest = (() => {
+    let timeoutId: NodeJS.Timeout;
+    return (callback: () => void, delay: number = 100) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(callback, delay);
+    };
+  })();
 
     const performAuthCheck = async () => {
       if (!mounted) return;
       
       // Prevent multiple initial auth checks
       if (initialAuthCheckRef.current) {
-  logger.debug('🔍 useServerAuth: Initial auth check already performed, skipping');
+        logger.debug('🔍 useServerAuth: Initial auth check already performed, skipping');
+        return;
+      }
+
+      // Prevent concurrent auth checks
+      if (isAuthCheckInProgress.current) {
+        logger.debug('🔍 useServerAuth: Auth check already in progress, skipping');
         return;
       }
       
       try {
-  logger.debug('🔍 useServerAuth: Performing initial auth check...');
+        // Update state machine
+        setAuthState(AuthState.CHECKING);
+        logger.debug('🔍 useServerAuth: State → CHECKING');
+        
+        // Initialize first auth check
         initialAuthCheckRef.current = true;
         
         // Check if we have valid cached authentication first
         if (isCacheValid()) {
-          logger.info('✅ useServerAuth: Using cached authentication, skipping server call');
+          logger.info('✅ useServerAuth: Using cached authentication');
+          
+          // Get cached data and update state
+          const cached = getCachedAuth();
+          if (cached) {
+            setUser(cached.user);
+            setIsAuthenticated(true);
+            setRedirectTo(cached.redirectTo);
+            setAuthState(AuthState.AUTHENTICATED);
+            logger.debug('🔍 useServerAuth: State → AUTHENTICATED (from cache)');
+          }
+          
           setIsLoading(false);
           return;
         }
@@ -431,72 +639,163 @@ export function useServerAuth(): UseServerAuthReturn {
         if (isAuthenticated && user && lastCheckTime && (Date.now() - lastCheckTime < 30000)) {
           logger.debug('✅ useServerAuth: Recent auth check found, skipping new check');
           setIsLoading(false);
+          setAuthState(AuthState.AUTHENTICATED);
+          logger.debug('🔍 useServerAuth: State → AUTHENTICATED (recent check)');
           return;
         }
         
-        // Set a timeout for the auth check
-        const authPromise = checkAuth(false); // Don't force refresh on initial load
-        const timeoutPromise = new Promise((_, reject) => {
-          authTimeout = setTimeout(() => reject(new Error('Authentication timeout')), 15000); // 15 second timeout
+        // Set a timeout for the auth check with improved cancellation
+        cancelInFlightRequests();
+        currentRequestController.current = new AbortController();
+        
+        // Set up timeout Promise
+        const timeoutPromise = new Promise<void>((_, reject) => {
+        authTimeout = setTimeout(() => {
+          reject(new Error('Authentication timeout'));
+          // Clean up controller on timeout
+          if (currentRequestController.current) {
+            currentRequestController.current.abort();
+            currentRequestController.current = null;
+          }
+        }, 8000); // Increased to 8 second timeout for better reliability
         });
         
-        await Promise.race([authPromise, timeoutPromise]);
+        // Race the auth check against timeout
+        await Promise.race([
+          checkAuth(false, currentRequestController.current.signal), 
+          timeoutPromise
+        ]);
+        
         clearTimeout(authTimeout);
       } catch (error) {
-  logger.error('❌ useServerAuth: Initial auth check failed:', error);
+        logger.error('❌ useServerAuth: Initial auth check failed:', error);
         clearTimeout(authTimeout);
         
-        // Retry logic for initial load with shorter delays
-        if (mounted && retryCount < 1) { // Reduced retries
+        // Update state machine
+        setAuthState(AuthState.ERROR);
+        logger.debug('🔍 useServerAuth: State → ERROR');
+        setError(error instanceof Error ? error.message : 'Authentication check failed');
+        
+        // Retry logic for initial load with better error handling
+        if (mounted && retryCount < 2) {
           logger.debug(`🔄 useServerAuth: Retrying auth check (${retryCount + 1}/2)...`);
           retryTimeout = setTimeout(() => {
             if (mounted) {
               setRetryCount(prev => prev + 1);
               performAuthCheck();
             }
-          }, 1000); // Shorter delay
+          }, 2000 * Math.pow(2, retryCount)); // Exponential backoff
         } else {
-          logger.warn('❌ useServerAuth: Max retries reached, giving up');
+          logger.warn('❌ useServerAuth: Max retries reached, transitioning to unauthenticated');
           setIsLoading(false);
+          setAuthState(AuthState.UNAUTHENTICATED);
+          logger.debug('🔍 useServerAuth: State → UNAUTHENTICATED (after retries)');
         }
       }
     };
-
+    
+    // Set up idle detection - if user is inactive for too long and has an expired token
+    // we'll transition to the expired state
+    const startIdleDetection = () => {
+      if (idleTimeout) {
+        clearTimeout(idleTimeout);
+      }
+      
+      // Check for extended inactivity
+      idleTimeout = setTimeout(() => {
+        const inactiveTime = Date.now() - lastActivityTime.current;
+        logger.debug(`🔍 useServerAuth: Idle check - inactive for ${Math.round(inactiveTime/1000)}s`);
+        
+        // If user has been inactive for more than 10 minutes and state is authenticated,
+        // verify authentication is still valid
+        if (authStateRef.current === AuthState.AUTHENTICATED && inactiveTime > 15 * 60 * 1000) { // Increased from 10 to 15 minutes
+          logger.debug('🔍 useServerAuth: User inactive, verifying auth status');
+          // Force a fresh check
+          checkAuth(true).catch(err => {
+            logger.error('❌ useServerAuth: Auth verification after inactivity failed:', err);
+          });
+        }
+        
+        // Continue checking
+        if (mounted) {
+          startIdleDetection();
+        }
+      }, 60000); // Check every minute
+    };
+    
     // Set a maximum wait time to prevent infinite loading
     maxWaitTimeout = setTimeout(() => {
       if (mounted && isLoading) {
-  logger.warn('⚠️ useServerAuth: Maximum wait time reached, stopping loading');
+        logger.warn('⚠️ useServerAuth: Maximum wait time reached, stopping loading');
         setIsLoading(false);
         setError('Authentication check timed out. Please refresh the page.');
+        setAuthState(AuthState.ERROR);
+        logger.debug('🔍 useServerAuth: State → ERROR (timeout)');
       }
-    }, 30000); // 30 second maximum wait
+    }, 10000); // Reduced to 10 seconds
 
+    // Start the auth check process
     performAuthCheck();
+    
+    // Start idle detection
+    startIdleDetection();
 
     return () => {
       mounted = false;
-      if (retryTimeout) {
-        clearTimeout(retryTimeout);
-      }
-      if (authTimeout) {
-        clearTimeout(authTimeout);
-      }
-      if (maxWaitTimeout) {
-        clearTimeout(maxWaitTimeout);
-      }
+      cancelInFlightRequests();
+      
+      if (retryTimeout) clearTimeout(retryTimeout);
+      if (authTimeout) clearTimeout(authTimeout);
+      if (maxWaitTimeout) clearTimeout(maxWaitTimeout);
+      if (idleTimeout) clearTimeout(idleTimeout);
     };
-  }, [isClient]); // Add isClient to dependencies
+  }, [isClient, isCacheValid, checkAuth, isAuthenticated, user, lastCheckTime]);
 
-  // Handle token refresh events
+  // Handle token refresh events - implement actual token refresh polling
   useEffect(() => {
     if (!isClient) return;
 
     // Start token refresh service if user is authenticated
-  // The token refresh service is server-side and not available in client bundles.
-  // We will rely on the server to issue refreshes via cookies. If a client-side
-  // token refresh mechanism is needed, implement a small client-only poll here.
-  return () => {};
-  }, [isClient, isAuthenticated, user, checkAuth]);
+    if (isAuthenticated && user) {
+      const startTokenRefreshService = async () => {
+        try {
+          const { default: tokenRefreshService } = await import('../services/token-refresh-service');
+          
+          tokenRefreshService.start(
+            (success) => {
+              if (success) {
+                logger.info('✅ useServerAuth: Token refresh successful');
+              } else {
+                logger.warn('⚠️ useServerAuth: Token refresh failed, checking auth status');
+                // If token refresh fails, check auth status to see if user is still authenticated
+                checkAuth(true).catch(err => {
+                  logger.error('❌ useServerAuth: Failed to check auth after token refresh failure:', err);
+                });
+              }
+            },
+            () => {
+              logger.warn('⚠️ useServerAuth: Token expired, forcing logout');
+              // Token expired, force logout
+              logout().catch(err => {
+                logger.error('❌ useServerAuth: Failed to logout after token expiry:', err);
+              });
+            }
+          );
+        } catch (error) {
+          logger.error('❌ useServerAuth: Failed to start token refresh service:', error);
+        }
+      };
+      
+      startTokenRefreshService();
+    }
+    
+    return () => {
+      // Stop token refresh service when unmounting or user logs out
+      import('../services/token-refresh-service').then(({ default: tokenRefreshService }) => {
+        tokenRefreshService.stop();
+      }).catch(() => {}); // Ignore errors on cleanup
+    };
+  }, [isClient, isAuthenticated, user, checkAuth, logout]);
 
   // Add a method to clear cache for debugging/testing
   const clearCache = useCallback(() => {
@@ -516,20 +815,68 @@ export function useServerAuth(): UseServerAuthReturn {
     }
   }, []);
 
-  // Add a method to force refresh authentication
+  // Add a method to force refresh authentication with improved error handling
   const forceRefresh = useCallback(async () => {
-  logger.debug('🔍 useServerAuth: Force refreshing authentication');
+    logger.debug('🔍 useServerAuth: Force refreshing authentication');
+    
+    // Update state machine
+    setAuthState(AuthState.REFRESHING);
+    logger.debug('🔍 useServerAuth: State → REFRESHING');
+    
+    // Clear all caches
     clearCachedAuth();
     initialAuthCheckRef.current = false;
     
-    // Clear auth cache in auth-utils as well
-    if (typeof window !== 'undefined') {
-      const { clearAuthStatusCache } = await import('../services/auth-utils');
-      clearAuthStatusCache();
+    // Cancel any in-flight requests
+    if (currentRequestController.current) {
+      currentRequestController.current.abort();
+      currentRequestController.current = null;
     }
     
-    await checkAuth(true);
+    // Clear auth cache in auth-utils as well
+    try {
+      if (typeof window !== 'undefined') {
+        const { clearAuthStatusCache } = await import('../services/auth-utils');
+        clearAuthStatusCache();
+      }
+      
+      // Create a new controller for this request
+      const controller = new AbortController();
+      currentRequestController.current = controller;
+      
+      // Set timeout for the request
+      const timeoutId = setTimeout(() => {
+        if (controller && !controller.signal.aborted) {
+          controller.abort();
+        }
+      }, 15000);
+      
+      try {
+        // Force a full refresh with the controller signal
+        await checkAuth(true, controller.signal);
+      } finally {
+        clearTimeout(timeoutId);
+        if (currentRequestController.current === controller) {
+          currentRequestController.current = null;
+        }
+      }
+    } catch (error) {
+      logger.error('❌ useServerAuth: Force refresh failed:', error);
+      
+      // Update state machine on error
+      setAuthState(AuthState.ERROR);
+      logger.debug('🔍 useServerAuth: State → ERROR (force refresh failed)');
+      
+      // Set error message
+      setError(error instanceof Error ? error.message : 'Failed to refresh authentication');
+      
+      // Rethrow for caller handling
+      throw error;
+    }
   }, [checkAuth]);
+
+  // Calculate if the session is expired based on auth state
+  const isExpired = authState === AuthState.EXPIRED;
 
   // Return default values during server-side rendering
   if (!isClient) {
@@ -539,6 +886,8 @@ export function useServerAuth(): UseServerAuthReturn {
       isLoading: true,
       error: null,
       redirectTo: null,
+      authState: AuthState.UNKNOWN,
+      isExpired: false,
       checkAuth: async () => {},
       logout: async () => {},
       clearCache: () => {},
@@ -552,6 +901,8 @@ export function useServerAuth(): UseServerAuthReturn {
     isLoading,
     error,
     redirectTo,
+    authState,
+    isExpired,
     checkAuth,
     logout,
     clearCache,

@@ -4,6 +4,9 @@
 const mongoose = require('mongoose');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const config = require('../config');
+const DatabaseConnectivityChecker = require('../utils/database-connectivity-checker');
+const connectionPoolManager = require('./connection-pool-manager');
+const enhancedDatabaseService = require('./enhanced-database-service');
 
 class DatabaseService {
   constructor() {
@@ -12,6 +15,9 @@ class DatabaseService {
     this.maxRetries = 5;
     this.retryDelay = 5000; // 5 seconds
     this.mongoClient = null; // Native MongoDB client
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 10;
+    this.healthCheckInterval = null;
   }
 
   // Get MongoDB connection string based on environment (using new config)
@@ -37,7 +43,7 @@ class DatabaseService {
       bufferCommands: false, // Disable mongoose buffering
     };
 
-    // MongoDB Atlas specific options
+    // MongoDB Atlas specific options with enhanced resilience
     if (isAtlas) {
       return {
         ...baseOptions,
@@ -48,6 +54,19 @@ class DatabaseService {
         },
         retryWrites: true,
         w: 'majority',
+        // Enhanced Atlas connection options for better resilience
+        maxPoolSize: 10,
+        minPoolSize: 2,
+        serverSelectionTimeoutMS: 30000, // Increased timeout
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 30000,
+        heartbeatFrequencyMS: 10000,
+        maxIdleTimeMS: 30000,
+        waitQueueTimeoutMS: 10000,
+        // Network resilience options
+        family: 4, // Force IPv4 to avoid dual-stack issues
+        directConnection: false,
+        maxConnecting: 2,
       };
     }
 
@@ -104,6 +123,24 @@ class DatabaseService {
       // Connect with Mongoose
       await mongoose.connect(connectionString, options);
       console.log('Mongoose connected to DB:', mongoose.connection.name);
+      
+      // Initialize connection pool manager
+      try {
+        await connectionPoolManager.initialize();
+        console.log('✅ Connection pool manager started');
+      } catch (initError) {
+        console.error('❌ Connection pool manager initialization failed:', {
+          error: initError.message,
+          details: initError
+        });
+        // Clean up any allocated resources before rethrowing
+        try {
+          await mongoose.disconnect();
+        } catch (disconnectError) {
+          console.error('❌ Failed to disconnect during cleanup:', disconnectError.message);
+        }
+        throw initError;
+      }
 
       // For MongoDB Atlas, also test with native client and ping
       if (isAtlas) {
@@ -144,6 +181,18 @@ class DatabaseService {
     } catch (error) {
       console.error('❌ MongoDB connection error:', error.message);
       
+      // Run connectivity diagnostic if connection fails
+      const connectionString = this.getConnectionString();
+      if (connectionString && error.message.includes('ENOTFOUND')) {
+        console.log('\n🔍 Running connectivity diagnostic...');
+        try {
+          const checker = new DatabaseConnectivityChecker(connectionString);
+          await checker.runFullCheck();
+        } catch (diagError) {
+          console.error('❌ Diagnostic failed:', diagError.message);
+        }
+      }
+      
       // Retry logic for production
       if (config.NODE_ENV === 'production' && this.connectionRetries < this.maxRetries) {
         this.connectionRetries++;
@@ -161,36 +210,95 @@ class DatabaseService {
     }
   }
 
-  // Set up connection event handlers
+  // Set up connection event handlers with improved reconnection logic
   setupEventHandlers() {
     const connection = mongoose.connection;
 
     connection.on('connected', () => {
       console.log('📊 Mongoose connected to MongoDB');
+      this.isConnected = true;
+      this.reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+      this.startHealthCheck();
     });
 
     connection.on('error', (err) => {
-      console.error('❌ Mongoose connection error:', err);
+      console.error('❌ Mongoose connection error:', err.message);
       this.isConnected = false;
+      
+      // Handle specific error types
+      if (err.message.includes('ENOTFOUND') || err.message.includes('getaddrinfo')) {
+        console.log('🌐 DNS resolution error - will attempt reconnection');
+      }
     });
 
     connection.on('disconnected', () => {
       console.log('📊 Mongoose disconnected from MongoDB');
       this.isConnected = false;
+      this.stopHealthCheck();
       
-      // Auto-reconnect in production
-      if (config.NODE_ENV === 'production') {
-        console.log('🔄 Attempting to reconnect...');
+      // Enhanced auto-reconnect logic
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnectAttempts++;
+        const backoffDelay = Math.min(this.retryDelay * Math.pow(2, this.reconnectAttempts - 1), 60000);
+        console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${backoffDelay/1000}s...`);
+        
         setTimeout(() => {
-          this.connect();
-        }, this.retryDelay);
+          this.connect().catch(err => {
+            console.error('❌ Reconnection failed:', err.message);
+          });
+        }, backoffDelay);
+      } else {
+        console.error('❌ Max reconnection attempts reached');
       }
     });
+
+    connection.on('reconnected', () => {
+      console.log('✅ Mongoose reconnected to MongoDB');
+      this.isConnected = true;
+      this.reconnectAttempts = 0;
+    });
+  }
+
+  // Start periodic health checks
+  startHealthCheck() {
+    if (this.healthCheckInterval) return;
+    
+    this.healthCheckInterval = setInterval(async () => {
+      try {
+        if (this.isConnected) {
+          // Verify connection objects exist before calling ping
+          if (!mongoose.connection || !mongoose.connection.db || typeof mongoose.connection.db.admin !== 'function') {
+            console.error('❌ Database health check failed: connection objects missing');
+            this.isConnected = false;
+            return;
+          }
+          
+          await mongoose.connection.db.admin().ping();
+          // console.log('💓 Database health check passed');
+        }
+      } catch (error) {
+        console.error('❌ Database health check failed:', error.message);
+        this.isConnected = false;
+      }
+    }, 30000); // Check every 30 seconds
+  }
+
+  // Stop health checks
+  stopHealthCheck() {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
   }
 
   // Disconnect from MongoDB (both Mongoose and native client)
   async disconnect() {
     try {
+      this.stopHealthCheck();
+      
+      // Cleanup connection pool manager
+      connectionPoolManager.cleanup();
+      
       if (!this.isConnected) {
         console.log('📊 Already disconnected from MongoDB');
         return;

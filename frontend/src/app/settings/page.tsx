@@ -4,17 +4,18 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
-import ServerAuthGuard from '../../components/ServerAuthGuard';
+import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import ToastService from '../../services/toastService';
 import { matchesCountService } from '../../services/matches-count-service';
 import { safeGsap } from '../../components/SafeGsap';
-import { useServerAuth } from '../../hooks/useServerAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
-import { clientLogout } from '../../utils/client-auth';
+import SmoothNavigation from '../../components/SmoothNavigation';
+import { userNavItems } from '../../config/navigation';
 
 function SettingsContent() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useServerAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
@@ -40,7 +41,7 @@ function SettingsContent() {
     try {
       setShowLogoutConfirm(false);
       // call client logout helper
-      await clientLogout();
+      await logout();
       // optionally call server-side logout handler
       if (typeof logout === 'function') {
         try { logout(); } catch (e) { /* ignore */ }
@@ -103,7 +104,7 @@ function SettingsContent() {
         </div>
       )}
 
-  <div className="p-4 space-y-4" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
+  <div className="p-4 space-y-4" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
         <h1 className="text-2xl font-semibold">Settings</h1>
 
         <div className="bg-white rounded-xl shadow-sm">
@@ -162,14 +163,17 @@ function SettingsContent() {
           <button onClick={handleLogout} className="w-full py-4 bg-rose-500 text-white rounded-xl font-semibold">Logout</button>
         </div>
       </div>
+
+      {/* Bottom Navigation */}
+      <SmoothNavigation items={userNavItems} />
     </div>
   );
 }
 
 export default function SettingsPage() {
   return (
-    <ServerAuthGuard requireAuth>
+    <AuthGuardV2>
       <SettingsContent />
-    </ServerAuthGuard>
+    </AuthGuardV2>
   );
 }

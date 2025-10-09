@@ -2,29 +2,21 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuthStatus } from '../../../utils/client-auth';
+import { useAuth } from '../../../contexts/AuthContext';
 import CustomIcon from '../../../components/CustomIcon';
 import logger from '../../../utils/logger';
 
 export default function AdminLogin() {
   const router = useRouter();
+  const { user, isLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     // Check if user is already authenticated and is admin
-    const checkAdminAccess = async () => {
-      try {
-        const authStatus = await getAuthStatus();
-        if (authStatus.authenticated && authStatus.user?.role === 'admin') {
-          router.replace('/admin/dashboard');
-          return;
-        }
-      } catch (error) {
-        logger.error('Error checking admin access:', error);
-      }
-    };
-
-    checkAdminAccess();
-  }, [router]);
+    if (!isLoading && isAuthenticated && user?.role === 'admin') {
+      logger.debug('✅ AdminLogin: User already authenticated as admin, redirecting to dashboard');
+      router.replace('/admin/dashboard');
+    }
+  }, [router, isLoading, isAuthenticated, user]);
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
