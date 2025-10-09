@@ -1,9 +1,9 @@
 'use client';
 
-interface CustomIconProps {
+import { Icon, IconProps } from './IconSystem';
+
+interface CustomIconProps extends Omit<IconProps, 'name'> {
   name: string;
-  className?: string;
-  size?: number;
 }
 
 const iconMap: Record<string, string> = {
@@ -113,38 +113,7 @@ const iconMap: Record<string, string> = {
   'arrow-right': '/icons/arrow-right.svg',
 };
 
-export default function CustomIcon({ name, className = '', size = 24 }: CustomIconProps) {
-  const iconPath = iconMap[name];
-  
-  // For filled icons, use custom SVG files if available, otherwise fallback to Remix Icons
-  if (name.includes('-fill') && iconPath) {
-    // Use custom SVG for filled icons
-  } else if (name.includes('-fill')) {
-    return <i className={`${name} ${className}`} style={{ color: 'inherit' }}></i>;
-  }
-  
-  if (!iconPath) {
-    // Fallback to original Remix Icon if custom icon doesn't exist
-    return <i className={`${name} ${className}`} style={{ color: 'inherit' }}></i>;
-  }
-
-  // If iconPath is a static import, use next/image. Otherwise, use <img> with eslint-disable.
-  // eslint-disable-next-line @next/next/no-img-element
-  return (
-    <img 
-      src={iconPath} 
-      alt={name}
-      width={size}
-      height={size}
-      className={`inline-block ${className}`}
-      style={{ 
-        filter: className.includes('text-white') 
-          ? 'brightness(0) invert(1)' 
-          : className.includes('text-rose-600') || className.includes('text-rose-500')
-          ? 'none' // Let SVG's built-in red color show
-          : 'none',
-        verticalAlign: 'middle'
-      }}
-    />
-  );
+export default function CustomIcon(props: CustomIconProps) {
+  // Use the new Icon component from IconSystem
+  return <Icon {...props} />;
 }

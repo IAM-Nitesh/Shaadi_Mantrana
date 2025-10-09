@@ -28,6 +28,7 @@ if (isNode) {
     pino = req('pino');
     pinoHttp = req('pino-http');
   } catch (e) {
+    // If modules are not available, we'll use fallbacks
     fs = undefined;
     path = undefined;
     pino = undefined;
@@ -47,103 +48,131 @@ if (isNode) {
     // ignore
   }
 
-  const warnDest = pino ? pino.destination({ dest: importantLogFile, sync: false }) : undefined;
+  // Initialize fallback logger first
+  logger = {
+    info: console.info.bind(console),
+    error: console.error.bind(console),
+    warn: console.warn.bind(console),
+    debug: console.debug.bind(console),
+    trace: console.trace.bind(console),
+    fatal: console.error.bind(console),
+    child: (obj?: any) => logger
+  };
 
-  const streams: any[] = [
-    { level, stream: process.stdout },
-  ];
-  if (warnDest) streams.push({ level: 'warn', stream: warnDest });
+  httpLogger = (_req: any, _res: any, next?: any) => {
+    if (next) next();
+  };
 
-  // Add pino-loki stream when configured (supports GRAFANA_LOKI_* or legacy LOKI_*)
-  const grafanaLokiUrl = process.env.NEXT_PUBLIC_GRAFANA_LOKI_URL || process.env.GRAFANA_LOKI_URL || process.env.NEXT_PUBLIC_LOKI_URL || process.env.LOKI_URL;
-  const grafanaLokiUser = process.env.NEXT_PUBLIC_GRAFANA_LOKI_USER || process.env.GRAFANA_LOKI_USER || process.env.NEXT_PUBLIC_LOKI_USER || process.env.LOKI_USER;
-  const grafanaLokiPassword = process.env.NEXT_PUBLIC_GRAFANA_LOKI_PASSWORD || process.env.GRAFANA_LOKI_PASSWORD || process.env.NEXT_PUBLIC_LOKI_PASSWORD || process.env.LOKI_PASSWORD;
-  if (grafanaLokiUrl) {
+  // Only attempt to initialize pino if all dependencies are available
+  if (pino && pinoHttp) {
     try {
-      const mod = req('pino-loki');
-      let lokiStream: any;
-      if (mod && typeof mod.createWriteStream === 'function') {
-        lokiStream = mod.createWriteStream({
-          host: grafanaLokiUrl,
-          basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
-          labels: { service: 'shaadimantra-frontend' },
-          timeout: 10000
-        });
-      } else if (typeof mod === 'function') {
-        lokiStream = mod({
-          host: grafanaLokiUrl,
-          basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
-          labels: { service: 'shaadimantra-frontend' },
-          timeout: 10000
-        });
-      }
-      if (lokiStream && typeof lokiStream.write === 'function') {
-        streams.push({ level: 'info', stream: lokiStream });
-        // eslint-disable-next-line no-console
-        console.log('[loki] attached frontend pino-loki stream');
-      } else {
-        // eslint-disable-next-line no-console
-        console.warn('pino-loki not configured for frontend logs: invalid stream');
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('pino-loki not configured for frontend logs:', e && (e as any).message);
-    }
-  }
+      const warnDest = pino.destination({ dest: importantLogFile, sync: false });
 
-  let emittedInfo = 0;
+      const streams: any[] = [
+        { level, stream: process.stdout },
+      ];
+      if (warnDest) streams.push({ level: 'warn', stream: warnDest });
 
-  const baseLogger = pino(
-    {
-      level,
-      base: {
-        service: 'shaadimantra-frontend',
-        env: process.env.NODE_ENV || 'development',
-        version: appVersion,
-        git_sha: gitSha,
-      },
-      redact: {
-        paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
-        censor: '[REDACTED]',
-      },
-      timestamp: pino.stdTimeFunctions.isoTime,
-      hooks: sampleInfoRate >= 1 ? undefined : {
-        logMethod(args: any[], method: any) {
-          try {
-            const isInfo = method === baseLogger.info;
-            if (isInfo && sampleInfoRate < 1) {
-              emittedInfo += 1;
-              if ((emittedInfo % Math.round(1 / sampleInfoRate)) !== 0) {
-                return; // drop
-              }
-            }
-          } catch (_) { /* ignore sampling errors */ }
-          method.apply(this, args);
+      // Add pino-loki stream when configured (server-only credentials)
+      const grafanaLokiUrl = process.env.GRAFANA_LOKI_URL || process.env.LOKI_URL;
+      const grafanaLokiUser = process.env.GRAFANA_LOKI_USER || process.env.LOKI_USER;
+      const grafanaLokiPassword = process.env.GRAFANA_LOKI_PASSWORD || process.env.LOKI_PASSWORD;
+      if (grafanaLokiUrl) {
+        try {
+          const mod = req('pino-loki');
+          let lokiStream: any;
+          if (mod && typeof mod.createWriteStream === 'function') {
+            lokiStream = mod.createWriteStream({
+              host: grafanaLokiUrl,
+              basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
+              labels: { service: 'shaadimantra-frontend' },
+              timeout: 10000
+            });
+          } else if (typeof mod === 'function') {
+            lokiStream = mod({
+              host: grafanaLokiUrl,
+              basicAuth: grafanaLokiUser && grafanaLokiPassword ? `${grafanaLokiUser}:${grafanaLokiPassword}` : undefined,
+              labels: { service: 'shaadimantra-frontend' },
+              timeout: 10000
+            });
+          }
+          if (lokiStream && typeof lokiStream.write === 'function') {
+            streams.push({ level: 'info', stream: lokiStream });
+            // eslint-disable-next-line no-console
+            console.log('[loki] attached frontend pino-loki stream');
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('pino-loki not configured for frontend logs: invalid stream');
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('pino-loki not configured for frontend logs:', e && (e as any).message);
         }
       }
-    },
-    pino.multistream(streams)
-  );
 
-  logger = baseLogger;
-  try {
-    if (grafanaLokiUrl) {
-      logger.info({ event: 'logger_start', sink: 'loki', service: 'shaadimantra-frontend' }, 'Frontend logger initialized with Loki stream');
+      let emittedInfo = 0;
+
+      const baseLogger = pino(
+        {
+          level,
+          base: {
+            service: 'shaadimantra-frontend',
+            env: process.env.NODE_ENV || 'development',
+            version: appVersion,
+            git_sha: gitSha,
+          },
+          redact: {
+            paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
+            censor: '[REDACTED]',
+          },
+          timestamp: pino?.stdTimeFunctions?.isoTime || (() => `,"time":"${new Date().toISOString()}"`),
+          hooks: sampleInfoRate >= 1 ? undefined : {
+            logMethod(args: any[], method: any) {
+              try {
+                // Only compare method if baseLogger is defined
+                const isInfo = baseLogger && method === baseLogger.info;
+                if (isInfo && sampleInfoRate < 1) {
+                  emittedInfo += 1;
+                  if ((emittedInfo % Math.round(1 / sampleInfoRate)) !== 0) {
+                    return; // drop
+                  }
+                }
+              } catch (_) { /* ignore sampling errors */ }
+              method.apply(this, args);
+            }
+          }
+        },
+        pino.multistream(streams)
+      );
+
+      logger = baseLogger;
+      
+      try {
+        if (grafanaLokiUrl) {
+          logger.info({ event: 'logger_start', sink: 'loki', service: 'shaadimantra-frontend' }, 'Frontend logger initialized with Loki stream');
+        }
+      } catch { /* ignore */ }
+
+      httpLogger = pinoHttp({
+        logger: baseLogger,
+        customLogLevel: function (res: any, err: any) {
+          if (res.statusCode >= 500 || err) return 'error';
+          if (res.statusCode >= 400) return 'warn';
+          return 'info';
+        },
+        serializers: {
+          req: (req: any) => ({ method: req.method, url: req.url, headers: req.headers }),
+          res: (res: any) => ({ statusCode: res.statusCode }),
+        },
+      });
+
+    } catch (e) {
+      // If pino initialization fails, keep the fallback logger
+      console.error('Error initializing pino logger, using console fallback:', e);
     }
-  } catch { /* ignore */ }
-
-  httpLogger = pinoHttp ? pinoHttp({
-    logger: baseLogger,
-    customLogLevel: function (res: any, err: any) {
-      if (res.statusCode >= 500 || err) return 'error';
-      if (res.statusCode >= 400) return 'warn';
-      return 'info';
-    },
-    serializers: {
-      req: (req: any) => ({ method: req.method, url: req.url, headers: req.headers }),
-      res: (res: any) => ({ statusCode: res.statusCode }),
-    },
-  }) : undefined;
+  } else {
+    console.warn('pino or pino-http not available, using console fallback logger');
+  }
 } else {
   // Client-side fallback logger
   const fallback = {

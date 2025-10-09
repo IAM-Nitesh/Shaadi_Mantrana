@@ -20,28 +20,28 @@ class SessionCleanupService {
 
     console.log('🧹 Starting Session Cleanup Service...');
 
-    // Run cleanup every hour
+    // Run cleanup every 30 minutes instead of 1 hour for better responsiveness
     this.cleanupInterval = setInterval(async () => {
       try {
         await JWTSessionManager.cleanExpiredSessions();
       } catch (error) {
         console.error('❌ Session cleanup failed:', error.message);
       }
-    }, 60 * 60 * 1000); // 1 hour
+    }, 30 * 60 * 1000); // 30 minutes
 
-    // Run monitoring every 6 hours
+    // Run monitoring every 3 hours instead of 6 hours
     this.monitoringInterval = setInterval(async () => {
       try {
         await this.logSessionStats();
       } catch (error) {
         console.error('❌ Session monitoring failed:', error.message);
       }
-    }, 6 * 60 * 60 * 1000); // 6 hours
+    }, 3 * 60 * 60 * 1000); // 3 hours
 
     this.isRunning = true;
     console.log('✅ Session Cleanup Service started');
-    console.log('   - Cleanup interval: Every 1 hour');
-    console.log('   - Monitoring interval: Every 6 hours');
+    console.log('   - Cleanup interval: Every 30 minutes');
+    console.log('   - Monitoring interval: Every 3 hours');
   }
 
   // Stop the cleanup service

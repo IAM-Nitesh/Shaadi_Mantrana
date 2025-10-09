@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getAuthStatus } from '../../utils/client-auth';
+import { useAuth } from '../../contexts/AuthContext';
 import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
@@ -15,79 +15,83 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [retryOnce, setRetryOnce] = useState(false);
+  const { user, isLoading, isAuthenticated, checkAuth } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const checkAuthentication = useCallback(async () => {
-    try {
-      // Skip authentication check for login page
-      if (pathname === '/admin/login') {
-        setIsChecking(false);
-        setIsAuthenticated(true); // Allow access to login page
-        return;
-      }
-
-  // Check if user is authenticated using server API
-      // Force a fresh check to avoid any stale negative cache right after login
-      const authStatus = await getAuthStatus(true);
-      if (!authStatus.authenticated) {
-        // Perform one quick retry to avoid transient unauthenticated state
-        if (!retryOnce) {
-          setRetryOnce(true);
-          const retryStatus = await getAuthStatus(true);
-          if (!retryStatus.authenticated) {
-            router.replace('/');
-            return;
-          }
-        } else {
-          router.replace('/');
-          return;
-        }
-      }
-
-      // Verify admin access
-  if (authStatus.user?.role !== 'admin') {
-        router.replace('/'); // Redirect to main app if not admin
-        return;
-      }
-
-      setIsAuthenticated(true);
-      
-      // Redirect to dashboard if accessing admin root
-      if (pathname === '/admin') {
-        router.replace('/admin/dashboard');
-      }
-    } catch (error) {
-      logger.error('Admin authentication check failed:', error);
-      router.replace('/'); // Redirect to main app on error
-    } finally {
-      setIsChecking(false);
-    }
-  }, [pathname, router, retryOnce]);
-
+  // Handle authentication and admin access checks
   useEffect(() => {
-    // Reset retry flag on path change to allow a fresh forced check
-    setRetryOnce(false);
-    checkAuthentication();
-  }, [pathname, router, checkAuthentication]);
+    // Skip authentication check for login page
+    if (pathname === '/admin/login') {
+      return;
+    }
 
-  // Show loading while checking authentication
-  if (isChecking) {
+    logger.debug('🔍 AdminLayout: Checking authentication for admin access', { 
+      pathname, 
+      isLoading,
+      isAuthenticated,
+      userRole: user?.role,
+      timestamp: new Date().toISOString() 
+    });
+
+    // Wait for AuthContext to finish loading
+    if (isLoading) {
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!isAuthenticated || !user) {
+      logger.warn('❌ AdminLayout: User not authenticated, redirecting to home');
+      setAuthError('Authentication required');
+      router.replace('/');
+      return;
+    }
+
+    // Verify admin access
+    if (user.role !== 'admin') {
+      logger.warn('❌ AdminLayout: User is not admin', { 
+        userRole: user.role, 
+        userEmail: user.email 
+      });
+      setAuthError('Access denied: Admin privileges required');
+      router.replace('/'); // Redirect to main app if not admin
+      return;
+    }
+
+    logger.info('✅ AdminLayout: Admin authentication successful', { 
+      userEmail: user.email,
+      userRole: user.role 
+    });
+    
+    // Clear any previous auth errors on successful authentication
+    setAuthError(null);
+    
+    // Redirect to dashboard if accessing admin root
+    if (pathname === '/admin') {
+      router.replace('/admin/dashboard');
+    }
+  }, [pathname, router, isLoading, isAuthenticated, user]);
+
+  // Show loading while AuthContext is checking authentication
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-        <HeartbeatLoader 
-          logoSize="xxl"
-          textSize="lg"
-          text="Checking admin access..."
-          showText={true}
-        />
+        <div className="text-center">
+          <HeartbeatLoader 
+            logoSize="xxl"
+            textSize="lg"
+            text="Checking admin access..."
+            showText={true}
+          />
+          {authError && (
+            <p className="mt-4 text-red-600 text-sm">{authError}</p>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Only render children if authenticated or on login page
-  if (isAuthenticated || pathname === '/admin/login') {
+  // Only render children if authenticated and admin, or on login page
+  if ((isAuthenticated && user?.role === 'admin') || pathname === '/admin/login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col">
         {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}
@@ -108,4 +112,4 @@ export default function AdminLayout({
 
   // Return null for unauthenticated users (except login page)
   return null;
-} 
+}
