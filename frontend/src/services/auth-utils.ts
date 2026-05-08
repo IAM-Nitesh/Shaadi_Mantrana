@@ -43,85 +43,59 @@ function clearAuthCache(): void {
 }
 
 // Get Bearer token for backend API calls
+// Returns null when using HTTP-only cookies (which are sent automatically)
 export async function getBearerToken(): Promise<string | null> {
   try {
     logger.debug('🔍 AuthUtils: Getting Bearer token...');
     
-    // Default refresh interval in milliseconds (5 minutes)
-    const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-    
-    // Try to get from authStorage first
-    const cachedTokenInfo = authStorage.get('tokenInfo');
-    if (cachedTokenInfo && typeof cachedTokenInfo === 'object' && cachedTokenInfo.token) {
-      // If token has no expiresAt, consider it valid (no expiry metadata)
-      // Or check if token is not expired
-      if (!cachedTokenInfo.expiresAt || cachedTokenInfo.expiresAt > Date.now()) {
-        logger.info('✅ AuthUtils: Bearer token retrieved from storage');
-        return cachedTokenInfo.token;
-      } else {
-        logger.debug('🔍 AuthUtils: Cached token expired, fetching new one');
-      }
-    }
-    
-    // Try backup storage if primary fails
-    const backupTokenInfo = authStorage.get('tokenBackup');
-    if (backupTokenInfo && typeof backupTokenInfo === 'object' && backupTokenInfo.token) {
-      // If token has no expiresAt, consider it valid
-      // Or check if token is not expired
-      if (!backupTokenInfo.expiresAt || backupTokenInfo.expiresAt > Date.now()) {
-        logger.info('✅ AuthUtils: Bearer token retrieved from backup storage');
-        // Restore to primary storage - no need to require expiresAt for restore
-        authStorage.set('tokenInfo', backupTokenInfo, {
-          expires: backupTokenInfo.expiresAt ? (backupTokenInfo.expiresAt - Date.now()) : REFRESH_INTERVAL_MS,
-          priority: ['localStorage', 'sessionStorage', 'memory']
-        });
-        return backupTokenInfo.token;
-      }
-    }
-    
-    // Fetch from API if no valid cached token - token is returned as HttpOnly cookie
+    // Check if we're using HTTP-only cookies by verifying auth status
+    // If authenticated via cookies, return null (cookies are sent automatically)
     const response = await apiClient.get('/api/auth/token', {
       credentials: 'include',
-      timeout: 3000 // Reduced from 5000 for faster token retrieval
+      timeout: 3000
     });
 
     if (response.ok && response.data.success) {
-      logger.info('✅ AuthUtils: Bearer token refreshed via API successfully');
+      const token = response.data.token;
       
-      // Token is now returned as HttpOnly cookie and not in the response body
-      // We'll use the expiresAt value from the response for token metadata
-      const expiresAt = response.data.expiresAt;
-      
-      if (!expiresAt) {
-        logger.warn('⚠️ AuthUtils: No expiresAt in token response');
-        return null;
+      // If backend returned a token (non-cookie auth), return it
+      if (token && typeof token === 'string' && token.length > 20) {
+        logger.info('✅ AuthUtils: Bearer token retrieved from backend');
+        
+        // Store token metadata for future use
+        const expiresAt = response.data.expiresAt || (Date.now() + 60 * 60 * 1000);
+        authStorage.set('tokenInfo', {
+          token,
+          expiresAt,
+          lastRefreshed: Date.now()
+        }, {
+          expires: expiresAt - Date.now(),
+          priority: ['localStorage', 'sessionStorage', 'memory']
+        });
+        
+        return token;
       }
       
-      // Create a placeholder token info - the actual token is in the HTTP-only cookie
-      // and will be sent automatically by the browser for API requests
-      const tokenInfo = {
-        token: 'http-only-cookie',  // This is a placeholder as we can't access the actual token
-        expiresAt: expiresAt,
-        lastRefreshed: Date.now()
-      };
+      // Otherwise, we're using HTTP-only cookies - return null
+      // The browser will automatically send cookies with credentials: 'include'
+      logger.info('✅ AuthUtils: Using HTTP-only cookie authentication');
       
-      // Store token metadata
-      authStorage.set('tokenInfo', tokenInfo, {
+      // Store metadata to indicate we're authenticated (but no token access)
+      const expiresAt = response.data.expiresAt || (Date.now() + 60 * 60 * 1000);
+      authStorage.set('tokenInfo', {
+        token: null,  // No token in storage - using HTTP-only cookies
+        expiresAt,
+        lastRefreshed: Date.now(),
+        authMethod: 'cookie'
+      }, {
         expires: expiresAt - Date.now(),
         priority: ['localStorage', 'sessionStorage', 'memory']
       });
       
-      // Also store in backup storage
-      authStorage.set('tokenBackup', tokenInfo, {
-        expires: Math.min(expiresAt - Date.now(), 24 * 60 * 60 * 1000), // Max 24h
-        priority: ['sessionStorage', 'cookie', 'memory']
-      });
-      
-      // Return the placeholder to indicate successful token refresh
-      return 'http-only-cookie';
+      return null; // Return null for HTTP-only cookie auth
     }
 
-    logger.warn('❌ AuthUtils: No token in response');
+    logger.warn('❌ AuthUtils: No valid authentication found');
     return null;
   } catch (error) {
     logger.error('❌ AuthUtils: Error getting Bearer token:', error);
@@ -277,4 +251,19 @@ export function hasCompletedOnboarding(user?: AuthUser): boolean {
 // Check if user is first login
 export function isFirstLogin(user?: AuthUser): boolean {
   return user?.isFirstLogin === true;
+}
+
+// Helper function to get auth headers for API requests
+// Returns headers object with Authorization if token exists, empty object otherwise
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  const token = await getBearerToken();
+  
+  // If we have a token (non-cookie auth), add Authorization header
+  if (token) {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  
+  // For HTTP-only cookie auth, return empty headers
+  // (cookies are sent automatically with credentials: 'include')
+  return {};
 }

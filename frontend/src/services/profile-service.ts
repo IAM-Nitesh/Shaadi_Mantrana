@@ -3,7 +3,7 @@
 
 // To configure the backend URL, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
 import { config as configService } from './configService';
-import { getBearerToken, isAuthenticated } from './auth-utils';
+import { getAuthHeaders, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { apiClient } from '../utils/api-client';
 
@@ -98,16 +98,11 @@ export class ProfileService {
         interests: filters.selectedInterests.join(','),
       });
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return [];
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.get(`/api/profiles?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`,
-        },
+        headers: authHeaders,
         timeout: 15000
       });
 
@@ -138,11 +133,8 @@ export class ProfileService {
     }
 
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return false;
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.post('/api/interactions', {
         profileId,
@@ -150,7 +142,7 @@ export class ProfileService {
         timestamp: new Date().toISOString(),
       }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json',
         },
         timeout: 15000
@@ -180,16 +172,11 @@ export class ProfileService {
     }
 
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return null;
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.get('/api/profiles/me', {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`,
-        },
+        headers: authHeaders,
         timeout: 15000
       });
 
@@ -210,22 +197,22 @@ export class ProfileService {
       const data = response.data;
       // console.log('🔍 Backend profile response:', data);
       
-      // The backend returns profile data nested under data.profile.profile
+      // Backend returns: { success: true, user: { userId, email, userUuid, profile: {...}, ... } }
       // We need to flatten this structure for the frontend
-      if (data.profile && data.profile.profile) {
+      if (data.success && data.user && data.user.profile) {
         const flattenedProfile = {
-          ...data.profile.profile, // All the profile fields (name, gender, etc.)
-          email: data.profile.email,
-          userUuid: data.profile.userUuid,
-          isFirstLogin: data.profile.isFirstLogin,
-          hasSeenOnboardingMessage: data.profile.hasSeenOnboardingMessage,
+          ...data.user.profile, // All the profile fields (name, gender, etc.)
+          email: data.user.email,
+          userUuid: data.user.userUuid,
+          isFirstLogin: data.user.isFirstLogin,
+          hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage,
           // Add any other top-level fields that might be needed
-          id: data.profile.userId?.toString(),
-          role: 'user', // Default role
-          verified: data.profile.verification?.isVerified || false,
-          lastActive: data.profile.lastActive || new Date().toISOString(),
+          id: data.user.userId?.toString(),
+          role: data.user.role || 'user',
+          verified: data.user.verification?.isVerified || false,
+          lastActive: data.user.lastActive || new Date().toISOString(),
           // Preserve the profileCompleteness field from the nested structure
-          profileCompleteness: data.profile.profile.profileCompleteness
+          profileCompleteness: data.user.profile.profileCompleteness || data.user.profileCompleteness
         };
         logger.debug('🔍 Flattened profile for onboarding check:', {
           isFirstLogin: flattenedProfile.isFirstLogin,
@@ -235,13 +222,24 @@ export class ProfileService {
         return flattenedProfile;
       }
       
-      return data.profile ? { 
-        ...data.profile, 
-        email: data.profile.email, 
-        role: 'user', 
-        isFirstLogin: data.profile.isFirstLogin,
-        hasSeenOnboardingMessage: data.profile.hasSeenOnboardingMessage
-      } : null;
+      // Fallback for old response format (legacy support)
+      if (data.profile && data.profile.profile) {
+        const flattenedProfile = {
+          ...data.profile.profile,
+          email: data.profile.email,
+          userUuid: data.profile.userUuid,
+          isFirstLogin: data.profile.isFirstLogin,
+          hasSeenOnboardingMessage: data.profile.hasSeenOnboardingMessage,
+          id: data.profile.userId?.toString(),
+          role: 'user',
+          verified: data.profile.verification?.isVerified || false,
+          lastActive: data.profile.lastActive || new Date().toISOString(),
+          profileCompleteness: data.profile.profile.profileCompleteness
+        };
+        return flattenedProfile;
+      }
+      
+      return null;
     } catch (error: unknown) {
       // console.error('Error fetching user profile:', error);
       // Don't throw, just return null for graceful handling
@@ -276,15 +274,12 @@ export class ProfileService {
     }
     
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return false;
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.delete('/api/profiles/me', {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -355,15 +350,12 @@ export class ProfileService {
         return false;
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return false;
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.patch('/api/profiles/me/onboarding', { hasSeenOnboardingMessage }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -427,15 +419,12 @@ export class ProfileService {
         return { success: false, error: 'Not authenticated' };
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return { success: false, error: 'No bearer token' };
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.patch('/api/profiles/me', profileData, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 20000
