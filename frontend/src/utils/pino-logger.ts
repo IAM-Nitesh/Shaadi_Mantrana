@@ -15,8 +15,26 @@ export function loggerForUser(userUuid?: string) {
 }
 
 const isNode = typeof process !== 'undefined' && (process as any)?.release?.name === 'node';
+// Detect Next.js production build phase to avoid initializing pino transports (file / loki) that
+// can throw 'sonic boom is not ready yet' while webpack evaluates modules during build.
+const isNextBuildPhase = !!(process && (process as any).env && (
+  (process as any).env.NEXT_PHASE === 'phase-production-build' ||
+  (process as any).env.VERCEL_BUILD === '1' ||
+  (process as any).env.__NEXT_PRIVATE_BUILD_PHASE__ === 'build'
+));
 
-if (isNode) {
+function makeFallbackLogger() {
+  const fallback = {
+    debug: (...args: any[]) => console.debug(...args),
+    info: (...args: any[]) => console.info(...args),
+    warn: (...args: any[]) => console.warn(...args),
+    error: (...args: any[]) => console.error(...args),
+    child: (_obj: any) => fallback,
+  };
+  return fallback;
+}
+
+if (isNode && !isNextBuildPhase) {
   // Use eval('require') to avoid webpack/static bundlers resolving these
   // Node-only modules when building client bundles. Wrap in try to be safe.
   // eslint-disable-next-line no-eval
@@ -174,17 +192,12 @@ if (isNode) {
     console.warn('pino or pino-http not available, using console fallback logger');
   }
 } else {
-  // Client-side fallback logger
-  const fallback = {
-    debug: (...args: any[]) => console.debug(...args),
-    info: (...args: any[]) => console.info(...args),
-    warn: (...args: any[]) => console.warn(...args),
-    error: (...args: any[]) => console.error(...args),
-    child: (obj: any) => ({ ...fallback, _childMeta: obj }),
-  };
-
-  logger = fallback as any;
+  // Build phase or client: use lightweight console-based logger
+  logger = makeFallbackLogger() as any;
   httpLogger = (_req: any, _res: any, _next?: any) => { /* no-op */ };
+  if (isNextBuildPhase) {
+    try { console.log('[logger] using fallback logger during Next.js build phase'); } catch {}
+  }
 }
 
 export default logger;
