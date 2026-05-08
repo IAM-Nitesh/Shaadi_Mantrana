@@ -3,7 +3,7 @@
 
 // To configure the backend URL, set NEXT_PUBLIC_API_BASE_URL in your .env.development file.
 import { config as configService } from './configService';
-import { getBearerToken, getCurrentUser, isAuthenticated } from './auth-utils';
+import { clearAuthStatusCache, getAuthHeaders, getCurrentUser, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { apiClient } from '../utils/api-client';
@@ -227,21 +227,12 @@ export class ImageUploadService {
   // logger.debug('Uploading to:', `${apiBaseUrl}/api/upload/single`);
   // logger.debug('File details:', { name: file.name, size: file.size, type: file.type });
 
-      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
-      const bearerToken = await getBearerToken();
-      
+      const authHeaders = await getAuthHeaders();
       // Build upload options
       const uploadOptions: any = {
+        headers: authHeaders,
         timeout: 30000
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      // If null, cookies are sent automatically with credentials: 'include'
-      if (bearerToken) {
-        uploadOptions.headers = {
-          'Authorization': `Bearer ${bearerToken}`
-        };
-      }
 
       const response = await apiClient.upload(`/api/upload/single`, formData, uploadOptions);
 
@@ -254,7 +245,7 @@ export class ImageUploadService {
         
         // Special handling for authentication errors
         if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('authToken'); // Clear invalid token
+          clearAuthStatusCache();
           throw new Error('Authentication required. Please log in again.');
         }
         
@@ -302,22 +293,17 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
-      const bearerToken = await getBearerToken();
+      const authHeaders = await getAuthHeaders();
       
       // Build delete options
       const deleteOptions: any = {
         body: { imageUrl },
         timeout: 15000,
         headers: {
+          ...authHeaders,
           'Content-Type': 'application/json'
         }
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      if (bearerToken) {
-        deleteOptions.headers['Authorization'] = `Bearer ${bearerToken}`;
-      }
 
       const response = await apiClient.delete('/api/upload/delete-image', deleteOptions);
 
@@ -337,20 +323,12 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
-      const bearerToken = await getBearerToken();
-      
+      const authHeaders = await getAuthHeaders();
       // Build request options
       const getOptions: any = {
+        headers: authHeaders,
         timeout: 15000
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      if (bearerToken) {
-        getOptions.headers = {
-          'Authorization': `Bearer ${bearerToken}`
-        };
-      }
 
       const response = await apiClient.get('/api/upload/profile-images', getOptions);
 
@@ -442,8 +420,7 @@ export class ImageUploadService {
       // Compress image for optimal upload with device-optimized settings
       const compressionResult = await ImageCompression.compressForDevice(file);
 
-      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
-      const bearerToken = await getBearerToken();
+      const authHeaders = await getAuthHeaders();
 
       // Create form data
       const formData = new FormData();
@@ -451,15 +428,9 @@ export class ImageUploadService {
 
       // Build upload options
       const uploadOptions: any = {
+        headers: authHeaders,
         timeout: 30000
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      if (bearerToken) {
-        uploadOptions.headers = {
-          'Authorization': `Bearer ${bearerToken}`
-        };
-      }
 
       // Upload to B2 via backend
       const response = await apiClient.upload('/api/upload/profile-picture', formData, uploadOptions);
@@ -510,20 +481,13 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
-      const bearerToken = await getBearerToken();
+      const authHeaders = await getAuthHeaders();
       
       // Build delete options
       const deleteOptions: any = {
+        headers: authHeaders,
         timeout: 15000
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      if (bearerToken) {
-        deleteOptions.headers = {
-          'Authorization': `Bearer ${bearerToken}`
-        };
-      }
 
       const response = await apiClient.delete('/api/upload/profile-picture', deleteOptions);
 
@@ -569,19 +533,7 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-  logger.debug('🔍 Bearer token found:', bearerToken ? 'Yes' : 'No');
-      if (!bearerToken) {
-        try {
-          const user = await getCurrentUser();
-          const log = loggerForUser(user?.userUuid);
-          log.warn('❌ No bearer token found');
-        } catch (e) {
-          logger.warn('❌ No bearer token found');
-        }
-        return null;
-      }
+      const authHeaders = await getAuthHeaders();
 
       // Get current user ID from server-side auth
       const user = await getCurrentUser();
@@ -605,15 +557,9 @@ export class ImageUploadService {
       
       // Build request options
       const getOptions: any = {
+        headers: authHeaders,
         timeout: 15000
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      if (bearerToken) {
-        getOptions.headers = {
-          'Authorization': `Bearer ${bearerToken}`
-        };
-      }
       
       const response = await apiClient.get(`/api/upload/profile-picture/url?expiry=${expiry}`, getOptions);
       
@@ -681,26 +627,13 @@ export class ImageUploadService {
   static async getUserProfilePictureSignedUrl(userId: string, expiry: number = 4200): Promise<string | null> {
     logger.debug('🔍 getUserProfilePictureSignedUrl called for userId:', userId);
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-  logger.debug('🔍 Bearer token found:', !!bearerToken);
-  logger.debug('🔍 Bearer token length:', bearerToken?.length);
-      if (!bearerToken) {
-    logger.warn('❌ No bearer token found');
-        return null;
-      }
+      const authHeaders = await getAuthHeaders();
 
       // Build request options
       const getOptions: any = {
+        headers: authHeaders,
         timeout: 15000
       };
-      
-      // Only add Authorization header if we have a token (non-cookie auth)
-      if (bearerToken) {
-        getOptions.headers = {
-          'Authorization': `Bearer ${bearerToken}`
-        };
-      }
 
       const response = await apiClient.get(`/api/upload/profile-picture/${userId}/url?expiry=${expiry}`, getOptions);
 

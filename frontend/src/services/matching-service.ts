@@ -1,10 +1,9 @@
 // Matching Service - Handles discovery, likes, and matches
 import { config as configService } from './configService';
-import { getAuthHeaders, isAuthenticated } from './auth-utils';
+import { clearAuthStatusCache, getAuthHeaders, getCurrentUser, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { apiClient } from '../utils/api-client';
 import { loggerForUser } from '../utils/pino-logger';
-import { getCurrentUser } from './auth-utils';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -256,9 +255,8 @@ export class MatchingService {
 
       if (!response.ok && response.status !== 304) {
         if (response.status === 401) {
-          // console.warn('Authentication failed, user may need to login again');
-          // Clear invalid token
-          localStorage.removeItem('authToken');
+          // Authentication is cookie-first now; clear auth cache only.
+          clearAuthStatusCache();
           return {
             profiles: [],
             dailyLimitReached: false,
