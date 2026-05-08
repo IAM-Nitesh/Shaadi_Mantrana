@@ -1,6 +1,6 @@
 // Matching Service - Handles discovery, likes, and matches
 import { config as configService } from './configService';
-import { getBearerToken, isAuthenticated } from './auth-utils';
+import { getAuthHeaders, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { apiClient } from '../utils/api-client';
 import { loggerForUser } from '../utils/pino-logger';
@@ -246,21 +246,11 @@ export class MatchingService {
         };
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return {
-          profiles: [],
-          dailyLimitReached: false,
-          dailyLikeCount: 0,
-          remainingLikes: 0
-        };
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.get(`/api/matching/discovery?page=${page}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`,
-        },
+        headers: authHeaders,
         timeout: 15000
       });
 
@@ -344,15 +334,12 @@ export class MatchingService {
         throw new Error('Authentication required');
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('Authentication required');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.post('/api/matching/like', { targetUserId, type }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -401,15 +388,12 @@ export class MatchingService {
         throw new Error('Authentication required');
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('Authentication required');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.post('/api/matching/pass', { targetUserId }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -434,7 +418,7 @@ export class MatchingService {
         throw new Error('User not authenticated');
       }
 
-      const token = await getBearerToken();
+      const authHeaders = await getAuthHeaders();
 
       const body: any = {};
       if (typeof payload === 'string') {
@@ -446,8 +430,8 @@ export class MatchingService {
 
       const response = await apiClient.post('/api/matching/unmatch', body, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          ...authHeaders,
+          'Content-Type': 'application/json'
         },
         timeout: 15000
       });
@@ -484,17 +468,13 @@ export class MatchingService {
         return { success: false, message: 'User not authenticated' };
       }
 
-      // Get Bearer token
-      const token = await getBearerToken();
-      if (!token) {
-  logger.warn('No bearer token available, skipping toast seen update');
-        return { success: false, message: 'No access token available' };
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.post('/api/matching/mark-toast-seen', { targetUserId }, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          ...authHeaders,
+          'Content-Type': 'application/json'
         },
         timeout: 10000
       });
@@ -533,17 +513,13 @@ export class MatchingService {
           return { success: false, message: 'User not authenticated' };
         }
 
-        // Get Bearer token
-        const token = await getBearerToken();
-        if (!token) {
-          logger.warn('No bearer token available, skipping toast seen update');
-          return { success: false, message: 'No access token available' };
-        }
+        // Get auth headers (includes Authorization if using token-based auth)
+        const authHeaders = await getAuthHeaders();
 
         const response = await apiClient.post('/api/matching/mark-toast-seen-chat', { connectionId }, {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...authHeaders,
+            'Content-Type': 'application/json'
           },
           timeout: 10000
         });
@@ -612,19 +588,12 @@ export class MatchingService {
         };
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return {
-          likedProfiles: [],
-          totalLikes: 0,
-          mutualMatches: 0
-        };
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.get(`/api/matching/liked`, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -682,18 +651,12 @@ export class MatchingService {
         };
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return {
-          matches: [],
-          totalMatches: 0
-        };
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.get(`/api/matching/matches`, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -749,16 +712,8 @@ export class MatchingService {
         };
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return {
-          dailyLikeCount: 0,
-          canLikeToday: true,
-          remainingLikes: 5,
-          dailyLimit: 5
-        };
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const url = date 
         ? `${apiBaseUrl}/api/matching/stats?date=${date}`
@@ -766,7 +721,7 @@ export class MatchingService {
         
       const response = await apiClient.get(url.replace(configService.apiBaseUrl || '', ''), {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -815,26 +770,19 @@ export class MatchingService {
     logger.debug('🔄 Fetching fresh matches data...');
 
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('No authentication token found');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       logger.debug('🔗 Making API calls to fetch matches and likes...');
 
       // Fetch both matches and likes in parallel
       const [matchesResponse, likesResponse] = await Promise.all([
         apiClient.get('/api/matching/matches', {
-          headers: {
-            'Authorization': `Bearer ${bearerToken}`,
-          },
+          headers: authHeaders,
           timeout: 15000
         }),
         apiClient.get('/api/matching/liked', {
-          headers: {
-            'Authorization': `Bearer ${bearerToken}`,
-          },
+          headers: authHeaders,
           timeout: 15000
         })
       ]);
@@ -953,15 +901,12 @@ export class MatchingService {
     }
 
     try {
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('No authentication token found');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.get(`/api/chat/${connectionId}`, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000

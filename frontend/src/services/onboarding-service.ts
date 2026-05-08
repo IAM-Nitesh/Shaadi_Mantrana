@@ -1,6 +1,6 @@
 // Onboarding Service - Manages user onboarding experience and flags
 import { config as configService } from './configService';
-import { getBearerToken, isAuthenticated } from './auth-utils';
+import { getAuthHeaders, isAuthenticated } from './auth-utils';
 import logger from '../utils/logger';
 import { getUserCompleteness } from '../utils/user-utils';
 import { apiClient } from '../utils/api-client';
@@ -26,15 +26,12 @@ export class OnboardingService {
         throw new Error('No authentication token found');
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('No authentication token found');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.put('/api/profiles/onboarding-flag', { hasSeenOnboardingMessage }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -59,15 +56,12 @@ export class OnboardingService {
         throw new Error('No authentication token found');
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('No authentication token found');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.put('/api/profiles/first-login-flag', { isFirstLogin }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000

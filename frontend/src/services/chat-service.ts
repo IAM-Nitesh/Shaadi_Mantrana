@@ -6,7 +6,7 @@ import { getCurrentUser } from './auth-utils';
 import { apiClient } from '../utils/api-client';
 import { config as configService } from './configService';
 import { MatchingService } from './matching-service';
-import { getBearerToken, isAuthenticated } from './auth-utils';
+import { getAuthHeaders, isAuthenticated } from './auth-utils';
 
 export interface ChatMessage {
   id: string;
@@ -48,15 +48,12 @@ export class ChatService {
         throw new Error('No authentication token found');
       }
 
-      // Get Bearer token for backend API call
-      const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('No authentication token found');
-      }
+      // Get auth headers (includes Authorization if using token-based auth)
+      const authHeaders = await getAuthHeaders();
 
       const response = await apiClient.post(`/api/chat/${connectionId}`, { message }, {
         headers: {
-          'Authorization': `Bearer ${bearerToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         timeout: 15000
@@ -96,20 +93,18 @@ export class ChatService {
       const authenticated = await isAuthenticated();
       if (!authenticated) throw new Error('User not authenticated');
 
-      // Attempt to get bearer token; if missing, clear cache once and retry (helps transient 401s)
-      let bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        if (process.env.NODE_ENV === 'development') logger.warn('🔁 ChatService: Bearer token missing, clearing auth cache and retrying');
-        try { (await import('./auth-utils')).clearAuthStatusCache(); } catch (e) { /* ignore */ }
-        bearerToken = await getBearerToken();
-      }
-      if (!bearerToken) throw new Error('No auth token');
+      // Socket.io requires authentication token
+      // Note: Socket.io needs actual token value, not HTTP-only cookie
+      // For cookie-based auth, we rely on socket.io's built-in cookie handling
+      const authHeaders = await getAuthHeaders();
+      const hasAuthToken = authHeaders['Authorization'];
 
-      // create socket with token in auth handshake
+      // create socket with appropriate auth method
       this.socket = io(this.baseUrl, {
-        auth: { token: bearerToken },
+        auth: hasAuthToken ? { token: authHeaders['Authorization'].replace('Bearer ', '') } : {},
         transports: ['websocket'],
-        reconnectionAttempts: 3
+        reconnectionAttempts: 3,
+        withCredentials: true  // Important: Allows cookies to be sent with socket connection
       });
 
       // Clear previous listeners just in case
