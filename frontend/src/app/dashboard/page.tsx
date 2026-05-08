@@ -7,69 +7,17 @@ import { useAuth } from '../../contexts/AuthContext';
 // Navigation is now handled globally in layout.tsx
 import SwipeCard from './SwipeCard';
 import { safeGsap } from '../../components/SafeGsap';
-
-// Mock profile data for demonstration
-const mockProfiles = [
-  {
-    _id: '1',
-    profile: {
-      name: 'Priya Sharma',
-      age: 28,
-      profession: 'Software Engineer',
-      images: '/api/placeholder/400/600',
-      about: 'Love traveling, reading books, and exploring new cuisines. Looking for someone who shares similar interests.',
-      interests: ['Travel', 'Reading', 'Cooking', 'Photography'],
-      education: 'B.Tech Computer Science',
-      nativePlace: 'Mumbai, India',
-      currentResidence: 'Mumbai, India'
-    },
-    verification: {
-      isVerified: true
-    }
-  },
-  {
-    _id: '2',
-    profile: {
-      name: 'Arjun Singh',
-      age: 30,
-      profession: 'Doctor',
-      images: '/api/placeholder/400/600',
-      about: 'Passionate about helping others. Love music, sports, and good conversations.',
-      interests: ['Music', 'Sports', 'Medicine', 'Travel'],
-      education: 'MBBS',
-      nativePlace: 'Delhi, India',
-      currentResidence: 'Delhi, India'
-    },
-    verification: {
-      isVerified: true
-    }
-  },
-  {
-    _id: '3',
-    profile: {
-      name: 'Sneha Patel',
-      age: 26,
-      profession: 'Marketing Manager',
-      images: '/api/placeholder/400/600',
-      about: 'Creative soul who loves art, dance, and making a difference in the world.',
-      interests: ['Art', 'Dance', 'Marketing', 'Social Work'],
-      education: 'MBA Marketing',
-      nativePlace: 'Bangalore, India',
-      currentResidence: 'Bangalore, India'
-    },
-    verification: {
-      isVerified: true
-    }
-  }
-];
+import { DiscoveryProfile, MatchingService } from '../../services/matching-service';
+import logger from '../../utils/logger';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
-  const [profiles, setProfiles] = useState(mockProfiles);
-  const [likesRemaining, setLikesRemaining] = useState(20);
+  const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
+  const [likesRemaining, setLikesRemaining] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isFetchingProfiles, setIsFetchingProfiles] = useState(true);
   
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -77,22 +25,52 @@ function DashboardContent() {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
-    console.log('🚪 Dashboard: Logging out...');
+    logger.info('Dashboard: logging out');
     await logout();
   };
 
-  const handleSwipe = (direction: 'left' | 'right' | 'up') => {
+  const fetchDiscoveryProfiles = async () => {
+    try {
+      setIsFetchingProfiles(true);
+      const discovery = await MatchingService.getDiscoveryProfiles(1, 20);
+      setProfiles(discovery.profiles || []);
+      setLikesRemaining(discovery.remainingLikes || 0);
+      setCurrentProfileIndex(0);
+    } catch (error) {
+      logger.error('Dashboard: failed to fetch discovery profiles', error);
+      setProfiles([]);
+      setLikesRemaining(0);
+    } finally {
+      setIsFetchingProfiles(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDiscoveryProfiles();
+  }, []);
+
+  const handleSwipe = async (direction: 'left' | 'right' | 'up') => {
     if (isAnimating) return;
     
     setIsAnimating(true);
+    const currentProfile = profiles[currentProfileIndex];
+    if (!currentProfile?._id) {
+      setIsAnimating(false);
+      return;
+    }
     
-    if (direction === 'right' && likesRemaining > 0) {
-      setLikesRemaining(prev => prev - 1);
-      console.log('❤️ Liked profile:', profiles[currentProfileIndex]?.name);
-    } else if (direction === 'left') {
-      console.log('👎 Passed profile:', profiles[currentProfileIndex]?.name);
-    } else if (direction === 'up') {
-      console.log('⭐ Super liked profile:', profiles[currentProfileIndex]?.name);
+    try {
+      if (direction === 'right' && likesRemaining > 0) {
+        const result = await MatchingService.likeProfile(currentProfile._id, 'like');
+        setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
+      } else if (direction === 'left') {
+        await MatchingService.passProfile(currentProfile._id);
+      } else if (direction === 'up' && likesRemaining > 0) {
+        const result = await MatchingService.likeProfile(currentProfile._id, 'super_like');
+        setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
+      }
+    } catch (error) {
+      logger.warn('Dashboard: swipe action failed', error);
     }
     
     // Move to next profile
@@ -168,11 +146,15 @@ function DashboardContent() {
 
       {/* Swipe Cards Container */}
       <div ref={cardRef} className="relative flex-1 px-4 pb-20">
-        {currentProfile ? (
+        {isFetchingProfiles ? (
+          <div className="flex flex-col items-center justify-center h-96 text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mb-4" />
+            <p className="text-gray-600">Loading profiles...</p>
+          </div>
+        ) : currentProfile ? (
           <SwipeCard 
             profile={currentProfile} 
             onSwipe={handleSwipe}
-            isAnimating={isAnimating}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-center">
@@ -182,10 +164,10 @@ function DashboardContent() {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No more profiles</h3>
             <p className="text-gray-600 mb-6">Check back later for new matches!</p>
             <button
-              onClick={() => setCurrentProfileIndex(0)}
+              onClick={fetchDiscoveryProfiles}
               className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              Start Over
+              Refresh Profiles
             </button>
           </div>
         )}

@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/LoginForm';
 import { safeGsap } from '../../components/SafeGsap';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import logger from '../../utils/logger';
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, user, redirectTo } = useAuth();
@@ -33,7 +34,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (isRouterReady && isAuthenticated && redirectTo) {
       const target = redirectTo ?? '/';
-      console.log('🔍 LoginPage: User already authenticated, redirecting to', target);
+      logger.debug('LoginPage: already authenticated, redirecting', { target });
       router.push(target);
     }
   }, [isRouterReady, isAuthenticated, redirectTo, router]);
@@ -47,11 +48,9 @@ export default function LoginPage() {
       try {
         // Check if main refs are available
         if (!logoRef.current || !cardRef.current) {
-          console.warn('⚠️ GSAP: Main elements not ready yet');
+          logger.warn('LoginPage: GSAP elements not ready');
           return;
         }
-
-        console.log('🎨 GSAP Animation Started');
 
         // Set initial states for logo (with scale)
         safeGsap.set?.(logoRef.current, {
@@ -95,7 +94,7 @@ export default function LoginPage() {
         // Create timeline
         const tl = safeGsap.timeline?.();
         if (!tl) {
-          console.warn('⚠️ GSAP timeline not available');
+          logger.warn('LoginPage: GSAP timeline unavailable');
           return;
         }
 
@@ -205,7 +204,7 @@ export default function LoginPage() {
         });
 
       } catch (error) {
-        console.error('❌ LoginPage: Animation error:', error);
+        logger.error('LoginPage: animation error', error);
       }
     }, 100); // 100ms delay to ensure DOM is ready
 

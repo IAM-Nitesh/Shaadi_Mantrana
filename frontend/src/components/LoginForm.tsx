@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import OTPInput from './OTPInput';
+import logger from '../utils/logger';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -30,7 +31,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && redirectTo) {
-      console.log('🔍 LoginForm: User already authenticated, redirecting to', redirectTo);
+      logger.debug('LoginForm: already authenticated, redirecting', { redirectTo });
       router.push(redirectTo);
     }
   }, [isAuthenticated, redirectTo, router]);
@@ -53,19 +54,19 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setIsSendingOTP(true);
 
     try {
-      console.log('🔍 LoginForm: Sending OTP to:', email);
+      logger.debug('LoginForm: sending OTP');
       const success = await sendOtp(email.trim());
       
       if (success) {
         setOtpSent(true);
         setStep('otp');
         setResendCooldown(30); // 30 second cooldown
-        console.log('✅ LoginForm: OTP sent successfully');
+        logger.info('LoginForm: OTP sent successfully');
       } else {
-        console.error('❌ LoginForm: OTP send failed');
+        logger.warn('LoginForm: OTP send failed');
       }
     } catch (error) {
-      console.error('❌ LoginForm: OTP send error:', error);
+      logger.error('LoginForm: OTP send error', error);
     } finally {
       setIsSendingOTP(false);
     }
@@ -79,18 +80,18 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setIsVerifyingOTP(true);
 
     try {
-      console.log('🔍 LoginForm: Verifying OTP for:', email);
+      logger.debug('LoginForm: verifying OTP');
       const success = await login(email.trim(), otp.trim());
       
       if (success) {
-        console.log('✅ LoginForm: Login successful');
+        logger.info('LoginForm: login successful');
         onLoginSuccess?.();
         // AuthContext will handle redirect via redirectTo
       } else {
-        console.error('❌ LoginForm: Login failed');
+        logger.warn('LoginForm: login failed');
       }
     } catch (error) {
-      console.error('❌ LoginForm: Login error:', error);
+      logger.error('LoginForm: login error', error);
     } finally {
       setIsVerifyingOTP(false);
     }
@@ -102,17 +103,17 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setIsSendingOTP(true);
 
     try {
-      console.log('🔍 LoginForm: Resending OTP to:', email);
+      logger.debug('LoginForm: resending OTP');
       const success = await sendOtp(email.trim());
       
       if (success) {
         setResendCooldown(30); // 30 second cooldown
-        console.log('✅ LoginForm: OTP resent successfully');
+        logger.info('LoginForm: OTP resent successfully');
       } else {
-        console.error('❌ LoginForm: OTP resend failed');
+        logger.warn('LoginForm: OTP resend failed');
       }
     } catch (error) {
-      console.error('❌ LoginForm: OTP resend error:', error);
+      logger.error('LoginForm: OTP resend error', error);
     } finally {
       setIsSendingOTP(false);
     }
