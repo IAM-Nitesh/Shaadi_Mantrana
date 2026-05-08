@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import OTPInput from './OTPInput';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -19,6 +20,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Handle client-side mounting to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -120,7 +127,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   if (step === 'email') {
     return (
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className={`rounded-2xl shadow-xl p-8 ${isMounted ? 'bg-white/80 backdrop-blur-md' : 'bg-white'}`}>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome</h2>
             <p className="text-gray-600">Sign in to your account to continue</p>
@@ -162,7 +169,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className={`rounded-2xl shadow-xl p-8 ${isMounted ? 'bg-white/80 backdrop-blur-md' : 'bg-white'}`}>
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
           <p className="text-gray-600">Enter the 6-digit code sent to your email</p>
@@ -170,19 +177,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
               Verification Code
             </label>
-            <input
-              type="text"
+            <OTPInput
               value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Enter 6-digit code"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-300 text-center text-lg tracking-widest"
+              onChange={setOtp}
               disabled={isVerifyingOTP}
-              maxLength={6}
             />
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 mt-4 text-center">
               Code sent to <span className="font-medium">{email}</span>
             </p>
           </div>

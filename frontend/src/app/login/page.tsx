@@ -18,7 +18,9 @@ export default function LoginPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const heartsRef = useRef<HTMLDivElement>(null);
+  const headlineRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const featureCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const securityBadgeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const featuresRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
 
@@ -40,57 +42,174 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isRouterReady) return;
 
-    try {
-      // Set initial states
-      safeGsap.set?.([logoRef.current, cardRef.current, heartsRef.current, featuresRef.current], {
-        opacity: 0,
-        y: 50
-      });
+    // Add small delay to ensure DOM is fully ready
+    const timer = setTimeout(() => {
+      try {
+        // Check if main refs are available
+        if (!logoRef.current || !cardRef.current) {
+          console.warn('⚠️ GSAP: Main elements not ready yet');
+          return;
+        }
 
-      // Create timeline
-      const tl = safeGsap.timeline?.();
-      if (!tl) return;
+        console.log('🎨 GSAP Animation Started');
 
-      // Animate elements in sequence
-      tl.to?.(logoRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power2.out"
-      })
-      .to?.(cardRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: "power2.out"
-      }, "-=0.4")
-      .to?.(heartsRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: "power2.out"
-      }, "-=0.3")
-      .to?.(featuresRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: "power2.out"
-      }, "-=0.3");
-
-      // Floating hearts animation
-      if (heartsRef.current) {
-        safeGsap.to?.(heartsRef.current, {
-          y: -20,
-          duration: 3,
-          ease: "power2.inOut",
-          yoyo: true,
-          repeat: -1
+        // Set initial states for logo (with scale)
+        safeGsap.set?.(logoRef.current, {
+          opacity: 0,
+          y: 50,
+          scale: 0.8
         });
-      }
 
-    } catch (error) {
-      console.error('❌ LoginPage: Animation error:', error);
-    }
+        // Set initial states for headline words
+        headlineRefs.current.forEach((ref) => {
+          if (ref) {
+            safeGsap.set?.(ref, { opacity: 0, y: 20 });
+          }
+        });
+
+        // Set initial states for card
+        safeGsap.set?.(cardRef.current, {
+          opacity: 0,
+          y: 50,
+          scale: 0.95
+        });
+
+        // Set initial states for security badges
+        securityBadgeRefs.current.forEach((ref, i) => {
+          if (ref) {
+            safeGsap.set?.(ref, {
+              opacity: 0,
+              x: i === 0 ? -50 : 50,
+              rotation: i === 0 ? -5 : 5
+            });
+          }
+        });
+
+        // Set initial states for feature cards
+        featureCardRefs.current.forEach((ref) => {
+          if (ref) {
+            safeGsap.set?.(ref, { opacity: 0, y: 30, scale: 0.9 });
+          }
+        });
+
+        // Create timeline
+        const tl = safeGsap.timeline?.();
+        if (!tl) {
+          console.warn('⚠️ GSAP timeline not available');
+          return;
+        }
+
+        // 1. Animate logo with elastic bounce
+        tl.to?.(logoRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1.2,
+          ease: "elastic.out(1, 0.5)"
+        }, 0);
+
+        // 2. Staggered headline text reveal
+        headlineRefs.current.forEach((ref, i) => {
+          if (ref) {
+            tl.to?.(ref, {
+              opacity: 1,
+              y: 0,
+              duration: 0.4,
+              ease: "power2.out"
+            }, 0.3 + (i * 0.08)); // Stagger delay
+          }
+        });
+
+        // 3. Login form with bounce
+        tl.to?.(cardRef.current, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.8,
+          ease: "back.out(1.4)"
+        }, "-=0.6");
+
+        // 4. Security badges slide in from sides
+        securityBadgeRefs.current.forEach((ref, i) => {
+          if (ref) {
+            tl.to?.(ref, {
+              opacity: 1,
+              x: 0,
+              rotation: 0,
+              duration: 0.6,
+              ease: "back.out(1.7)"
+            }, i === 0 ? "-=0.4" : "-=0.5");
+          }
+        });
+
+        // 5. Feature cards staggered animation
+        featureCardRefs.current.forEach((card, i) => {
+          if (card) {
+            tl.to?.(card, {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.5,
+              ease: "back.out(1.2)"
+            }, "-=0.4");
+          }
+        });
+
+        // 6. Background blob animations (continuous)
+        const blobs = document.querySelectorAll('.animate-blob');
+        
+        if (blobs[0]) {
+          safeGsap.to?.(blobs[0], {
+            x: 100,
+            y: -100,
+            duration: 20,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1
+          });
+        }
+
+        if (blobs[1]) {
+          safeGsap.to?.(blobs[1], {
+            x: -100,
+            y: 100,
+            duration: 25,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1
+          });
+        }
+
+        if (blobs[2]) {
+          safeGsap.to?.(blobs[2], {
+            x: 50,
+            y: -50,
+            duration: 22,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1
+          });
+        }
+
+        // 7. Icon pulse animations (continuous subtle effect)
+        const icons = document.querySelectorAll('.feature-icon');
+        icons.forEach((icon, i) => {
+          safeGsap.to?.(icon, {
+            scale: 1.1,
+            duration: 2,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+            delay: i * 0.3
+          });
+        });
+
+      } catch (error) {
+        console.error('❌ LoginPage: Animation error:', error);
+      }
+    }, 100); // 100ms delay to ensure DOM is ready
+
+    return () => clearTimeout(timer);
   }, [isRouterReady]);
 
   // Show loading while checking authentication
@@ -118,60 +237,100 @@ export default function LoginPage() {
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left side - Branding */}
-            <div className="text-center lg:text-left">
-              <div ref={logoRef} className="mb-8">
-                <h1 className="text-6xl font-bold text-gray-800 mb-4">
-                  Shaadi<span className="text-rose-500">Mantrana</span>
-                </h1>
-                <p className="text-xl text-gray-600">
-                  Your journey to forever starts here
-                </p>
+        <div className="w-full max-w-md mx-auto space-y-8">
+          {/* Logo section - centered */}
+          <div ref={logoRef} className="text-center">
+            <h1 className="text-5xl font-bold text-gray-800 mb-4">
+              Shaadi<span className="text-rose-500">Mantrana</span>
+            </h1>
+            <p className="text-lg text-gray-600">
+              {["Your", "journey", "to", "forever", "starts", "here"].map((word, i) => (
+                <span 
+                  key={i} 
+                  className="inline-block mr-1" 
+                  ref={el => { headlineRefs.current[i] = el; }}
+                >
+                  {word}
+                </span>
+              ))}
+            </p>
+          </div>
+
+          {/* Login Form */}
+          <div ref={cardRef} className="flex justify-center">
+            <LoginForm />
+          </div>
+
+          {/* Security Badges */}
+          <div className="grid grid-cols-2 gap-4">
+            <div 
+              ref={el => { securityBadgeRefs.current[0] = el; }}
+              className="flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-sm"
+            >
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 font-bold">✓</span>
               </div>
-
-              <div ref={featuresRef} className="space-y-8">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">💝</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">Smart Matching</h3>
-                    <p className="text-gray-600">Quality Matches</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">✨</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">Quality Profiles</h3>
-                    <p className="text-gray-600">Verified Users</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">🎯</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">Easy to Use</h3>
-                    <p className="text-gray-600">Simple Interface</p>
-                  </div>
-                </div>
+              <div>
+                <p className="font-semibold text-gray-800">100% Free</p>
+                <p className="text-sm text-gray-600">No charges</p>
               </div>
             </div>
+            
+            <div 
+              ref={el => { securityBadgeRefs.current[1] = el; }}
+              className="flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-sm"
+            >
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-bold">🔒</span>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">Secure</p>
+                <p className="text-sm text-gray-600">Data safe</p>
+              </div>
+            </div>
+          </div>
 
-            {/* Right side - Login Form */}
-            <div className="flex justify-center">
-              <LoginForm />
+          {/* Why Choose Us */}
+          <div ref={featuresRef} className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-sm">
+            <h2 className="text-center font-bold text-xl text-gray-800 mb-6">Why Choose Us</h2>
+            <div className="grid grid-cols-3 gap-4">
+              <div 
+                ref={el => { featureCardRefs.current[0] = el; }}
+                className="text-center"
+              >
+                <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-3 feature-icon">
+                  <span className="text-2xl">💝</span>
+                </div>
+                <h3 className="font-semibold text-gray-800 text-sm mb-1">Smart Matching</h3>
+                <p className="text-gray-600 text-xs">Quality Matches</p>
+              </div>
+
+              <div 
+                ref={el => { featureCardRefs.current[1] = el; }}
+                className="text-center"
+              >
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3 feature-icon">
+                  <span className="text-2xl">✨</span>
+                </div>
+                <h3 className="font-semibold text-gray-800 text-sm mb-1">Quality Profiles</h3>
+                <p className="text-gray-600 text-xs">Verified Users</p>
+              </div>
+
+              <div 
+                ref={el => { featureCardRefs.current[2] = el; }}
+                className="text-center"
+              >
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 feature-icon">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <h3 className="font-semibold text-gray-800 text-sm mb-1">Easy to Use</h3>
+                <p className="text-gray-600 text-xs">Simple Interface</p>
+              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-16 text-center">
+          <div className="text-center">
             <p className="text-gray-500 text-sm">
               By continuing, you agree to our{' '}
               <Link href="/terms" className="text-rose-500 hover:text-rose-600">

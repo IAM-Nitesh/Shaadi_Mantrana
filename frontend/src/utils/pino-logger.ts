@@ -129,42 +129,47 @@ if (isNode && !isNextBuildPhase) {
       }
 
       let emittedInfo = 0;
-
-      const baseLogger = pino(
-        {
-          level,
-          base: {
-            service: 'shaadimantra-frontend',
-            env: process.env.NODE_ENV || 'development',
-            version: appVersion,
-            git_sha: gitSha,
-          },
-          redact: {
-            paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
-            censor: '[REDACTED]',
-          },
-          timestamp: pino?.stdTimeFunctions?.isoTime || (() => `,"time":"${new Date().toISOString()}"`),
-          hooks: sampleInfoRate >= 1 ? undefined : {
-            logMethod(args: any[], method: any) {
-              try {
-                // Only compare method if baseLogger is defined
-                const isInfo = baseLogger && method === baseLogger.info;
-                if (isInfo && sampleInfoRate < 1) {
-                  emittedInfo += 1;
-                  if ((emittedInfo % Math.round(1 / sampleInfoRate)) !== 0) {
-                    return; // drop
+      let baseLogger: any;
+      try {
+        baseLogger = pino(
+          {
+            level,
+            base: {
+              service: 'shaadimantra-frontend',
+              env: process.env.NODE_ENV || 'development',
+              version: appVersion,
+              git_sha: gitSha,
+            },
+            redact: {
+              paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
+              censor: '[REDACTED]',
+            },
+            timestamp: pino?.stdTimeFunctions?.isoTime || (() => `,"time":"${new Date().toISOString()}"`),
+            hooks: sampleInfoRate >= 1 ? undefined : {
+              logMethod(args: any[], method: any) {
+                try {
+                  const isInfo = baseLogger && method === baseLogger.info;
+                  if (isInfo && sampleInfoRate < 1) {
+                    emittedInfo += 1;
+                    if ((emittedInfo % Math.round(1 / sampleInfoRate)) !== 0) {
+                      return; // drop
+                    }
                   }
-                }
-              } catch (_) { /* ignore sampling errors */ }
-              method.apply(this, args);
-            }
-          }
-        },
-        pino.multistream(streams)
-      );
+                } catch (_) { /* ignore sampling errors */ }
+                method.apply(this, args);
+              }
+            },
+          },
+          pino.multistream(streams)
+        );
+      } catch (err) {
+        // Fallback if pino initialization fails for any reason during runtime
+        baseLogger = makeFallbackLogger();
+        // eslint-disable-next-line no-console
+        console.warn('[logger] fallback console logger engaged (pino init failed):', (err as any)?.message);
+      }
 
       logger = baseLogger;
-      
       try {
         if (grafanaLokiUrl) {
           logger.info({ event: 'logger_start', sink: 'loki', service: 'shaadimantra-frontend' }, 'Frontend logger initialized with Loki stream');
