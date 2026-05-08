@@ -227,18 +227,23 @@ export class ImageUploadService {
   // logger.debug('Uploading to:', `${apiBaseUrl}/api/upload/single`);
   // logger.debug('File details:', { name: file.name, size: file.size, type: file.type });
 
-      // Get Bearer token for backend API call
+      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
       const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('Authentication required. Please log in first.');
+      
+      // Build upload options
+      const uploadOptions: any = {
+        timeout: 30000
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      // If null, cookies are sent automatically with credentials: 'include'
+      if (bearerToken) {
+        uploadOptions.headers = {
+          'Authorization': `Bearer ${bearerToken}`
+        };
       }
 
-      const response = await apiClient.upload(`/api/upload/single`, formData, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`
-        },
-        timeout: 30000
-      });
+      const response = await apiClient.upload(`/api/upload/single`, formData, uploadOptions);
 
   // logger.debug('Upload response status:', response.status);
   // logger.debug('Upload response headers:', Object.fromEntries(response.headers.entries()));
@@ -297,20 +302,24 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call
+      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
       const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return false;
+      
+      // Build delete options
+      const deleteOptions: any = {
+        body: { imageUrl },
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      if (bearerToken) {
+        deleteOptions.headers['Authorization'] = `Bearer ${bearerToken}`;
       }
 
-      const response = await apiClient.delete('/api/upload/delete-image', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${bearerToken}`
-        },
-        body: { imageUrl },
-        timeout: 15000
-      });
+      const response = await apiClient.delete('/api/upload/delete-image', deleteOptions);
 
       return response.ok;
     } catch (error: unknown) {
@@ -328,18 +337,22 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call
+      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
       const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return [];
+      
+      // Build request options
+      const getOptions: any = {
+        timeout: 15000
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      if (bearerToken) {
+        getOptions.headers = {
+          'Authorization': `Bearer ${bearerToken}`
+        };
       }
 
-      const response = await apiClient.get('/api/upload/profile-images', {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`
-        },
-        timeout: 15000
-      });
+      const response = await apiClient.get('/api/upload/profile-images', getOptions);
 
       if (!response.ok) throw new Error('Failed to fetch profile images');
       return response.data.images || [];
@@ -429,23 +442,27 @@ export class ImageUploadService {
       // Compress image for optimal upload with device-optimized settings
       const compressionResult = await ImageCompression.compressForDevice(file);
 
-      // Get Bearer token for backend API call
+      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
       const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        throw new Error('Authentication required. Please log in first.');
-      }
 
       // Create form data
       const formData = new FormData();
       formData.append('image', compressionResult.file);
 
-      // Upload to B2 via backend
-      const response = await apiClient.upload('/api/upload/profile-picture', formData, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`
-        },
+      // Build upload options
+      const uploadOptions: any = {
         timeout: 30000
-      });
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      if (bearerToken) {
+        uploadOptions.headers = {
+          'Authorization': `Bearer ${bearerToken}`
+        };
+      }
+
+      // Upload to B2 via backend
+      const response = await apiClient.upload('/api/upload/profile-picture', formData, uploadOptions);
 
       if (!response.ok) {
         const errorData = response.data || {};
@@ -493,18 +510,22 @@ export class ImageUploadService {
     }
 
     try {
-      // Get Bearer token for backend API call
+      // Get Bearer token for backend API call (returns null if using HTTP-only cookies)
       const bearerToken = await getBearerToken();
-      if (!bearerToken) {
-        return false;
+      
+      // Build delete options
+      const deleteOptions: any = {
+        timeout: 15000
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      if (bearerToken) {
+        deleteOptions.headers = {
+          'Authorization': `Bearer ${bearerToken}`
+        };
       }
 
-      const response = await apiClient.delete('/api/upload/profile-picture', {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`
-        },
-        timeout: 15000
-      });
+      const response = await apiClient.delete('/api/upload/profile-picture', deleteOptions);
 
       return response.ok;
     } catch (error) {
@@ -582,12 +603,19 @@ export class ImageUploadService {
 
   logger.debug(`🔍 Fetching signed URL from: ${apiBaseUrl}/api/upload/profile-picture/url?expiry=${expiry}`);
       
-      const response = await apiClient.get(`/api/upload/profile-picture/url?expiry=${expiry}`, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`,
-        },
+      // Build request options
+      const getOptions: any = {
         timeout: 15000
-      });
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      if (bearerToken) {
+        getOptions.headers = {
+          'Authorization': `Bearer ${bearerToken}`
+        };
+      }
+      
+      const response = await apiClient.get(`/api/upload/profile-picture/url?expiry=${expiry}`, getOptions);
       
   logger.debug(`🔍 Response status: ${response.status}`);
       
@@ -662,12 +690,19 @@ export class ImageUploadService {
         return null;
       }
 
-      const response = await apiClient.get(`/api/upload/profile-picture/${userId}/url?expiry=${expiry}`, {
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`
-        },
+      // Build request options
+      const getOptions: any = {
         timeout: 15000
-      });
+      };
+      
+      // Only add Authorization header if we have a token (non-cookie auth)
+      if (bearerToken) {
+        getOptions.headers = {
+          'Authorization': `Bearer ${bearerToken}`
+        };
+      }
+
+      const response = await apiClient.get(`/api/upload/profile-picture/${userId}/url?expiry=${expiry}`, getOptions);
 
       if (!response.ok) {
         const errorText = JSON.stringify(response.data || {});

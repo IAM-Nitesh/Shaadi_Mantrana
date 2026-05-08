@@ -1295,16 +1295,18 @@ function ProfileContent() {
           if (response.ok) {
             const data = response.data;
             logger.debug('📥 Raw backend response after refresh:', data);
-            if (data.profile && data.profile.profile) {
+            // Backend returns: { success: true, user: { userId, email, userUuid, profile: {...}, ... } }
+            if (data.success && data.user) {
               refreshedProfile = {
-                ...data.profile.profile,
-                email: data.profile.email,
-                userUuid: data.profile.userUuid,
-                isFirstLogin: data.profile.isFirstLogin,
-                id: data.profile.userId?.toString(),
-                role: 'user',
-                verified: data.profile.verification?.isVerified || false,
-                lastActive: data.profile.lastActive || new Date().toISOString()
+                ...data.user.profile,
+                email: data.user.email,
+                userUuid: data.user.userUuid,
+                isFirstLogin: data.user.isFirstLogin,
+                id: data.user.userId?.toString(),
+                role: data.user.role || 'user',
+                verified: data.user.verification?.isVerified || false,
+                lastActive: data.user.lastActive || new Date().toISOString(),
+                hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false
               };
               setProfile(refreshedProfile);
               logger.debug('🔄 Profile refreshed from backend with cache-busting:', refreshedProfile);

@@ -17,10 +17,17 @@ const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true' || process.env.NODE_ENV !==
 function getCookieOptions(req, options = {}) {
   const isProduction = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
   
+  // IMPORTANT: SameSite Cookie Configuration
+  // - Frontend: Vercel (shaadimantrana.app)
+  // - Backend: Render (different domain)
+  // - Production uses 'none' because frontend and backend are on DIFFERENT domains
+  // - Development uses 'lax' (same-origin: localhost:3000 and localhost:5500)
+  // - 'none' requires secure:true (HTTPS only)
+  
   return {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
+    httpOnly: true,           // Prevents XSS attacks
+    secure: isProduction,     // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax',  // 'none' for cross-site (Vercel->Render)
     path: '/',
     ...options
   };
@@ -935,7 +942,8 @@ class AuthController {
           if (sessionData) {
             return res.status(200).json({
               success: true,
-              token: token
+              token: token,
+              expiresAt: decoded.exp * 1000 // Convert to milliseconds
             });
           }
         } catch (tokenError) {
@@ -956,7 +964,8 @@ class AuthController {
           if (sessionData) {
             return res.status(200).json({
               success: true,
-              token: accessToken
+              token: accessToken,
+              expiresAt: decoded.exp * 1000 // Convert to milliseconds
             });
           }
         } catch (tokenError) {
@@ -992,7 +1001,8 @@ class AuthController {
 
             return res.status(200).json({
               success: true,
-              token: newAccessToken
+              token: newAccessToken,
+              expiresAt: payload.exp * 1000 // Convert to milliseconds
             });
           }
         } catch (tokenError) {
