@@ -268,7 +268,7 @@ const clientLogLimiter = expressRateLimit({
 app.post('/api/logs', clientLogLimiter, (req, res) => {
   try {
     const apiKey = req.headers['x-client-log-key'] || req.query.key;
-    const expectedKey = process.env.LOKI_CLIENT_API_KEY;
+    const expectedKey = process.env.LOKI_CLIENT_API_KEY || process.env.NEXT_PUBLIC_LOKI_CLIENT_API_KEY;
     if (!expectedKey || apiKey !== expectedKey) {
       logger.warn({ event: 'client_log_unauthorized', ip: req.ip, headers: req.headers }, 'Unauthorized client log attempt');
       return res.status(401).json({ success: false, error: 'Unauthorized' });

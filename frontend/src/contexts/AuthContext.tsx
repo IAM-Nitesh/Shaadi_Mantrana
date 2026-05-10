@@ -1,9 +1,11 @@
-'use client';
-
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import logger from '../utils/logger';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5500';
+import { 
+  RecaptchaVerifier, 
+  signInWithPhoneNumber, 
+  ConfirmationResult,
+  getIdToken,
+  signOut as firebaseSignOut
+} from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 export interface User {
   userId: string;
@@ -15,6 +17,7 @@ export interface User {
   isFirstLogin?: boolean;
   isApprovedByAdmin?: boolean;
   hasSeenOnboardingMessage?: boolean;
+  phoneNumber?: string;
 }
 
 export interface AuthContextType {
@@ -27,6 +30,8 @@ export interface AuthContextType {
   isExpired: boolean;
   login: (email: string, otp: string) => Promise<boolean>;
   sendOtp: (email: string) => Promise<boolean>;
+  signInWithPhone: (phoneNumber: string) => Promise<ConfirmationResult | null>;
+  confirmPhoneCode: (confirmationResult: ConfirmationResult, code: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   forceRefresh: () => Promise<void>;
@@ -230,8 +235,71 @@ export const AuthProvider = ({
     }
   };
 
+  const signInWithPhone = async (phoneNumber: string): Promise<ConfirmationResult | null> => {
+    try {
+      setError(null);
+      
+      // Initialize reCAPTCHA - ensure we have a container in the DOM
+      // For mobile apps, invisible reCAPTCHA is best
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
+
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      logger.info('✅ Firebase: OTP sent to', phoneNumber);
+      return confirmationResult;
+    } catch (err: any) {
+      logger.error('❌ Firebase Phone Auth Error:', err);
+      setError(err.message || 'Failed to send OTP');
+      return null;
+    }
+  };
+
+  const confirmPhoneCode = async (confirmationResult: ConfirmationResult, code: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const result = await confirmationResult.confirm(code);
+      const fbUser = result.user;
+      const idToken = await getIdToken(fbUser);
+
+      logger.info('✅ Firebase: Code confirmed, syncing with backend...');
+
+      // Send ID Token to our backend
+      const response = await fetch(`${API_BASE_URL}/api/auth/firebase-login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        logger.error('❌ AuthContext: Firebase sync failed:', data);
+        setError(data.error || 'Failed to sync with server');
+        return false;
+      }
+
+      logger.info('✅ AuthContext: Firebase login successful');
+      await checkAuth();
+      return true;
+    } catch (err: any) {
+      logger.error('❌ Firebase Code Confirmation Error:', err);
+      setError(err.message || 'Invalid verification code');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async (): Promise<void> => {
     try {
+      // Sign out from Firebase
+      await firebaseSignOut(auth);
+      
+      // Sign out from our backend
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
@@ -255,6 +323,8 @@ export const AuthProvider = ({
     isExpired,
     login,
     sendOtp,
+    signInWithPhone,
+    confirmPhoneCode,
     logout,
     checkAuth,
     forceRefresh,

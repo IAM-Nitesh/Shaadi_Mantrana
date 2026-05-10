@@ -7,6 +7,7 @@ const fs = require('fs').promises;
 const crypto = require('crypto');
 const { SecurityUtils } = require('../utils/security');
 const B2StorageService = require('../services/b2StorageService');
+const { logger } = require('../utils/pino-logger');
 
 // Enhanced validation utilities for uploads
 const UploadValidationUtils = {
@@ -842,9 +843,7 @@ const uploadController = {
     const startTime = Date.now();
     
     try {
-      console.log('🔍 uploadProfilePicture called');
-      console.log('📁 req.file:', req.file);
-      console.log('👤 req.user:', req.user);
+      logger.info({ userId: req.user && req.user.userId, hasFile: !!req.file }, 'Profile picture upload requested');
       
       // Check if user is authenticated
       if (!req.user || !req.user.userId) {
@@ -857,9 +856,7 @@ const uploadController = {
 
       // Check if file exists
       if (!req.file) {
-        console.log('❌ No file provided in req.file');
-        console.log('📋 req.body:', req.body);
-        console.log('📋 req.files:', req.files);
+        logger.warn({ userId: req.user && req.user.userId }, 'Profile picture upload missing file');
         return res.status(400).json({
           success: false,
           message: 'No file provided',
@@ -900,7 +897,7 @@ const uploadController = {
       // Initialize B2 storage service
       const b2Storage = new B2StorageService();
 
-      console.log(`⏱️ Starting B2 upload at: ${new Date().toISOString()}`);
+      logger.info({ userId: req.user.userId }, 'Starting B2 profile picture upload');
       
       // Upload to B2
       const uploadResult = await b2Storage.uploadProfilePicture(
@@ -908,7 +905,7 @@ const uploadController = {
         req.user.userId
       );
       
-      console.log(`⏱️ B2 upload completed at: ${new Date().toISOString()}`);
+      logger.info({ userId: req.user.userId }, 'B2 profile picture upload completed');
 
       // Update user's profile with the file reference
       const User = require('../models/User');
@@ -1096,18 +1093,17 @@ const uploadController = {
       const userId = req.user.userId;
       const { expiry = 3600 } = req.query; // Default 1 hour
 
-      console.log(`🔍 getMyProfilePictureUrl called for user: ${userId}`);
+      logger.info({ userId }, 'Profile picture signed URL requested');
 
       // Initialize B2 storage service
       const b2Storage = new B2StorageService();
 
       // Check if profile picture exists
-      console.log(`🔍 Checking if profile picture exists for user: ${userId}`);
       const exists = await b2Storage.profilePictureExists(userId);
-      console.log(`🔍 Profile picture exists: ${exists}`);
+      logger.debug({ userId, exists }, 'Profile picture existence checked');
       
       if (!exists) {
-        console.log(`❌ Profile picture not found for user: ${userId}`);
+        logger.warn({ userId }, 'Profile picture not found');
         return res.status(404).json({
           success: false,
           message: 'Profile picture not found',
@@ -1116,9 +1112,8 @@ const uploadController = {
       }
 
       // Generate signed URL
-      console.log(`🔍 Generating signed URL for user: ${userId}`);
       const signedUrl = await b2Storage.getSignedUrl(userId, parseInt(expiry));
-      console.log(`✅ Signed URL generated: ${signedUrl}`);
+      logger.info({ userId, expiry: parseInt(expiry) }, 'Profile picture signed URL generated');
 
       const processingTime = Date.now() - startTime;
 

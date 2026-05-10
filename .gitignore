@@ -17,8 +17,17 @@ frontend/out/
 frontend/dist/
 backend/dist/
 
-# Mobile build outputs
-android/*
+# Mobile build outputs and local Android state
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/app/debug/
+android/local.properties
+android/**/*.keystore
+android/**/*.jks
+keystore.properties
+android/keystore.properties
 
 
 # Environment variables (track only .env.example or .env.template)
@@ -121,6 +130,8 @@ backend/uploads/*
 *.key
 *.cert
 *.crt
+*.jks
+*.keystore
 *.p12
 *.pfx
 

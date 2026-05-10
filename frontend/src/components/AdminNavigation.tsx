@@ -49,6 +49,12 @@ export default function AdminNavigation() {
       label: 'Data Safety',
       icon: 'ri-shield-check-line',
       active: pathname === '/admin/data-safety'
+    },
+    {
+      href: '/admin/moderation',
+      label: 'Moderation',
+      icon: 'ri-image-check-line',
+      active: pathname === '/admin/moderation'
     }
   ];
 

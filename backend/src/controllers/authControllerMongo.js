@@ -9,6 +9,7 @@ const config = require('../config');
 const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
 const { User } = require('../models');
+const { verifyIdToken } = require('../services/firebaseService');
 
 const { logger } = require('../utils/pino-logger');
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
@@ -142,6 +143,146 @@ const SecurityUtils = {
 };
 
 class AuthController {
+  // Login with Firebase ID Token
+  async firebaseLogin(req, res) {
+    try {
+      const { idToken, fcmToken } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'Firebase ID Token is required'
+        });
+      }
+
+      // Verify Firebase Token
+      let decodedToken;
+      try {
+        decodedToken = await verifyIdToken(idToken);
+      } catch (error) {
+        logger.error({ event: 'firebase_token_failed', err: error.message }, 'Firebase token verification failed');
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid Firebase token'
+        });
+      }
+
+      const { uid, email, phone_number, name, picture } = decodedToken;
+      const clientIP = SecurityUtils.getClientIP(req);
+
+      // 1. Try to find user by firebaseUid
+      let user = await User.findOne({ firebaseUid: uid });
+
+      // 2. If not found, try to find by email
+      if (!user && email) {
+        user = await User.findOne({ email: email.toLowerCase() });
+        if (user) {
+          // Link existing email account to Firebase
+          user.firebaseUid = uid;
+          if (phone_number) user.phoneNumber = phone_number;
+          await user.save();
+          logger.info({ event: 'account_linked', email, uid }, 'Linked existing email account to Firebase');
+        }
+      }
+
+      // 3. If still not found and we have a phone number, try by phone
+      if (!user && phone_number) {
+        user = await User.findOne({ phoneNumber: phone_number });
+        if (user) {
+          user.firebaseUid = uid;
+          await user.save();
+          logger.info({ event: 'account_linked_phone', phone: phone_number, uid }, 'Linked existing phone account to Firebase');
+        }
+      }
+
+      // 4. Create new user if not found
+      if (!user) {
+        const { v4: uuidv4 } = require('uuid');
+        user = new User({
+          email: email || `${uid}@shaadimantrana.firebase`, // Fallback for phone-only login
+          firebaseUid: uid,
+          phoneNumber: phone_number,
+          userUuid: uuidv4(),
+          isApprovedByAdmin: true, // Default to true or check pre-approval logic
+          role: 'user',
+          status: 'active', // Set to active for Firebase users
+          isFirstLogin: true,
+          profile: {
+            name: name || '',
+            images: picture ? [picture] : [],
+            profileCompleteness: 0
+          }
+        });
+        await user.save();
+        logger.info({ event: 'firebase_user_created', uid, email }, 'New Firebase user created');
+      }
+
+      // Update FCM token if provided
+      if (fcmToken) {
+        user.fcmToken = fcmToken;
+        await user.save();
+      }
+
+      // Update last login info
+      user.lastActive = new Date();
+      user.lastLogin = {
+        timestamp: new Date(),
+        ipAddress: clientIP,
+        userAgent: req.headers['user-agent'],
+        deviceType: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 
+                   req.headers['user-agent']?.includes('Tablet') ? 'tablet' : 'desktop'
+      };
+      await user.save();
+
+      // Create JWT session for backward compatibility
+      const session = await JWTSessionManager.createSession(user);
+      
+      const userData = user.toPublicJSON();
+      const isAdminUser = user.role === 'admin';
+      const completeness = user.profile?.profileCompleteness || 0;
+      
+      const redirectTo = isAdminUser
+        ? '/admin/dashboard'
+        : (user.isFirstLogin || completeness < 100)
+          ? '/profile'
+          : '/dashboard';
+
+      const responseData = {
+        success: true,
+        message: 'Firebase login successful',
+        accessToken: session.accessToken,
+        user: {
+          ...userData,
+          profileCompleteness: completeness
+        },
+        redirectTo,
+        session: {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          expiresIn: session.expiresIn,
+          sessionId: session.sessionId
+        }
+      };
+
+      // Set Cookies
+      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      
+      res.cookie('accessToken', session.accessToken, cookieOptions);
+      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { maxAge: cookieMaxAge * 2 }));
+      res.cookie('sessionId', session.sessionId, cookieOptions);
+
+      res.status(200).json(responseData);
+
+    } catch (error) {
+      logger.error({ event: 'firebase_login_error', err: error.message }, 'Firebase login error');
+      res.status(500).json({
+        success: false,
+        error: 'Failed to process Firebase login'
+      });
+    }
+  }
+
   // Send OTP for email verification (No storage - for external service integration)
   async sendOTP(req, res) {
   if (AUTH_DEBUG) logger.debug({ event: 'send_otp_received', email: req.body && req.body.email }, 'sendOTP received');
