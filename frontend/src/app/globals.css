@@ -35,6 +35,9 @@
 
 /* Design System Variables */
 :root {
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Great Vibes', cursive, ui-serif, Georgia, serif;
+  --font-body: 'Cormorant Infant', ui-serif, Georgia, serif;
   /* Primary Colors */
   --color-primary-50: #fdf2f8;
   --color-primary-100: #fce7f3;

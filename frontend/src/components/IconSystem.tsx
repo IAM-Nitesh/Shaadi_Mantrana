@@ -233,7 +233,7 @@ export const ICON_REGISTRY = {
 
 export type IconName = keyof typeof ICON_REGISTRY;
 
-interface IconProps {
+export interface IconProps {
   name: IconName | string;
   size?: IconSize | number;
   className?: string;
@@ -377,7 +377,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       <Icon
         name={name}
         size={iconSize}
-        aria-hidden="true"
+        aria-hidden={true}
         {...iconProps}
       />
     </button>
@@ -418,7 +418,7 @@ export const IconText: React.FC<IconTextProps> = ({
       <Icon
         name={name}
         size={size}
-        aria-hidden="true"
+        aria-hidden={true}
         {...iconProps}
       />
       <span className={`${textClasses[textSize]} font-medium`}>
@@ -473,4 +473,3 @@ export const IconUtils = {
 
 // Export default Icon component for backward compatibility
 export default Icon;
-

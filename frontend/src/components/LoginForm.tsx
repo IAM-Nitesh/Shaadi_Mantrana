@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import OTPInput from './OTPInput';
 import logger from '../utils/logger';
+import { ConfirmationResult } from 'firebase/auth';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -12,14 +13,14 @@ interface LoginFormProps {
 
 export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const router = useRouter();
-  const { login, sendOtp, isAuthenticated, isLoading, error, redirectTo } = useAuth();
+  const { signInWithPhone, confirmPhoneCode, isAuthenticated, isLoading, error, redirectTo } = useAuth();
   
-  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'email' | 'otp'>('email');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -47,118 +48,105 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   }, [resendCooldown]);
 
   const handleSendOTP = async () => {
-    if (!email.trim()) {
+    if (!phoneNumber.trim()) {
       return;
     }
+
+    // Basic phone number validation (simple check, Firebase handles real validation)
+    const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber.trim() : `+91${phoneNumber.trim()}`;
 
     setIsSendingOTP(true);
 
     try {
-      logger.debug('LoginForm: sending OTP');
-      const success = await sendOtp(email.trim());
+      logger.debug('LoginForm: sending Firebase Phone OTP', { phoneNumber: formattedPhone });
+      const result = await signInWithPhone(formattedPhone);
       
-      if (success) {
-        setOtpSent(true);
+      if (result) {
+        setConfirmationResult(result);
         setStep('otp');
-        setResendCooldown(30); // 30 second cooldown
-        logger.info('LoginForm: OTP sent successfully');
+        setResendCooldown(60); // 60 second cooldown for phone auth
+        logger.info('LoginForm: Phone OTP sent successfully');
       } else {
-        logger.warn('LoginForm: OTP send failed');
+        logger.warn('LoginForm: Phone OTP send failed');
       }
-    } catch (error) {
-      logger.error('LoginForm: OTP send error', error);
+    } catch (err) {
+      logger.error('LoginForm: Phone OTP send error', err);
     } finally {
       setIsSendingOTP(false);
     }
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp.trim() || otp.length !== 6) {
+    if (!otp.trim() || otp.length !== 6 || !confirmationResult) {
       return;
     }
 
     setIsVerifyingOTP(true);
 
     try {
-      logger.debug('LoginForm: verifying OTP');
-      const success = await login(email.trim(), otp.trim());
+      logger.debug('LoginForm: verifying Firebase Code');
+      const success = await confirmPhoneCode(confirmationResult, otp.trim());
       
       if (success) {
         logger.info('LoginForm: login successful');
         onLoginSuccess?.();
-        // AuthContext will handle redirect via redirectTo
       } else {
         logger.warn('LoginForm: login failed');
       }
-    } catch (error) {
-      logger.error('LoginForm: login error', error);
+    } catch (err) {
+      logger.error('LoginForm: login error', err);
     } finally {
       setIsVerifyingOTP(false);
     }
   };
 
-  const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
-    
-    setIsSendingOTP(true);
-
-    try {
-      logger.debug('LoginForm: resending OTP');
-      const success = await sendOtp(email.trim());
-      
-      if (success) {
-        setResendCooldown(30); // 30 second cooldown
-        logger.info('LoginForm: OTP resent successfully');
-      } else {
-        logger.warn('LoginForm: OTP resend failed');
-      }
-    } catch (error) {
-      logger.error('LoginForm: OTP resend error', error);
-    } finally {
-      setIsSendingOTP(false);
-    }
-  };
-
-  const handleBackToEmail = () => {
-    setStep('email');
+  const handleBackToPhone = () => {
+    setStep('phone');
     setOtp('');
-    setOtpSent(false);
+    setConfirmationResult(null);
   };
 
-  if (step === 'email') {
+  if (step === 'phone') {
     return (
       <div className="w-full max-w-md mx-auto">
         <div className={`rounded-2xl shadow-xl p-8 ${isMounted ? 'bg-white/80 backdrop-blur-md' : 'bg-white'}`}>
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome</h2>
-            <p className="text-gray-600">Sign in to your account to continue</p>
+            <p className="text-gray-600">Enter your mobile number to continue</p>
           </div>
 
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Mobile Number
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-300"
-                disabled={isSendingOTP}
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="Enter 10 digit number"
+                  className="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-300"
+                  disabled={isSendingOTP}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2 italic">We'll send a code for verification</p>
             </div>
 
             <button
               onClick={handleSendOTP}
-              disabled={!email.trim() || isSendingOTP}
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-xl font-medium hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={phoneNumber.length < 10 || isSendingOTP}
+              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-xl font-medium hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {isSendingOTP ? 'Sending...' : 'Send Verification Code'}
+              {isSendingOTP ? 'Sending OTP...' : 'Get Verification Code'}
             </button>
 
+            {/* Hidden reCAPTCHA container for Firebase */}
+            <div id="recaptcha-container"></div>
+
             {error && (
-              <div className="text-red-500 text-sm text-center">
+              <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg border border-red-100">
                 {error}
               </div>
             )}
@@ -172,8 +160,8 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     <div className="w-full max-w-md mx-auto">
       <div className={`rounded-2xl shadow-xl p-8 ${isMounted ? 'bg-white/80 backdrop-blur-md' : 'bg-white'}`}>
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
-          <p className="text-gray-600">Enter the 6-digit code sent to your email</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Mobile</h2>
+          <p className="text-gray-600">Enter the 6-digit code sent to your phone</p>
         </div>
 
         <div className="space-y-6">
@@ -187,21 +175,21 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               disabled={isVerifyingOTP}
             />
             <p className="text-sm text-gray-500 mt-4 text-center">
-              Code sent to <span className="font-medium">{email}</span>
+              Code sent to <span className="font-medium">+91 {phoneNumber}</span>
             </p>
           </div>
 
           <button
             onClick={handleVerifyOTP}
-            disabled={!otp.trim() || otp.length !== 6 || isVerifyingOTP}
-            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-xl font-medium hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={otp.length !== 6 || isVerifyingOTP}
+            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-xl font-medium hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {isVerifyingOTP ? 'Verifying...' : 'Verify Code'}
           </button>
 
           <div className="text-center">
             <button
-              onClick={handleResendOTP}
+              onClick={handleSendOTP}
               disabled={resendCooldown > 0 || isSendingOTP}
               className="text-rose-500 hover:text-rose-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -211,15 +199,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
           <div className="text-center">
             <button
-              onClick={handleBackToEmail}
+              onClick={handleBackToPhone}
               className="text-gray-500 hover:text-gray-600 font-medium"
             >
-              ← Back to Email
+              ← Change Phone Number
             </button>
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg border border-red-100">
               {error}
             </div>
           )}

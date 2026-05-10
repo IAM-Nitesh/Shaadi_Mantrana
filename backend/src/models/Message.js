@@ -34,8 +34,8 @@ const messageSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Keep messages for 24 hours (TTL index)
-messageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 });
+// Keep messages for 30 days (TTL index)
+messageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
 messageSchema.statics.getByConnection = function(connectionId, limit = 100) {
   return this.find({ connectionId }).sort({ createdAt: 1 }).limit(limit).lean();

@@ -20,6 +20,27 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
+
+  // Firebase Authentication
+  firebaseUid: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
+  },
+
+  phoneNumber: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
+  },
+
+  // Push Notifications
+  fcmToken: {
+    type: String,
+    trim: true
+  },
   
   // Profile Information
   profile: {
@@ -208,6 +229,13 @@ const userSchema = new mongoose.Schema({
       default: 0,
       min: 0,
       max: 100
+    },
+    
+    // Photo Moderation
+    photoStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
     }
   },
 
@@ -351,6 +379,9 @@ userSchema.index({ status: 1 });
 userSchema.index({ lastActive: -1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ 'lastLogin.timestamp': -1 });
+userSchema.index({ firebaseUid: 1 });
+userSchema.index({ phoneNumber: 1 });
+userSchema.index({ 'profile.photoStatus': 1 });
 
 // Virtual for profile completion calculation (legacy - use profileCompleteness instead)
 userSchema.virtual('profileCompletion').get(function() {

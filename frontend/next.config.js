@@ -1,16 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  output: 'export',
+  outputFileTracingRoot: __dirname,
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
   },
-  
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  
-  
   // Proxy API requests to backend in development
   async rewrites() {
+    // Rewrites are not supported with output: 'export'
+    // This will only work in development mode without 'next build'
     if (process.env.NODE_ENV === 'development') {
       return [
         {
@@ -24,3 +23,4 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+

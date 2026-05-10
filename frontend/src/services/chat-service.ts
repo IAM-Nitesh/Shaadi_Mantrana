@@ -1,5 +1,5 @@
-// Chat Service - Socket.IO Client Integration
-import { io, Socket } from 'socket.io-client';
+// Chat Service - Supabase Realtime Integration
+import { supabase, getChatChannel } from '../utils/supabase';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getCurrentUser } from './auth-utils';
@@ -7,6 +7,7 @@ import { apiClient } from '../utils/api-client';
 import { config as configService } from './configService';
 import { MatchingService } from './matching-service';
 import { getAuthHeaders, isAuthenticated } from './auth-utils';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface ChatMessage {
   id: string;
@@ -24,33 +25,33 @@ export interface ChatConnection {
     image: string;
   };
 }
+
 export class ChatService {
   private static baseUrl = configService.apiBaseUrl;
-  private static socket: Socket | null = null;
+  private static channel: RealtimeChannel | null = null;
   private static messageListeners: Array<(msg: ChatMessage) => void> = [];
 
   /**
    * Get chat messages with caching for 1 day
    */
   static async getChatMessages(connectionId: string): Promise<any> {
-    // Use the MatchingService cache for chat messages
     return await MatchingService.getChatMessages(connectionId);
   }
 
   /**
-   * Send a message and clear cache for that chat
+   * Send a message and broadcast to Supabase channel
    */
   static async sendMessage(connectionId: string, message: string): Promise<any> {
     try {
-      // Check if user is authenticated using server-side auth
       const authenticated = await isAuthenticated();
       if (!authenticated) {
         throw new Error('No authentication token found');
       }
 
-      // Get auth headers (includes Authorization if using token-based auth)
       const authHeaders = await getAuthHeaders();
+      const currentUser = await getCurrentUser();
 
+      // 1. Send to backend for persistence
       const response = await apiClient.post(`/api/chat/${connectionId}`, { message }, {
         headers: {
           ...authHeaders,
@@ -63,77 +64,63 @@ export class ChatService {
 
       const data = response.data;
       
-      // Clear cache for this chat when new message is sent
-      MatchingService.clearChatCache(connectionId);
+      // 2. Broadcast via Supabase for Realtime delivery
+      if (this.channel) {
+        this.channel.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: {
+            id: data.messageId || Date.now().toString(),
+            senderId: currentUser?.userId || currentUser?._id,
+            message,
+            timestamp: new Date().toISOString(),
+            connectionId
+          }
+        });
+      }
       
+      MatchingService.clearChatCache(connectionId);
       return data;
     } catch (error) {
       try {
         const user = await getCurrentUser();
-  const log = loggerForUser(user?.userUuid);
-  log.error({ err: error }, 'Error sending message');
+        const log = loggerForUser(user?.userUuid);
+        log.error({ err: error }, 'Error sending message');
       } catch (e) {
-  logger.error({ err: error }, 'Error sending message');
+        logger.error({ err: error }, 'Error sending message');
       }
       throw error;
     }
   }
 
-  // Initialize Socket.IO connection and join a room
+  // Initialize Supabase Channel connection
   static async initSocket(connectionId: string) {
     try {
-      if (this.socket && this.socket.connected) {
-        // already connected
-        this.socket.emit('join_room', { connectionId });
+      if (this.channel) {
         return;
       }
-      // Ensure we have freshest auth status when initializing sockets
-      try { (await import('./auth-utils')).clearAuthStatusCache(); } catch (e) { /* ignore */ }
 
       const authenticated = await isAuthenticated();
       if (!authenticated) throw new Error('User not authenticated');
 
-      // Socket.io requires authentication token
-      // Note: Socket.io needs actual token value, not HTTP-only cookie
-      // For cookie-based auth, we rely on socket.io's built-in cookie handling
-      const authHeaders = await getAuthHeaders();
-      const hasAuthToken = authHeaders['Authorization'];
+      // Initialize Supabase Channel
+      this.channel = getChatChannel(connectionId);
 
-      // create socket with appropriate auth method
-      this.socket = io(this.baseUrl, {
-        auth: hasAuthToken ? { token: authHeaders['Authorization'].replace('Bearer ', '') } : {},
-        transports: ['websocket'],
-        reconnectionAttempts: 3,
-        withCredentials: true  // Important: Allows cookies to be sent with socket connection
-      });
-
-      // Clear previous listeners just in case
-      this.socket.off('new_message');
-
-      this.socket.on('connect', () => {
-        // join the chat room
-        this.socket?.emit('join_room', { connectionId });
-      });
-
-      this.socket.on('authenticated', (data: any) => {
-        // optionally handle auth
-        // join room on successful authentication
-        this.socket?.emit('join_room', { connectionId });
-      });
-
-      this.socket.on('new_message', (msg: ChatMessage) => {
-        // notify all listeners
-        this.messageListeners.forEach(fn => {
-          try { fn(msg); } catch (e) { /* swallow */ }
+      // Listen for broadcasts
+      this.channel
+        .on('broadcast', { event: 'new_message' }, ({ payload }) => {
+          this.messageListeners.forEach(fn => {
+            try { fn(payload as ChatMessage); } catch (e) { /* swallow */ }
+          });
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            logger.info(`✅ Subscribed to Supabase channel: chat:${connectionId}`);
+          }
         });
-      });
-
-      this.socket.on('connect_error', (err) => {
-        logger.error('Socket connection error', err);
-      });
 
     } catch (error) {
-      logger.error('Failed to initialize socket', error);
+      logger.error('Failed to initialize Supabase channel', error);
       throw error;
     }
   }
@@ -149,19 +136,16 @@ export class ChatService {
 
   static disconnectSocket() {
     try {
-      if (this.socket) {
-        this.socket.disconnect();
-        this.socket = null;
+      if (this.channel) {
+        this.channel.unsubscribe();
+        this.channel = null;
         this.messageListeners = [];
       }
     } catch (e) {
-      logger.error('Error disconnecting socket', e);
+      logger.error('Error unsubscribing from Supabase channel', e);
     }
   }
 
-  /**
-   * Get cache statistics for monitoring
-   */
   static getCacheStats() {
     return MatchingService.getCacheStats();
   }

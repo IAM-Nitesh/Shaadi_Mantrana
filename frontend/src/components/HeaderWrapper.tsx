@@ -7,7 +7,7 @@ export default function HeaderWrapper() {
   const pathname = usePathname();
   const p = pathname || '';
   // Hide header on chat routes to avoid overlapping the chat head
-  if (p.startsWith('/chat/')) return null;
+  if (p === '/chat' || p.startsWith('/chat/')) return null;
 
   // Paths that should show the global back button
   const backPaths = ['/profile', '/settings', '/help', '/terms', '/privacy'];
