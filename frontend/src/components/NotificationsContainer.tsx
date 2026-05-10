@@ -1,5 +1,6 @@
-// Authentication Notification Component
 'use client';
+// Authentication Notification Component
+
 
 import React, { useEffect, useState } from 'react';
 import notificationService, { 

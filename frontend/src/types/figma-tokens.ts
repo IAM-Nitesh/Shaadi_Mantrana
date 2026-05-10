@@ -1,3 +1,7 @@
+type spacing = string;
+type borderRadius = string;
+type boxShadow = string;
+
 export interface DesignTokens {
   colors: DesignTokensColors;
   typography: DesignTokensTypography;
@@ -44,8 +48,8 @@ export interface DesignTokensBorderRadius {
   md: borderRadius;
   lg: borderRadius;
   xl: borderRadius;
-  2xl: borderRadius;
-  3xl: borderRadius;
+  '2xl': borderRadius;
+  '3xl': borderRadius;
   full: borderRadius;
 }
 
@@ -59,7 +63,7 @@ export interface DesignTokensShadows {
   md: boxShadow;
   lg: boxShadow;
   xl: boxShadow;
-  2xl: boxShadow;
+  '2xl': boxShadow;
 }
 
 export interface DesignTokens {

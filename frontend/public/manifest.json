@@ -1,7 +1,7 @@
 {
-  "name": "Shaadi Mantra",
-  "short_name": "Shaadi Mantra",
-  "description": "Find your perfect match with Shaadi Mantra",
+  "name": "Shaadi Mantrana",
+  "short_name": "Shaadi Mantrana",
+  "description": "Find your perfect match with Shaadi Mantrana",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -20,12 +20,6 @@
     {
       "src": "/icon-512.svg",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192.svg",
-      "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     }
@@ -66,22 +60,6 @@
           "sizes": "96x96"
         }
       ]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/dashboard.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard - Discover new profiles"
-    },
-    {
-      "src": "/screenshots/matches.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Matches - View your connections"
     }
   ],
   "related_applications": [],
