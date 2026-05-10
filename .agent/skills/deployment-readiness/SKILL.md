@@ -29,6 +29,7 @@ This skill provides the knowledge and patterns required to move a Next.js 15 pro
 - **The Fix**: Add `eslint`, `eslint-config-next`, and any component-level packages (e.g., `react-intersection-observer`) directly to `dependencies` — **NOT** `devDependencies`.
 - **Rationale**: Vercel's build worker runs in a production-mode install context. Any package used during compilation (linting, type-checking, component rendering) must live in `dependencies`.
 - **Pattern to catch**: If a file imports a package that is not in `dependencies`, add it there before pushing.
+- **Capacitor ESLint Conflict**: When using `<a>` tags for native links, add `"@next/next/no-html-link-for-pages": "off"` to `.eslintrc.json` to prevent build failures.
 
 ### 5. Static Export (Capacitor) Compatibility
 - **The Issue**: Hydration errors or blank screens in Capacitor apps using `next/link`.
