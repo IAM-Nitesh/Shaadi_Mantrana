@@ -13,7 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = searchParams.get('id');
+  const id = searchParams?.get('id');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);

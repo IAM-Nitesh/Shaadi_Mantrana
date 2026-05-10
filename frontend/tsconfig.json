@@ -13,7 +13,7 @@
     "incremental": true,
     "module": "esnext",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -28,12 +28,12 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "../android/app/src/main/assets/www/types/**/*.ts",
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
+    ".next",
     "**/__tests__/**",
     "**/*.test.ts",
     "**/*.test.tsx",

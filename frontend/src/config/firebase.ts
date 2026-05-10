@@ -1,5 +1,7 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+"use client";
+
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { Auth, getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,11 +12,30 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Lazy initialization — only runs on client, never during SSR/static export
+let _app: FirebaseApp | null = null;
+let _auth: Auth | null = null;
 
-// Configure phone auth language
-auth.useDeviceLanguage();
+export function getFirebaseApp(): FirebaseApp {
+  if (!_app) {
+    _app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  }
+  return _app;
+}
 
-export { app, auth };
+export function getFirebaseAuth(): Auth {
+  if (!_auth) {
+    const app = getFirebaseApp();
+    _auth = getAuth(app);
+    _auth.useDeviceLanguage();
+  }
+  return _auth;
+}
+
+// Keep backward-compatible named exports as getters
+export const app = new Proxy({} as FirebaseApp, {
+  get: (_, prop) => getFirebaseApp()[prop as keyof FirebaseApp],
+});
+export const auth = new Proxy({} as Auth, {
+  get: (_, prop) => getFirebaseAuth()[prop as keyof Auth],
+});
