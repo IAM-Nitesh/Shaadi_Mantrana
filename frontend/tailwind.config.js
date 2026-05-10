@@ -19,7 +19,16 @@ module.exports = {
           700: '#be185d',
           800: '#9d174d',
           900: '#831843',
+        },
+        accent: {
+          gold: '#CA8A04',
+          'gold-light': '#EAB308',
+          'gold-dark': '#A16207',
         }
+      },
+      fontFamily: {
+        heading: ['var(--font-heading)', 'cursive'],
+        body: ['var(--font-body)', 'serif'],
       },
       animation: {
         'gradient': 'gradient 8s ease infinite',

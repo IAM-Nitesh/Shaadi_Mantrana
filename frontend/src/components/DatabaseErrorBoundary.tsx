@@ -46,7 +46,7 @@ class DatabaseErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('DatabaseErrorBoundary caught an error:', error, errorInfo);
     this.setState({
-      errorInfo: errorInfo.componentStack
+      errorInfo: errorInfo.componentStack || null
     });
   }
 

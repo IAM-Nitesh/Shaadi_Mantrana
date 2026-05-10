@@ -7,6 +7,7 @@ const { User, Invitation } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const InviteEmailService = require('../services/inviteEmailService');
+const adminController = require('../controllers/adminController');
 
 // Middleware to check if user is admin
 const adminMiddleware = async (req, res, next) => {
@@ -1316,5 +1317,10 @@ router.post('/invitations/:invitationId/resend', authenticateToken, adminMiddlew
     });
   }
 });
+
+// Photo moderation routes
+router.get('/photos/pending', authenticateToken, adminMiddleware, adminController.getPendingPhotos);
+router.post('/photos/moderate', authenticateToken, adminMiddleware, adminController.moderatePhoto);
+router.get('/dashboard-stats', authenticateToken, adminMiddleware, adminController.getDashboardStats);
 
 module.exports = router;

@@ -27,16 +27,16 @@ export default function ClientMobileLoggerProvider({ children }: { children: Rea
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Dynamically import the MobileLoggerProvider only on client side
-        const module = await import('./MobileLoggerProvider');
+        const loggerProviderModule = await import('./MobileLoggerProvider');
         
         // Check if the module loaded properly
-        if (!module || !module.default) {
+        if (!loggerProviderModule || !loggerProviderModule.default) {
           throw new Error('MobileLoggerProvider module failed to load properly');
         }
         
         if (mounted) {
           // Set the component so we can render it
-          setLoggerProvider(() => module.default);
+          setLoggerProvider(() => loggerProviderModule.default);
           console.log('Mobile logger provider loaded successfully on client');
         }
       } catch (error) {

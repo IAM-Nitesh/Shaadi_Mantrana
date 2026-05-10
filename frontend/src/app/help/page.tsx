@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+;
 import CustomIcon from '../../components/CustomIcon';
 import { ContactService } from '../../services/contact-service';
 

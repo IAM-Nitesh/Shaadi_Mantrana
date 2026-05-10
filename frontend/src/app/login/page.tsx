@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+;
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/LoginForm';
@@ -332,13 +332,13 @@ export default function LoginPage() {
           <div className="text-center">
             <p className="text-gray-500 text-sm">
               By continuing, you agree to our{' '}
-              <Link href="/terms" className="text-rose-500 hover:text-rose-600">
+              <a href="/terms" className="text-rose-500 hover:text-rose-600">
                 Terms
-              </Link>{' '}
+              </a>{' '}
               and{' '}
-              <Link href="/privacy" className="text-rose-500 hover:text-rose-600">
+              <a href="/privacy" className="text-rose-500 hover:text-rose-600">
                 Privacy Policy
-              </Link>
+              </a>
             </p>
           </div>
         </div>
