@@ -713,72 +713,130 @@ class AuthController {
       };
 
       // Set HTTP-only cookies for the session with extended expiry - ADMIN SESSION FIX
-      // CRITICAL: Use longer expiry for admin sessions to prevent immediate logouts
-      // isAdminUser already defined above, reuse it
       const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 90 days for admin, 30 days for regular
       
       const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
       
-      // Define isProduction for logging
-      const isProduction = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
-
-      console.log('🍪 AuthController: Setting cookies with options:', {
-        maxAge: cookieMaxAge,
-        maxAgeDays: cookieMaxAge / (24 * 60 * 60 * 1000),
-        secure: cookieOptions.secure,
-        sameSite: cookieOptions.sameSite,
-        isAdminUser,
-        isProduction
-      });
-
-      // Set access token cookie
       res.cookie('accessToken', session.accessToken, cookieOptions);
       
-      // Set refresh token cookie with even longer expiration for admin users
       const refreshCookieMaxAge = isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000; // 180 days for admin, 90 days for regular
       const refreshCookieOptions = getCookieOptions(req, { maxAge: refreshCookieMaxAge });
       res.cookie('refreshToken', session.refreshToken, refreshCookieOptions);
       
-      // Set session ID cookie
       res.cookie('sessionId', session.sessionId, cookieOptions);
 
-  logger.info({ event: 'cookies_set', email: sanitizedEmail }, 'Cookies set for user');
+      logger.info({ event: 'cookies_set', email: sanitizedEmail }, 'Cookies set for user');
 
       res.status(200).json(responseData);
 
     } catch (error) {
-      console.error('❌ Verify OTP error:', error);
-      
-      // Provide user-friendly error messages
-      let errorMessage = 'Failed to verify OTP';
-      let statusCode = 500;
-      
-      if (error.name === 'ValidationError') {
-        statusCode = 400;
-        // Check for enum validation errors
-        const enumErrors = Object.keys(error.errors).filter(key => 
-          error.errors[key].kind === 'enum'
-        );
-        
-        if (enumErrors.length > 0) {
-          console.error('❌ Enum validation errors:', enumErrors);
-          errorMessage = 'Invalid profile data format. Please check your selections and try again.';
-        } else if (error.errors && error.errors['profile.maritalStatus']) {
-          errorMessage = 'Profile data validation error. Please contact support.';
-        } else {
-          errorMessage = 'Invalid data format. Please try again.';
-        }
-      } else if (error.name === 'MongoError' && error.code === 11000) {
-        statusCode = 409;
-        errorMessage = 'This email is already registered. Please try logging in.';
-      } else if (error.message && error.message.includes('not preapproved')) {
-        statusCode = 403;
-        errorMessage = 'This email is not authorized. Please contact support.';
-      }
-      
-      res.status(statusCode).json({
+      console.error('❌ Authentication processing error:', error);
+      res.status(500).json({
         success: false,
-        error: errorMessage
+        error: 'Failed to complete authentication'
+      });
+    }
+  }
+
+  /**
+   * Login using Firebase ID Token (Phone Auth)
+   * This is the primary anchor for Play Store compliance
+   */
+  async firebaseLogin(req, res) {
+    try {
+      const { idToken } = req.body;
+      const { verifyIdToken } = require('../services/firebaseService');
+      const { JWTSessionManager } = require('../middleware/auth');
+
+      if (!idToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'Firebase ID Token is required'
+        });
+      }
+
+      // 1. Verify token with Firebase
+      const decodedToken = await verifyIdToken(idToken);
+      const { uid, phone_number, email } = decodedToken;
+
+      if (!uid || !phone_number) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid Firebase token: Missing UID or Phone Number'
+        });
+      }
+
+      // 2. Find or Create User
+      let user = await User.findOne({ 
+        $or: [
+          { firebaseUid: uid },
+          { phoneNumber: phone_number }
+        ]
+      });
+
+      if (!user) {
+        // Create new user for first-time phone login
+        const { v4: uuidv4 } = require('uuid');
+        user = new User({
+          userUuid: uuidv4(),
+          firebaseUid: uid,
+          phoneNumber: phone_number,
+          email: email || `${uid}@shaadimantrana.firebase`, // Fallback email
+          status: 'active',
+          role: 'user',
+          verification: {
+            isVerified: true, // Phone is verified via Firebase
+            verifiedAt: new Date()
+          },
+          photoStatus: 'pending' // Play Store compliance: Force moderation
+        });
+        await user.save();
+        console.log(`✅ New Firebase user created: ${phone_number} (UUID: ${user.userUuid})`);
+      } else {
+        // Update existing user with Firebase info if missing
+        let updated = false;
+        if (!user.firebaseUid) { user.firebaseUid = uid; updated = true; }
+        if (!user.phoneNumber) { user.phoneNumber = phone_number; updated = true; }
+        
+        if (updated) {
+          await user.save();
+          console.log(`✅ Existing user updated with Firebase info: ${user.email}`);
+        }
+      }
+
+      // 3. Create JWT Session
+      const session = await JWTSessionManager.createSession(user);
+
+      // 4. Set cookies and return response
+      const isAdminUser = user.role === 'admin';
+      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      
+      res.cookie('accessToken', session.accessToken, cookieOptions);
+      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { maxAge: isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 }));
+      res.cookie('sessionId', session.sessionId, cookieOptions);
+
+      res.status(200).json({
+        success: true,
+        accessToken: session.accessToken,
+        user: {
+          ...user.toPublicJSON(),
+          isFirstLogin: user.isFirstLogin,
+          profileCompleteness: user.profile?.profileCompleteness || 0
+        },
+        session: {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          expiresIn: session.expiresIn,
+          sessionId: session.sessionId
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Firebase Login error:', error);
+      res.status(401).json({
+        success: false,
+        error: 'Authentication failed: ' + (error.message || 'Invalid token')
       });
     }
   }

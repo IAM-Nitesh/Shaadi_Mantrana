@@ -1,7 +1,7 @@
  'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+;
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
@@ -111,7 +111,7 @@ function SettingsContent() {
             <h2 className="font-semibold">Account</h2>
           </div>
           <div className="divide-y">
-            <Link href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            <a href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-user-line" className="text-gray-600" />
@@ -119,7 +119,7 @@ function SettingsContent() {
                 <span>Edit Profile</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -128,7 +128,7 @@ function SettingsContent() {
             <h2 className="font-semibold">Support</h2>
           </div>
           <div className="divide-y">
-            <Link href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            <a href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-question-line" className="text-gray-600" />
@@ -136,8 +136,8 @@ function SettingsContent() {
                 <span>Help & Support</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-            <Link href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            </a>
+            <a href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-file-text-line" className="text-gray-600" />
@@ -145,8 +145,8 @@ function SettingsContent() {
                 <span>Terms of Service</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-            <Link href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            </a>
+            <a href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-shield-line" className="text-gray-600" />
@@ -154,7 +154,7 @@ function SettingsContent() {
                 <span>Privacy Policy</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
+            </a>
           </div>
         </div>
 

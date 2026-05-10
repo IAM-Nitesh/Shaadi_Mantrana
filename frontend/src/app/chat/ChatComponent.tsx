@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+;
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -43,8 +43,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
-  const [showDisappearingBanner, setShowDisappearingBanner] = useState(true);
-  const disappearingBannerRef = useRef<HTMLDivElement | null>(null);
   const [headerOffset, setHeaderOffset] = useState<number>(0);
   const [headerHeight, setHeaderHeight] = useState<number>(0);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -91,16 +89,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
     return null;
   };
 
-  // Hide disappearing banner after 5 seconds
-  useEffect(() => {
-    logger.debug('🎬 Chat banner timer started - will hide in 5 seconds');
-    const timer = setTimeout(() => {
-      logger.debug('🎬 Hiding chat banner after 5 seconds');
-      setShowDisappearingBanner(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Compute top offset so chat header sits below app banner and any extra banner
   useEffect(() => {
@@ -109,9 +97,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         let offset = 0;
         const appBanner = document.querySelector('[role="banner"]') as HTMLElement | null;
         if (appBanner) offset += appBanner.offsetHeight || 0;
-        if (disappearingBannerRef.current && showDisappearingBanner) {
-          offset += disappearingBannerRef.current.offsetHeight || 0;
-        }
 
         // Read the CSS var --header-height (e.g. "96px") and parse it to a number
         let parsedHeaderHeight = 0;
@@ -134,7 +119,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
     const onResize = () => computeOffset();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [showDisappearingBanner]);
+  }, []);
 
   // Close unmatch menu when clicking outside
   useEffect(() => {
@@ -573,7 +558,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="fixed w-full bg-white/90 backdrop-blur-md border-b border-white/20 shadow-lg z-40 px-4 py-3"
-          style={{ top: headerOffset > 0 ? `${headerOffset}px` : (showDisappearingBanner ? 'calc(var(--header-height) + 60px)' : 'var(--header-height)') }}
+          style={{ top: headerOffset > 0 ? `${headerOffset}px` : 'var(--header-height)' }}
       >
         <div className="flex items-center space-x-3">
           <button 
@@ -689,28 +674,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         </div>
       </motion.div>
 
-      {/* Disappearing Messages Banner */}
-      <AnimatePresence>
-        {showDisappearingBanner && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="fixed top-0 left-0 right-0 z-50"
-          >
-            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm px-4 py-3 shadow-lg border-b border-pink-400/30 flex items-center justify-center">
-              <span className="text-center font-medium">Messages disappear after 12 hours.</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Chat messages area */}
 
       {/* Messages - scrollable area between fixed header (top) and input (bottom) */}
       <div
         className="absolute left-0 right-0 z-10 overflow-y-auto px-4"
         style={{
-          top: headerOffset > 0 ? `${headerOffset + headerHeight}px` : (showDisappearingBanner ? '120px' : '96px'),
+          top: headerOffset > 0 ? `${headerOffset + headerHeight}px` : '96px',
           bottom: '112px'
         }}
       >

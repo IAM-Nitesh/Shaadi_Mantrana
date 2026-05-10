@@ -181,30 +181,8 @@ class ChatController {
 
       res.status(201).json({ success: true, message: savedMessage });
 
-      // Broadcast message via Socket.IO to other users in the room
-      // Only broadcast if the message was successfully saved
-      if (savedMessage) {
-        try {
-          const chatService = require('../services/chatService');
-          if (chatService && chatService.io) {
-            const normalized = {
-              id: savedMessage.id ? (savedMessage.id.toString ? savedMessage.id.toString() : String(savedMessage.id)) : null,
-              senderId: savedMessage.senderId || savedMessage.sender || userId,
-              message: savedMessage.message || savedMessage.text || message,
-              timestamp: savedMessage.timestamp && savedMessage.timestamp.toISOString ? savedMessage.timestamp.toISOString() : (new Date(savedMessage.timestamp)).toISOString(),
-              status: savedMessage.status || 'sent',
-              connectionId: connectionId
-            };
-            
-            // Broadcast to all users in the room
-            chatService.io.to(connectionId).emit('new_message', normalized);
-            console.log(`📡 Message broadcasted via Socket.IO to room: ${connectionId}`);
-          }
-        } catch (broadcastError) {
-          console.warn('Failed to broadcast message via Socket.IO:', broadcastError.message);
-          // Don't fail the request if broadcasting fails
-        }
-      }
+      // Realtime broadcasting is now handled by the frontend via Supabase for zero-cost infrastructure.
+      console.log(`  Message persistence complete for: ${savedMessage.id}`);
       
     } catch (error) {
       console.error('❌ Send message error:', error);

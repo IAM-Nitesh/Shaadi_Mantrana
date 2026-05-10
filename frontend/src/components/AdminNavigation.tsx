@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+;
 import { usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
 import { useAuth } from '../contexts/AuthContext';
@@ -63,7 +63,7 @@ export default function AdminNavigation() {
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-2">
         <div className="flex space-x-1">
           {navItems.map((item) => (
-            <Link
+            <a
               key={item.href}
               href={item.href}
               className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 ${
@@ -74,7 +74,7 @@ export default function AdminNavigation() {
             >
               <CustomIcon name={item.icon} className="mr-2" />
               <span className="text-sm font-medium">{item.label}</span>
-            </Link>
+            </a>
           ))}
         </div>
       </div>

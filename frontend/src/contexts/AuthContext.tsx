@@ -6,6 +6,10 @@ import {
   signOut as firebaseSignOut
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import logger from '../utils/logger';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export interface User {
   userId: string;

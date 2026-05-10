@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  outputFileTracingRoot: __dirname,
   trailingSlash: true,
   images: {
     unoptimized: true,
   },
+  optimizeFonts: false,
   // Proxy API requests to backend in development
   async rewrites() {
     // Rewrites are not supported with output: 'export'

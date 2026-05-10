@@ -16,8 +16,7 @@ const config = require('./config');
 const databaseService = require('./services/databaseService');
 const enhancedDatabaseService = require('./services/enhanced-database-service');
 
-// Import chat service
-const chatService = require('./services/chatService');
+// Chat service (Legacy Socket.IO removed)
 
 // Import request logging middleware
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
@@ -215,7 +214,6 @@ const invitationRoutes = require('./routes/invitationRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const matchRoutes = require('./routes/matchRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
 const chatRoutes = require('./routes/chatRoutes');
@@ -233,7 +231,6 @@ app.use('/api/invitations', invitationRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/matches', matchRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/chat', chatRoutes);
@@ -361,68 +358,7 @@ app.post('/api/logs', clientLogLimiter, (req, res) => {
   }
 });
 
-// Health check endpoint
-app.get('/health', async (req, res) => {
-  try {
-    const dbHealth = await databaseService.healthCheck();
-    const dbStats = await databaseService.getStats();
-    
-    // Get session statistics if available
-    let sessionStats = null;
-    if (config.DATA_SOURCE === 'mongodb' && config.DATABASE.URI) {
-      try {
-        const sessionCleanupService = require('./services/sessionCleanupService');
-          sessionStats = await sessionCleanupService.getSessionStats();
-        } catch (error) {
-        logger.warn({ err: error && error.message }, 'Could not get session stats');
-        }
-    }
-    
-    // Get email service health with a short timeout so /health stays responsive
-    let emailHealth = { status: 'unknown' };
-    try {
-      const emailService = require('./services/emailService');
-      const emailHealthTimeout = (config && config.EMAIL && config.EMAIL.MASTER_TIMEOUT_MS) || 2000;
-      emailHealth = await Promise.race([
-        emailService.testService(),
-        new Promise((resolve) => setTimeout(() => resolve({ success: false, message: 'email health check timeout' }), emailHealthTimeout))
-      ]);
-    } catch (error) {
-    logger.warn({ err: error && error.message }, 'Could not get email service health');
-      emailHealth = { status: 'unknown', error: error.message };
-    }
-    
-    const responsePayload = {
-      status: 'OK',
-      message: 'Shaadi Mantrana Backend API is running',
-      timestamp: new Date().toISOString(),
-      database: dbHealth,
-      sessions: sessionStats,
-      email: emailHealth,
-      environment: process.env.NODE_ENV || 'development',
-      version: '1.0.0'
-    };
 
-    try {
-      logger.info({
-        event: 'health_check',
-        source: req.get('X-Ping-Token') ? 'keepalive' : 'user',
-        database_status: dbHealth && dbHealth.status,
-        email_status: (emailHealth && (emailHealth.status || (emailHealth.success === false ? 'fail' : 'unknown'))) || 'unknown',
-        sessions_present: !!sessionStats
-      }, 'Health check');
-    } catch (logErr) {}
-
-    res.status(200).json(responsePayload);
-  } catch (error) {
-    res.status(503).json({
-      status: 'Service Unavailable',
-      message: 'Database connection issue',
-      timestamp: new Date().toISOString(),
-      error: error.message
-    });
-  }
-});
 
 // Database status endpoint
 app.get('/api/database/status', async (req, res) => {
@@ -501,14 +437,8 @@ async function startServer() {
   logger.info({ port: PORT, health: `/health` }, 'Backend server running');
     });
 
-    // Initialize Socket.IO chat service
-    chatService.initialize(server);
-  logger.info('Socket.IO chat service initialized');
-
-    // Setup periodic cleanup for chat data
-    setInterval(() => {
-      chatService.cleanup();
-    }, 60 * 60 * 1000); // Run cleanup every hour
+    // Realtime chat is now handled by the frontend via Supabase.
+    // Standard MongoDB persistence handles message history.
     
     // Start session management services
     try {

@@ -30,8 +30,8 @@ export default function PhotoModerationPage() {
     try {
       setLoading(true);
       const response = await apiClient.get('/api/admin/photos/pending');
-      if (response.success) {
-        setUsers(response.users || []);
+      if (response.data?.success) {
+        setUsers(response.data.users || []);
       }
     } catch (error) {
       logger.error('Error fetching pending photos:', error);
@@ -49,11 +49,11 @@ export default function PhotoModerationPage() {
         status
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         toast.success(`Photo ${status} successfully`);
         setUsers(prev => prev.filter(u => u.userId !== userId));
       } else {
-        toast.error(response.error || 'Action failed');
+        toast.error(response.data?.error || 'Action failed');
       }
     } catch (error) {
       logger.error(`Error moderating photo (${status}):`, error);

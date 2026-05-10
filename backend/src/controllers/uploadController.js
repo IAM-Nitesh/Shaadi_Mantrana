@@ -911,7 +911,8 @@ const uploadController = {
       const User = require('../models/User');
       await User.findByIdAndUpdate(req.user.userId, {
         $set: {
-          'profile.images': uploadResult.fileName // Store the file path, frontend will use signed URLs
+          'profile.images': uploadResult.fileName, // Store the file path, frontend will use signed URLs
+          photoStatus: 'pending' // Reset to pending on every new upload for moderation
         }
       });
 
