@@ -29,7 +29,7 @@
     "cloudinary": "^2.7.0",
     "critters": "^0.0.23",
     "date-fns": "^3.6.0",
-    "firebase": "^11.0.0",
+    "firebase": "^10.13.2",
     "framer-motion": "^11.0.0",
     "gsap": "^3.13.0",
     "lottie-react": "^2.4.1",
