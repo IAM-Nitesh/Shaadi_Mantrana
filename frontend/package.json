@@ -57,5 +57,12 @@
     "@types/react-dom": "^18.3.7",
     "eslint-config-next": "15.5.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "serialize-javascript": "^6.0.2",
+    "braces": "^3.0.3",
+    "postcss": "^8.4.31",
+    "micromatch": "^4.0.8",
+    "elliptic": "^6.5.7"
   }
 }
