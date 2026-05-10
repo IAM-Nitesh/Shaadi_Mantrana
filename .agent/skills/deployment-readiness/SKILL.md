@@ -24,7 +24,13 @@ This skill provides the knowledge and patterns required to move a Next.js 15 pro
 - **The Fix**: Move `typescript` and core `@types/*` packages from `devDependencies` to `dependencies` in the subfolder `package.json`.
 - **Rationale**: Vercel build workers sometimes struggle to resolve devDependencies during the post-compilation type-checking phase.
 
-### 4. Static Export (Capacitor) Compatibility
+### 4. ESLint & Missing Build Packages
+- **The Issue**: "ESLint must be installed" or "Cannot find module 'X'" errors during Vercel's type-check phase.
+- **The Fix**: Add `eslint`, `eslint-config-next`, and any component-level packages (e.g., `react-intersection-observer`) directly to `dependencies` — **NOT** `devDependencies`.
+- **Rationale**: Vercel's build worker runs in a production-mode install context. Any package used during compilation (linting, type-checking, component rendering) must live in `dependencies`.
+- **Pattern to catch**: If a file imports a package that is not in `dependencies`, add it there before pushing.
+
+### 5. Static Export (Capacitor) Compatibility
 - **The Issue**: Hydration errors or blank screens in Capacitor apps using `next/link`.
 - **The Fix**: Replace `next/link` with standard `<a>` tags and enable `trailingSlash: true` in `next.config.js`.
 - **Rationale**: Standard tags are more reliable in native WebView environments where persistent client-side routing can behave differently than on the web.
