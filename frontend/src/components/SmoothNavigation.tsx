@@ -7,6 +7,7 @@ import CustomIcon from './CustomIcon';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageTransition } from './PageTransitionProvider';
 import { useOptimizedNavigation } from '../hooks/useOptimizedNavigation';
+import { toast } from 'react-hot-toast';
 
 interface NavItem {
   href: string;
@@ -173,18 +174,14 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
           ? 'Please complete the onboarding process first' 
           : 'Please complete your profile to access this feature';
         
-        // Create and show toast
-        const toast = document.createElement('div');
-        toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fadeInScale';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        
-        // Remove toast after 3 seconds
-        setTimeout(() => {
-          if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-          }
-        }, 3000);
+        toast.error(message, {
+          icon: '🔒',
+          style: {
+            borderRadius: '12px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
         
         // Redirect to profile page with optimized transition
         navigateTo('/profile', { immediate: true });

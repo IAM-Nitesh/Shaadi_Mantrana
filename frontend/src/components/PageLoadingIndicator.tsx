@@ -21,7 +21,7 @@ export default function PageLoadingIndicator() {
     }
     
     // Don't show on chat pages
-        if (p.startsWith('/chat/')) {
+    if (p === '/chat' || p.startsWith('/chat/')) {
       return true;
     }
     

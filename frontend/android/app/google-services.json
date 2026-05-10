@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "825355316301",
+    "project_id": "shaadi-mantrana-app",
+    "storage_bucket": "shaadi-mantrana-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825355316301:android:e218b46fd37b4d26fdc004",
+        "android_client_info": {
+          "package_name": "com.shaadimantrana.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfwRVsfw3Yb9rlVOHTWWMVyLtJr64GZp0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

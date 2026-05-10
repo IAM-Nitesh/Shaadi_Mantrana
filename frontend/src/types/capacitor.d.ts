@@ -4,6 +4,6 @@ interface Window {
     isNativePlatform: () => boolean;
     getPlatform: () => string;
     convertFileSrc?: (path: string) => string;
-    registerPlugin?: (name: string, plugin: any) => any;
+    registerPlugin?: (name: string, plugin: unknown) => unknown;
   };
 }

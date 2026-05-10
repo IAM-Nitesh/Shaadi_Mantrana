@@ -11,6 +11,8 @@ import authStorage from './auth-storage-service';
 
 // Local type definitions to avoid importing from server-auth-service
 interface AuthUser {
+  userId: string;
+  _id?: string;
   role: string;
   email: string;
   isFirstLogin: boolean;

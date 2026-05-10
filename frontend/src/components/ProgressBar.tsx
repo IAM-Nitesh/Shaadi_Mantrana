@@ -1,5 +1,4 @@
 import React from 'react';
-import styles from './ProgressBar.module.css';
 
 interface ProgressBarProps {
   progress: number; // from 0 to 100
@@ -8,18 +7,18 @@ interface ProgressBarProps {
 const ProgressBar: React.FC<ProgressBarProps> = ({ progress }) => {
   // Determine color based on progress percentage
   const getProgressColor = (progress: number) => {
-    if (progress < 25) return 'red';
-    if (progress < 50) return 'orange';
-    if (progress < 75) return 'yellow';
-    return 'green';
+    if (progress < 25) return 'bg-red-500';
+    if (progress < 50) return 'bg-orange-500';
+    if (progress < 75) return 'bg-yellow-500';
+    return 'bg-green-500';
   };
 
-  const color = getProgressColor(progress);
+  const colorClass = getProgressColor(progress);
 
   return (
-    <div className={styles.container}>
+    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
       <div 
-        className={`${styles.bar} ${styles[color]}`} 
+        className={`h-full transition-all duration-300 ${colorClass}`} 
         style={{ width: `${progress}%` }} 
       />
     </div>

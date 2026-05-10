@@ -534,7 +534,8 @@ class ProfileController {
       const queryFilters = {
         _id: { $ne: userId }, // Exclude current user
         status: 'active',
-        'verification.isVerified': true
+        'verification.isVerified': true,
+        photoStatus: 'approved' // Play Store Compliance: Only show moderated photos
       };
 
       // Apply user preferences if no specific filters provided

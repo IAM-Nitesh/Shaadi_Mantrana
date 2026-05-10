@@ -40,6 +40,7 @@ router.get('/email/health', async (req, res) => {
 // OTP endpoints
 router.post('/send-otp', (req, res) => authController.sendOTP(req, res));
 router.post('/verify-otp', (req, res) => authController.verifyOTP(req, res));
+router.post('/firebase-login', (req, res) => authController.firebaseLogin(req, res));
 
 // Profile endpoints
 router.get('/profile', authenticateToken, (req, res) => authController.getProfile(req, res));

@@ -1,7 +1,7 @@
  'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+;
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
@@ -10,7 +10,6 @@ import { matchesCountService } from '../../services/matches-count-service';
 import { safeGsap } from '../../components/SafeGsap';
 import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
-import SmoothNavigation from '../../components/SmoothNavigation';
 import { userNavItems } from '../../config/navigation';
 
 function SettingsContent() {
@@ -105,14 +104,14 @@ function SettingsContent() {
       )}
 
   <div className="p-4 space-y-4" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-4xl font-heading text-gray-900 mb-6">Settings</h1>
 
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-4 border-b">
             <h2 className="font-semibold">Account</h2>
           </div>
           <div className="divide-y">
-            <Link href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            <a href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-user-line" className="text-gray-600" />
@@ -120,7 +119,7 @@ function SettingsContent() {
                 <span>Edit Profile</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -129,7 +128,7 @@ function SettingsContent() {
             <h2 className="font-semibold">Support</h2>
           </div>
           <div className="divide-y">
-            <Link href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            <a href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-question-line" className="text-gray-600" />
@@ -137,8 +136,8 @@ function SettingsContent() {
                 <span>Help & Support</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-            <Link href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            </a>
+            <a href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-file-text-line" className="text-gray-600" />
@@ -146,8 +145,8 @@ function SettingsContent() {
                 <span>Terms of Service</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
-            <Link href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            </a>
+            <a href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <CustomIcon name="ri-shield-line" className="text-gray-600" />
@@ -155,7 +154,7 @@ function SettingsContent() {
                 <span>Privacy Policy</span>
               </div>
               <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -164,8 +163,7 @@ function SettingsContent() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <SmoothNavigation items={userNavItems} />
+      {/* Bottom Navigation is handled globally in layout.tsx */}
     </div>
   );
 }

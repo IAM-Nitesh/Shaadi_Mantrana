@@ -1,24 +1,50 @@
-import { redirect } from 'next/navigation';
-import { getServerSession } from '../lib/auth-server';
+'use client';
 
-// Force dynamic rendering since we use cookies for auth
-export const dynamic = 'force-dynamic';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
+import PageDataLoadingProvider, { usePageDataLoading } from '../components/PageDataLoadingProvider';
 
-export default async function HomePage() {
-  // Check auth on server
-  const user = await getServerSession();
+function HomeContent() {
+  const router = useRouter();
+  const { user, authState, isLoading } = useAuth();
+  const { setPageDataLoaded: setPageLoading } = usePageDataLoading();
 
-  if (user) {
-    // User is authenticated, redirect based on profile completeness
-    if (user.isFirstLogin || (user.profileCompleteness || 0) < 50) {
-      redirect('/profile');
-    } else if (user.role === 'admin') {
-      redirect('/admin/dashboard');
-    } else {
-      redirect('/dashboard');
+  useEffect(() => {
+    if (isLoading || authState === 'checking' || authState === 'unknown') {
+      setPageLoading(true);
+      return;
     }
-  }
 
-  // User is not authenticated, show login page
-  redirect('/login');
+    setPageLoading(false);
+
+    if (authState === 'authenticated' && user) {
+      if (user.isFirstLogin || (user.profileCompleteness || 0) < 50) {
+        router.replace('/profile');
+      } else if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/dashboard');
+      }
+    } else {
+      router.replace('/login');
+    }
+  }, [user, authState, isLoading, router, setPageLoading]);
+
+  return (
+    <div className="min-h-screen bg-pink-50 flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="w-16 h-16 bg-pink-400 rounded-full mb-4"></div>
+        <div className="h-4 w-32 bg-pink-200 rounded"></div>
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <PageDataLoadingProvider>
+      <HomeContent />
+    </PageDataLoadingProvider>
+  );
 }

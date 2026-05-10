@@ -1,21 +1,13 @@
-import { Inter } from 'next/font/google';
-import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '../contexts/AuthContext';
-import { getServerSession } from '../lib/auth-server';
 import PageTransitionProvider from '../components/PageTransitionProvider';
 import { PWAProvider } from '../components/PWAProvider';
 import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
 import ToasterClient from '../components/ToasterClient';
 import DevTools from '../components/DevTools';
-// import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
+import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 
-const inter = Inter({ subsets: ['latin'] });
-
-// Force dynamic rendering since we use cookies for auth
-export const dynamic = 'force-dynamic';
-
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Shaadi Mantrana',
   description: 'Find your perfect match with Shaadi Mantrana',
   manifest: '/manifest.json',
@@ -27,16 +19,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initialUser = await getServerSession();
+  const initialUser = null;
 
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={inter.className}>
+      <body className="font-body antialiased">
         <AuthProvider initialUser={initialUser}>
           <PWAProvider>
             <PageTransitionProvider>
@@ -44,7 +36,7 @@ export default async function RootLayout({
                 {children}
                 <ToasterClient />
                 <DevTools />
-                {/* <GlobalBottomNavigation /> */}
+                <GlobalBottomNavigation />
               </PageDataLoadingProvider>
             </PageTransitionProvider>
           </PWAProvider>
