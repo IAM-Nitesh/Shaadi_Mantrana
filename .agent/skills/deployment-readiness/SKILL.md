@@ -16,8 +16,13 @@ This skill provides the knowledge and patterns required to move a Next.js 15 pro
 
 ### 2. Client Components Guardrails
 - **The Issue**: "createContext/useState/useEffect only works in Client Component" build errors.
-- **The Fix**: Every file using React hooks MUST start with `"use client";`.
+- **The Fix**: Every file using React hooks MUST start with `'use client';` as the **absolute first line** — before any comments, imports, or blank lines.
 - **Note**: This includes Context Providers, interactive UI components, and pages using `useEffect`.
+- **Scan command**: `grep -rL '"use client"' src/ --include="*.tsx" | xargs grep -l "useState\|useEffect\|createContext"`
+
+### 3. next.config.js Compatibility
+- **The Issue**: `Invalid next.config.js options: Unrecognized key 'optimizeFonts'` warning on Next.js 15.
+- **The Fix**: Remove `optimizeFonts` — it was removed in Next.js 13+. Font optimization is now automatic.
 
 ### 3. Vercel Build Dependency Management
 - **The Issue**: "Module not found: Can't resolve 'typescript'" or '@types' during Vercel validation.
