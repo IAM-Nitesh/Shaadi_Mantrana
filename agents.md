@@ -1,17 +1,15 @@
 # SHAADI MANTRANA - GLOBAL BRAIN
 
-## PRODUCT CONTEXT
-* Premium Indian Matrimony
-* Trust-first, mobile-first experience
-* Elegant, luxury aesthetic (not flashy dating app)
+## PRODUCT CONTEXT (Enriched)
+* **Premium Indian Matrimony**: Focus on authentic, meaningful romantic relationships for urban professionals.
+* **Modern Matchmaking**: Combines traditional values with contemporary dating app features (Swipe, Real-time chat).
+* **Trust-first, mobile-first**: Elegant luxury aesthetic with OTP-verified safety.
 
-## TECH STACK
-* Next.js 15 (App Router, Server Components)
-* Capacitor (Cross-platform)
-* MongoDB / Mongoose
-* Socket.io (Real-time)
-* GSAP (Animations)
-* Tailwind CSS
+## ARCHITECTURE OVERVIEW
+* **Frontend**: Next.js 15 App Router (Server Components primary).
+* **Mobile**: Capacitor with GSAP for high-performance animations.
+* **Backend**: Node.js Service Layer with MongoDB Singleton.
+* **Scalability**: Event-driven architecture with Socket.io.
 
 ## CORE RULES
 * Never break mobile responsiveness
