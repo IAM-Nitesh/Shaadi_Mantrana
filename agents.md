@@ -16,3 +16,10 @@
 * Never add heavy libraries without approval
 * Use TypeScript strict mode
 * Prioritize performance over abstraction
+
+## MOBILE & DEPLOYMENT GUARDRAILS
+* **Next.js Version Sync**: Always ensure subfolder `package.json` matches root version (Next.js 15+).
+* **Client Directives**: Mark all files using Hooks (`useState`, `useEffect`, `createContext`) with `"use client";` at the very top.
+* **Vercel Build Stability**: Keep `typescript` and core `@types` in `dependencies` (not devDeps) to ensure visibility to the Vercel build worker.
+* **Native-First Links**: Use `<a>` tags instead of `next/link` for static Capacitor exports to avoid hydration mismatch.
+* **UGC Compliance**: Always flag new media as `pending` and restrict Discovery to `approved` status only.
