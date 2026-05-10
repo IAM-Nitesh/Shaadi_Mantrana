@@ -7,13 +7,13 @@ import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import toast from 'react-hot-toast';
-import { ChatMessage } from '../../../services/chat-service';
-import { ImageUploadService } from '../../../services/image-upload-service';
-import CustomIcon from '../../../components/CustomIcon';
-import { ChatService } from '../../../services/chat-service';
-import { MatchingService } from '../../../services/matching-service';
-import ToastService from '../../../services/toastService';
-import logger from '../../../utils/logger';
+import { ChatMessage } from '../../services/chat-service';
+import { ImageUploadService } from '../../services/image-upload-service';
+import CustomIcon from '../../components/CustomIcon';
+import { ChatService } from '../../services/chat-service';
+import { MatchingService } from '../../services/matching-service';
+import ToastService from '../../services/toastService';
+import logger from '../../utils/logger';
 
 interface Match {
   name: string;

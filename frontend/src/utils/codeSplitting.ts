@@ -18,7 +18,7 @@ export const DynamicProfile = dynamic(() => import('../app/profile/page'), {
   ssr: false,
 });
 
-export const DynamicChat = dynamic(() => import('../app/chat/[id]/ChatComponent'), {
+export const DynamicChat = dynamic(() => import('../app/chat/ChatComponent'), {
   loading: () => React.createElement('div', null, 'Loading Chat...'),
   ssr: false,
 });
@@ -30,12 +30,6 @@ export const DynamicFilterModal = dynamic(() => import('../app/dashboard/FilterM
 
 export const DynamicCelebratoryToast = dynamic(() => import('../components/CelebratoryMatchToast'), {
   loading: () => React.createElement('div', null, 'Loading...'),
-  ssr: false,
-});
-
-// Lazy load heavy components
-export const DynamicImageUpload = dynamic(() => import('../components/B2UploadTest'), {
-  loading: () => React.createElement('div', null, 'Loading Image Upload...'),
   ssr: false,
 });
 
@@ -72,7 +66,7 @@ export const routeComponents = {
   dashboard: () => import('../app/dashboard/page'),
   matches: () => import('../app/matches/page'),
   profile: () => import('../app/profile/page'),
-  chat: () => import('../app/chat/[id]/ChatComponent'),
+  chat: () => import('../app/chat/ChatComponent'),
   admin: () => import('../app/admin/dashboard/page'),
 };
 

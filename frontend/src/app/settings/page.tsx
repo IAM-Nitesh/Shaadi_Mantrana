@@ -10,7 +10,6 @@ import { matchesCountService } from '../../services/matches-count-service';
 import { safeGsap } from '../../components/SafeGsap';
 import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
-import SmoothNavigation from '../../components/SmoothNavigation';
 import { userNavItems } from '../../config/navigation';
 
 function SettingsContent() {
@@ -105,7 +104,7 @@ function SettingsContent() {
       )}
 
   <div className="p-4 space-y-4" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-4xl font-heading text-gray-900 mb-6">Settings</h1>
 
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-4 border-b">
@@ -164,8 +163,7 @@ function SettingsContent() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <SmoothNavigation items={userNavItems} />
+      {/* Bottom Navigation is handled globally in layout.tsx */}
     </div>
   );
 }

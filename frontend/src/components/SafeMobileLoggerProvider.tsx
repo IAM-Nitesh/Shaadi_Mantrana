@@ -22,8 +22,8 @@ export function SafeMobileLoggerProvider({ children }: { children: React.ReactNo
       const loadComponent = async () => {
         try {
           // Dynamically import component only on client
-          const module = await import('../components/MobileLoggerProvider');
-          setMobileLoggerComponent(() => module.default);
+          const mobileLoggerModule = await import('../components/MobileLoggerProvider');
+          setMobileLoggerComponent(() => mobileLoggerModule.default);
         } catch (err) {
           console.error('Failed to load MobileLoggerProvider:', err);
         }

@@ -1,27 +1,30 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ChatComponent from './ChatComponent';
-import CustomIcon from '../../../components/CustomIcon';
-import HeartbeatLoader from '../../../components/HeartbeatLoader';
-import logger from '../../../utils/logger';
-import { apiClient } from '../../../utils/api-client';
-import { useAuth } from '../../../contexts/AuthContext';
+import CustomIcon from '../../components/CustomIcon';
+import HeartbeatLoader from '../../components/HeartbeatLoader';
+import logger from '../../utils/logger';
+import { apiClient } from '../../utils/api-client';
+import { useAuth } from '../../contexts/AuthContext';
 
-// Chat page for matched profiles
-
-export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
+// Chat page for matched profiles - Static Export Compatible
+function ChatPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { id } = use(params);
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!id) {
+      router.replace('/matches');
+      return;
+    }
+
     // Check authentication using AuthContext
     const checkAuth = async () => {
       try {
@@ -45,7 +48,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     async function loadMatch() {
       try {
         // Fetch connection and other user's profile from MongoDB
-  const token = localStorage.getItem('accessToken') || '';
+        const token = localStorage.getItem('accessToken') || '';
         const response = await apiClient.get(`/api/connections/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -63,7 +66,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         
         // Get the other user's profile from the connection
         // Extract current user ID from server auth
-  const authToken = localStorage.getItem('accessToken') || '';
+        const authToken = localStorage.getItem('accessToken') || '';
         let currentUserId = null;
         if (authToken) {
           try {
@@ -74,7 +77,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           }
         }
         
-        const otherUser = data.connection.users.find((user: any) => user._id !== currentUserId);
+        const otherUser = data.connection.users.find((u: any) => u._id !== currentUserId);
         
         if (!otherUser) {
           setError('Other user not found in connection');
@@ -96,7 +99,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     }
 
     loadMatch();
-  }, [id, router]);
+  }, [id, router, isAuthenticated, user]);
 
   if (loading) {
     return (
@@ -151,3 +154,16 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
   return <ChatComponent match={match} />;
 }
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-rose-50 flex items-center justify-center">
+        <HeartbeatLoader logoSize="xxxxl" text="Loading Chat..." />
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
+  );
+}
+

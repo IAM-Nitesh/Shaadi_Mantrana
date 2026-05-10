@@ -7,12 +7,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5
 
 export interface User {
   userId: string;
+  userUuid?: string;
   email: string;
   role: string;
   verified: boolean;
   profileCompleteness?: number;
   isFirstLogin?: boolean;
   isApprovedByAdmin?: boolean;
+  hasSeenOnboardingMessage?: boolean;
 }
 
 export interface AuthContextType {
@@ -21,10 +23,13 @@ export interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   redirectTo: string | null;
+  authState: 'unknown' | 'authenticated' | 'unauthenticated' | 'checking' | 'error';
+  isExpired: boolean;
   login: (email: string, otp: string) => Promise<boolean>;
   sendOtp: (email: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  forceRefresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,10 +45,13 @@ export const AuthProvider = ({
   const [isLoading, setIsLoading] = useState(!initialUser);
   const [error, setError] = useState<string | null>(null);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
+  const [authState, setAuthState] = useState<AuthContextType['authState']>('unknown');
+  const [isExpired, setIsExpired] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
       setIsLoading(true);
+      setAuthState('checking');
       logger.debug('🔍 AuthContext: Checking authentication status...');
       
       // Use HttpOnly cookies for authentication (no client-side token storage)
@@ -68,6 +76,8 @@ export const AuthProvider = ({
         logger.warn('❌ AuthContext: Auth status check failed:', response.status);
         setUser(null);
         setRedirectTo('/login');
+        setIsExpired(response.status === 401);
+        setAuthState('unauthenticated');
         return;
       }
       
@@ -77,12 +87,14 @@ export const AuthProvider = ({
       if (data.authenticated && data.user) {
         const userData = {
           userId: data.user.userId || data.user._id || '',
+          userUuid: data.user.userUuid || data.user.uuid || data.user.userId || data.user._id || '',
           email: data.user.email || '',
           role: data.user.role || 'user',
           verified: true,
           profileCompleteness: data.user.profileCompleteness || 0,
           isFirstLogin: data.user.isFirstLogin || false,
           isApprovedByAdmin: data.user.isApprovedByAdmin || false,
+          hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false,
         };
         
         logger.info('✅ AuthContext: User authenticated:', userData);
@@ -99,19 +111,28 @@ export const AuthProvider = ({
           // Users with 100% profile completion can access dashboard
           setRedirectTo('/dashboard');
         }
+        setIsExpired(false);
+        setAuthState('authenticated');
       } else {
         logger.debug('❌ AuthContext: User not authenticated');
         setUser(null);
         setRedirectTo('/login');
+        setIsExpired(false);
+        setAuthState('unauthenticated');
       }
     } catch (err) {
       logger.error('❌ AuthContext: Auth check error:', err);
       setUser(null);
       setRedirectTo('/login');
+      setAuthState('error');
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const forceRefresh = useCallback(async () => {
+    await checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     if (!initialUser) {
@@ -230,10 +251,13 @@ export const AuthProvider = ({
     isLoading,
     error,
     redirectTo,
+    authState,
+    isExpired,
     login,
     sendOtp,
     logout,
     checkAuth,
+    forceRefresh,
   };
 
   return (

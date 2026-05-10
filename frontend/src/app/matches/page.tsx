@@ -11,7 +11,6 @@ import { safeGsap } from '../../components/SafeGsap';
 // HeartbeatLoader removed (unused)
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import { config as configService } from '../../services/configService';
-import SmoothNavigation from '../../components/SmoothNavigation';
 import { userNavItems } from '../../config/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
@@ -321,6 +320,7 @@ function MatchesContent() {
       
       {/* Main Content */}
   <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
+        <h1 className="text-4xl font-heading text-gray-900 mb-6 px-2">Matches</h1>
         {/* Tabs */}
         <div ref={tabsRef} className="mb-6">
           <div className="flex bg-white rounded-2xl p-1 shadow-sm">
@@ -381,7 +381,7 @@ function MatchesContent() {
                       {mutualMatches.map((match, index) => (
                         <Link
                           key={match.connectionId}
-                          href={`/chat/${match.connectionId}`}
+                          href={`/chat?id=${match.connectionId}`}
                           className="profile-card bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-pink-200"
                           style={{
                             animationDelay: `${index * 100}ms`
@@ -454,7 +454,7 @@ function MatchesContent() {
                       likedProfile.isMutualMatch ? (
                         <Link
                           key={likedProfile.likeId}
-                          href={`/chat/${likedProfile.connectionId}`}
+                          href={`/chat?id=${likedProfile.connectionId}`}
                                                      className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer hover:border-pink-200"
                         >
                           <div className="flex items-center space-x-4">
@@ -560,8 +560,7 @@ function MatchesContent() {
         />
       )}
 
-      {/* Bottom Navigation */}
-      <SmoothNavigation items={userNavItems} />
+      {/* Bottom Navigation is handled globally in layout.tsx */}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Inter } from 'next/font/google';
+import { Inter, Great_Vibes, Cormorant_Infant } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '../contexts/AuthContext';
@@ -8,12 +8,24 @@ import { PWAProvider } from '../components/PWAProvider';
 import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
 import ToasterClient from '../components/ToasterClient';
 import DevTools from '../components/DevTools';
-// import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
+import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+});
 
-// Force dynamic rendering since we use cookies for auth
-export const dynamic = 'force-dynamic';
+const headingFont = Great_Vibes({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-heading',
+});
+
+const bodyFont = Cormorant_Infant({
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-body',
+});
 
 export const metadata: Metadata = {
   title: 'Shaadi Mantrana',
@@ -27,16 +39,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initialUser = await getServerSession();
+  const initialUser = null;
 
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${headingFont.variable} ${bodyFont.variable} font-body`}>
         <AuthProvider initialUser={initialUser}>
           <PWAProvider>
             <PageTransitionProvider>
@@ -44,7 +56,7 @@ export default async function RootLayout({
                 {children}
                 <ToasterClient />
                 <DevTools />
-                {/* <GlobalBottomNavigation /> */}
+                <GlobalBottomNavigation />
               </PageDataLoadingProvider>
             </PageTransitionProvider>
           </PWAProvider>

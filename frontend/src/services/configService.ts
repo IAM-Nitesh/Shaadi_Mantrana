@@ -19,7 +19,7 @@ export const config = {
   grafanaLokiUser: process.env.GRAFANA_LOKI_USER || '',
   grafanaLokiPassword: process.env.GRAFANA_LOKI_PASSWORD || '',
   grafanaLokiUrl: process.env.GRAFANA_LOKI_URL || '',
-  lokiClientApiKey: process.env.LOKI_CLIENT_API_KEY || '',
+  lokiClientApiKey: process.env.NEXT_PUBLIC_LOKI_CLIENT_API_KEY || process.env.LOKI_CLIENT_API_KEY || '',
   lokiUrl: process.env.LOKI_URL || '',
   
   // Security Configuration

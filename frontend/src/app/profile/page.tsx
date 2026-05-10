@@ -16,7 +16,6 @@ import 'react-time-picker/dist/TimePicker.css';
 import { TimePicker } from '../../components/time-picker';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
-import SmoothNavigation from '../../components/SmoothNavigation';
 import { userNavItems } from '../../config/navigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import ToastService from '../../services/toastService';
@@ -975,7 +974,7 @@ function ProfileContent() {
           logger.debug(`  ❌ Height: feet="${feetEl?.value || 'undefined'}", inches="${inchesEl?.value || 'undefined'}", isEmpty: true`);
         }
       } else {
-        logger.debug(`�� Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
+        logger.debug(` Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
         
         // Handle different data types
         if (fieldValue === null || fieldValue === undefined) {
@@ -2289,7 +2288,6 @@ function ProfileContent() {
       setShowOnboarding(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden">
       {/* Background Pattern */}
@@ -2300,7 +2298,7 @@ function ProfileContent() {
       
 
   {/* Content */}
-  <div className="relative z-10 page-transition">
+  <div className="relative z-10 page-transition" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
 
         {/* Profile Complete Success Banner */}
         {isProfileComplete && (
@@ -2317,6 +2315,30 @@ function ProfileContent() {
             </div>
           </div>
         )}
+        {/* Profile Header */}
+        <div className="px-4 py-4 flex items-center justify-between">
+          <h1 className="text-4xl font-heading text-gray-900">My Profile</h1>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center space-x-1 px-4 py-2 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-full text-sm font-medium text-rose-600 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <CustomIcon name="ri-edit-line" size={16} />
+                <span>Edit</span>
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Profile Image */}
         <div className="px-4 py-6">
@@ -2611,8 +2633,9 @@ function ProfileContent() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Birth Details */}
+        {/* Birth Details */}
           <div className="card-modern p-6 hover-lift">
             <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
               <CustomIcon name="ri-calendar-line" size={20} className="text-rose-600 mr-3" />
@@ -3247,7 +3270,6 @@ function ProfileContent() {
                   + Add Interest
                 </button>
               )}
-
             </div>
             {renderInlineError('interests')}
           </div>
@@ -3287,9 +3309,6 @@ function ProfileContent() {
               )}
             </div>
           )}
-        </div>
-      </div>
-
       {/* Filter Modal */}
       {showFilter && (
         <FilterModal
@@ -3314,9 +3333,9 @@ function ProfileContent() {
         onComplete={handleOnboardingDismiss}
       />
 
-      {/* Bottom Navigation */}
-      <SmoothNavigation items={userNavItems} />
-    </div>
+      {/* Bottom Navigation is handled globally in layout.tsx */}
+        </div>
+      </div>
   );
 }
 
