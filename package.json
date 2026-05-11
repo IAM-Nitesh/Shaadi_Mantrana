@@ -22,12 +22,16 @@
     "keep-alive": "node scripts/keep-alive.js",
     "keep-alive-bg": "node scripts/keep-alive.js &",
     "test:e2e:playwright": "npx playwright test --config=playwright.config.js",
-  "mobile:build:web": "cd frontend && npm run build:web",
-  "mobile:copy": "npx cap copy",
-  "mobile:sync": "npx cap sync android",
-  "mobile:open": "npx cap open android",
+    "mobile:build:web": "cd frontend && npm run build:web",
+    "mobile:copy": "npx cap copy",
+    "mobile:sync": "npx cap sync android",
+    "mobile:open": "npx cap open android",
     "mobile:add:android": "npx cap add android",
-    "mobile:bundle": "cd android && ./gradlew bundleRelease"
+    "mobile:bundle": "cd android && ./gradlew bundleRelease",
+    "security:audit": "bash scripts/security-audit-fix.sh",
+    "security:fix": "bash scripts/security-audit-fix.sh --fix",
+    "security:force": "bash scripts/security-audit-fix.sh --auto-fix",
+    "prepare": "bash scripts/install-git-hooks.sh 2>/dev/null || true"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
@@ -45,6 +49,7 @@
   "overrides": {
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "next": "^15.5.7",
     "serialize-javascript": "^6.0.2",
     "braces": "^3.0.3",
     "postcss": "^8.4.31",
@@ -86,7 +91,7 @@
     "framer-motion": "^12.23.9",
     "lucide-react": "^0.525.0",
     "multer": "^2.0.2",
-    "next": "^15.5.0",
+    "next": "^15.5.7",
     "nodemailer": "^8.0.5",
     "puppeteer": "^24.15.0",
     "react-chat-elements": "^12.0.18",
