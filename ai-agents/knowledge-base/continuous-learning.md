@@ -30,3 +30,19 @@ For Next.js monorepos on Vercel, compilation-critical tools like autoprefixer, p
 **Insight**: 
 In Next.js monorepos on Vercel, every package imported by a workspace (e.g., frontend) MUST be explicitly declared in its local package.json dependencies, even if already present in the root. Failure to do so causes 'Cannot find module' errors during the workspace-specific build phase.
 
+
+---
+
+### 🎓 Learning: Hallucinated Version Prevention
+**Date**: 2026-05-11 20:46:34
+**Insight**: 
+Always verify package versions against the actual registry (npm info) before pinning them in package.json. Pinning non-existent versions (like nodemailer 8.0.7) causes security audit scripts and CI installation steps to fail silently or with confusing errors.
+
+
+---
+
+### 🎓 Learning: Sync Overrides Across All Workspaces
+**Date**: 2026-05-11 20:46:34
+**Insight**: 
+In a monorepo, missing overrides in a specific workspace (e.g. frontend) can allow transitive dependencies to pull in vulnerable versions even if the root is patched. Always maintain mirror-overrides in root, frontend, and backend for critical security packages.
+
