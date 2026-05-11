@@ -21,8 +21,8 @@ When a task is received, the AI MUST route it through this matrix to invoke the 
 Before executing ANY command or committing code, the AI performs this internal "Dispatcher" check:
 1.  **Analyze**: "What is the core domain of this request?"
 2.  **Infect Context**: Read the mapped Persona AND the Knowledge Base.
-3.  **Pre-Flight Validation**: Cross-check the proposed solution against `knowledge-base/continuous-learning.md` to prevent recurring patterns (e.g., Vercel dependency quirks or Proxy context loss).
-4.  **Declare**: State to the USER: *"Adopted [Persona] mindset; Knowledge Base consulted and pre-flight check passed."*
+3.  **Pre-Flight Validation**: Cross-check the proposed solution against `knowledge-base/continuous-learning.md` AND perform a **Workspace Dependency Audit** (grep imports) to ensure all packages are locally declared.
+4.  **Declare**: State to the USER: *"Adopted [Persona] mindset; Knowledge Base consulted and Workspace Dependency Audit passed."*
 5.  **Execute**: Proceed with domain-specific rigor.
 
 ---

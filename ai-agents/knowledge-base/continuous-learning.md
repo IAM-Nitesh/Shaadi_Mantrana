@@ -22,3 +22,11 @@ When using Proxy for lazy initialization of SDKs (Supabase, Firebase), you MUST 
 **Insight**: 
 For Next.js monorepos on Vercel, compilation-critical tools like autoprefixer, postcss, and typescript should remain in 'dependencies' (not devDeps) in the workspace package.json to ensure the build worker can resolve them during the optimized production build phase.
 
+
+---
+
+### 🎓 Learning: Workspace Dependency Integrity
+**Date**: 2026-05-11 20:41:27
+**Insight**: 
+In Next.js monorepos on Vercel, every package imported by a workspace (e.g., frontend) MUST be explicitly declared in its local package.json dependencies, even if already present in the root. Failure to do so causes 'Cannot find module' errors during the workspace-specific build phase.
+
