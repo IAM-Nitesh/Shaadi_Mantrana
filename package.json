@@ -44,7 +44,7 @@
     "next": "^15.5.18",
     "serialize-javascript": "^7.0.5",
     "braces": "^3.0.3",
-    "postcss": "^8.4.31",
+    "postcss": "^8.5.3",
     "micromatch": "^4.0.8",
     "elliptic": "^6.5.7",
     "semver": "^7.5.2",
