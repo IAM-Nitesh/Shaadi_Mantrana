@@ -1,5 +1,5 @@
 {
-  "name": "shaadi-mantra-frontend",
+  "name": "shaadi-mantrana-frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -19,7 +19,7 @@
     "axios": "^1.8.2",
     "framer-motion": "^12.4.10",
     "lucide-react": "^0.477.0",
-    "next": "^15.2.1",
+    "next": "^15.5.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
