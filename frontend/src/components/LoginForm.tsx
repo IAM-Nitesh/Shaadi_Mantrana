@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import OTPInput from './OTPInput';
 import logger from '../utils/logger';
 import { ConfirmationResult } from 'firebase/auth';
+import posthog from 'posthog-js';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -66,6 +67,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         setStep('otp');
         setResendCooldown(60); // 60 second cooldown for phone auth
         logger.info('LoginForm: Phone OTP sent successfully');
+        posthog.capture('otp_requested');
       } else {
         logger.warn('LoginForm: Phone OTP send failed');
       }
@@ -89,12 +91,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       
       if (success) {
         logger.info('LoginForm: login successful');
+        posthog.capture('user_logged_in', { method: 'phone_otp' });
         onLoginSuccess?.();
       } else {
         logger.warn('LoginForm: login failed');
+        posthog.capture('login_failed', { method: 'phone_otp' });
       }
     } catch (err) {
       logger.error('LoginForm: login error', err);
+      posthog.captureException(err);
     } finally {
       setIsVerifyingOTP(false);
     }
