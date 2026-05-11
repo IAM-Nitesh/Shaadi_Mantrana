@@ -10,22 +10,28 @@ SCRIPT="$ROOT_DIR/scripts/security-audit-fix.sh"
 
 echo ""
 echo "🔐 Running security audit before push..."
+echo ""
 
 if [ ! -f "$SCRIPT" ]; then
   echo "⚠ Security script not found at $SCRIPT — skipping"
   exit 0
 fi
 
-bash "$SCRIPT" --fix
+chmod +x "$SCRIPT"
+
+# Use --auto-fix: handles both safe fix AND clean reinstall for workspace pin issues
+bash "$SCRIPT" --auto-fix
 STATUS=$?
 
 if [ $STATUS -ne 0 ]; then
   echo ""
-  echo "❌ Push BLOCKED due to security vulnerabilities."
-  echo "   Fix them first, then re-run: git push"
+  echo "❌ Push BLOCKED due to unresolved security vulnerabilities."
+  echo "   Review the output above and fix manually if needed."
+  echo "   Then re-run: git push"
   echo ""
   exit 1
 fi
 
-echo "✅ Security check passed — proceeding with push."
+echo ""
+echo "✅ Security gate passed — proceeding with push."
 exit 0
