@@ -38,7 +38,7 @@ export const app = new Proxy({} as FirebaseApp, {
     const instance = getFirebaseApp();
     const value = instance[prop as keyof FirebaseApp];
     if (typeof value === 'function') {
-      return value.bind(instance);
+      return (value as any).bind(instance);
     }
     return value;
   },
@@ -48,7 +48,7 @@ export const auth = new Proxy({} as Auth, {
     const instance = getFirebaseAuth();
     const value = instance[prop as keyof Auth];
     if (typeof value === 'function') {
-      return value.bind(instance);
+      return (value as any).bind(instance);
     }
     return value;
   },
