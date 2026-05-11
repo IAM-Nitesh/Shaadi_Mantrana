@@ -6,3 +6,19 @@
 **Insight**: 
 Consolidated scattered personas into ai-agents/ directory with a MASTER_BRAIN.md orchestrator and a centralized knowledge-base. Established the rule that CI failures must be documented to prevent phantom dependencies.
 
+
+---
+
+### 🎓 Learning: Proxy Function Binding in Lazy Init
+**Date**: 2026-05-11 20:33:35
+**Insight**: 
+When using Proxy for lazy initialization of SDKs (Supabase, Firebase), you MUST bind functions to the original instance to prevent 'this' context loss. SDK methods like .channel() or .auth() will fail silently or crash without explicit binding.
+
+
+---
+
+### 🎓 Learning: Vercel Build Dependencies
+**Date**: 2026-05-11 20:33:35
+**Insight**: 
+For Next.js monorepos on Vercel, compilation-critical tools like autoprefixer, postcss, and typescript should remain in 'dependencies' (not devDeps) in the workspace package.json to ensure the build worker can resolve them during the optimized production build phase.
+
