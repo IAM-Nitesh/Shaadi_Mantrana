@@ -16,19 +16,25 @@ This document serves as a "Continuous Learning" artifact, capturing the hard-won
 - **The Fix**: Restored 157 missing core packages (GSAP, Firebase, etc.) to the `frontend/package.json`.
 - **Rule**: *If it's imported in `src/`, it must be in the workspace `package.json`.*
 
-## 🔐 3. The "Unified Shield" Override Strategy
+## 🎨 3. The CSS Plugin Phantom
+- **The Challenge**: Build passed locally but failed on Vercel with `Error: Cannot find module 'autoprefixer'`.
+- **The Learning**: Next.js build-time plugins (PostCSS, Autoprefixer, Tailwind) are often present in a developer's global cache or root `node_modules`, leading to false positives in local preflight builds. Vercel requires these to be explicitly defined in the workspace `devDependencies`.
+- **The Fix**: Explicitly added `autoprefixer` and `postcss` to `frontend/package.json`.
+- **Rule**: *Always define CSS processing plugins in the workspace devDependencies, even if they seem global.*
+
+## 🔐 4. The "Unified Shield" Override Strategy
 - **The Challenge**: Vulnerabilities kept reappearing in different workspaces.
 - **The Learning**: Security `overrides` must be synchronized across the root and all workspaces to prevent "dependency drifting" where one workspace remains vulnerable.
 - **The Fix**: Implemented identical security pins (`next: 15.5.18`, `nodemailer: 8.0.7`, `tar: 7.4.3`) across the entire repository.
 - **Rule**: *Security overrides are a global monorepo concern, not a per-project one.*
 
-## 🛡️ 4. Local Validation vs. CI Fatigue
+## 🛡️ 5. Local Validation vs. CI Fatigue
 - **The Challenge**: Waiting 5-10 minutes for CI to fail on a simple path error or type mismatch.
 - **The Learning**: A robust local `scripts/preflight.sh` that mirrors the CI's strictness is the only way to maintain high velocity.
 - **The Fix**: Implemented a preflight script that runs security audits, type checks, and Capacitor syncs locally.
 - **Rule**: *No push without a Green Preflight.*
 
-## 🏷️ 5. Registry Verification
+## 🏷️ 6. Registry Verification
 - **The Challenge**: Attempting to pin `tar@6.2.3` caused "Notarget" errors because that version doesn't exist in the npm registry.
 - **The Learning**: AI and developers must verify the existence of a version using `npm show [pkg] versions` before adding it to an override.
 - **The Fix**: Corrected to `tar@7.4.3`, the verified secure version.
