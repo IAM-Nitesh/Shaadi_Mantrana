@@ -5,6 +5,10 @@ CONSTRAINTS: Prefer Server Components, Optimized DB indexes.
 WORKFLOWS: Use `brainstorming`, `make-plan`, and `pathfinder` skills.
 ESCALATION: If DB changes impact costs, consult `growth.md`.
 
+## ⚡ REQUIRED SKILLS
+- `pathfinder`: To audit architecture before refactoring.
+- `make-plan` / `do`: For orchestrating multi-step migrations.
+
 ## SYSTEM ARCHITECTURE DIAGRAM
 +-----------------+      +---------------------+      +-----------------+
 |  Next.js (Web)  | <--> |  Node.js API Layer  | <--> |  MongoDB/Redis  |
