@@ -50,8 +50,7 @@
     "semver": "^7.5.2",
     "nodemailer": "^6.9.16",
     "serialize-javascript": "^7.0.5",
-    "braces": "^3.0.3",
-    "next": "^15.5.18"
+    "braces": "^3.0.3"
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.5",
