@@ -1,20 +1,25 @@
 {
-  "name": "shaadi-mantra",
+  "name": "shaadi-mantrana",
   "version": "1.0.0",
   "description": "Shaadi Mantrana - Matrimonial Platform",
   "main": "index.js",
   "scripts": {
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "start": "npm run start --workspace=backend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend",
+    "test": "npm run test --workspace=backend",
+    "security:audit": "bash scripts/security-audit-fix.sh",
+    "security:fix": "bash scripts/security-audit-fix.sh --fix",
+    "prepare": "bash scripts/install-git-hooks.sh >/dev/null 2>&1 || true",
     "dev:backend": "cd backend && npx cross-env NODE_ENV=development node start.js",
     "prod:backend": "cd backend && npx cross-env NODE_ENV=production node start.js",
     "dev:frontend": "cd frontend && npx cross-env NODE_ENV=development npm run dev",
     "prod:frontend": "cd frontend && npx cross-env NODE_ENV=production npm run build && cd frontend && npx cross-env NODE_ENV=production PORT=2000 npm run start",
     "dev:all": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "prod:all": "concurrently \"npm run prod:frontend\" \"npm run prod:backend\"",
-    "build": "cd frontend && npm run build && cd ../backend && npm install --production",
-    "start": "npm run prod:backend",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install",
     "clean": "rm -rf frontend/.next frontend/out backend/node_modules frontend/node_modules",
-    "test": "echo \"Tests not yet implemented\" && exit 0",
     "emails:add": "node scripts/manage-approved-emails.js add",
     "emails:remove": "node scripts/manage-approved-emails.js remove",
     "emails:list": "node scripts/manage-approved-emails.js list",
@@ -27,10 +32,7 @@
     "mobile:sync": "npx cap sync android",
     "mobile:open": "npx cap open android",
     "mobile:add:android": "npx cap add android",
-    "mobile:bundle": "cd android && ./gradlew bundleRelease",
-    "security:audit": "bash scripts/security-audit-fix.sh",
-    "security:fix": "bash scripts/security-audit-fix.sh --fix",
-    "prepare": "bash scripts/install-git-hooks.sh >/dev/null 2>&1 || true"
+    "mobile:bundle": "cd android && ./gradlew bundleRelease"
   },
   "workspaces": [
     "frontend",
@@ -58,7 +60,10 @@
     "cloudinary": "^2.10.0",
     "swiper": "^12.1.4",
     "@rollup/plugin-terser": "^0.4.4",
-    "nodemailer": "^8.0.7"
+    "nodemailer": "^8.0.7",
+    "react-chat-elements": {
+      "react-dom": "^18.3.1"
+    }
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.5",
