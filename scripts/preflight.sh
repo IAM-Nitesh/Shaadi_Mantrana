@@ -23,6 +23,11 @@ npm run security:audit || {
   exit 1
 }
 
+# 2.5 WORKSPACE ISOLATION CHECK
+echo "🏢 Checking Workspace Isolation (Vercel Compatibility)..."
+bash scripts/audit-workspace-deps.sh frontend || exit 1
+bash scripts/audit-workspace-deps.sh backend || exit 1
+
 # 3. INSTALLATION SYNC
 echo "📦 Verifying dependency synchronization..."
 npm install --legacy-peer-deps --package-lock-only
