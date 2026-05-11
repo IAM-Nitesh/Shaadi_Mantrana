@@ -25,9 +25,12 @@ Before executing ANY command or committing code, the AI performs this internal "
 4.  **Declare**: State to the USER: *"Adopted [Persona] mindset; Knowledge Base consulted and Workspace Dependency Audit passed."*
 5.  **Execute**: Proceed with domain-specific rigor.
 
----
-
-## 🔄 CONTINUOUS LEARNING FEEDBACK
+## 🛡️ HARD RIGOR PROTOCOL
+To prevent regression and "Whack-a-Mole" fixes, the following are now mandatory:
+1.  **Source of Truth**: Always request raw logs (e.g., `npm audit`, CI build logs) before the first edit. Do not rely on internal version data if a live report is available.
+2.  **Workspace Isolation**: In monorepos, performing a root fix is a failure. You MUST perform a **Recursive Import Audit** (grep imports vs local `package.json`) for every workspace involved.
+3.  **The Preflight Paradox**: You are FORBIDDEN from claiming a task is "fixed" or "stable" until a full `./scripts/preflight.sh` (or equivalent) has been executed and passed.
+4.  **Surgical Integrity**: Every JSON/TS edit must be followed by a syntax check. If you touch a Proxy, you must verify its `this` binding and TypeScript types immediately.
 The Orchestrator is responsible for the **Post-Task Retrospective**:
 1.  **Analyze**: "Is this learning new or a recurrence?"
 2.  **Codify**: If new, run `./scripts/learn.sh` to update the brain.
