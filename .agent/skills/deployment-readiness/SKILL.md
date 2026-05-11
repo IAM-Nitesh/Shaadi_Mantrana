@@ -59,7 +59,7 @@ This skill provides the knowledge and patterns required to move a Next.js 15 pro
 ### 6. Lazy SDK Initialization (Firebase / Supabase)
 - **The Issue**: `Firebase: auth/invalid-api-key` or `supabaseUrl is required` crash during `Generating static pages`.
 - **Root Cause**: SDKs initialized at module-load time. During static export, Next.js pre-renders pages on the server where `NEXT_PUBLIC_*` env vars are empty strings.
-- **The Fix**: Use a lazy-init Proxy pattern so the SDK only initializes when actually called on the client:
+- **The Fix**: Use a lazy-init Proxy pattern with **explicit function binding** so the SDK only initializes when actually called on the client:
 ```ts
 let _client: Client | null = null;
 export const getClient = () => {
@@ -67,10 +67,16 @@ export const getClient = () => {
   return _client;
 };
 export const client = new Proxy({} as Client, {
-  get: (_, prop) => getClient()[prop as keyof Client],
+  get: (_, prop) => {
+    const inst = getClient();
+    const value = inst[prop as keyof Client];
+    // CRITICAL: Bind functions to instance to preserve 'this' context
+    if (typeof value === 'function') return value.bind(inst);
+    return value;
+  },
 });
 ```
-- **Rule**: Any SDK that validates env vars at init time MUST use lazy initialization in a static export project.
+- **Rule**: Any SDK that validates env vars at init time or uses internal `this` references MUST use lazy initialization with bound function Proxies.
 
 ### 7. TypeScript Module Resolution for Next.js 15
 - **The Issue**: `Cannot find module '../../app/admin/dashboard/page.js'` from `.next/types/` auto-generated files.

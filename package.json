@@ -1,20 +1,25 @@
 {
-  "name": "shaadi-mantrana",
+  "name": "shaadi-mantra",
   "version": "1.0.0",
-  "description": "Shaadi Mantrana - Full Stack Matrimonial Application",
-  "private": true,
+  "description": "Shaadi Mantrana - Matrimonial Platform",
+  "main": "index.js",
   "scripts": {
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "start": "npm run start --workspace=backend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend",
+    "test": "npm run test --workspace=backend",
+    "security:audit": "bash scripts/security-audit-fix.sh",
+    "security:fix": "bash scripts/security-audit-fix.sh --fix",
+    "prepare": "bash scripts/install-git-hooks.sh >/dev/null 2>&1 || true",
     "dev:backend": "cd backend && npx cross-env NODE_ENV=development node start.js",
     "prod:backend": "cd backend && npx cross-env NODE_ENV=production node start.js",
     "dev:frontend": "cd frontend && npx cross-env NODE_ENV=development npm run dev",
     "prod:frontend": "cd frontend && npx cross-env NODE_ENV=production npm run build && cd frontend && npx cross-env NODE_ENV=production PORT=2000 npm run start",
     "dev:all": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "prod:all": "concurrently \"npm run prod:frontend\" \"npm run prod:backend\"",
-    "build": "cd frontend && npm run build && cd ../backend && npm install --production",
-    "start": "npm run prod:backend",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install",
     "clean": "rm -rf frontend/.next frontend/out backend/node_modules frontend/node_modules",
-    "test": "echo \"Tests not yet implemented\" && exit 0",
     "emails:add": "node scripts/manage-approved-emails.js add",
     "emails:remove": "node scripts/manage-approved-emails.js remove",
     "emails:list": "node scripts/manage-approved-emails.js list",
@@ -29,6 +34,31 @@
     "mobile:add:android": "npx cap add android",
     "mobile:bundle": "cd android && ./gradlew bundleRelease"
   },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "overrides": {
+    "serialize-javascript": "^7.0.5",
+    "braces": "^3.0.3",
+    "postcss": "^8.5.13",
+    "micromatch": "^4.0.8",
+    "react-intersection-observer": "^9.16.0",
+    "sonner": "^2.0.1",
+    "elliptic": "^6.5.7",
+    "semver": "^7.5.4",
+    "cross-spawn": "^7.0.5",
+    "nanoid": "^3.3.3",
+    "path-to-regexp": "^0.1.12",
+    "cookie": "^0.7.0",
+    "tar": "^7.4.3",
+    "ip": "^2.0.1",
+    "ws": "^8.17.1",
+    "undici": "^6.19.2",
+    "@tootallnate/once": "^3.0.1",
+    "nodemailer": "^8.0.7",
+    "next": "^15.5.18"
+  },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.5",
     "@playwright/test": "^1.40.0",
@@ -39,20 +69,11 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3"
   },
-  "overrides": {
-    "react-chat-elements": {
-      "react-dom": "^18.3.1"
-    }
-  },
   "keywords": [
     "shaadi",
     "mantrana",
     "matrimony",
-    "matching",
-    "fullstack",
-    "react",
-    "express",
-    "mobile-app"
+    "monorepo"
   ],
   "author": "Shaadi Mantrana Team",
   "license": "MIT",
@@ -80,8 +101,8 @@
     "framer-motion": "^12.23.9",
     "lucide-react": "^0.525.0",
     "multer": "^2.0.2",
-    "next": "^15.5.4",
-    "nodemailer": "^7.0.5",
+    "next": "^15.5.18",
+    "nodemailer": "^8.0.7",
     "puppeteer": "^24.15.0",
     "react-chat-elements": "^12.0.18",
     "react-day-picker": "^9.8.0",
