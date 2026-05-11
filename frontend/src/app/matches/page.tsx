@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
+;
 import { useRouter } from 'next/navigation';
 import { MatchingService, type LikedProfile, type MutualMatch } from '../../services/matching-service';
 import { matchesCountService } from '../../services/matches-count-service';
@@ -11,15 +11,15 @@ import { safeGsap } from '../../components/SafeGsap';
 // HeartbeatLoader removed (unused)
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import { config as configService } from '../../services/configService';
-import SmoothNavigation from '../../components/SmoothNavigation';
-import { useServerAuth } from '../../hooks/useServerAuth';
-import ServerAuthGuard from '../../components/ServerAuthGuard';
+import { userNavItems } from '../../config/navigation';
+import { useAuth } from '../../contexts/AuthContext';
+import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import ToastService from '../../services/toastService';
 import CelebratoryMatchToast from '../../components/CelebratoryMatchToast';
 import { MatchesListSkeleton } from '../../components/SkeletonLoader';
 import { ProfileImage } from '../../components/LazyImage';
-import { usePullToRefresh } from '../../hooks/usePullToRefresh';
-import { useHapticFeedback } from '../../hooks/useHapticFeedback';
+// import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+// import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import logger from '../../utils/logger';
 
 // Helper to decode JWT and get current user ID (for backward compatibility)
@@ -35,7 +35,7 @@ function getCurrentUserId() {
 
 function MatchesContent() {
   const router = useRouter();
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('matches');
   const [likedProfiles, setLikedProfiles] = useState<LikedProfile[]>([]);
   const [mutualMatches, setMutualMatches] = useState<MutualMatch[]>([]);
@@ -57,15 +57,15 @@ function MatchesContent() {
     selectedState: ''
   });
 
-  // Enhanced mobile features
-  const { haptics } = useHapticFeedback();
-  const { containerRef: pullToRefreshRef, isRefreshing } = usePullToRefresh({
-    onRefresh: async () => {
-      haptics.light();
-      await fetchMatches();
-    },
-    enabled: true,
-  });
+  // Enhanced mobile features - temporarily disabled for build
+  // const { haptics } = useHapticFeedback();
+  // const { containerRef: pullToRefreshRef, isRefreshing } = usePullToRefresh({
+  //   onRefresh: async () => {
+  //     haptics.light();
+  //     await fetchMatches();
+  //   },
+  //   enabled: true,
+  // });
 
   // GSAP refs for animations
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -303,13 +303,13 @@ function MatchesContent() {
             </p>
           </div>
           
-          <Link 
+          <a 
             href="/profile"
             className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             <CustomIcon name="ri-user-settings-line" className="mr-2" />
             Complete Profile
-          </Link>
+          </a>
         </div>
       </div>
     );
@@ -319,7 +319,8 @@ function MatchesContent() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       
       {/* Main Content */}
-    <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
+  <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
+        <h1 className="text-4xl font-heading text-gray-900 mb-6 px-2">Matches</h1>
         {/* Tabs */}
         <div ref={tabsRef} className="mb-6">
           <div className="flex bg-white rounded-2xl p-1 shadow-sm">
@@ -354,7 +355,7 @@ function MatchesContent() {
         </div>
 
         {/* Content with Pull-to-Refresh */}
-        <div ref={pullToRefreshRef} className="android-scroll">
+        <div className="android-scroll">
           {loading ? (
             <MatchesListSkeleton />
           ) : (
@@ -368,19 +369,19 @@ function MatchesContent() {
                       </div>
                       <h3 className="text-xl font-semibold text-gray-800 mb-2">No Matches Yet</h3>
                       <p className="text-gray-600 mb-6">Start swiping to find your perfect match!</p>
-                      <Link
+                      <a
                         href="/dashboard"
                         className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                       >
                         Start Discovering
-                      </Link>
+                      </a>
                     </div>
                   ) : (
                     <div className="grid gap-4">
                       {mutualMatches.map((match, index) => (
-                        <Link
+                        <a
                           key={match.connectionId}
-                          href={`/chat/${match.connectionId}`}
+                          href={`/chat?id=${match.connectionId}`}
                           className="profile-card bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-pink-200"
                           style={{
                             animationDelay: `${index * 100}ms`
@@ -427,7 +428,7 @@ function MatchesContent() {
                               <CustomIcon name="ri-chat-3-line" className="text-xl" />
                             </div>
                           </div>
-                        </Link>
+                        </a>
                       ))}
                     </div>
                   )}
@@ -441,19 +442,19 @@ function MatchesContent() {
                       <CustomIcon name="ri-user-add-line" className="text-6xl text-gray-300 mx-auto mb-4" />
                       <h3 className="text-xl font-semibold text-gray-600 mb-2">No Likes Yet</h3>
                       <p className="text-gray-500 mb-6">Profiles you like will appear here</p>
-                      <Link
+                      <a
                         href="/dashboard"
                         className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
                       >
                         Start Discovering
-                      </Link>
+                      </a>
                     </div>
                   ) : (
                     likedProfiles.map((likedProfile) => (
                       likedProfile.isMutualMatch ? (
-                        <Link
+                        <a
                           key={likedProfile.likeId}
-                          href={`/chat/${likedProfile.connectionId}`}
+                          href={`/chat?id=${likedProfile.connectionId}`}
                                                      className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer hover:border-pink-200"
                         >
                           <div className="flex items-center space-x-4">
@@ -492,7 +493,7 @@ function MatchesContent() {
                               <CustomIcon name="ri-chat-3-line" className="text-xl" />
                             </div>
                           </div>
-                        </Link>
+                        </a>
                       ) : (
                         <div key={likedProfile.likeId} className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md">
                           <div className="flex items-center space-x-4">
@@ -559,29 +560,15 @@ function MatchesContent() {
         />
       )}
 
-      {/* Modern Bottom Navigation */}
-      <SmoothNavigation 
-        items={[
-          { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
-          { 
-            href: '/matches', 
-            icon: 'ri-chat-3-line', 
-            label: 'Matches',
-            activeIcon: 'ri-chat-3-fill',
-            ...(matchesCount > 0 && { badge: matchesCount })
-          },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
-        ]}
-      />
+      {/* Bottom Navigation is handled globally in layout.tsx */}
     </div>
   );
 }
 
 export default function Matches() {
   return (
-    <ServerAuthGuard requireAuth={true} requireCompleteProfile={true}>
+    <AuthGuardV2 requiresCompleteProfile={true}>
       <MatchesContent />
-    </ServerAuthGuard>
+    </AuthGuardV2>
   );
 }

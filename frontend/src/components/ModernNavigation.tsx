@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import CustomIcon from './CustomIcon';
-import { useServerAuth } from '../hooks/useServerAuth';
+import { useAuth } from '../contexts/AuthContext';
 import logger from '../utils/logger';
 
 interface NavItem {
@@ -23,9 +23,10 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const handleNavigation = (href: string) => {
+    const profileCompleteness = user?.profileCompleteness ?? 0;
     // If auth state isn't ready yet, avoid aggressive redirects that may trigger logout
     if (!isAuthenticated && !user) {
       logger.debug('ModernNavigation: Auth state not ready, delaying navigation');
@@ -39,7 +40,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
     
     if (isRestrictedRoute && user) {
       // Access Control Logic: Only allow access if profileCompleteness is 100%
-      const canAccess = user.profileCompleteness >= 100;
+      const canAccess = profileCompleteness >= 100;
       const isFirstLogin = user.isFirstLogin;
       
       if (!canAccess) {
@@ -78,8 +79,9 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const getNavItemClasses = (href: string) => {
     const isActive = pathname === href;
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
+    const profileCompleteness = user?.profileCompleteness ?? 0;
+    const canAccess = user ? (profileCompleteness >= 100 && !user.isFirstLogin) : false;
+    const isInOnboarding = user ? (user.isFirstLogin || profileCompleteness < 100) : false;
     const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
     
     const baseClasses = `
@@ -105,8 +107,9 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const getIconClasses = (href: string) => {
     const isActive = pathname === href;
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
+    const profileCompleteness = user?.profileCompleteness ?? 0;
+    const canAccess = user ? (profileCompleteness >= 100 && !user.isFirstLogin) : false;
+    const isInOnboarding = user ? (user.isFirstLogin || profileCompleteness < 100) : false;
     const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
     
     return `
@@ -118,8 +121,9 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   const getLabelClasses = (href: string) => {
     const isActive = pathname === href;
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    const canAccess = user ? (user.profileCompleteness >= 100 && !user.isFirstLogin) : false;
-    const isInOnboarding = user ? (user.isFirstLogin || user.profileCompleteness < 100) : false;
+    const profileCompleteness = user?.profileCompleteness ?? 0;
+    const canAccess = user ? (profileCompleteness >= 100 && !user.isFirstLogin) : false;
+    const isInOnboarding = user ? (user.isFirstLogin || profileCompleteness < 100) : false;
     const isDisabled = isRestrictedRoute && (!canAccess || isInOnboarding);
     
     return `
@@ -145,7 +149,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
         {items.map((item) => {
           const isActive = pathname === item.href;
           const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
-          const canAccess = user ? (user.profileCompleteness >= 100) : false;
+          const canAccess = user ? ((user.profileCompleteness ?? 0) >= 100) : false;
           const isFirstLogin = user ? user.isFirstLogin : false;
           const isDisabled = isRestrictedRoute && !canAccess;
           

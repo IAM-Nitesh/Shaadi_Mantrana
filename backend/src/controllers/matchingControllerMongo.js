@@ -50,7 +50,8 @@ class MatchingController {
         _id: { $ne: userId, $nin: likedProfileIds },
         status: 'active',
         'verification.isVerified': true,
-        'profile.name': { $exists: true, $ne: '' }
+        'profile.name': { $exists: true, $ne: '' },
+        photoStatus: 'approved' // Play Store compliance: only show moderated content
       };
       
       // Filter by opposite gender
@@ -970,69 +971,36 @@ class MatchingController {
       // Legacy matches collection cleanup
       // Some deployments have an older `matches` collection that stores active matches
       // with a `users` array and/or `connectionId`. Attempt to remove matching docs
-      // both via existing Mongoose `Match` model and by direct collection delete.
+      // via direct collection delete.
       try {
         const mongoose = require('mongoose');
-        const MatchModel = require('../models/Match');
+        const coll = mongoose.connection.db.collection('matches');
+        const collQuery = { $or: [] };
 
-        // First try via the Mongoose model (handles newer match docs)
-        try {
-          const matchQuery = {};
-          if (connection && connection._id) {
-            matchQuery.$or = [ { connectionId: connection._id.toString() } ];
-          } else if (otherUserId) {
-            matchQuery.$or = [
-              { users: { $all: [userId, otherUserId] } },
-              { $and: [ { userId: userId }, { likedUserId: otherUserId } ] },
-              { $and: [ { userId: otherUserId }, { likedUserId: userId } ] }
-            ];
-          }
-
-          if (matchQuery.$or && matchQuery.$or.length > 0) {
-            const resDel = await MatchModel.deleteMany(matchQuery);
-            deletedLegacyMatchesCount += (resDel && (resDel.deletedCount || resDel.n)) || 0;
-            console.log(`🗑️ Deleted ${deletedLegacyMatchesCount} legacy match document(s) (via Match model) for unmatch between ${userId} and ${otherUserId}`);
-          }
-        } catch (e) {
-          console.warn('Legacy Match model deletion failed (continuing with collection delete):', e.message);
+        if (connection && connection._id) {
+          const connId = connection._id.toString();
+          try {
+            collQuery.$or.push({ connectionId: mongoose.Types.ObjectId(connId) });
+          } catch (e) {}
+          collQuery.$or.push({ connectionId: connId });
         }
 
-  // Also attempt direct collection delete for docs stored in `matches` collection
-  try {
-          const coll = mongoose.connection.db.collection('matches');
-          const collQuery = { $or: [] };
+        if (otherUserId) {
+          try {
+            collQuery.$or.push({ users: { $all: [ mongoose.Types.ObjectId(userId), mongoose.Types.ObjectId(otherUserId) ] } });
+          } catch (e) {}
+          collQuery.$or.push({ users: { $all: [ userId, otherUserId ] } });
+          collQuery.$or.push({ userId: userId, likedUserId: otherUserId });
+          collQuery.$or.push({ userId: otherUserId, likedUserId: userId });
+        }
 
-          if (connection && connection._id) {
-            try {
-              collQuery.$or.push({ connectionId: mongoose.Types.ObjectId(connection._id.toString()) });
-            } catch (errCast) {
-              // fallback to string match
-              collQuery.$or.push({ connectionId: connection._id.toString() });
-            }
-          }
-
-          if (otherUserId) {
-            try {
-              collQuery.$or.push({ users: { $all: [ mongoose.Types.ObjectId(userId), mongoose.Types.ObjectId(otherUserId) ] } });
-            } catch (errCast) {
-              collQuery.$or.push({ users: { $all: [ userId, otherUserId ] } });
-            }
-          }
-
-          if (collQuery.$or.length > 0) {
-            console.log('🔎 Attempting native collection delete with query on matches:', JSON.stringify(collQuery));
-            const colRes = await coll.deleteMany(collQuery);
-            const colDeleted = (colRes && (colRes.deletedCount || colRes.n)) || 0;
-            deletedLegacyMatchesCount += colDeleted;
-            console.log(`🗑️ Deleted ${colDeleted} legacy match document(s) from 'matches' collection for unmatch between ${userId} and ${otherUserId}`);
-          } else {
-            console.log('🔎 No native matches collection query constructed (nothing to delete)');
-          }
-        } catch (e) {
-          console.warn('Failed to delete from native matches collection:', e.message);
+        if (collQuery.$or.length > 0) {
+          const colRes = await coll.deleteMany(collQuery);
+          deletedLegacyMatchesCount = (colRes && (colRes.deletedCount || colRes.n)) || 0;
+          console.log(`🗑️ Deleted ${deletedLegacyMatchesCount} legacy match document(s) from 'matches' collection for unmatch between ${userId} and ${otherUserId}`);
         }
       } catch (e) {
-        console.warn('Failed to delete legacy matches during unmatch cleanup (outer):', e.message);
+        console.warn('Failed to delete legacy matches during unmatch cleanup:', e.message);
       }
 
       // Defensive native collection deletes to ensure no orphaned documents remain

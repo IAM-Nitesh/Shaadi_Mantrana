@@ -40,6 +40,7 @@ router.get('/email/health', async (req, res) => {
 // OTP endpoints
 router.post('/send-otp', (req, res) => authController.sendOTP(req, res));
 router.post('/verify-otp', (req, res) => authController.verifyOTP(req, res));
+router.post('/firebase-login', (req, res) => authController.firebaseLogin(req, res));
 
 // Profile endpoints
 router.get('/profile', authenticateToken, (req, res) => authController.getProfile(req, res));
@@ -54,6 +55,66 @@ router.get('/status', (req, res) => authController.getAuthStatus(req, res));
 
 // Token endpoint for frontend
 router.get('/token', (req, res) => authController.getToken(req, res));
+
+// Session health check endpoint - doesn't affect session TTL
+router.get('/session-health', authenticateToken, (req, res) => {
+  try {
+    const { JWTSessionManager } = require('../middleware/auth');
+    const sessionId = req.user?.sessionId;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No session identifier found'
+      });
+    }
+    
+    // Get read-only session info (doesn't update lastAccessed)
+    JWTSessionManager.checkSessionHealth(sessionId)
+      .then(sessionHealth => {
+        if (!sessionHealth.exists) {
+          return res.status(404).json({
+            success: false,
+            exists: false,
+            error: 'Session not found'
+          });
+        }
+        
+        // Create a sanitized clone of sessionHealth to avoid mutating the original
+        const sanitizedResponse = {
+          ...sessionHealth,
+          session: sessionHealth.session ? {
+            ...sessionHealth.session,
+            // Explicitly exclude sensitive data from the clone
+          } : null
+        };
+        
+        // Delete sensitive fields from the clone, not the original
+        if (sanitizedResponse.session) {
+          delete sanitizedResponse.session.refreshToken;
+          delete sanitizedResponse.session.accessToken;
+        }
+        
+        res.status(200).json({
+          success: true,
+          ...sanitizedResponse
+        });
+      })
+      .catch(error => {
+        console.error('Session health check error:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to check session health'
+        });
+      });
+  } catch (error) {
+    console.error('Session health endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
 
 // Development-only helper to fetch last OTP for an email (used by E2E tests)
 if (process.env.NODE_ENV === 'development') {

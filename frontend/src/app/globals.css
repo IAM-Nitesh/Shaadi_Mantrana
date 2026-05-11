@@ -1,10 +1,43 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css');
+@import '../styles/design-tokens.css';
+@import '../styles/typography.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Floating Blob Animations */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
 /* Design System Variables */
 :root {
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Great Vibes', cursive, ui-serif, Georgia, serif;
+  --font-body: 'Cormorant Infant', ui-serif, Georgia, serif;
   /* Primary Colors */
   --color-primary-50: #fdf2f8;
   --color-primary-100: #fce7f3;
@@ -26,6 +59,10 @@
   /* Android Touch Targets */
   --touch-target-min: 48px;
   --touch-target-ideal: 56px;
+  
+  /* Layout Height Variables */
+  --header-height: 4rem; /* matches h-16 */
+  --bottom-nav-height: 5rem; /* bottom navigation with safe area */
   
   /* Neutral Colors */
   --color-neutral-50: #fafafa;
@@ -79,6 +116,27 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Android-specific optimizations */
+.android-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Ensure content is not hidden under fixed navigation */
+.main-content {
+  padding-top: var(--header-height);
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+  min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+}
+
+/* Android touch targets */
+.android-touch-target {
+  min-height: var(--touch-target-ideal);
+  min-width: var(--touch-target-ideal);
+}
+
 body {
   background: var(--gradient-surface);
   color: var(--color-neutral-800);
@@ -126,9 +184,6 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-    /* Centralized header/footer height variables */
-    --header-height: 4rem; /* matches h-16 */
-    --bottom-nav-height: 4rem; /* bottom navigation default */
   right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.3), transparent);
@@ -1525,6 +1580,42 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
 /* Toast exit animations */
 .toast-animation[data-exit="true"] {
   animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Swipeable toast styles */
+.swipeable-toast {
+  /* Override pointer-events: none from the container */
+  pointer-events: auto !important;
+  /* Touch action for better touch behavior */
+  touch-action: pan-x;
+}
+
+/* Swiping state styles */
+.swipeable-toast[data-swipe="move"] {
+  transform: translateX(var(--swipe-offset));
+  transition-property: none;
+}
+
+/* Swipe exit animations */
+.swipeable-toast[data-swipe="end"] {
+  animation: swipeFadeOut 0.4s ease forwards;
+}
+
+@keyframes swipeFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(var(--swipe-offset));
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(calc(var(--swipe-offset) * 2));
+  }
+}
+
+/* Swipe cancel animation */
+.swipeable-toast[data-swipe="cancel"] {
+  transition: transform 0.2s ease-out;
+  transform: translateX(0) !important;
 }
 
 @keyframes toastSlideOut {

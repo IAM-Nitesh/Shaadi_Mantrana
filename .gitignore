@@ -17,8 +17,17 @@ frontend/out/
 frontend/dist/
 backend/dist/
 
-# Mobile build outputs
-android/*
+# Mobile build outputs and local Android state
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/app/debug/
+android/local.properties
+android/**/*.keystore
+android/**/*.jks
+keystore.properties
+android/keystore.properties
 
 
 # Environment variables (track only .env.example or .env.template)
@@ -121,6 +130,8 @@ backend/uploads/*
 *.key
 *.cert
 *.crt
+*.jks
+*.keystore
 *.p12
 *.pfx
 
@@ -316,3 +327,27 @@ docs/CLOUDFLARE_KEEPALIVE.md
 docs/KEEPALIVE_MIGRATION_GHA_TO_CLOUDFLARE.md
 docs/KEEPALIVE_OPTIONS.md
 cloudflare-keepalive/README.md
+docs/mcp.browsermcp.config.json
+COMPREHENSIVE_CHANGES_DOCUMENTATION.md
+cookies.txt
+DESIGN_SYSTEM_IMPLEMENTATION_SUMMARY.md
+playground-1.mongodb.js
+shaadi mantrana.fig
+TESTING_GUIDE.md
+UI_MIGRATION_SUMMARY.md
+USER_FLOW_TEST_RESULTS.md
+.playwright-mcp/LDNHEAEPMNMBJJJAHOKPHCKBPGCIIAED-0-0-187-0.crx
+.cursor/mcp.json
+backend/test-db-connection.js
+backend/scripts/promote-to-admin.js
+docs/ENHANCED_AUTH_STORAGE.md
+docs/MOBILE_LOGGING_IMPLEMENTATION.md
+docs/MOBILE_LOGGING_SSR_FIX.md
+docs/MOBILE_LOGGING_SUMMARY.md
+docs/MOBILE_LOGGING_TEST_RESULTS.md
+docs/SWIPEABLE_TOASTS.md
+frontend/scripts/extract-figma-tokens.js
+.gitignore
+frontend/src/utils/README-MOBILE-LOGGING.md
+frontend/src/docs/ANDROID_OPTIMIZATION_GUIDE.md
+frontend/src/docs/COMPONENT_LIBRARY.md

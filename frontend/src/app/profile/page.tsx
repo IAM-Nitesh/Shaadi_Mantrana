@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InterestModal from './InterestModal';
 import { ImageUploadService, UploadResult } from '../../services/image-upload-service';
-import ServerAuthGuard from '../../components/ServerAuthGuard';
+import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import CustomIcon from '../../components/CustomIcon';
 import ImageCompression from '../../utils/imageCompression';
 import { safeGsap } from '../../components/SafeGsap';
@@ -16,12 +16,11 @@ import 'react-time-picker/dist/TimePicker.css';
 import { TimePicker } from '../../components/time-picker';
 import HeartbeatLoader from '../../components/HeartbeatLoader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
-import SmoothNavigation from '../../components/SmoothNavigation';
+import { userNavItems } from '../../config/navigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import ToastService from '../../services/toastService';
-import { getAuthStatus, getClientToken } from '../../utils/client-auth';
 import OnboardingOverlay from '../../components/OnboardingOverlay';
-import { useServerAuth } from '../../hooks/useServerAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
@@ -284,7 +283,7 @@ function toISODateString(date: string | Date | null): string | null {
 
 function ProfileContent() {
   const router = useRouter();
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -975,7 +974,7 @@ function ProfileContent() {
           logger.debug(`  ❌ Height: feet="${feetEl?.value || 'undefined'}", inches="${inchesEl?.value || 'undefined'}", isEmpty: true`);
         }
       } else {
-        logger.debug(`�� Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
+        logger.debug(` Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
         
         // Handle different data types
         if (fieldValue === null || fieldValue === undefined) {
@@ -1258,7 +1257,7 @@ function ProfileContent() {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getClientToken()}`
+          'Authorization': `Bearer ${await localStorage.getItem('accessToken') || ''}`
         },
         timeout: 20000
       });
@@ -1285,7 +1284,7 @@ function ProfileContent() {
           // Add cache-busting parameter to ensure fresh data
           const response = await apiClient.get(`/api/profiles/me?t=${Date.now()}`, {
             headers: {
-              'Authorization': `Bearer ${await getClientToken()}`,
+              'Authorization': `Bearer ${await localStorage.getItem('accessToken') || ''}`,
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache'
             },
@@ -1295,16 +1294,18 @@ function ProfileContent() {
           if (response.ok) {
             const data = response.data;
             logger.debug('📥 Raw backend response after refresh:', data);
-            if (data.profile && data.profile.profile) {
+            // Backend returns: { success: true, user: { userId, email, userUuid, profile: {...}, ... } }
+            if (data.success && data.user) {
               refreshedProfile = {
-                ...data.profile.profile,
-                email: data.profile.email,
-                userUuid: data.profile.userUuid,
-                isFirstLogin: data.profile.isFirstLogin,
-                id: data.profile.userId?.toString(),
-                role: 'user',
-                verified: data.profile.verification?.isVerified || false,
-                lastActive: data.profile.lastActive || new Date().toISOString()
+                ...data.user.profile,
+                email: data.user.email,
+                userUuid: data.user.userUuid,
+                isFirstLogin: data.user.isFirstLogin,
+                id: data.user.userId?.toString(),
+                role: data.user.role || 'user',
+                verified: data.user.verification?.isVerified || false,
+                lastActive: data.user.lastActive || new Date().toISOString(),
+                hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false
               };
               setProfile(refreshedProfile);
               logger.debug('🔄 Profile refreshed from backend with cache-busting:', refreshedProfile);
@@ -2287,7 +2288,6 @@ function ProfileContent() {
       setShowOnboarding(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden">
       {/* Background Pattern */}
@@ -2298,7 +2298,7 @@ function ProfileContent() {
       
 
   {/* Content */}
-  <div className="relative z-10 page-transition">
+  <div className="relative z-10 page-transition" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
 
         {/* Profile Complete Success Banner */}
         {isProfileComplete && (
@@ -2315,6 +2315,30 @@ function ProfileContent() {
             </div>
           </div>
         )}
+        {/* Profile Header */}
+        <div className="px-4 py-4 flex items-center justify-between">
+          <h1 className="text-4xl font-heading text-gray-900">My Profile</h1>
+          <div className="flex items-center space-x-2">
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center space-x-1 px-4 py-2 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-full text-sm font-medium text-rose-600 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <CustomIcon name="ri-edit-line" size={16} />
+                <span>Edit</span>
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Profile Image */}
         <div className="px-4 py-6">
@@ -2609,8 +2633,9 @@ function ProfileContent() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Birth Details */}
+        {/* Birth Details */}
           <div className="card-modern p-6 hover-lift">
             <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
               <CustomIcon name="ri-calendar-line" size={20} className="text-rose-600 mr-3" />
@@ -3245,7 +3270,6 @@ function ProfileContent() {
                   + Add Interest
                 </button>
               )}
-
             </div>
             {renderInlineError('interests')}
           </div>
@@ -3285,9 +3309,6 @@ function ProfileContent() {
               )}
             </div>
           )}
-        </div>
-      </div>
-
       {/* Filter Modal */}
       {showFilter && (
         <FilterModal
@@ -3296,22 +3317,6 @@ function ProfileContent() {
           currentFilters={filters}
         />
       )}
-
-      {/* Modern Bottom Navigation */}
-      <SmoothNavigation 
-        items={[
-          { href: '/dashboard', icon: 'ri-heart-line', label: 'Discover', activeIcon: 'ri-heart-fill' },
-          { 
-            href: '/matches', 
-            icon: 'ri-chat-3-line', 
-            label: 'Matches',
-            activeIcon: 'ri-chat-3-fill',
-            ...(matchesCount > 0 && { badge: matchesCount })
-          },
-          { href: '/profile', icon: 'ri-user-line', label: 'Profile', activeIcon: 'ri-user-fill' },
-          { href: '/settings', icon: 'ri-settings-line', label: 'Settings', activeIcon: 'ri-settings-fill' },
-        ]}
-      />
 
       {/* Interest Modal */}
       {showInterestModal && (
@@ -3327,14 +3332,17 @@ function ProfileContent() {
         isVisible={showOnboarding}
         onComplete={handleOnboardingDismiss}
       />
-    </div>
+
+      {/* Bottom Navigation is handled globally in layout.tsx */}
+        </div>
+      </div>
   );
 }
 
 export default function Profile() {
   return (
-    <ServerAuthGuard requireAuth={true} requireCompleteProfile={false}>
+    <AuthGuardV2 requiresCompleteProfile={false}>
       <ProfileContent />
-    </ServerAuthGuard>
+    </AuthGuardV2>
   );
 }

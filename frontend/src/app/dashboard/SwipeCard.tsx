@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -27,7 +26,7 @@ interface SwipeCardProps {
       isVerified: boolean;
     };
   };
-  onSwipe: (direction: 'left' | 'right') => void;
+  onSwipe: (direction: 'left' | 'right' | 'up') => void;
 }
 
 export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {

@@ -4,9 +4,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTransition, useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomIcon from './CustomIcon';
-import { useServerAuth } from '../hooks/useServerAuth';
+import { useAuth } from '../contexts/AuthContext';
 import { usePageTransition } from './PageTransitionProvider';
 import { useOptimizedNavigation } from '../hooks/useOptimizedNavigation';
+import { toast } from 'react-hot-toast';
 
 interface NavItem {
   href: string;
@@ -42,7 +43,7 @@ const NavigationItem = memo(({
       mobile-touch-feedback android-touch-target
       transition-all duration-150 ease-out
       group
-      min-h-[64px] flex-1
+      min-h-[80px] flex-1
     `;
     
     if (isDisabled) {
@@ -135,7 +136,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const { user, isAuthenticated } = useServerAuth();
+  const { user, isAuthenticated } = useAuth();
   const { setTransitioning } = usePageTransition();
   const { navigateTo, preloadRoutes } = useOptimizedNavigation();
 
@@ -173,18 +174,14 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
           ? 'Please complete the onboarding process first' 
           : 'Please complete your profile to access this feature';
         
-        // Create and show toast
-        const toast = document.createElement('div');
-        toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fadeInScale';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        
-        // Remove toast after 3 seconds
-        setTimeout(() => {
-          if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-          }
-        }, 3000);
+        toast.error(message, {
+          icon: '🔒',
+          style: {
+            borderRadius: '12px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
         
         // Redirect to profile page with optimized transition
         navigateTo('/profile', { immediate: true });
@@ -225,11 +222,15 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
 
   return (
     <motion.div
-      initial={{ y: 20, opacity: 0 }} // Minimal entrance animation
+      initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }} // Smooth, natural easing
-      className={`fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg ${className}`}
-      style={{ height: 'var(--bottom-nav-height, 4rem)' }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={`fixed inset-x-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg ${className}`}
+      style={{
+        bottom: '0px',
+        height: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+      }}
     >
       <div className="flex justify-around items-center h-full px-4">
         <AnimatePresence>

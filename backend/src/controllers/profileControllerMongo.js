@@ -53,7 +53,7 @@ class ProfileController {
       console.log(`✅ Profile retrieved for user: ${userUuid} (${user.email})`);
       res.status(200).json({
         success: true,
-        profile: {
+        user: {
           ...user.toPublicJSON(),
           isFirstLogin: isFirstLogin,
           profileCompleteness: user.profile.profileCompleteness || 0,
@@ -534,7 +534,8 @@ class ProfileController {
       const queryFilters = {
         _id: { $ne: userId }, // Exclude current user
         status: 'active',
-        'verification.isVerified': true
+        'verification.isVerified': true,
+        photoStatus: 'approved' // Play Store Compliance: Only show moderated photos
       };
 
       // Apply user preferences if no specific filters provided

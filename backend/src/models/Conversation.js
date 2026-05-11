@@ -65,8 +65,8 @@ conversationSchema.index({ messageCount: -1 });
 conversationSchema.index({ participants: 1, status: 1 });
 conversationSchema.index({ participants: 1, lastMessageAt: -1 });
 
-// TTL index to expire conversations after 12 hours (43200 seconds)
-conversationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 43200 });
+// TTL index to expire conversations after 30 days (TTL index)
+conversationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
 // Ensure exactly 2 participants
 conversationSchema.pre('validate', function(next) {

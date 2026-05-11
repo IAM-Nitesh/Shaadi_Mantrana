@@ -9,9 +9,30 @@ const config = require('../config');
 const emailService = require('../services/emailService');
 const { JWTSessionManager } = require('../middleware/auth');
 const { User } = require('../models');
+const { verifyIdToken } = require('../services/firebaseService');
 
 const { logger } = require('../utils/pino-logger');
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true' || process.env.NODE_ENV !== 'production';
+
+// Shared cookie options helper function
+function getCookieOptions(req, options = {}) {
+  const isProduction = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+  
+  // IMPORTANT: SameSite Cookie Configuration
+  // - Frontend: Vercel (shaadimantrana.app)
+  // - Backend: Render (different domain)
+  // - Production uses 'none' because frontend and backend are on DIFFERENT domains
+  // - Development uses 'lax' (same-origin: localhost:3000 and localhost:5500)
+  // - 'none' requires secure:true (HTTPS only)
+  
+  return {
+    httpOnly: true,           // Prevents XSS attacks
+    secure: isProduction,     // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax',  // 'none' for cross-site (Vercel->Render)
+    path: '/',
+    ...options
+  };
+}
 
 // Session management - use JWTSessionManager's activeSessions
 // const sessions = new Map(); // Removed - using JWTSessionManager.activeSessions instead
@@ -122,6 +143,146 @@ const SecurityUtils = {
 };
 
 class AuthController {
+  // Login with Firebase ID Token
+  async firebaseLogin(req, res) {
+    try {
+      const { idToken, fcmToken } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'Firebase ID Token is required'
+        });
+      }
+
+      // Verify Firebase Token
+      let decodedToken;
+      try {
+        decodedToken = await verifyIdToken(idToken);
+      } catch (error) {
+        logger.error({ event: 'firebase_token_failed', err: error.message }, 'Firebase token verification failed');
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid Firebase token'
+        });
+      }
+
+      const { uid, email, phone_number, name, picture } = decodedToken;
+      const clientIP = SecurityUtils.getClientIP(req);
+
+      // 1. Try to find user by firebaseUid
+      let user = await User.findOne({ firebaseUid: uid });
+
+      // 2. If not found, try to find by email
+      if (!user && email) {
+        user = await User.findOne({ email: email.toLowerCase() });
+        if (user) {
+          // Link existing email account to Firebase
+          user.firebaseUid = uid;
+          if (phone_number) user.phoneNumber = phone_number;
+          await user.save();
+          logger.info({ event: 'account_linked', email, uid }, 'Linked existing email account to Firebase');
+        }
+      }
+
+      // 3. If still not found and we have a phone number, try by phone
+      if (!user && phone_number) {
+        user = await User.findOne({ phoneNumber: phone_number });
+        if (user) {
+          user.firebaseUid = uid;
+          await user.save();
+          logger.info({ event: 'account_linked_phone', phone: phone_number, uid }, 'Linked existing phone account to Firebase');
+        }
+      }
+
+      // 4. Create new user if not found
+      if (!user) {
+        const { v4: uuidv4 } = require('uuid');
+        user = new User({
+          email: email || `${uid}@shaadimantrana.firebase`, // Fallback for phone-only login
+          firebaseUid: uid,
+          phoneNumber: phone_number,
+          userUuid: uuidv4(),
+          isApprovedByAdmin: true, // Default to true or check pre-approval logic
+          role: 'user',
+          status: 'active', // Set to active for Firebase users
+          isFirstLogin: true,
+          profile: {
+            name: name || '',
+            images: picture ? [picture] : [],
+            profileCompleteness: 0
+          }
+        });
+        await user.save();
+        logger.info({ event: 'firebase_user_created', uid, email }, 'New Firebase user created');
+      }
+
+      // Update FCM token if provided
+      if (fcmToken) {
+        user.fcmToken = fcmToken;
+        await user.save();
+      }
+
+      // Update last login info
+      user.lastActive = new Date();
+      user.lastLogin = {
+        timestamp: new Date(),
+        ipAddress: clientIP,
+        userAgent: req.headers['user-agent'],
+        deviceType: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 
+                   req.headers['user-agent']?.includes('Tablet') ? 'tablet' : 'desktop'
+      };
+      await user.save();
+
+      // Create JWT session for backward compatibility
+      const session = await JWTSessionManager.createSession(user);
+      
+      const userData = user.toPublicJSON();
+      const isAdminUser = user.role === 'admin';
+      const completeness = user.profile?.profileCompleteness || 0;
+      
+      const redirectTo = isAdminUser
+        ? '/admin/dashboard'
+        : (user.isFirstLogin || completeness < 100)
+          ? '/profile'
+          : '/dashboard';
+
+      const responseData = {
+        success: true,
+        message: 'Firebase login successful',
+        accessToken: session.accessToken,
+        user: {
+          ...userData,
+          profileCompleteness: completeness
+        },
+        redirectTo,
+        session: {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          expiresIn: session.expiresIn,
+          sessionId: session.sessionId
+        }
+      };
+
+      // Set Cookies
+      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      
+      res.cookie('accessToken', session.accessToken, cookieOptions);
+      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { maxAge: cookieMaxAge * 2 }));
+      res.cookie('sessionId', session.sessionId, cookieOptions);
+
+      res.status(200).json(responseData);
+
+    } catch (error) {
+      logger.error({ event: 'firebase_login_error', err: error.message }, 'Firebase login error');
+      res.status(500).json({
+        success: false,
+        error: 'Failed to process Firebase login'
+      });
+    }
+  }
+
   // Send OTP for email verification (No storage - for external service integration)
   async sendOTP(req, res) {
   if (AUTH_DEBUG) logger.debug({ event: 'send_otp_received', email: req.body && req.body.email }, 'sendOTP received');
@@ -472,7 +633,51 @@ class AuthController {
       }
 
       // Create JWT session using the same system as the main auth controller
+      // CRITICAL FIX: Ensure session persistence for admin users
+      console.log('🔍 AuthController: Creating session for user:', {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        userUuid: user.userUuid
+      });
+      
       const session = await JWTSessionManager.createSession(user);
+      
+      // CRITICAL: Verify session was created successfully
+      console.log('✅ AuthController: Session created:', {
+        sessionId: session.sessionId,
+        accessToken: session.accessToken ? 'present' : 'missing',
+        refreshToken: session.refreshToken ? 'present' : 'missing'
+      });
+      
+      // Double-check session exists in database immediately after creation
+      try {
+        const verifySession = await JWTSessionManager.getSession(session.sessionId);
+        if (verifySession) {
+          console.log('✅ AuthController: Session verified in database after creation');
+        } else {
+          console.error('❌ AuthController: CRITICAL - Session missing from database after creation');
+          throw new Error('Session creation verification failed');
+        }
+      } catch (verifyError) {
+        console.error('❌ AuthController: Session verification failed:', verifyError);
+        throw new Error('Session verification failed: ' + verifyError.message);
+      }
+
+      // CRITICAL FIX: Add session persistence delay for admin users
+      if (user.role === 'admin') {
+        console.log('🔍 AuthController: Adding session persistence delay for admin user');
+        // Add a small delay to ensure session is fully persisted before redirect
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify session one more time after delay
+        const finalVerify = await JWTSessionManager.getSession(session.sessionId);
+        if (!finalVerify) {
+          console.error('❌ AuthController: CRITICAL - Session lost after persistence delay');
+          throw new Error('Admin session persistence failed');
+        }
+        console.log('✅ AuthController: Admin session persistence verified');
+      }
 
       // Prepare response with user data for frontend redirection logic
       const userData = user.toPublicJSON();
@@ -490,6 +695,7 @@ class AuthController {
       const responseData = {
         success: true,
         message: 'Authentication successful',
+        accessToken: session.accessToken, // Include access token at top level for frontend
         user: {
           ...userData,
           isFirstLogin: user.isFirstLogin,
@@ -506,66 +712,131 @@ class AuthController {
         }
       };
 
-      // Set HTTP-only cookies for the session
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        // For cross-origin requests, don't set domain to allow cookies to work across different domains
-        // The browser will handle the domain automatically for sameSite: 'none'
-      };
-
-      // Set access token cookie
+      // Set HTTP-only cookies for the session with extended expiry - ADMIN SESSION FIX
+      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 90 days for admin, 30 days for regular
+      
+      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      
       res.cookie('accessToken', session.accessToken, cookieOptions);
       
-      // Set refresh token cookie with longer expiration
-      const refreshCookieOptions = {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      };
+      const refreshCookieMaxAge = isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000; // 180 days for admin, 90 days for regular
+      const refreshCookieOptions = getCookieOptions(req, { maxAge: refreshCookieMaxAge });
       res.cookie('refreshToken', session.refreshToken, refreshCookieOptions);
       
-      // Set session ID cookie
       res.cookie('sessionId', session.sessionId, cookieOptions);
 
-  logger.info({ event: 'cookies_set', email: sanitizedEmail }, 'Cookies set for user');
+      logger.info({ event: 'cookies_set', email: sanitizedEmail }, 'Cookies set for user');
 
       res.status(200).json(responseData);
 
     } catch (error) {
-      console.error('❌ Verify OTP error:', error);
-      
-      // Provide user-friendly error messages
-      let errorMessage = 'Failed to verify OTP';
-      let statusCode = 500;
-      
-      if (error.name === 'ValidationError') {
-        statusCode = 400;
-        // Check for enum validation errors
-        const enumErrors = Object.keys(error.errors).filter(key => 
-          error.errors[key].kind === 'enum'
-        );
-        
-        if (enumErrors.length > 0) {
-          console.error('❌ Enum validation errors:', enumErrors);
-          errorMessage = 'Invalid profile data format. Please check your selections and try again.';
-        } else if (error.errors && error.errors['profile.maritalStatus']) {
-          errorMessage = 'Profile data validation error. Please contact support.';
-        } else {
-          errorMessage = 'Invalid data format. Please try again.';
-        }
-      } else if (error.name === 'MongoError' && error.code === 11000) {
-        statusCode = 409;
-        errorMessage = 'This email is already registered. Please try logging in.';
-      } else if (error.message && error.message.includes('not preapproved')) {
-        statusCode = 403;
-        errorMessage = 'This email is not authorized. Please contact support.';
-      }
-      
-      res.status(statusCode).json({
+      console.error('❌ Authentication processing error:', error);
+      res.status(500).json({
         success: false,
-        error: errorMessage
+        error: 'Failed to complete authentication'
+      });
+    }
+  }
+
+  /**
+   * Login using Firebase ID Token (Phone Auth)
+   * This is the primary anchor for Play Store compliance
+   */
+  async firebaseLogin(req, res) {
+    try {
+      const { idToken } = req.body;
+      const { verifyIdToken } = require('../services/firebaseService');
+      const { JWTSessionManager } = require('../middleware/auth');
+
+      if (!idToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'Firebase ID Token is required'
+        });
+      }
+
+      // 1. Verify token with Firebase
+      const decodedToken = await verifyIdToken(idToken);
+      const { uid, phone_number, email } = decodedToken;
+
+      if (!uid || !phone_number) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid Firebase token: Missing UID or Phone Number'
+        });
+      }
+
+      // 2. Find or Create User
+      let user = await User.findOne({ 
+        $or: [
+          { firebaseUid: uid },
+          { phoneNumber: phone_number }
+        ]
+      });
+
+      if (!user) {
+        // Create new user for first-time phone login
+        const { v4: uuidv4 } = require('uuid');
+        user = new User({
+          userUuid: uuidv4(),
+          firebaseUid: uid,
+          phoneNumber: phone_number,
+          email: email || `${uid}@shaadimantrana.firebase`, // Fallback email
+          status: 'active',
+          role: 'user',
+          verification: {
+            isVerified: true, // Phone is verified via Firebase
+            verifiedAt: new Date()
+          },
+          photoStatus: 'pending' // Play Store compliance: Force moderation
+        });
+        await user.save();
+        console.log(`✅ New Firebase user created: ${phone_number} (UUID: ${user.userUuid})`);
+      } else {
+        // Update existing user with Firebase info if missing
+        let updated = false;
+        if (!user.firebaseUid) { user.firebaseUid = uid; updated = true; }
+        if (!user.phoneNumber) { user.phoneNumber = phone_number; updated = true; }
+        
+        if (updated) {
+          await user.save();
+          console.log(`✅ Existing user updated with Firebase info: ${user.email}`);
+        }
+      }
+
+      // 3. Create JWT Session
+      const session = await JWTSessionManager.createSession(user);
+
+      // 4. Set cookies and return response
+      const isAdminUser = user.role === 'admin';
+      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      
+      res.cookie('accessToken', session.accessToken, cookieOptions);
+      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { maxAge: isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 }));
+      res.cookie('sessionId', session.sessionId, cookieOptions);
+
+      res.status(200).json({
+        success: true,
+        accessToken: session.accessToken,
+        user: {
+          ...user.toPublicJSON(),
+          isFirstLogin: user.isFirstLogin,
+          profileCompleteness: user.profile?.profileCompleteness || 0
+        },
+        session: {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          expiresIn: session.expiresIn,
+          sessionId: session.sessionId
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Firebase Login error:', error);
+      res.status(401).json({
+        success: false,
+        error: 'Authentication failed: ' + (error.message || 'Invalid token')
       });
     }
   }
@@ -666,15 +937,10 @@ class AuthController {
         audience: 'shaadi-mantra-app'
       });
 
-      // Set new access token cookie
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        // For cross-origin requests, don't set domain to allow cookies to work across different domains
-        // The browser will handle the domain automatically for sameSite: 'none'
-      };
+      // Set new access token cookie with extended expiry
+      const cookieOptions = getCookieOptions(req, { 
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days instead of 24 hours
+      });
 
       res.cookie('accessToken', newAccessToken, cookieOptions);
 
@@ -704,13 +970,7 @@ class AuthController {
       }
 
       // Clear authentication cookies
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: (process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https') ? 'none' : 'lax',
-        // For cross-origin requests, don't set domain to allow cookies to work across different domains
-        // The browser will handle the domain automatically for sameSite: 'none'
-      };
+      const cookieOptions = getCookieOptions(req);
 
       res.clearCookie('accessToken', cookieOptions);
       res.clearCookie('refreshToken', cookieOptions);
@@ -881,7 +1141,8 @@ class AuthController {
           if (sessionData) {
             return res.status(200).json({
               success: true,
-              token: token
+              token: token,
+              expiresAt: decoded.exp * 1000 // Convert to milliseconds
             });
           }
         } catch (tokenError) {
@@ -902,7 +1163,8 @@ class AuthController {
           if (sessionData) {
             return res.status(200).json({
               success: true,
-              token: accessToken
+              token: accessToken,
+              expiresAt: decoded.exp * 1000 // Convert to milliseconds
             });
           }
         } catch (tokenError) {
@@ -938,7 +1200,8 @@ class AuthController {
 
             return res.status(200).json({
               success: true,
-              token: newAccessToken
+              token: newAccessToken,
+              expiresAt: payload.exp * 1000 // Convert to milliseconds
             });
           }
         } catch (tokenError) {

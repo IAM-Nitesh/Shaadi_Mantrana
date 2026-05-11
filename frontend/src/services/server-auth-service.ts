@@ -307,25 +307,35 @@ export class ServerAuthService {
   }
 
   // Get Bearer token for backend API calls
-  // This method extracts the authToken from cookies and returns it as a Bearer token
+  // NOTE: This is a legacy method - use auth-utils.getBearerToken() instead
+  // Returns null when using HTTP-only cookies (which are sent automatically)
   static async getBearerToken(): Promise<string | null> {
     try {
-  logger.debug('🔍 ServerAuthService: Getting Bearer token...');
+      logger.debug('🔍 ServerAuthService: Getting Bearer token...');
       
       const response = await apiClient.get('/api/auth/token', {
         credentials: 'include',
         timeout: 5000
       });
 
-      if (response.ok && response.data.success && response.data.token) {
-  logger.info('✅ ServerAuthService: Bearer token retrieved successfully');
-        return response.data.token;
+      if (response.ok && response.data.success) {
+        const token = response.data.token;
+        
+        // If backend returned a token (non-cookie auth), return it
+        if (token && typeof token === 'string' && token.length > 20) {
+          logger.info('✅ ServerAuthService: Bearer token retrieved from backend');
+          return token;
+        }
+        
+        // Otherwise, using HTTP-only cookies - return null
+        logger.info('✅ ServerAuthService: Using HTTP-only cookie authentication');
+        return null;
       }
 
-  logger.warn('❌ ServerAuthService: No token in response');
+      logger.warn('❌ ServerAuthService: No token in response');
       return null;
     } catch (error) {
-  logger.error('❌ ServerAuthService: Error getting Bearer token:', error);
+      logger.error('❌ ServerAuthService: Error getting Bearer token:', error);
       return null;
     }
   }

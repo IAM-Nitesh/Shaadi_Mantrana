@@ -1,57 +1,22 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-import React from 'react';
-
-// import NavigationGuard from '../components/NavigationGuard';
-import { Toaster } from 'react-hot-toast';
-const ToasterComponent = Toaster as unknown as React.ComponentType<any>;
+import { AuthProvider } from '../contexts/AuthContext';
 import PageTransitionProvider from '../components/PageTransitionProvider';
-import PageLoadingIndicator from '../components/PageLoadingIndicator';
-import LenisProvider from './LenisProvider';
-import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
-import PerformanceOptimizer from '../components/PerformanceOptimizer';
 import { PWAProvider } from '../components/PWAProvider';
-import ConsoleSuppressor from '../components/ConsoleSuppressor';
-import HeaderWrapper from '../components/HeaderWrapper';
-import BottomWrapper from '../components/BottomWrapper';
-import ClientOnly from '../components/ClientOnly';
+import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
+import ToasterClient from '../components/ToasterClient';
+import DevTools from '../components/DevTools';
+import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 
-
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Shaadi Mantrana',
   description: 'Find your perfect match with Shaadi Mantrana',
   manifest: '/manifest.json',
-
+  themeColor: '#ec4899',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Shaadi Mantra',
+    title: 'Shaadi Mantrana',
   },
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://shaadimantra.com',
-    title: 'Shaadi Mantra',
-    description: 'Find your perfect match with Shaadi Mantra',
-    siteName: 'Shaadi Mantra',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Shaadi Mantra',
-    description: 'Find your perfect match with Shaadi Mantra',
-  },
-};
-
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1.0,
-  maximumScale: 1.0,
-  userScalable: false,
-  viewportFit: 'cover' as const,
-  themeColor: '#667eea',
 };
 
 export default function RootLayout({
@@ -59,112 +24,23 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const initialUser = null;
+
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={inter.className}>
-        <PerformanceOptimizer>
-          <LenisProvider>
-            <PageDataLoadingProvider>
-              <PWAProvider>
-                <PageTransitionProvider>
-                  <ConsoleSuppressor />
-                  {/* Layout container with fixed header and footer */}
-                  <div className="flex flex-col min-h-screen">
-                    {/* Pinned global header */}
-                    <ClientOnly><HeaderWrapper /></ClientOnly>
-                    {/* Scrollable main content between header and footer */}
-                    <main className="flex-1 overflow-auto" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
-                      {children}
-                    </main>
-                    {/* Pinned bottom navigation */}
-                    <ClientOnly><BottomWrapper /></ClientOnly>
-                  </div>
-                  <ClientOnly><PageLoadingIndicator /></ClientOnly>
-                </PageTransitionProvider>
-              </PWAProvider>
-            </PageDataLoadingProvider>
-          </LenisProvider>
-        </PerformanceOptimizer>
-
-        {/* Party.js for confetti animations */}
-        <script
-          src="https://cdn.jsdelivr.net/npm/party-js@latest/bundle/party.min.js"
-          async
-        />
-
-  <ToasterComponent
-          position="top-center"
-          reverseOrder={false}
-          toastOptions={{
-            // Default options for all types
-            duration: 3000,
-            style: {
-              background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)',
-              color: '#1f2937',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              boxShadow: '0 10px 25px rgba(236, 72, 153, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
-              border: '1px solid rgba(236, 72, 153, 0.1)',
-              backdropFilter: 'blur(10px)',
-              maxWidth: '400px',
-              minWidth: '300px',
-              cursor: 'pointer',
-              userSelect: 'none',
-            },
-            success: {
-              duration: 5000,
-              style: {
-                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                color: '#065f46',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
-              },
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#ffffff',
-              },
-            },
-            error: {
-              duration: 5000,
-              style: {
-                background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                color: '#991b1b',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                boxShadow: '0 10px 25px rgba(239, 68, 68, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
-              },
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#ffffff',
-              },
-            },
-            loading: {
-              style: {
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                color: '#0c4a6e',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
-              },
-              iconTheme: {
-                primary: '#3b82f6',
-                secondary: '#ffffff',
-              },
-            },
-            // Custom animation for all toasts
-            className: 'toast-animation',
-          }}
-          // Custom container styling
-          containerStyle={{
-            top: 20,
-            zIndex: 9999,
-          }}
-          // Custom gutter for spacing between toasts
-          gutter={12}
-          // Note: react-hot-toast's current types may not include swipeDirection/swipeThreshold
-          // We'll keep standard props only to satisfy TypeScript
-        />
+      <body className="font-body antialiased">
+        <AuthProvider initialUser={initialUser}>
+          <PWAProvider>
+            <PageTransitionProvider>
+              <PageDataLoadingProvider>
+                {children}
+                <ToasterClient />
+                <DevTools />
+                <GlobalBottomNavigation />
+              </PageDataLoadingProvider>
+            </PageTransitionProvider>
+          </PWAProvider>
+        </AuthProvider>
       </body>
     </html>
   );
