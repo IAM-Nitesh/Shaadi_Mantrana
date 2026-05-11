@@ -6,7 +6,7 @@
 # Usage:
 #   bash scripts/security-audit-fix.sh              # audit only
 #   bash scripts/security-audit-fix.sh --fix        # audit + safe fix
-#   bash scripts/security-audit-fix.sh --auto-fix   # force fix + clean reinstall
+#   bash scripts/security-audit-fix.sh --auto-fix   # audit + safe fix + clean reinstall
 # ============================================================
 
 # NOTE: NOT using "set -u" — bash 3.2 (macOS default) has no associative arrays
@@ -46,7 +46,7 @@ parse_json_counts() {
   " 2>/dev/null || echo "0 0 0 0"
 }
 
-# ── Ensure root install (NEVER cd into workspaces — avoids pinned nested copies) ──
+# ── Ensure root install ──
 ensure_install() {
   if [ ! -d "$ROOT_DIR/node_modules" ]; then
     echo -e "${YELLOW}⚙ Installing dependencies (root workspace)...${RESET}"
@@ -95,9 +95,10 @@ audit_scope() {
       fi
 
       if [ "$MODE" = "--auto-fix" ]; then
-        echo -e "  ${YELLOW}⚠ Trying force fix + clean reinstall...${RESET}"
-        npm audit fix --force $ws_flag --silent 2>&1 | tail -3 || true
-        # Wipe everything to flush stale workspace lockfile pins (e.g. next@15.5.0)
+        echo -e "  ${YELLOW}⚠ Safe fix insufficient — running clean reinstall...${RESET}"
+        # NEVER use --force as it can corrupt package.json and increase vulnerabilities
+        
+        # Wipe everything to flush stale workspace lockfile pins
         rm -f "$ROOT_DIR/package-lock.json"
         rm -rf "$ROOT_DIR/node_modules" \
                "$ROOT_DIR/frontend/node_modules" \
@@ -129,7 +130,7 @@ audit_scope() {
   fi
 }
 
-# ── Known CVE minimum version check (bash 3.2 safe — no declare -A) ─
+# ── Known CVE minimum version check (bash 3.2 safe) ──
 check_pinned_versions() {
   section "Known CVE Package Version Check"
   [ ! -f "$ROOT_DIR/package-lock.json" ] && echo -e "  ${YELLOW}⚠ No lockfile found${RESET}" && return
@@ -164,7 +165,10 @@ check_pinned_versions() {
       var found = [];
       Object.keys(pkgs).forEach(function(p){
         var n = p.split('/').pop();
-        if(n === item.name) found.push({ path:p, version:pkgs[p].version||'?' });
+        // Skip @types/ packages as they don't contain runtime code/vulnerabilities
+        if(n === item.name && !p.includes('@types/')) {
+          found.push({ path:p, version:pkgs[p].version||'?' });
+        }
       });
       if(!found.length){ console.log('  \u2139\uFE0F  '+item.name+': not in lockfile'); return; }
       found.forEach(function(inst){
@@ -182,8 +186,6 @@ main() {
   cd "$ROOT_DIR"
   header
 
-  # IMPORTANT: all npm commands run from ROOT using --workspace flag
-  # This prevents the nested workspace node_modules issue (e.g. next@15.5.0 recreated in frontend/)
   audit_scope "Root + All Workspaces" ""
   audit_scope "Frontend Workspace"    "--workspace=frontend"
   audit_scope "Backend Workspace"     "--workspace=backend"
