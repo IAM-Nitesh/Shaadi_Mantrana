@@ -109,3 +109,21 @@ gh is not installed in this repo environment. The Recurrence >= 2 mandate now wr
 **Insight**:
 The pattern observed across the entire Hardened V2 session: adding the ambiguity stop revealed the AGENTS.md bootstrap gap; adding the Recurrence threshold revealed the gh CLI dependency; adding PENDING_ISSUES.md revealed the sprint ritual gap. This is not a bug — it is the process working. Each constraint surfaces the next hidden assumption rather than burying it. When you add a hard rule and something feels slightly wrong immediately after, look for the assumption it just exposed.
 
+
+---
+
+### 🎓 Learning: posthog-js maskInputFn signature is HTMLElement | undefined
+**Date**: 2026-05-12 01:58:05
+**Version**: 1.0 | **Domain**: Frontend/Analytics | **Expiry Hint**: Review if posthog-js major version is upgraded
+**Insight**:
+posthog-js's maskInputFn type signature uses 'element?: HTMLElement' (not 'Element | null'). Always check the SDK's actual TypeScript types before writing custom callbacks — the PostHog docs show a different signature than what the installed version exports.
+
+
+---
+
+### 🎓 Learning: Stale backend/node_modules/* lockfile entries silently block overrides
+**Date**: 2026-05-12 02:20:03
+**Version**: 1.0 | **Domain**: Pipeline/Security | **Expiry Hint**: Permanent — re-verify if monorepo structure changes
+**Insight**:
+In a monorepo, if backend ever had its own separate install, stale 'backend/node_modules/*' entries get frozen in the root package-lock.json. npm workspace installs do NOT evict them — overrides in workspace package.json are ignored for these frozen entries. Fix: use a Node script to delete all 'backend/node_modules/*' keys from package-lock.json packages map, then run npm install from root to re-resolve cleanly.
+

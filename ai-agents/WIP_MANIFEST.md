@@ -13,6 +13,9 @@
 | Domain | Interface / File in Flight | Expected Stable By |
 | :--- | :--- | :--- |
 | **⚠️ STANDING** | **Check `ai-agents/PENDING_ISSUES.md` before opening new work this sprint** | Never — permanent standing reminder |
+| Pipeline | `.github/workflows/security-audit.yml` (actions/cache added) | 2026-05-12 |
+| Mobile | `android/build.gradle` + `android/app/build.gradle` (Firebase Crashlytics) | 2026-05-13 — requires `google-services.json` + `npx cap sync android` |
+| Frontend | `frontend/src/components/PostHogProvider.tsx` + `layout.tsx` (PostHog) | 2026-05-12 — requires `NEXT_PUBLIC_POSTHOG_KEY` env var in Vercel |
 
 ---
 
