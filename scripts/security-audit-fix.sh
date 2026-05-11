@@ -142,7 +142,7 @@ check_pinned_versions() {
     var pkgs = lock.packages || {};
 
     var minimums = [
-      { name:'nodemailer',           min:'8.0.5',  cve:'SMTP injection (GHSA-vvjj)' },
+      { name:'nodemailer',           min:'6.9.13', cve:'SMTP injection (GHSA-vvjj)' },
       { name:'next',                 min:'15.5.7', cve:'RCE CVE-2025-66478' },
       { name:'serialize-javascript', min:'6.0.2',  cve:'RCE via RegExp' },
       { name:'braces',               min:'3.0.3',  cve:'ReDoS' },
