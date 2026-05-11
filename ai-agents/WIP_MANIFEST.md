@@ -13,9 +13,7 @@
 | Domain | Interface / File in Flight | Expected Stable By |
 | :--- | :--- | :--- |
 | **⚠️ STANDING** | **Check `ai-agents/PENDING_ISSUES.md` before opening new work this sprint** | Never — permanent standing reminder |
-| Pipeline | `.github/workflows/security-audit.yml` (actions/cache added) | 2026-05-12 |
-| Mobile | `android/build.gradle` + `android/app/build.gradle` (Firebase Crashlytics) | 2026-05-13 — requires `google-services.json` + `npx cap sync android` |
-| Frontend | `frontend/src/components/PostHogProvider.tsx` + `layout.tsx` (PostHog) | 2026-05-12 — requires `NEXT_PUBLIC_POSTHOG_KEY` env var in Vercel |
+| Mobile | `android/build.gradle` + `android/app/build.gradle` (Firebase Crashlytics) | 2026-05-13 — requires Android Studio release build + Play Console upload |
 
 ---
 
@@ -25,6 +23,8 @@
 | :--- | :--- | :--- | :--- |
 | System | `ai-agents/MASTER_BRAIN.md` | 2026-05-12 | Hardened V2 workflow implemented |
 | System | `ai-agents/GLOBAL_RULES.md` | 2026-05-12 | Superpower Integration section added |
+| Pipeline | `.github/workflows/security-audit.yml` | 2026-05-12 | actions/cache@v4 added; stale lockfile fixed (57 entries) |
+| Frontend | `PostHogProvider.tsx` + `layout.tsx` | 2026-05-12 | Session recording + JS exception capture; typescript moved to deps |
 
 ---
 

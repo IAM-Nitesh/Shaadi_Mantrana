@@ -24,6 +24,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
+import posthog from 'posthog-js';
 
 // Type definition for field configuration
 interface FieldConfig {
@@ -1226,6 +1227,7 @@ function ProfileContent() {
           if (uploadResult.success && uploadResult.imageUrl) {
             uploadedImageUrl = uploadResult.imageUrl;
             logger.debug('✅ Image uploaded to B2:', uploadedImageUrl);
+            posthog.capture('profile_photo_uploaded', { file_type: tempImageFile.type });
             ToastService.dismiss(loadingToast);
             ToastService.profilePictureVerificationPending();
           } else {
@@ -1348,6 +1350,7 @@ function ProfileContent() {
         }
         
         // Show appropriate success message based on backend completeness
+        posthog.capture('profile_saved', { completeness: backendCompleteness, photo_uploaded: !!uploadedImageUrl });
         if (backendCompleteness >= 100) {
           ToastService.profileSaved();
         } else {

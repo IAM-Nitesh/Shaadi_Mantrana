@@ -66,6 +66,7 @@
     "next": "^15.5.18"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.4",
     "@jridgewell/sourcemap-codec": "^1.5.5",
     "@playwright/test": "^1.40.0",
     "@rollup/plugin-terser": "^0.4.4",

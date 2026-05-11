@@ -14,6 +14,7 @@ import { ChatService } from '../../services/chat-service';
 import { MatchingService } from '../../services/matching-service';
 import ToastService from '../../services/toastService';
 import logger from '../../utils/logger';
+import posthog from 'posthog-js';
 
 interface Match {
   name: string;
@@ -277,11 +278,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         // Don't add message to local state here - it will be received via Socket.IO
         // This prevents duplicate messages from appearing
         console.log('Message sent successfully, waiting for Socket.IO broadcast');
+        posthog.capture('message_sent', { connection_id: connectionId });
       } else {
         logger.error('Failed to send message:', response.message);
       }
     } catch (error) {
       logger.error('Error sending message:', error);
+      posthog.captureException(error);
     } finally {
       setIsSending(false);
     }
@@ -313,6 +316,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   // Show swipeable success toast controlled by GSAP (auto-dismiss after 3s)
   toast((t) => <AutoDismissToast toastId={t.id} message={'Successfully unmatched!'} />, { duration: Infinity });
 
+      posthog.capture('user_unmatched', { connection_id: connectionId });
       router.push('/matches');
     } catch (error) {
       logger.error('Error unmatching:', error);
