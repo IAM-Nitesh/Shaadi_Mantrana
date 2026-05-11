@@ -11,6 +11,7 @@ import { safeGsap } from '../../components/SafeGsap';
 import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
 import { userNavItems } from '../../config/navigation';
+import posthog from 'posthog-js';
 
 function SettingsContent() {
   const router = useRouter();
@@ -39,6 +40,8 @@ function SettingsContent() {
   const confirmLogout = async () => {
     try {
       setShowLogoutConfirm(false);
+      posthog.capture('user_logged_out');
+      posthog.reset();
       // call client logout helper
       await logout();
       // optionally call server-side logout handler

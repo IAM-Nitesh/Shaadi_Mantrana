@@ -6,6 +6,7 @@ import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
 import ToasterClient from '../components/ToasterClient';
 import DevTools from '../components/DevTools';
 import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
+import { PostHogProvider } from '../components/PostHogProvider';
 
 export const metadata = {
   title: 'Shaadi Mantrana',
@@ -29,18 +30,20 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body className="font-body antialiased">
-        <AuthProvider initialUser={initialUser}>
-          <PWAProvider>
-            <PageTransitionProvider>
-              <PageDataLoadingProvider>
-                {children}
-                <ToasterClient />
-                <DevTools />
-                <GlobalBottomNavigation />
-              </PageDataLoadingProvider>
-            </PageTransitionProvider>
-          </PWAProvider>
-        </AuthProvider>
+        <PostHogProvider>
+          <AuthProvider initialUser={initialUser}>
+            <PWAProvider>
+              <PageTransitionProvider>
+                <PageDataLoadingProvider>
+                  {children}
+                  <ToasterClient />
+                  <DevTools />
+                  <GlobalBottomNavigation />
+                </PageDataLoadingProvider>
+              </PageTransitionProvider>
+            </PWAProvider>
+          </AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

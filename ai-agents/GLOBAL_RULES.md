@@ -22,4 +22,8 @@
 * **Client Directives**: Mark all files using Hooks (`useState`, `useEffect`, `createContext`) with `"use client";` at the very top.
 * **Vercel Build Stability**: Keep `typescript` and core `@types` in `dependencies` (not devDeps) to ensure visibility to the Vercel build worker.
 * **Native-First Links**: Use `<a>` tags instead of `next/link` for static Capacitor exports to avoid hydration mismatch.
-* **UGC Compliance**: Always flag new media as `pending` and restrict Discovery to `approved` status only.
+
+## ⚡ SUPERPOWER INTEGRATION
+* **Skill-First Mentality**: If a skill exists for a task (TDD, Debugging, Planning), it is MANDATORY to invoke it.
+* **Traceability**: All major plans must be saved to `docs/superpowers/plans/` as per the `writing-plans` skill.
+* **Continuous Discovery**: Use `smart-explore` and `mem-search` before asking questions about existing logic.

@@ -351,3 +351,4 @@ frontend/scripts/extract-figma-tokens.js
 frontend/src/utils/README-MOBILE-LOGGING.md
 frontend/src/docs/ANDROID_OPTIMIZATION_GUIDE.md
 frontend/src/docs/COMPONENT_LIBRARY.md
+.env.local
