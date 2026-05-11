@@ -34,8 +34,22 @@ export function getFirebaseAuth(): Auth {
 
 // Keep backward-compatible named exports as getters
 export const app = new Proxy({} as FirebaseApp, {
-  get: (_, prop) => getFirebaseApp()[prop as keyof FirebaseApp],
+  get: (_, prop) => {
+    const instance = getFirebaseApp();
+    const value = instance[prop as keyof FirebaseApp];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  },
 });
 export const auth = new Proxy({} as Auth, {
-  get: (_, prop) => getFirebaseAuth()[prop as keyof Auth],
+  get: (_, prop) => {
+    const instance = getFirebaseAuth();
+    const value = instance[prop as keyof Auth];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  },
 });
