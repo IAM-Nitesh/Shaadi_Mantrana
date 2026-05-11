@@ -47,14 +47,14 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.3",
     "eslint": "^9.21.0",
-    "eslint-config-next": "15.2.1"
-  },
-  "devDependencies": {
+    "eslint-config-next": "15.2.1",
+    "typescript": "5.9.3",
     "@types/node": "^20",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.3",
-    "@types/react-router-dom": "^5.3.3",
-    "typescript": "5.9.3"
+    "@types/react-router-dom": "^5.3.3"
+  },
+  "devDependencies": {
   },
   "overrides": {
     "react": "18.3.1",
