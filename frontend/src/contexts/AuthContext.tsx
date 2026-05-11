@@ -10,6 +10,7 @@ import {
 import { auth } from '../config/firebase';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import logger from '../utils/logger';
+import posthog from 'posthog-js';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -110,6 +111,7 @@ export const AuthProvider = ({
         
         logger.info('✅ AuthContext: User authenticated:', userData);
         setUser(userData);
+        posthog.identify(userData.userId, { role: userData.role });
         
         // Set redirect based on business logic
         if (userData.role === 'admin') {

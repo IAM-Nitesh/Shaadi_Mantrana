@@ -9,6 +9,7 @@ import SwipeCard from './SwipeCard';
 import { safeGsap } from '../../components/SafeGsap';
 import { DiscoveryProfile, MatchingService } from '../../services/matching-service';
 import logger from '../../utils/logger';
+import posthog from 'posthog-js';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -63,14 +64,18 @@ function DashboardContent() {
       if (direction === 'right' && likesRemaining > 0) {
         const result = await MatchingService.likeProfile(currentProfile._id, 'like');
         setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
+        posthog.capture('profile_swiped', { action: 'like', likes_remaining: result.remainingLikes });
       } else if (direction === 'left') {
         await MatchingService.passProfile(currentProfile._id);
+        posthog.capture('profile_swiped', { action: 'pass' });
       } else if (direction === 'up' && likesRemaining > 0) {
         const result = await MatchingService.likeProfile(currentProfile._id, 'super_like');
         setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
+        posthog.capture('profile_swiped', { action: 'super_like', likes_remaining: result.remainingLikes });
       }
     } catch (error) {
       logger.warn('Dashboard: swipe action failed', error);
+      posthog.captureException(error);
     }
     
     // Move to next profile

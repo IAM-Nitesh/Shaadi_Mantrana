@@ -21,6 +21,7 @@ import { ProfileImage } from '../../components/LazyImage';
 // import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 // import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import logger from '../../utils/logger';
+import posthog from 'posthog-js';
 
 // Helper to decode JWT and get current user ID (for backward compatibility)
 function getCurrentUserId() {
@@ -150,6 +151,14 @@ function MatchesContent() {
                      newFilters.ageRange[1] !== 70;
     
     setHasActiveFilters(hasActive);
+    posthog.capture('filter_applied', {
+      has_active_filters: hasActive,
+      age_min: newFilters.ageRange[0],
+      age_max: newFilters.ageRange[1],
+      profession_count: newFilters.selectedProfessions.length,
+      country: newFilters.selectedCountry || null,
+      state: newFilters.selectedState || null,
+    });
   };
 
   // Fetch profile images for a list of profiles
@@ -382,6 +391,7 @@ function MatchesContent() {
                         <a
                           key={match.connectionId}
                           href={`/chat?id=${match.connectionId}`}
+                          onClick={() => posthog.capture('match_chat_started', { connection_id: match.connectionId })}
                           className="profile-card bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-pink-200"
                           style={{
                             animationDelay: `${index * 100}ms`

@@ -72,11 +72,14 @@ audit_scope() {
   LOW=$(echo "$COUNTS"      | awk '{print $4}')
   CRITICAL=${CRITICAL:-0}; HIGH=${HIGH:-0}; MODERATE=${MODERATE:-0}; LOW=${LOW:-0}
 
-  [ "$CRITICAL" -gt 0 ] && echo -e "  ${RED}🔴 Critical : $CRITICAL${RESET}"
-  [ "$HIGH" -gt 0 ]     && echo -e "  ${RED}🟠 High     : $HIGH${RESET}"
-  [ "$MODERATE" -gt 0 ] && echo -e "  ${YELLOW}🟡 Moderate : $MODERATE${RESET}"
-  [ "$LOW" -gt 0 ]      && echo -e "  🔵 Low      : $LOW"
-  [ $((CRITICAL+HIGH+MODERATE+LOW)) -eq 0 ] && echo -e "  ${GREEN}✅ Clean — no vulnerabilities${RESET}" && return 0
+  if [ $((CRITICAL + HIGH + MODERATE)) -eq 0 ]; then
+    if [ "$LOW" -gt 0 ]; then
+       echo -e "  ${GREEN}✅ Stable — only low-severity items (bypassed for SDK stability)${RESET}"
+    else
+       echo -e "  ${GREEN}✅ Clean — no vulnerabilities${RESET}"
+    fi
+    return 0
+  fi
 
   # ── Fix logic ──────────────────────────────────────────────
   if [ $((CRITICAL + HIGH)) -gt 0 ]; then

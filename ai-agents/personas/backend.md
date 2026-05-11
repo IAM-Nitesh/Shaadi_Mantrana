@@ -5,6 +5,10 @@ CONSTRAINTS: Use lean() wherever possible, Paginate all lists.
 WORKFLOWS: Use `smart-explore` and `make-plan`.
 ESCALATION: If API delay impacts UI, consult `performance.md`.
 
+## ⚡ REQUIRED SKILLS
+- `systematic-debugging`: For investigating API/Auth issues.
+- `test-driven-development`: Mandatory for all new service logic.
+
 ## API ROUTE REGISTRY
 | Path | Method | Description |
 |------|--------|-------------|
