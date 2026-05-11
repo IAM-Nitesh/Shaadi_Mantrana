@@ -38,6 +38,7 @@
     "frontend",
     "backend"
   ],
+  "overrides": {
     "serialize-javascript": "^7.0.5",
     "braces": "^3.0.3",
     "postcss": "^8.5.13",
