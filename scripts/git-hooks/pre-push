@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ============================================================
+# Git pre-push hook — Shaadi Mantrana
+# Blocks git push if critical/high security vulnerabilities exist.
+# Installed automatically by: bash scripts/install-git-hooks.sh
+# ============================================================
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+SCRIPT="$ROOT_DIR/scripts/security-audit-fix.sh"
+
+echo ""
+echo "🔐 Running security audit before push..."
+echo ""
+
+if [ ! -f "$SCRIPT" ]; then
+  echo "⚠ Security script not found at $SCRIPT — skipping"
+  exit 0
+fi
+
+chmod +x "$SCRIPT"
+
+# Use --auto-fix: handles both safe fix AND clean reinstall for workspace pin issues
+bash "$SCRIPT" --auto-fix
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo ""
+  echo "❌ Push BLOCKED due to unresolved security vulnerabilities."
+  echo "   Review the output above and fix manually if needed."
+  echo "   Then re-run: git push"
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "✅ Security gate passed — proceeding with push."
+exit 0
