@@ -7,6 +7,7 @@ import OTPInput from './OTPInput';
 import logger from '../utils/logger';
 import { ConfirmationResult } from 'firebase/auth';
 import posthog from 'posthog-js';
+import MandalaBackground from './ui/MandalaBackground';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -111,14 +112,16 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setConfirmationResult(null);
   };
 
-  if (step === 'phone') {
     return (
-      <div className="w-full max-w-md mx-auto">
-        <div className={`rounded-2xl shadow-xl p-8 ${isMounted ? 'bg-white/80 backdrop-blur-md' : 'bg-white'}`}>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome</h2>
-            <p className="text-gray-600">Enter your mobile number to continue</p>
-          </div>
+      <div className="relative min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <MandalaBackground opacity={0.1} rotationSpeed={120} />
+        
+        <div className="w-full max-w-md mx-auto relative z-10">
+          <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-playfair font-bold text-royal-gold mb-2">Shaadi Mantrana</h2>
+              <p className="text-royal-gold-light/80 font-inter">The Sacred Counsel</p>
+            </div>
 
           <div className="space-y-6">
             <div>
@@ -126,23 +129,23 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                 Mobile Number
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-royal-gold font-medium">+91</span>
                 <input
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   placeholder="Enter 10 digit number"
-                  className="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-300"
+                  className="w-full pl-14 pr-4 py-3 bg-royal-obsidian/50 border border-royal-glass-border rounded-xl text-royal-gold-light placeholder:text-royal-gold-light/30 focus:ring-2 focus:ring-royal-gold focus:border-transparent transition-all duration-300"
                   disabled={isSendingOTP}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-2 italic">We'll send a code for verification</p>
+              <p className="text-xs text-royal-gold-light/50 mt-2 italic">We'll send a code for verification</p>
             </div>
 
             <button
               onClick={handleSendOTP}
               disabled={phoneNumber.length < 10 || isSendingOTP}
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-xl font-medium hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)]"
             >
               {isSendingOTP ? 'Sending OTP...' : 'Get Verification Code'}
             </button>
@@ -162,60 +165,66 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <div className={`rounded-2xl shadow-xl p-8 ${isMounted ? 'bg-white/80 backdrop-blur-md' : 'bg-white'}`}>
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Mobile</h2>
-          <p className="text-gray-600">Enter the 6-digit code sent to your phone</p>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-              Verification Code
-            </label>
-            <OTPInput
-              value={otp}
-              onChange={setOtp}
-              disabled={isVerifyingOTP}
-            />
-            <p className="text-sm text-gray-500 mt-4 text-center">
-              Code sent to <span className="font-medium">+91 {phoneNumber}</span>
-            </p>
+    <div className="relative min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <MandalaBackground opacity={0.1} rotationSpeed={120} />
+      
+      <div className="w-full max-w-md mx-auto relative z-10">
+        <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-playfair font-bold text-royal-gold mb-2">Verify Mobile</h2>
+            <p className="text-royal-gold-light/80 font-inter">Enter the 6-digit code sent to your phone</p>
           </div>
 
-          <button
-            onClick={handleVerifyOTP}
-            disabled={otp.length !== 6 || isVerifyingOTP}
-            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-xl font-medium hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-          >
-            {isVerifyingOTP ? 'Verifying...' : 'Verify Code'}
-          </button>
-
-          <div className="text-center">
-            <button
-              onClick={handleSendOTP}
-              disabled={resendCooldown > 0 || isSendingOTP}
-              className="text-rose-500 hover:text-rose-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
-            </button>
-          </div>
-
-          <div className="text-center">
-            <button
-              onClick={handleBackToPhone}
-              className="text-gray-500 hover:text-gray-600 font-medium"
-            >
-              ← Change Phone Number
-            </button>
-          </div>
-
-          {error && (
-            <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg border border-red-100">
-              {error}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-royal-gold-light/70 mb-4 text-center font-inter">
+                Verification Code
+              </label>
+              <div className="royal-otp-wrapper">
+                <OTPInput
+                  value={otp}
+                  onChange={setOtp}
+                  disabled={isVerifyingOTP}
+                />
+              </div>
+              <p className="text-sm text-royal-gold-light/60 mt-4 text-center font-inter">
+                Code sent to <span className="font-bold text-royal-gold">+91 {phoneNumber}</span>
+              </p>
             </div>
-          )}
+
+            <button
+              onClick={handleVerifyOTP}
+              disabled={otp.length !== 6 || isVerifyingOTP}
+              className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+            >
+              {isVerifyingOTP ? 'Verifying...' : 'Verify Code'}
+            </button>
+
+            <div className="text-center">
+              <button
+                onClick={handleSendOTP}
+                disabled={resendCooldown > 0 || isSendingOTP}
+                className="text-royal-gold hover:text-royal-gold-light font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-inter"
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+              </button>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={handleBackToPhone}
+                className="text-royal-gold-light/60 hover:text-royal-gold-light font-medium transition-colors font-inter"
+              >
+                ← Change Phone Number
+              </button>
+            </div>
+
+            {error && (
+              <div className="text-royal-crimson text-sm text-center bg-royal-crimson/10 p-2 rounded-lg border border-royal-crimson/20">
+                {error}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
