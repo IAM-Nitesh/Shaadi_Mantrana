@@ -32,7 +32,13 @@ interface SwipeCardProps {
 }
 
 export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const likeRef = useRef<HTMLDivElement>(null);
   const passRef = useRef<HTMLDivElement>(null);
   // GSAP entrance animation
