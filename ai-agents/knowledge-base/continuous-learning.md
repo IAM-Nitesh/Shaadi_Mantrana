@@ -127,3 +127,12 @@ posthog-js's maskInputFn type signature uses 'element?: HTMLElement' (not 'Eleme
 **Insight**:
 In a monorepo, if backend ever had its own separate install, stale 'backend/node_modules/*' entries get frozen in the root package-lock.json. npm workspace installs do NOT evict them — overrides in workspace package.json are ignored for these frozen entries. Fix: use a Node script to delete all 'backend/node_modules/*' keys from package-lock.json packages map, then run npm install from root to re-resolve cleanly.
 
+
+---
+
+### 🎓 Learning: Postman Sync
+**Date**: 2026-05-12 15:03:40
+**Version**: 1.0 | **Domain**: API/Verification | **Expiry Hint**: Permanent
+**Insight**:
+Synchronized Collection with true backend routes and added /_dev/last-otp helper for local testing.
+

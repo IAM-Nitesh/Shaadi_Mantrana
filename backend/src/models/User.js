@@ -371,7 +371,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Indexes for better query performance
-userSchema.index({ email: 1 });
 userSchema.index({ 'profile.gender': 1 });
 userSchema.index({ 'profile.maritalStatus': 1 });
 userSchema.index({ 'profile.currentResidence': 1 });
@@ -379,8 +378,6 @@ userSchema.index({ status: 1 });
 userSchema.index({ lastActive: -1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ 'lastLogin.timestamp': -1 });
-userSchema.index({ firebaseUid: 1 });
-userSchema.index({ phoneNumber: 1 });
 userSchema.index({ 'profile.photoStatus': 1 });
 
 // Virtual for profile completion calculation (legacy - use profileCompleteness instead)

@@ -81,8 +81,7 @@ module.exports = {
       maxIdleTimeMS: 30000,
       waitQueueTimeoutMS: 5000, // Reduced from 10000
       bufferCommands: false,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      autoIndex: isProduction, // Disable autoIndex in development for faster startup
       // Network resilience
       family: 4, // Force IPv4
       directConnection: false,
@@ -91,7 +90,7 @@ module.exports = {
       retryReads: true,
       compressors: 'snappy,zlib',
       // Additional connection resilience options
-      ssl: true, // Force SSL for Atlas
+      ssl: isProduction || (getMongoDBURI() && getMongoDBURI().includes('mongodb+srv://')),
       authSource: 'admin', // Explicit auth source
       appName: 'Shaadi-Mantrana-Backend'
     }
