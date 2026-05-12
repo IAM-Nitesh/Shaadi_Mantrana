@@ -1,22 +1,24 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import { safeGsap } from '../SafeGsap';
 
 interface MandalaBackgroundProps {
   opacity?: number;
   rotationSpeed?: number;
+  parallaxShift?: number;
 }
 
 export default function MandalaBackground({ 
   opacity = 0.05, 
-  rotationSpeed = 60 
+  rotationSpeed = 60,
+  parallaxShift = 0
 }: MandalaBackgroundProps) {
   const mandalaRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (mandalaRef.current) {
-      gsap.to(mandalaRef.current, {
+      safeGsap.to?.(mandalaRef.current, {
         rotation: 360,
         duration: rotationSpeed,
         repeat: -1,
@@ -30,8 +32,11 @@ export default function MandalaBackground({
       <svg
         ref={mandalaRef}
         viewBox="0 0 100 100"
-        className="w-[150%] h-[150%] max-w-[1200px] text-royal-gold"
-        style={{ opacity }}
+        className="w-[150%] h-[150%] max-w-[1200px] text-royal-gold transition-transform duration-300 ease-out"
+        style={{ 
+          opacity,
+          transform: `translateX(${parallaxShift * 0.1}px) rotate(${parallaxShift * 0.05}deg)`
+        }}
         fill="none"
         stroke="currentColor"
         strokeWidth="0.2"

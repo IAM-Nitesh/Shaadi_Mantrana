@@ -28,9 +28,10 @@ interface SwipeCardProps {
     };
   };
   onSwipe: (direction: 'left' | 'right' | 'up') => void;
+  onDrag?: (x: number) => void;
 }
 
-export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
+export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const likeRef = useRef<HTMLDivElement>(null);
   const passRef = useRef<HTMLDivElement>(null);
@@ -184,6 +185,23 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           const deltaX = currentX - startX;
           currentDragX = deltaX;
           setDragX(deltaX);
+          onDrag?.(deltaX);
+
+          // GSAP 3D Tilt Effect
+          if (cardRef.current) {
+            const rect = cardRef.current.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const mouseX = e.clientX - centerX;
+            const mouseY = e.clientY - centerY;
+            
+            safeGsap.to?.(cardRef.current, {
+              rotateY: mouseX * 0.05,
+              rotateX: -mouseY * 0.05,
+              duration: 0.5,
+              ease: 'power2.out',
+            });
+          }
         } catch (error) {
           logger.warn('Error in handleMouseMove:', error);
         }
@@ -192,14 +210,25 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       const handleMouseUp = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
-            // Add haptic feedback for mobile
+          if (Math.abs(currentDragX) > 80) {
             if ('vibrate' in navigator) {
               navigator.vibrate(50);
             }
             onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
+          onDrag?.(0);
+          
+          // Reset GSAP Tilt
+          if (cardRef.current) {
+            safeGsap.to?.(cardRef.current, {
+              rotateY: 0,
+              rotateX: 0,
+              duration: 0.8,
+              ease: 'elastic.out(1, 0.3)',
+            });
+          }
+
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
         } catch (error) {
@@ -228,6 +257,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           const deltaX = currentX - startX;
           currentDragX = deltaX;
           setDragX(deltaX);
+          onDrag?.(deltaX);
         } catch (error) {
           logger.warn('Error in handleTouchMove:', error);
         }
@@ -236,14 +266,14 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       const handleTouchEnd = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
-            // Add haptic feedback for mobile
+          if (Math.abs(currentDragX) > 80) {
             if ('vibrate' in navigator) {
               navigator.vibrate(50);
             }
             onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
+          onDrag?.(0);
           document.removeEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
           document.removeEventListener('touchend', handleTouchEnd);
         } catch (error) {
