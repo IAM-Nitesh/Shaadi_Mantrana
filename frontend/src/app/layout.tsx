@@ -12,12 +12,15 @@ export const metadata = {
   title: 'Shaadi Mantrana',
   description: 'Find your perfect match with Shaadi Mantrana',
   manifest: '/manifest.json',
-  themeColor: '#ec4899',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Shaadi Mantrana',
   },
+};
+
+export const viewport = {
+  themeColor: '#ec4899',
 };
 
 export default function RootLayout({
