@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css');
 @import '../styles/design-tokens.css';
 @import '../styles/typography.css';
@@ -37,18 +38,28 @@
 :root {
   --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
   --font-heading: 'Great Vibes', cursive, ui-serif, Georgia, serif;
+  --font-playfair: 'Playfair Display', serif;
   --font-body: 'Cormorant Infant', ui-serif, Georgia, serif;
   /* Primary Colors */
-  --color-primary-50: #fdf2f8;
-  --color-primary-100: #fce7f3;
-  --color-primary-200: #fbcfe8;
-  --color-primary-300: #f9a8d4;
-  --color-primary-400: #f472b6;
-  --color-primary-500: #ec4899;
-  --color-primary-600: #db2777;
-  --color-primary-700: #be185d;
-  --color-primary-800: #9d174d;
-  --color-primary-900: #831843;
+  /* Modern Royal Palette (Obsidian & Gold) */
+  --royal-obsidian: #121212;
+  --royal-gold: #D4AF37;
+  --royal-gold-light: #F9E29C;
+  --royal-crimson: #800000;
+  --royal-glass: rgba(255, 255, 255, 0.05);
+  --royal-glass-border: rgba(212, 175, 55, 0.2);
+
+  /* Mapping legacy primary tokens to Royal Palette for safety */
+  --color-primary-50: #1a1a1a;
+  --color-primary-100: #262626;
+  --color-primary-200: #333333;
+  --color-primary-300: #404040;
+  --color-primary-400: #D4AF37;
+  --color-primary-500: #D4AF37;
+  --color-primary-600: #B8860B;
+  --color-primary-700: #121212;
+  --color-primary-800: #0a0a0a;
+  --color-primary-900: #000000;
   
   /* Android Safe Area Variables */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
@@ -77,10 +88,10 @@
   --color-neutral-900: #171717;
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #fb7185 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #db2777 0%, #e11d48 50%, #f43f5e 100%);
-  --gradient-surface: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-  --gradient-card: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  --gradient-primary: linear-gradient(135deg, var(--royal-gold) 0%, var(--royal-gold-light) 50%, var(--royal-gold) 100%);
+  --gradient-primary-hover: linear-gradient(135deg, var(--royal-gold-light) 0%, var(--royal-gold) 50%, var(--royal-gold-light) 100%);
+  --gradient-surface: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+  --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   
   /* Advanced Transitions */
   --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -105,6 +116,14 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Modern Royal Palette */
+  --royal-obsidian: #121212;
+  --royal-gold: #D4AF37;
+  --royal-gold-light: #F9E29C;
+  --royal-crimson: #800000;
+  --royal-glass: rgba(255, 255, 255, 0.05);
+  --royal-glass-border: rgba(212, 175, 55, 0.2);
 }
 
 /* Base Styles */
@@ -138,8 +157,8 @@ html {
 }
 
 body {
-  background: var(--gradient-surface);
-  color: var(--color-neutral-800);
+  background: var(--royal-obsidian);
+  color: var(--royal-gold-light);
   transition: var(--transition-normal);
   font-feature-settings: 'rlig' 1, 'calt' 1;
   text-rendering: optimizeLegibility;
@@ -155,27 +174,27 @@ body {
 
 /* Enhanced Modern Components */
 
-/* Login Page Specific Styles */
+/* Modernized Login Page Styles */
 .login-page-bg {
-  background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 50%, #fce7f3 100%);
+  background: var(--royal-obsidian);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--royal-glass);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--royal-glass-border);
   border-radius: 1.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
 .login-card:hover {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(212, 175, 55, 0.2);
   transform: translateY(-2px);
 }
 
@@ -186,41 +205,42 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, var(--royal-gold), transparent);
 }
 
 .form-input-modern {
-  background: rgba(248, 250, 252, 0.8);
-  border: 2px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--royal-glass-border);
   border-radius: 1rem;
   padding: 1rem 1.25rem;
   font-size: 0.875rem;
+  color: var(--royal-gold-light);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
 }
 
 .form-input-modern:focus {
-  border-color: #ec4899;
-  box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1);
-  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--royal-gold);
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .btn-gradient-modern {
-  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #fb7185 100%);
-  color: white;
+  background: var(--royal-gold);
+  color: var(--royal-obsidian);
   border: none;
   border-radius: 1rem;
   padding: 1rem 1.5rem;
   font-weight: 600;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
 .btn-gradient-modern:hover:not(:disabled) {
-  background: linear-gradient(135deg, #db2777 0%, #e11d48 50%, #f43f5e 100%);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background: var(--royal-gold-light);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
   transform: translateY(-1px) scale(1.02);
 }
 
@@ -240,14 +260,14 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #1e293b 0%, #475569 50%, #1e293b 100%);
+  background: linear-gradient(135deg, var(--royal-gold) 0%, var(--royal-gold-light) 50%, var(--royal-gold) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-accent {
-  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #fb7185 100%);
+  background: linear-gradient(135deg, var(--royal-gold-light) 0%, var(--royal-gold) 50%, var(--royal-gold-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

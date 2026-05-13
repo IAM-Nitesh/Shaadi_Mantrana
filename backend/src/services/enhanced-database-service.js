@@ -21,7 +21,8 @@ class EnhancedDatabaseService {
     this.dnsCacheTimeout = 300000; // 5 minutes
     this.fallbackIPs = [];
     
-    this.setupEventHandlers();
+    // Event handlers are now managed centrally by DatabaseService to prevent loops
+    // this.setupEventHandlers();
   }
 
   async connect() {
@@ -162,7 +163,7 @@ class EnhancedDatabaseService {
       bufferCommands: false,
       
       // Additional resilience options
-      ssl: true,
+      ssl: config.isProduction, // Only use SSL in production
       authSource: 'admin',
       compressors: 'snappy',
       maxConnecting: 1, // Limit concurrent connections
@@ -195,7 +196,7 @@ class EnhancedDatabaseService {
     mongoose.connection.on('disconnected', () => {
       console.log('🟡 Enhanced MongoDB disconnected');
       this.isConnected = false;
-      this.scheduleReconnection();
+      // Reconnection handled by primary DatabaseService
     });
 
     mongoose.connection.on('reconnected', () => {

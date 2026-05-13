@@ -16,6 +16,7 @@ import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 // Type assertion for EllipsisVerticalIcon
 const EllipsisVerticalIconTyped = EllipsisVerticalIcon as React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 import HeartbeatLoader from '../../components/HeartbeatLoader';
+import RoyalLoader from '../../components/RoyalLoader';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
 
@@ -320,6 +321,7 @@ function AdminPageContent() {
           textSize="lg"
           text="Loading Admin Panel..."
           showText={true}
+          variant="royal"
         />
       </div>
     );
@@ -423,6 +425,7 @@ function AdminPageContent() {
                 textSize="lg"
                 text="Loading Users..."
                 showText={true}
+                variant="royal"
               />
             </div>
           ) : users.length === 0 ? (
@@ -759,7 +762,11 @@ function AdminPageContent() {
 
       {/* Logout Animation Overlay */}
       {isLoggingOut && (
-        <div className="fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-royal-obsidian backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <RoyalLoader 
+            size="xl" 
+            text="Farewell, Majesty..." 
+          />
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-20"
                style={{
@@ -772,7 +779,7 @@ function AdminPageContent() {
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {/* Heart 1 */}
             <div className="absolute animate-bounce" style={{ left: '10%', top: '20%', animationDelay: '0s' }}>
-              <div className="w-6 h-6 text-red-400 opacity-80">
+              <div className="w-6 h-6 text-royal-gold opacity-80">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
@@ -780,7 +787,7 @@ function AdminPageContent() {
             </div>
             {/* Heart 2 */}
             <div className="absolute animate-bounce" style={{ right: '15%', top: '30%', animationDelay: '0.5s' }}>
-              <div className="w-5 h-5 text-pink-400 opacity-70">
+              <div className="w-5 h-5 text-royal-gold-light opacity-70">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
@@ -788,7 +795,7 @@ function AdminPageContent() {
             </div>
             {/* Heart 3 */}
             <div className="absolute animate-bounce" style={{ left: '20%', bottom: '25%', animationDelay: '1s' }}>
-              <div className="w-4 h-4 text-rose-400 opacity-90">
+              <div className="w-4 h-4 text-royal-gold opacity-90">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
@@ -796,7 +803,7 @@ function AdminPageContent() {
             </div>
             {/* Heart 4 */}
             <div className="absolute animate-bounce" style={{ right: '25%', bottom: '35%', animationDelay: '1.5s' }}>
-              <div className="w-5 h-5 text-red-500 opacity-60">
+              <div className="w-5 h-5 text-royal-gold-light opacity-60">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>

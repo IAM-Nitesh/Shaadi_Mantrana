@@ -127,3 +127,111 @@ posthog-js's maskInputFn type signature uses 'element?: HTMLElement' (not 'Eleme
 **Insight**:
 In a monorepo, if backend ever had its own separate install, stale 'backend/node_modules/*' entries get frozen in the root package-lock.json. npm workspace installs do NOT evict them — overrides in workspace package.json are ignored for these frozen entries. Fix: use a Node script to delete all 'backend/node_modules/*' keys from package-lock.json packages map, then run npm install from root to re-resolve cleanly.
 
+
+---
+
+### 🎓 Learning: Postman Sync
+**Date**: 2026-05-12 15:03:40
+**Version**: 1.0 | **Domain**: API/Verification | **Expiry Hint**: Permanent
+**Insight**:
+Synchronized Collection with true backend routes and added /_dev/last-otp helper for local testing.
+
+
+---
+
+### 🎓 Learning: Express 5 Wildcard Compatibility
+**Date**: 2026-05-12 18:07:42
+**Version**: 1.0 | **Domain**: Backend | **Expiry Hint**: Permanent
+**Insight**:
+Express 5 uses path-to-regexp v8 which requires named parameters (/:path*) or RegExp for wildcards; '*' is no longer supported.
+
+
+---
+
+### 🎓 Learning: Fixing Phantom Dependencies in Backend
+**Date**: 2026-05-12 18:21:10
+**Version**: 1.0 | **Domain**: Backend | **Expiry Hint**: Keep for 1 month
+**Insight**:
+Direct dependencies in workspaces must be explicitly present in node_modules even if they exist as nested dependencies elsewhere. Forced installation with --workspace resolves hoisting gaps.
+
+
+---
+
+### 🎓 Learning: Pino/Pino-HTTP Initialization Fix
+**Date**: 2026-05-12 22:17:10
+**Version**: 1.0 | **Domain**: Frontend | **Expiry Hint**: Never
+**Insight**:
+Next.js 15 requires handling ESM default exports for pino and pino-http when using eval('require'). Also, pino-http crashes if passed a non-pino logger, requiring metadata symbol tagging.
+
+
+---
+
+### 🎓 Learning: Mobile-First Royal Visual Retrofit
+**Date**: 2026-05-12 22:31:00
+**Version**: 1.0 | **Domain**: UI/UX | **Expiry Hint**: Review after Dashboard v2 feedback
+**Insight**:
+Completed Phase 1 of UI Rampup: synchronized viewport themeColor with Royal Obsidian, retrofitted Global Bottom Navigation to Gold/Obsidian, and updated Dashboard swipe actions to Royal palette. Forced dark mode globally to prevent white flashes.
+
+
+---
+
+### 🎓 Learning: Modern Royal UI Stabilization
+**Date**: 2026-05-12 22:56:33
+**Version**: 1.0 | **Domain**: Frontend/UX | **Expiry Hint**: Never
+**Insight**:
+UI hangs in Next.js can be caused by hydration locks or module evaluation blocks in non-resilient services. Use global failsafe scripts in layout.tsx to force unblock the UI if initialization stalls.
+
+
+---
+
+### 🎓 Learning: Enterprise Product Blueprint
+**Date**: 2026-05-12 23:03:04
+**Version**: 1.0 | **Domain**: Product Strategy | **Expiry Hint**: 2026-12-31
+**Insight**:
+Consolidated product strategy into a 12-section enterprise-grade blueprint covering AI Matching, Freemium Monetization, and DPDP Compliance.
+
+
+---
+
+### 🎓 Learning: Royal Progressive Profiling
+**Date**: 2026-05-12 23:10:10
+**Version**: 1.0 | **Domain**: UI/UX | **Expiry Hint**: Stable
+**Insight**:
+Implemented a 5-step premium onboarding wizard with Obsidian/Gold styling, auto-save persistence, and mobile-first ergonomics. Replaced monolithic profile form.
+
+
+---
+
+### 🎓 Learning: Login UI Stability Fix
+**Date**: 2026-05-12 23:23:06
+**Version**: 1.0 | **Domain**: Frontend/UX | **Expiry Hint**: 2026-12-31
+**Insight**:
+Decoupled global isLoading from interactive auth actions to prevent component unmounting. Added GSAP animation fallbacks.
+
+
+---
+
+### 🎓 Learning: Playwright E2E Integration
+**Date**: 2026-05-12 23:28:06
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: None
+**Insight**:
+Implemented E2E scripts for Login journey using Page-agnostic selectors for GSAP compatibility.
+
+
+---
+
+### 🎓 Learning: Firebase env vars missing broke login
+**Date**: 2026-05-12 23:51:03
+**Version**: 1.0 | **Domain**: Auth/Testing | **Expiry Hint**: Permanent
+**Insight**:
+NEXT_PUBLIC_FIREBASE_* vars were absent from all .env files causing silent auth failure. Added guard in LoginForm and placeholders in .env.local.
+
+
+---
+
+### 🎓 Learning: Capacitor 7 Plugin Initialization Fix
+**Date**: 2026-05-13 12:24:35
+**Version**: 1.0 | **Domain**: Mobile/Android | **Expiry Hint**: Never
+**Insight**:
+Resolved 'null object reference' in @capacitor-firebase/authentication by upgrading to v7.0.0 (Capacitor 7 compatible) and adding 'phone' provider to plugins.FirebaseAuthentication.providers in capacitor.config.json. Reverted manual registration in MainActivity.java as v7 auto-registers correctly.
+

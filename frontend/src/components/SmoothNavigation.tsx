@@ -50,7 +50,7 @@ const NavigationItem = memo(({
       return `${baseClasses} text-gray-300 cursor-not-allowed opacity-50`;
     }
     
-    return `${baseClasses} text-rose-500`;
+    return `${baseClasses} text-royal-gold`;
   }, [isDisabled]);
 
   const getIconClasses = useMemo(() => {
@@ -63,7 +63,7 @@ const NavigationItem = memo(({
       text-xs font-medium
       transition-all duration-150 ease-out
       transform
-      text-rose-500
+      text-royal-gold/70
     `;
     
     if (isDisabled) {
@@ -74,7 +74,7 @@ const NavigationItem = memo(({
       return `${baseClasses} font-semibold`;
     }
     
-    return `${baseClasses}`;
+    return `${baseClasses} text-royal-gold/50`;
   }, [isActive, isDisabled]);
 
   return (
@@ -225,7 +225,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`fixed inset-x-0 z-50 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg ${className}`}
+      className={`fixed inset-x-0 z-50 bg-royal-obsidian/90 backdrop-blur-xl border-t border-royal-glass-border shadow-[0_-4px_20px_rgba(0,0,0,0.5)] ${className}`}
       style={{
         bottom: '0px',
         height: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom, 0px))',
