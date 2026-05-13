@@ -10,6 +10,7 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Lazy initialization — only runs on client, never during SSR/static export
@@ -18,6 +19,14 @@ let _auth: Auth | null = null;
 
 export function getFirebaseApp(): FirebaseApp {
   if (!_app) {
+    // Debug log to check if env vars are reaching the mobile build
+    console.log('Firebase: Initializing with API Key starting with:', firebaseConfig.apiKey?.substring(0, 10));
+    console.log('Firebase: App ID:', firebaseConfig.appId);
+    
+    if (!firebaseConfig.apiKey) {
+      console.error('Firebase: API Key is MISSING! Check your .env.production file.');
+    }
+    
     _app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   }
   return _app;

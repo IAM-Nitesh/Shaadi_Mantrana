@@ -21,6 +21,13 @@
 
 ## Active Assumptions
 
+### [2026-05-12] [Testing] Playwright requires external network for initial browser setup
+- **Task**: Implementing Playwright E2E tests
+- **Assumption**: The user has local network access to run `npx playwright install` which is currently blocked in the sandbox environment.
+- **Risk if wrong**: Tests will fail to run even with the scripts present.
+- **Status**: `documented`
+- **Validated by**: Pending - User manual execution required.
+
 ### [2026-05-12] [System] Initial AI OS architecture is correct for a solo/small-team monorepo
 - **Task**: Designing the Master Brain and AI Agent ecosystem
 - **Assumption**: A 7→9 phase dispatcher loop is not over-engineered for a Next.js 15 + Capacitor monorepo with one primary developer
@@ -42,5 +49,31 @@
 - **Status**: `documented`
 - **Validated by**: Pending — needs an explicit sprint ritual (e.g., "check PENDING_ISSUES.md at sprint start")
 
+### [2026-05-12] [Backend] Symlinking hoisted dependencies is a stable workaround for network isolation
+- **Task**: Resolving missing `mongodb` module in restricted environment
+- **Assumption**: Symlinking modules from `node_modules/mongoose/node_modules/mongodb` to `node_modules/mongodb` (root) is sufficient for all internal service imports.
+- **Risk if wrong**: Other services requiring `mongodb` but expecting a different version or location might fail if not also symlinked.
+- **Status**: `documented`
+- **Validated by**: Successful backend startup in `static` mode.
 
-<!-- Move validated/rejected entries here to keep Active section clean -->
+
+### [2026-05-12] [Product] Freemium model is the primary revenue driver
+- **Task**: Strategic Blueprinting
+- **Assumption**: A freemium model (limited interests, pay to unlock chat) is more viable for urban professionals than a credit-based model.
+- **Risk if wrong**: Revenue may stall if the free tier is too generous or if users prefer granular credit purchases.
+- **Status**: `documented`
+- **Validated by**: Pending - A/B testing framework required.
+
+### [2026-05-12] [Trust] Automation-First moderation is scalable without compromising safety
+- **Task**: Strategic Blueprinting
+- **Assumption**: AI can accurately flag 90%+ of high-risk anomalies, allowing the platform to scale without a linear increase in human moderators.
+- **Risk if wrong**: High-risk profiles may leak into the "Active" pool, damaging brand trust.
+- **Status**: `documented`
+- **Validated by**: Pending - AI confidence scoring audit required.
+
+### [2026-05-12] [Legal] DPDP compliance is the mandatory data framework
+- **Task**: Strategic Blueprinting
+- **Assumption**: Designing specifically for India's Digital Personal Data Protection Act (DPDP) will cover 95% of international GDPR-style requirements.
+- **Risk if wrong**: Regional legal nuances (e.g., UAE or US-specific laws) might require refactoring.
+- **Status**: `documented`
+- **Validated by**: Pending - Legal review.

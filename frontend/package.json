@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:web": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^7.0.0",
     "@capacitor/android": "^7.0.0",
     "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0",
@@ -86,6 +88,6 @@
     "next": "^15.5.18"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "5.8.2"
   }
 }

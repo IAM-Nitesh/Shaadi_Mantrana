@@ -11,8 +11,10 @@ import { auth } from '../config/firebase';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import logger from '../utils/logger';
 import posthog from 'posthog-js';
+import { Capacitor } from '@capacitor/core';
+import { NativeAuthService } from '../services/NativeAuthService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export interface User {
   userId: string;
@@ -37,8 +39,8 @@ export interface AuthContextType {
   isExpired: boolean;
   login: (email: string, otp: string) => Promise<boolean>;
   sendOtp: (email: string) => Promise<boolean>;
-  signInWithPhone: (phoneNumber: string) => Promise<ConfirmationResult | null>;
-  confirmPhoneCode: (confirmationResult: ConfirmationResult, code: string) => Promise<boolean>;
+  signInWithPhone: (phoneNumber: string) => Promise<ConfirmationResult | { verificationId: string } | null>;
+  confirmPhoneCode: (confirmation: ConfirmationResult | { verificationId: string }, code: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   forceRefresh: () => Promise<void>;
@@ -54,38 +56,53 @@ export const AuthProvider = ({
   initialUser?: User | null; 
 }) => {
   const [user, setUser] = useState<User | null>(initialUser);
-  const [isLoading, setIsLoading] = useState(!initialUser);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [authState, setAuthState] = useState<AuthContextType['authState']>('unknown');
   const [isExpired, setIsExpired] = useState(false);
 
+  // Guaranteed unblock timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const checkAuth = useCallback(async () => {
     try {
       setIsLoading(true);
       setAuthState('checking');
-      logger.debug('🔍 AuthContext: Checking authentication status...');
+      // logger.debug('🔍 AuthContext: Checking authentication status...');
       
-      // Use HttpOnly cookies for authentication (no client-side token storage)
       const headers: Record<string, string> = {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
       };
       
+      // logger.debug('🔍 AuthContext: Starting auth status check...', { API_BASE_URL });
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
         credentials: 'include',
         cache: 'no-store',
-        headers
+        headers,
+        signal: controller.signal
       });
       
-      logger.debug('🔍 AuthContext: Auth status response:', {
-        status: response.status,
-        ok: response.ok
-      });
+      clearTimeout(timeoutId);
+      
+      // logger.debug('🔍 AuthContext: Auth status response:', {
+      //   status: response.status,
+      //   ok: response.ok
+      // });
       
       if (!response.ok) {
-        logger.warn('❌ AuthContext: Auth status check failed:', response.status);
+        // logger.warn('❌ AuthContext: Auth status check failed:', response.status);
         setUser(null);
         setRedirectTo('/login');
         setIsExpired(response.status === 401);
@@ -94,7 +111,7 @@ export const AuthProvider = ({
       }
       
       const data = await response.json();
-      logger.debug('🔍 AuthContext: Auth status data:', data);
+      // logger.debug('🔍 AuthContext: Auth status data:', data);
       
       if (data.authenticated && data.user) {
         const userData = {
@@ -109,37 +126,38 @@ export const AuthProvider = ({
           hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false,
         };
         
-        logger.info('✅ AuthContext: User authenticated:', userData);
+        // logger.info('✅ AuthContext: User authenticated:', userData);
         setUser(userData);
-        posthog.identify(userData.userId, { role: userData.role });
+        // posthog.identify(userData.userId, { role: userData.role });
         
-        // Set redirect based on business logic
         if (userData.role === 'admin') {
-          // Admin users always go to admin dashboard
           setRedirectTo('/admin/dashboard');
         } else if (userData.profileCompleteness < 100 || userData.isFirstLogin) {
-          // Users with incomplete profile or first login must complete it first
           setRedirectTo('/profile');
         } else {
-          // Users with 100% profile completion can access dashboard
           setRedirectTo('/dashboard');
         }
         setIsExpired(false);
         setAuthState('authenticated');
       } else {
-        logger.debug('❌ AuthContext: User not authenticated');
+        // logger.debug('❌ AuthContext: User not authenticated');
         setUser(null);
         setRedirectTo('/login');
         setIsExpired(false);
         setAuthState('unauthenticated');
       }
-    } catch (err) {
-      logger.error('❌ AuthContext: Auth check error:', err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        // logger.error('❌ AuthContext: Auth check timed out after 5s');
+      } else {
+        // logger.error('❌ AuthContext: Auth check error:', err);
+      }
       setUser(null);
       setRedirectTo('/login');
       setAuthState('error');
     } finally {
       setIsLoading(false);
+      // logger.debug('🔍 AuthContext: isLoading set to false');
     }
   }, []);
 
@@ -152,172 +170,175 @@ export const AuthProvider = ({
       checkAuth();
     } else {
       setIsLoading(false);
-      // Set redirect based on business logic
       if (initialUser.role === 'admin') {
-        // Admin users always go to admin dashboard
         setRedirectTo('/admin/dashboard');
       } else if ((initialUser.profileCompleteness || 0) < 100) {
-        // Users with incomplete profile must complete it first
         setRedirectTo('/profile');
       } else {
-        // Users with 100% profile completion can access dashboard
         setRedirectTo('/dashboard');
       }
     }
   }, [initialUser, checkAuth]);
 
-  const sendOtp = async (email: string): Promise<boolean> => {
+  const sendOtp = async (email: string) => {
     try {
       setError(null);
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
+      
       const data = await response.json();
+      
       if (!response.ok) {
-        setError(data.message || 'Failed to send OTP');
-        return false;
+        throw new Error(data.message || 'Failed to send OTP');
       }
+      
       return true;
-    } catch (err) {
-      setError('Failed to send OTP');
+    } catch (err: any) {
+      setError(err.message);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const login = async (email: string, otp: string): Promise<boolean> => {
+  const login = async (email: string, otp: string) => {
     try {
-      setIsLoading(true);
       setError(null);
-
-      logger.debug('🔍 AuthContext: Starting OTP verification for:', email);
-
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
       });
-
+      
       const data = await response.json();
-      logger.debug('🔍 AuthContext: OTP verification response:', {
-        status: response.status,
-        ok: response.ok,
-        data: data
-      });
-
+      
       if (!response.ok) {
-        logger.error('❌ AuthContext: OTP verification failed:', data);
-        setError(data.error || data.message || 'Invalid OTP');
-        return false;
+        throw new Error(data.message || 'Login failed');
       }
-
-      if (!data.success) {
-        logger.error('❌ AuthContext: Backend returned success: false:', data);
-        setError(data.error || data.message || 'Authentication failed');
-        return false;
-      }
-
-      logger.info('✅ AuthContext: OTP verification successful, storing token and checking auth status...');
-      logger.debug('🔍 AuthContext: Response data keys:', Object.keys(data));
-      logger.debug('🔍 AuthContext: accessToken present:', !!data.accessToken);
-      logger.debug('🔍 AuthContext: session object:', data.session);
-
-      // Token should be handled by HttpOnly cookies from backend
-      if (!data.accessToken) {
-        logger.warn('❌ AuthContext: No accessToken found in response');
-      }
-
-      // After successful OTP verification, check auth status to get user data
+      
       await checkAuth();
       return true;
-    } catch (err) {
-      logger.error('❌ AuthContext: Login error:', err);
-      setError('Login failed');
+    } catch (err: any) {
+      setError(err.message);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signInWithPhone = async (phoneNumber: string): Promise<ConfirmationResult | null> => {
+  const signInWithPhone = async (phoneNumber: string): Promise<ConfirmationResult | { verificationId: string } | null> => {
     try {
       setError(null);
       
-      // Initialize reCAPTCHA - ensure we have a container in the DOM
-      // For mobile apps, invisible reCAPTCHA is best
-      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
+      // --- Native Path ---
+      if (Capacitor.isNativePlatform()) {
+        logger.info('AuthContext: Using Native Firebase Phone Auth');
+        const nativeResult = await NativeAuthService.signInWithPhone(phoneNumber);
+        return nativeResult;
+      }
+      
+      // --- Web Path ---
+      // Safety check for recaptcha container
+      if (!document.getElementById('recaptcha-container')) {
+        logger.error('AuthContext: recaptcha-container not found in DOM');
+        setError('Verification system initialization failed. Please refresh.');
+        return null;
+      }
+      
+      // Clear any existing recaptcha widgets to prevent 'already rendered' errors
+      const container = document.getElementById('recaptcha-container');
+      if (container) container.innerHTML = '';
+      
+      const appVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible'
       });
-
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-      logger.info('✅ Firebase: OTP sent to', phoneNumber);
+      
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
       return confirmationResult;
     } catch (err: any) {
-      logger.error('❌ Firebase Phone Auth Error:', err);
-      setError(err.message || 'Failed to send OTP');
+      setError(err.message || 'Verification failed. Please check your number.');
+      logger.error('Phone Sign-In Error:', err);
+      
+      // Reset container on failure to allow retry
+      if (!Capacitor.isNativePlatform()) {
+        const container = document.getElementById('recaptcha-container');
+        if (container) container.innerHTML = '';
+      }
+      
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const confirmPhoneCode = async (confirmationResult: ConfirmationResult, code: string): Promise<boolean> => {
+  const confirmPhoneCode = async (confirmation: ConfirmationResult | { verificationId: string }, code: string) => {
     try {
-      setIsLoading(true);
       setError(null);
       
-      const result = await confirmationResult.confirm(code);
-      const fbUser = result.user;
-      const idToken = await getIdToken(fbUser);
+      let finalIdToken: string | null = null;
 
-      logger.info('✅ Firebase: Code confirmed, syncing with backend...');
-
-      // Send ID Token to our backend
+      // --- Native Path ---
+      if (Capacitor.isNativePlatform() && 'verificationId' in confirmation) {
+        logger.info('AuthContext: Confirming Code via Native SDK');
+        await NativeAuthService.confirmCode(confirmation.verificationId, code);
+        
+        // Get the token directly from the native SDK
+        finalIdToken = await NativeAuthService.getIdToken();
+        if (!finalIdToken) throw new Error('Native login succeeded but failed to get ID token');
+      } 
+      // --- Web Path ---
+      else if ('confirm' in confirmation) {
+        const result = await confirmation.confirm(code);
+        finalIdToken = await getIdToken(result.user);
+      } else {
+        throw new Error('Invalid confirmation object');
+      }
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/firebase-login`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken: finalIdToken }),
       });
-
+      
       const data = await response.json();
       
       if (!response.ok) {
-        logger.error('❌ AuthContext: Firebase sync failed:', data);
-        setError(data.error || 'Failed to sync with server');
-        return false;
+        throw new Error(data.message || 'Backend authentication failed');
       }
-
-      logger.info('✅ AuthContext: Firebase login successful');
+      
       await checkAuth();
       return true;
     } catch (err: any) {
-      logger.error('❌ Firebase Code Confirmation Error:', err);
-      setError(err.message || 'Invalid verification code');
+      setError(err.message);
+      logger.error('Phone Confirmation Error:', err);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const logout = async () => {
     try {
-      // Sign out from Firebase
       await firebaseSignOut(auth);
       
-      // Sign out from our backend
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
+      
+      setUser(null);
+      setRedirectTo('/login');
+      setAuthState('unauthenticated');
+      posthog.reset();
     } catch (err) {
       logger.error('Logout error:', err);
     } finally {
-      // Clear user state (token handled by HttpOnly cookies)
-      setUser(null);
-      setRedirectTo('/login');
+      setIsLoading(false);
     }
   };
 
@@ -335,7 +356,7 @@ export const AuthProvider = ({
     confirmPhoneCode,
     logout,
     checkAuth,
-    forceRefresh,
+    forceRefresh
   };
 
   return (
@@ -345,7 +366,7 @@ export const AuthProvider = ({
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

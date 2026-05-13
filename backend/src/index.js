@@ -85,7 +85,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Handle OPTIONS preflight requests explicitly
-app.options('*', cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // Enhanced Security middleware - Helmet with comprehensive security headers
 app.use(helmet({
@@ -392,7 +392,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use(/.*/, (req, res) => {
   res.status(404).json({ 
     error: 'API endpoint not found',
     path: req.originalUrl 
