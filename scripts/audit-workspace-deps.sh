@@ -35,6 +35,13 @@ IMPORTS=$(grep -rE "(import|from|require\() ['\"]" "$WS_DIR/src" "$WS_DIR/lib" 2
 MISSING_DEPS=()
 PK_JSON="$WS_DIR/package.json"
 
+# SPECIAL CHECK: If tsconfig.json exists, typescript MUST be in package.json
+if [ -f "$WS_DIR/tsconfig.json" ]; then
+  if ! grep -q "\"typescript\":" "$PK_JSON"; then
+    MISSING_DEPS+=("typescript (REQUIRED for TS workspaces)")
+  fi
+fi
+
 for DEP in $IMPORTS; do
   # Handle scoped packages (e.g., @capacitor/device -> @capacitor)
   BASE_DEP=$(echo "$DEP" | awk -F'/' '{if($1 ~ /^@/) print $1"/"$2; else print $1}')
