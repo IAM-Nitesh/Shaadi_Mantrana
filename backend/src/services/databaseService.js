@@ -18,6 +18,7 @@ class DatabaseService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
     this.healthCheckInterval = null;
+    this.areHandlersSetup = false;
   }
 
   // Get MongoDB connection string based on environment (using new config)
@@ -175,8 +176,11 @@ class DatabaseService {
       console.log(`📦 Database: ${mongoose.connection.name}`);
       console.log(`🏷️  Environment: ${config.NODE_ENV}`);
 
-      // Set up connection event handlers
-      this.setupEventHandlers();
+      // Set up connection event handlers (only once)
+      if (!this.areHandlersSetup) {
+        this.setupEventHandlers();
+        this.areHandlersSetup = true;
+      }
 
     } catch (error) {
       console.error('❌ MongoDB connection error:', error.message);
@@ -233,6 +237,7 @@ class DatabaseService {
 
     connection.on('disconnected', () => {
       console.log('📊 Mongoose disconnected from MongoDB');
+      console.log(`🔍 Connection State: ${mongoose.connection.readyState} (0=disc, 1=conn, 2=conn-ing, 3=disc-ing)`);
       this.isConnected = false;
       this.stopHealthCheck();
       

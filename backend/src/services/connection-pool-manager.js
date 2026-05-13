@@ -21,8 +21,8 @@ class ConnectionPoolManager {
     try {
       console.log('🔧 Initializing MongoDB connection pool...');
       
-      // Set up connection event handlers
-      this.setupMongooseEvents();
+      // Event handlers are now managed centrally by DatabaseService to prevent loops
+      // this.setupMongooseEvents();
       
       // Start health monitoring
       this.startHealthMonitoring();
@@ -64,7 +64,7 @@ class ConnectionPoolManager {
       console.log('❌ MongoDB: Disconnected');
       this.isHealthy = false;
       this.connectionErrors++;
-      this.handleDisconnection();
+      // handleDisconnection is disabled to prevent loops; handled by DatabaseService
     });
 
     connection.on('close', () => {

@@ -255,3 +255,38 @@ If you encounter any issues:
 3. Review `UI_MIGRATION_SUMMARY.md` for changes made
 4. Check React DevTools for component tree issues
 
+---
+
+## 🎭 Playwright E2E Testing
+
+We use Playwright for automated end-to-end testing of critical user journeys.
+
+### 🚀 Running Tests
+
+1.  **Headless Mode** (Standard for CI):
+    ```bash
+    npm run test:e2e:playwright
+    ```
+
+2.  **UI Mode** (Recommended for Debugging):
+    ```bash
+    npm run test:e2e:ui
+    ```
+    This opens a browser window where you can step through tests, view snapshots, and debug issues visually.
+
+### 📂 Test Structure
+
+-   `tests/playwright/login.smoke.spec.ts`: Basic page load and brand presence.
+-   `tests/playwright/login.validation.spec.ts`: Phone number input validation and button states.
+-   `tests/playwright/login.flow.spec.ts`: Transitions between phone input and OTP verification.
+
+### 🛠️ Debugging with Playwright
+
+When a test fails:
+1.  Run the test in **UI Mode** (`npm run test:e2e:ui`).
+2.  Use the **"Trace Viewer"** to see exactly what the browser was doing at each step.
+3.  Check the **"Locators"** tab to verify if selectors are matching the expected elements.
+
+### 🚦 CI/CD Integration
+These tests are designed to run on every functional change to ensure core flows like Login never break.
+

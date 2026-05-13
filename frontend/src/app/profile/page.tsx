@@ -20,6 +20,7 @@ import { userNavItems } from '../../config/navigation';
 import { matchesCountService } from '../../services/matches-count-service';
 import ToastService from '../../services/toastService';
 import OnboardingOverlay from '../../components/OnboardingOverlay';
+import RoyalOnboardingWizard from '../../components/onboarding/RoyalOnboardingWizard';
 import { useAuth } from '../../contexts/AuthContext';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
@@ -291,6 +292,7 @@ function ProfileContent() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2214,9 +2216,10 @@ function ProfileContent() {
             setShowOnboarding(false);
             setHasSeenOnboarding(true);
             
-            // If profile is incomplete, enable edit mode
+            // If profile is incomplete, enable Royal Wizard
             if ((profileCompletenessFromApi ?? 0) < 100) {
-              setIsEditing(true);
+              setShowWizard(true);
+              setIsEditing(true); // Keep isEditing for backward compatibility in some components
             }
           }
         } else {
@@ -2266,7 +2269,7 @@ function ProfileContent() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50 px-4">
         <div className="flex flex-col items-center space-y-6 p-10 bg-white/80 rounded-2xl shadow-lg border border-rose-100">
           <Image src="/icons/user.svg" alt="No Profile" width={80} height={80} className="mb-2 opacity-60" />
-          <h2 className="text-2xl font-bold text-rose-600">No Profile Data</h2>
+          <h2 className="text-2xl font-bold text-royal-gold">No Profile Data</h2>
           <p className="text-gray-500 text-center max-w-md">We couldn't find your profile information. Please try refreshing the page or contact support if the issue persists.</p>
         </div>
       </div>
@@ -2284,6 +2287,11 @@ function ProfileContent() {
       // Update local state
       setShowOnboarding(false);
       
+      // If profile is incomplete, transition to Royal Wizard
+      if (profile && (profile.profileCompleteness || 0) < 100) {
+        setShowWizard(true);
+      }
+      
       logger.debug('✅ Onboarding message marked as seen');
     } catch (error) {
       logger.error('Error marking onboarding message as seen:', error);
@@ -2291,11 +2299,26 @@ function ProfileContent() {
       setShowOnboarding(false);
     }
   };
+  if (showWizard) {
+    return (
+      <RoyalOnboardingWizard 
+        initialProfile={profile} 
+        onComplete={async (finalProfile) => {
+          setProfile(finalProfile);
+          setShowWizard(false);
+          setIsEditing(false);
+          // Force a refresh to recalculate completeness
+          await ProfileService.getUserProfile().then(p => setProfile(p));
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden">
+    <div className="min-h-screen bg-royal-obsidian relative overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-rose-100/30 to-pink-100/30 backdrop-blur-[2.5px]"></div>
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(236,72,153,0.13),transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-royal-obsidian backdrop-blur-[2.5px]"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(212,175,55,0.05),transparent_50%)]"></div>
       
   {/* Onboarding Overlay (rendered above once earlier) - duplicate removed */}
       
@@ -2319,22 +2342,28 @@ function ProfileContent() {
           </div>
         )}
         {/* Profile Header */}
-        <div className="px-4 py-4 flex items-center justify-between">
-          <h1 className="text-4xl font-heading text-gray-900">My Profile</h1>
+        <div className="px-6 py-6 flex items-center justify-between">
+          <h1 className="text-3xl font-playfair font-bold text-royal-gold">Sacred Profile</h1>
           <div className="flex items-center space-x-2">
             {!isEditing ? (
               <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-1 px-4 py-2 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-full text-sm font-medium text-rose-600 shadow-sm hover:shadow-md transition-all duration-200"
+                onClick={() => {
+                  setShowWizard(true);
+                  setIsEditing(true);
+                }}
+                className="flex items-center space-x-2 px-5 py-2.5 bg-royal-gold text-royal-obsidian rounded-xl text-sm font-bold shadow-lg shadow-royal-gold/10 active:scale-95 transition-all"
               >
                 <CustomIcon name="ri-edit-line" size={16} />
-                <span>Edit</span>
+                <span>Refine</span>
               </button>
             ) : (
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setShowWizard(false);
+                  }}
+                  className="px-5 py-2.5 bg-royal-gold/10 text-royal-gold border border-royal-gold/20 rounded-xl text-sm font-bold active:scale-95 transition-all"
                 >
                   Cancel
                 </button>
@@ -2356,7 +2385,7 @@ function ProfileContent() {
                     alt="Profile"
                     width={128}
                     height={128}
-                    className="w-full h-full rounded-full object-cover object-top border-4 border-white shadow-2xl hover:shadow-3xl transition-shadow duration-300 bg-white/60 backdrop-blur-md"
+                    className="w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-shadow duration-300 bg-royal-obsidian/40 backdrop-blur-md"
                     onError={(e) => {
                       logger.error('❌ Image failed to load:', e);
                     }}
@@ -2364,7 +2393,7 @@ function ProfileContent() {
 
                 </div>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-rose-300 bg-white/60 transition-all duration-200 relative"
+                <div className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-royal-gold/30 bg-royal-obsidian/40 transition-all duration-200 relative"
                   style={{ minHeight: 128, minWidth: 128 }}
                 >
                   <Image
@@ -2372,16 +2401,16 @@ function ProfileContent() {
                     alt="Profile Placeholder"
                     width={64}
                     height={64}
-                    className="mx-auto mb-2 opacity-70"
+                    className="mx-auto mb-2 opacity-40 brightness-200"
                   />
-                  <span className="text-xs text-rose-500 font-semibold">No Photo</span>
+                  <span className="text-xs text-royal-gold/60 font-semibold">No Photo</span>
                   
                   {/* Small camera icon for upload when editing */}
                   {isEditing && (
                     <button
                       type="button"
                       onClick={handleCameraClick}
-                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-rose-500 flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-rose-400 border border-rose-200"
+                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-royal-gold text-royal-obsidian flex items-center justify-center shadow-lg hover:bg-royal-gold-light transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-royal-gold border border-royal-gold/20"
                     >
                       <CustomIcon name="ri-camera-line" className="text-sm" />
                     </button>
@@ -2395,7 +2424,7 @@ function ProfileContent() {
                   {/* Camera icon for upload */}
                   <button
                     onClick={handleCameraClick}
-                    className="absolute -bottom-2 -right-2 text-rose-500 hover:text-rose-600 transition-colors duration-200 cursor-pointer"
+                    className="absolute -bottom-2 -right-2 text-royal-gold hover:text-royal-gold-light transition-colors duration-200 cursor-pointer"
                   >
                     <CustomIcon name="ri-camera-line" size={22} />
                   </button>
@@ -2403,7 +2432,7 @@ function ProfileContent() {
                   {/* Delete icon */}
                   <button
                     onClick={handleDeleteProfilePicture}
-                    className="absolute -top-2 -right-2 text-red-500 hover:text-red-600 transition-colors duration-200 cursor-pointer"
+                    className="absolute -top-2 -right-2 text-royal-crimson hover:text-red-600 transition-colors duration-200 cursor-pointer"
                     title={tempImageUrl ? "Remove temporary image" : "Delete profile picture"}
                   >
                     <CustomIcon name="ri-delete-bin-line" size={18} />
@@ -2449,26 +2478,15 @@ function ProfileContent() {
           
 
           
-
-
-          
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
         </div>
 
         {/* Profile Name and Quick Info */}
         <div ref={profileInfoRef} className="px-4 mb-6">
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <h1 className="text-2xl font-bold text-neutral-900">{profile.name}</h1>
+              <h1 className="text-2xl font-playfair font-bold text-white">{profile.name}</h1>
             </div>
-            <div className="flex items-center justify-center gap-4 text-sm text-neutral-600 mb-4">
+            <div className="flex items-center justify-center gap-4 text-sm text-royal-gold-light/60 mb-4">
               <div className="flex items-center gap-2">
                 <CustomIcon name="ri-calendar-line" size={16} />
                 <span>{calculateAge(profile.dateOfBirth)} years</span>
@@ -2482,8 +2500,6 @@ function ProfileContent() {
                 <span>{profile.currentResidence}</span>
               </div>
             </div>
-            
-
           </div>
         </div>
 
@@ -2491,8 +2507,8 @@ function ProfileContent() {
         <div ref={profileDetailsRef} className="px-4 space-y-6">
           {/* Basic Information */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-user-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-user-line" size={20} className="text-royal-gold mr-3" />
               Basic Information
             </h2>
             
@@ -2514,7 +2530,7 @@ function ProfileContent() {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-neutral-800 text-sm">{profile.name || 'Not specified'}</p>
+                      <p className="text-white/90 text-sm">{profile.name || 'Not specified'}</p>
                     </div>
                   )}
                   {renderInlineError('name')}
@@ -2539,7 +2555,7 @@ function ProfileContent() {
                       <option value="Female">Female</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.gender || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.gender || 'Not specified'}</p>
                   )}
                   {renderInlineError('gender')}
                 </div>
@@ -2559,7 +2575,7 @@ function ProfileContent() {
                      className={getInputClassName('nativePlace')}
                    />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.nativePlace || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.nativePlace || 'Not specified'}</p>
                   )}
                   {renderInlineError('nativePlace')}
                 </div>
@@ -2577,7 +2593,7 @@ function ProfileContent() {
                      className={getInputClassName('currentResidence')}
                    />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.currentResidence || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.currentResidence || 'Not specified'}</p>
                   )}
                   {renderInlineError('currentResidence')}
                 </div>
@@ -2604,7 +2620,7 @@ function ProfileContent() {
                       <option value="Widowed">Widowed</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.maritalStatus || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.maritalStatus || 'Not specified'}</p>
                   )}
                   {renderInlineError('maritalStatus')}
                 </div>
@@ -2629,7 +2645,7 @@ function ProfileContent() {
                       <option value="Dont Know">Dont Know</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.manglik || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.manglik || 'Not specified'}</p>
                   )}
                   {renderInlineError('manglik')}
                 </div>
@@ -2640,8 +2656,8 @@ function ProfileContent() {
 
         {/* Birth Details */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-calendar-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-calendar-line" size={20} className="text-royal-gold mr-3" />
               Birth Details
             </h2>
             <div className="space-y-4">
@@ -2673,7 +2689,7 @@ function ProfileContent() {
                       />
                     </div>
                   ) : (
-                    <p className="text-neutral-800 text-sm">
+                    <p className="text-white/90 text-sm">
                       {(() => {
                         if (profile.dateOfBirth instanceof Date) {
                           return format(profile.dateOfBirth, 'PPP');
@@ -2706,7 +2722,7 @@ function ProfileContent() {
                       />
                     </div>
                   ) : (
-                    <p className="text-neutral-800 text-sm">
+                    <p className="text-white/90 text-sm">
                       {(() => {
                         if (profile.timeOfBirth instanceof Date) {
                           return format(profile.timeOfBirth, 'hh:mm aa');
@@ -2734,7 +2750,7 @@ function ProfileContent() {
                       className={getInputClassName('placeOfBirth')}
                     />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.placeOfBirth || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.placeOfBirth || 'Not specified'}</p>
                   )}
                   {renderInlineError('placeOfBirth')}
                 </div>
@@ -2744,8 +2760,8 @@ function ProfileContent() {
 
           {/* Physical Details */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-user-heart-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-user-heart-line" size={20} className="text-royal-gold mr-3" />
               Physical Details
             </h2>
             <div className="space-y-4">
@@ -2799,7 +2815,7 @@ function ProfileContent() {
                       {renderInlineError('height')}
                     </>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.height || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.height || 'Not specified'}</p>
                   )}
                 </div>
                 <div>
@@ -2816,7 +2832,7 @@ function ProfileContent() {
                       className={getInputClassName('weight')}
                     />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.weight || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.weight || 'Not specified'}</p>
                   )}
                   {renderInlineError('weight')}
                 </div>
@@ -2840,7 +2856,7 @@ function ProfileContent() {
                       <option value="Dark">Dark</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.complexion || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.complexion || 'Not specified'}</p>
                   )}
                   {renderInlineError('complexion')}
                 </div>
@@ -2850,8 +2866,8 @@ function ProfileContent() {
 
           {/* Gotra Details */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-building-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-building-line" size={20} className="text-royal-gold mr-3" />
               Gotra Details
             </h2>
             <div className="space-y-4">
@@ -2869,7 +2885,7 @@ function ProfileContent() {
                       className={getInputClassName('fatherGotra')}
                     />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.fatherGotra || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.fatherGotra || 'Not specified'}</p>
                   )}
                 </div>
                 <div>
@@ -2885,7 +2901,7 @@ function ProfileContent() {
                       className={getInputClassName('motherGotra')}
                     />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.motherGotra || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.motherGotra || 'Not specified'}</p>
                   )}
                 </div>
               </div>
@@ -2904,7 +2920,7 @@ function ProfileContent() {
                       className={getInputClassName('grandfatherGotra')}
                     />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.grandfatherGotra || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.grandfatherGotra || 'Not specified'}</p>
                   )}
                 </div>
                 <div>
@@ -2921,7 +2937,7 @@ function ProfileContent() {
                       className={getInputClassName('grandmotherGotra')}
                     />
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.grandmotherGotra || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.grandmotherGotra || 'Not specified'}</p>
                   )}
                 </div>
               </div>
@@ -2930,8 +2946,8 @@ function ProfileContent() {
 
           {/* Professional Details */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-briefcase-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-briefcase-line" size={20} className="text-royal-gold mr-3" />
               Professional Details
             </h2>
             <div className="space-y-4">
@@ -2950,7 +2966,7 @@ function ProfileContent() {
                     className={getInputClassName('education')}
                   />
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.education || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.education || 'Not specified'}</p>
                 )}
                 {renderInlineError('education')}
               </div>
@@ -2969,7 +2985,7 @@ function ProfileContent() {
                     className={getInputClassName('occupation')}
                   />
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.occupation || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.occupation || 'Not specified'}</p>
                 )}
                 {renderInlineError('occupation')}
               </div>
@@ -2988,7 +3004,7 @@ function ProfileContent() {
                     className={getInputClassName('annualIncome')}
                   />
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.annualIncome || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.annualIncome || 'Not specified'}</p>
                 )}
                 {renderInlineError('annualIncome')}
               </div>
@@ -2997,8 +3013,8 @@ function ProfileContent() {
 
           {/* Lifestyle */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-heart-3-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-heart-3-line" size={20} className="text-royal-gold mr-3" />
               Lifestyle
             </h2>
             <div className="space-y-4">
@@ -3023,7 +3039,7 @@ function ProfileContent() {
                       <option value="Non-Vegetarian">Non-Vegetarian</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.eatingHabit || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.eatingHabit || 'Not specified'}</p>
                   )}
                 </div>
                 <div>
@@ -3046,7 +3062,7 @@ function ProfileContent() {
                       <option value="Occasionally">Occasionally</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.smokingHabit || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.smokingHabit || 'Not specified'}</p>
                   )}
                 </div>
                 <div>
@@ -3069,7 +3085,7 @@ function ProfileContent() {
                       <option value="Occasionally">Occasionally</option>
                     </select>
                   ) : (
-                    <p className="text-neutral-800 text-sm">{profile.drinkingHabit || 'Not specified'}</p>
+                    <p className="text-white/90 text-sm">{profile.drinkingHabit || 'Not specified'}</p>
                   )}
                 </div>
               </div>
@@ -3078,8 +3094,8 @@ function ProfileContent() {
 
           {/* Family Details */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-group-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-group-line" size={20} className="text-royal-gold mr-3" />
               Family Details
             </h2>
             <div className="space-y-4">
@@ -3096,7 +3112,7 @@ function ProfileContent() {
                     className={getInputClassName('father')}
                   />
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.father || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.father || 'Not specified'}</p>
                 )}
               </div>
               <div>
@@ -3112,7 +3128,7 @@ function ProfileContent() {
                     className={getInputClassName('mother')}
                   />
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.mother || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.mother || 'Not specified'}</p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -3130,7 +3146,7 @@ function ProfileContent() {
                       className={getInputClassName('brothers')}
                     />
                                   ) : (
-                  <p className="text-neutral-800 text-sm">{profile.brothers || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.brothers || 'Not specified'}</p>
                 )}
                 </div>
                 <div>
@@ -3147,7 +3163,7 @@ function ProfileContent() {
                       className={getInputClassName('sisters')}
                     />
                                   ) : (
-                  <p className="text-neutral-800 text-sm">{profile.sisters || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.sisters || 'Not specified'}</p>
                 )}
                 </div>
               </div>
@@ -3156,8 +3172,8 @@ function ProfileContent() {
 
           {/* Preferences */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-settings-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-settings-line" size={20} className="text-royal-gold mr-3" />
               Preferences
             </h2>
             <div className="space-y-4">
@@ -3174,7 +3190,7 @@ function ProfileContent() {
                     className={`w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none ${getInputClassName('specificRequirements')}`}
                   />
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.specificRequirements || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.specificRequirements || 'Not specified'}</p>
                 )}
               </div>
               <div>
@@ -3197,7 +3213,7 @@ function ProfileContent() {
                     <option value="Maybe">Maybe</option>
                   </select>
                 ) : (
-                  <p className="text-neutral-800 text-sm">{profile.settleAbroad || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.settleAbroad || 'Not specified'}</p>
                 )}
               </div>
             </div>
@@ -3205,8 +3221,8 @@ function ProfileContent() {
 
           {/* About */}
           <div className="card-modern p-6 hover-lift">
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-file-text-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-file-text-line" size={20} className="text-royal-gold mr-3" />
               About Me
               {isEditing && isRequiredField('about') && (
                 <span className="text-red-500 ml-1">*</span>
@@ -3225,7 +3241,7 @@ function ProfileContent() {
                 className={`w-full p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none ${getInputClassName('about')}`}
               />
             ) : (
-              <p className="text-neutral-800">{profile.about || 'Not specified'}</p>
+              <p className="text-white/90">{profile.about || 'Not specified'}</p>
             )}
             {renderInlineError('about')}
           </div>
@@ -3241,8 +3257,8 @@ function ProfileContent() {
             onFocus={() => handleFieldFocus('interests')}
             onBlur={() => handleFieldBlur('interests')}
           >
-            <h2 className="font-semibold text-neutral-800 mb-4 flex items-center">
-              <CustomIcon name="ri-heart-line" size={20} className="text-rose-600 mr-3" />
+            <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
+              <CustomIcon name="ri-heart-line" size={20} className="text-royal-gold mr-3" />
               Interests
               {isEditing && isRequiredField('interests') && (
                 <span className="text-red-500 ml-1">*</span>
@@ -3252,13 +3268,13 @@ function ProfileContent() {
               {Array.isArray(profile.interests) && profile.interests.map((interest, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                  className="px-3 py-1 bg-rose-100/80 text-royal-gold rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
                 >
                   {interest}
                   {isEditing && (
                     <button
                       onClick={() => removeInterest(index)}
-                      className="ml-2 text-rose-400 hover:text-rose-600"
+                      className="ml-2 text-rose-400 hover:text-royal-gold"
                     >
                       ×
                     </button>

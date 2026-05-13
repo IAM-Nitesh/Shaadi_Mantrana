@@ -55,7 +55,6 @@ const conversationSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-conversationSchema.index({ connectionId: 1 }, { unique: true });
 conversationSchema.index({ participants: 1 });
 conversationSchema.index({ status: 1 });
 conversationSchema.index({ lastMessageAt: -1 });

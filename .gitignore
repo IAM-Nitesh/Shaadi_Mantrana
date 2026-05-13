@@ -33,10 +33,13 @@ android/keystore.properties
 # Environment variables (track only .env.example or .env.template)
 .env
 .env.*
+.env.local
+.env.development
+.env.production
 frontend/.env*
 backend/.env*
-!.env.example
-!.env.template
+!*.example
+!*.template
 
 # Logs
 *.log
@@ -250,9 +253,6 @@ backend/scripts/switch-env.js
 docs/ENVIRONMENT_SWITCHING_GUIDE.md
 docs/ENVIRONMENT_VARIABLES_AUDIT.md
 frontend/scripts/switch-env.js
-backend/.env.production
-backend/.env.production
-frontend/.env.production
 backend/scripts/test-render-health.js
 testsprite_tests/TC001_OTP_Sending_to_Pre_approved_Email.py
 testsprite_tests/TC002_OTP_Verification_and_JWT_Session_Creation.py
@@ -286,8 +286,6 @@ backend/list-all-users.js
 backend/test-config.js
 backend/test-user-check.js
 backend/backups/prod-backup-2025-08-31.json
-backend/.env.production
-frontend/.env.production
 scripts/clean-env-files.js
 scripts/verify-env-cleanup.js
 testsprite_tests/TC001_User_Registration_with_Valid_OTP_and_Approved_Email.py

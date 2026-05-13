@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import RoyalLoader from './RoyalLoader';
 
 interface AuthGuardV2Props {
   children: React.ReactNode;
@@ -75,10 +76,12 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
   // Show loading state
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-500">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-xl font-semibold">Loading...</p>
+      <div className="flex items-center justify-center min-h-screen bg-royal-obsidian">
+        <div className="text-center text-royal-gold">
+          <RoyalLoader 
+            size="xl" 
+            text="Securing your majestic journey..." 
+          />
         </div>
       </div>
     );

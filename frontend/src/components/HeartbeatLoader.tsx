@@ -8,6 +8,7 @@ interface HeartbeatLoaderProps {
   className?: string;
   text?: string;
   showText?: boolean;
+  variant?: 'default' | 'royal';
 }
 
 const HeartbeatLoader: React.FC<HeartbeatLoaderProps> = ({ 
@@ -16,8 +17,10 @@ const HeartbeatLoader: React.FC<HeartbeatLoaderProps> = ({
   textSize,
   className = '', 
   text = 'Loading...',
-  showText = true 
+  showText = true,
+  variant = 'default'
 }) => {
+  const isRoyal = variant === 'royal';
   // Use logoSize if provided, otherwise fall back to size
   const actualLogoSize = logoSize || size;
   // Use textSize if provided, otherwise fall back to size
@@ -47,18 +50,18 @@ const HeartbeatLoader: React.FC<HeartbeatLoaderProps> = ({
 
   return (
     <div className={`flex flex-col items-center justify-center ${className}`}>
-      <div className={`${sizeClasses[actualLogoSize]} animate-heartbeat`}>
+      <div className={`${sizeClasses[actualLogoSize]} animate-heartbeat ${isRoyal ? 'text-royal-gold' : ''}`}>
         <Image
-          src="/icon.svg"
+          src={isRoyal ? "/icon.svg" : "/icon.svg"} // We could use a gold icon here if available
           alt="Shaadi Mantrana"
           width={512}
           height={512}
-          className="w-full h-full"
+          className={`w-full h-full ${isRoyal ? 'brightness-125 sepia-[.5] hue-rotate-[0deg] saturate-[2]' : ''}`}
           priority
         />
       </div>
       {showText && (
-        <p className={`mt-2 text-gray-600 font-medium ${textSizes[actualTextSize]}`}>
+        <p className={`mt-2 font-medium ${textSizes[actualTextSize]} ${isRoyal ? 'text-royal-gold font-playfair tracking-widest uppercase' : 'text-gray-600'}`}>
           {text}
         </p>
       )}

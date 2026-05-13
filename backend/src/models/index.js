@@ -7,6 +7,7 @@ const DailyLike = require('./DailyLike');
 const Message = require('./Message');
 const Conversation = require('./Conversation');
 const Session = require('./Session');
+const ChatThread = require('./ChatThread');
 
 module.exports = {
   User,
@@ -15,5 +16,6 @@ module.exports = {
   DailyLike,
   Message,
   Conversation,
-  Session
+  Session,
+  ChatThread
 };

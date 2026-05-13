@@ -10,6 +10,8 @@ import { safeGsap } from '../../components/SafeGsap';
 import { DiscoveryProfile, MatchingService } from '../../services/matching-service';
 import logger from '../../utils/logger';
 import posthog from 'posthog-js';
+import MandalaBackground from '../../components/ui/MandalaBackground';
+import RoyalLoader from '../../components/RoyalLoader';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -19,6 +21,7 @@ function DashboardContent() {
   const [likesRemaining, setLikesRemaining] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isFetchingProfiles, setIsFetchingProfiles] = useState(true);
+  const [dragX, setDragX] = useState(0);
   
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,21 +130,22 @@ function DashboardContent() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 relative overflow-hidden"
+      className="min-h-screen bg-royal-obsidian relative overflow-hidden"
       style={{ paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 2rem)' }}
     >
+      <MandalaBackground opacity={0.1} rotationSpeed={180} parallaxShift={dragX} />
       {/* Mobile Header */}
-      <div ref={headerRef} className="relative z-10 p-4 pt-6">
+      <div ref={headerRef} className="relative z-10 p-4 pt-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
-            <p className="text-sm text-gray-600">{likesRemaining} likes remaining today</p>
+            <h1 className="text-3xl font-playfair font-bold text-royal-gold">Discovery</h1>
+            <p className="text-sm text-royal-gold-light/60 font-inter">{likesRemaining} royal matches today</p>
           </div>
           <div className="flex items-center space-x-3">
             <button
               onClick={handleLogout}
               disabled={isLoading}
-              className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="p-2 text-royal-gold-light/60 hover:text-royal-gold transition-colors"
             >
               <i className="ri-logout-box-line text-xl"></i>
             </button>
@@ -153,24 +157,27 @@ function DashboardContent() {
       <div ref={cardRef} className="relative flex-1 px-4 pb-20">
         {isFetchingProfiles ? (
           <div className="flex flex-col items-center justify-center h-96 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mb-4" />
-            <p className="text-gray-600">Loading profiles...</p>
+            <RoyalLoader 
+              size="lg" 
+              text="Curating royal profiles..." 
+            />
           </div>
         ) : currentProfile ? (
           <SwipeCard 
             profile={currentProfile} 
             onSwipe={handleSwipe}
+            onDrag={setDragX}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-96 text-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mb-4">
-              <i className="ri-heart-line text-3xl text-white"></i>
+          <div className="flex flex-col items-center justify-center h-96 text-center relative z-10">
+            <div className="w-24 h-24 bg-royal-gold/10 border border-royal-gold/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
+              <i className="ri-heart-line text-4xl text-royal-gold"></i>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No more profiles</h3>
-            <p className="text-gray-600 mb-6">Check back later for new matches!</p>
+            <h3 className="text-2xl font-playfair font-bold text-royal-gold mb-2">Majestic Journey Pause</h3>
+            <p className="text-royal-gold-light/60 mb-8 max-w-xs font-inter">Your royal connections are being curated. Check back soon for new matches!</p>
             <button
               onClick={fetchDiscoveryProfiles}
-              className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+              className="px-8 py-3 bg-royal-gold text-royal-obsidian font-bold rounded-full shadow-lg hover:bg-royal-gold-light transition-all duration-300"
             >
               Refresh Profiles
             </button>
@@ -185,15 +192,15 @@ function DashboardContent() {
             <button
               onClick={() => handleSwipe('left')}
               disabled={isAnimating}
-              className="w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-close-line text-2xl text-gray-600"></i>
+              <i className="ri-close-line text-2xl text-royal-gold"></i>
             </button>
             
             <button
               onClick={() => handleSwipe('up')}
               disabled={isAnimating || likesRemaining <= 0}
-              className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="w-16 h-16 bg-gradient-to-r from-royal-crimson to-royal-gold rounded-full shadow-[0_0_20px_rgba(128,0,0,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
             >
               <i className="ri-star-line text-2xl text-white"></i>
             </button>
@@ -201,9 +208,9 @@ function DashboardContent() {
             <button
               onClick={() => handleSwipe('right')}
               disabled={isAnimating || likesRemaining <= 0}
-              className="w-14 h-14 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="w-14 h-14 bg-gradient-to-r from-royal-gold to-royal-gold-light rounded-full shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-heart-line text-2xl text-white"></i>
+              <i className="ri-heart-line text-2xl text-royal-obsidian"></i>
             </button>
           </div>
         </div>

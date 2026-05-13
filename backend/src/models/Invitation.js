@@ -56,7 +56,6 @@ const invitationSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 invitationSchema.index({ email: 1 });
-invitationSchema.index({ uuid: 1 });
 invitationSchema.index({ sentDate: -1 });
 
 module.exports = mongoose.model('Invitation', invitationSchema);
