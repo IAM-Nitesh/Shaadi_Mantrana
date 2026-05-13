@@ -6,6 +6,7 @@ import { Profile } from '../../services/profile-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import { SwipeCardImage } from '../../components/LazyImage';
 import logger from '../../utils/logger';
+import GoldLeafFrame from '../../components/ui/GoldLeafFrame';
 
 interface SwipeCardProps {
   profile: {
@@ -27,10 +28,17 @@ interface SwipeCardProps {
     };
   };
   onSwipe: (direction: 'left' | 'right' | 'up') => void;
+  onDrag?: (x: number) => void;
 }
 
-export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
+export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const likeRef = useRef<HTMLDivElement>(null);
   const passRef = useRef<HTMLDivElement>(null);
   // GSAP entrance animation
@@ -183,6 +191,23 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           const deltaX = currentX - startX;
           currentDragX = deltaX;
           setDragX(deltaX);
+          onDrag?.(deltaX);
+
+          // GSAP 3D Tilt Effect
+          if (cardRef.current) {
+            const rect = cardRef.current.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const mouseX = e.clientX - centerX;
+            const mouseY = e.clientY - centerY;
+            
+            safeGsap.to?.(cardRef.current, {
+              rotateY: mouseX * 0.05,
+              rotateX: -mouseY * 0.05,
+              duration: 0.5,
+              ease: 'power2.out',
+            });
+          }
         } catch (error) {
           logger.warn('Error in handleMouseMove:', error);
         }
@@ -191,14 +216,25 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       const handleMouseUp = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
-            // Add haptic feedback for mobile
+          if (Math.abs(currentDragX) > 80) {
             if ('vibrate' in navigator) {
               navigator.vibrate(50);
             }
             onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
+          onDrag?.(0);
+          
+          // Reset GSAP Tilt
+          if (cardRef.current) {
+            safeGsap.to?.(cardRef.current, {
+              rotateY: 0,
+              rotateX: 0,
+              duration: 0.8,
+              ease: 'elastic.out(1, 0.3)',
+            });
+          }
+
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
         } catch (error) {
@@ -227,6 +263,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           const deltaX = currentX - startX;
           currentDragX = deltaX;
           setDragX(deltaX);
+          onDrag?.(deltaX);
         } catch (error) {
           logger.warn('Error in handleTouchMove:', error);
         }
@@ -235,14 +272,14 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
       const handleTouchEnd = () => {
         try {
           setIsDragging(false);
-          if (Math.abs(currentDragX) > 80) { // Reduced threshold for better responsiveness
-            // Add haptic feedback for mobile
+          if (Math.abs(currentDragX) > 80) {
             if ('vibrate' in navigator) {
               navigator.vibrate(50);
             }
             onSwipe(currentDragX > 0 ? 'right' : 'left');
           }
           setDragX(0);
+          onDrag?.(0);
           document.removeEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
           document.removeEventListener('touchend', handleTouchEnd);
         } catch (error) {
@@ -261,9 +298,9 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
     <div className="relative">
       <div
         ref={cardRef}
-        className={`bg-white/70 backdrop-blur-lg border border-white/40 shadow-2xl rounded-3xl overflow-hidden cursor-grab select-none transition-transform duration-200 ${
-          isDragging ? 'cursor-grabbing scale-105 shadow-rose-200' : 'hover:scale-[1.025] hover:shadow-2xl'
-        }`}
+        className={`shadow-2xl rounded-3xl overflow-hidden cursor-grab select-none transition-transform duration-200 border border-royal-glass-border ${
+          isMounted && isDragging ? 'cursor-grabbing scale-105 shadow-royal-gold/20' : 'hover:scale-[1.01] hover:shadow-2xl'
+        } ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}
         style={{
           transform: `translateX(${dragX}px) rotate(${dragX * 0.1}deg)`,
           boxShadow: isDragging
@@ -295,12 +332,12 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
         {/* Main Image */}
         <div className="relative h-96">
           {isLoadingImage && !signedImageUrl ? (
-            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
-              <div className="text-center text-rose-600">
-                <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">Loading profile photo...</p>
+            <div className="w-full h-full bg-royal-obsidian flex items-center justify-center">
+              <div className="text-center text-royal-gold">
+                <div className="text-6xl mb-4 animate-pulse">👤</div>
+                <p className="text-lg font-medium font-playfair tracking-widest uppercase">Revealing Majesty...</p>
                 <div className="mt-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-gold mx-auto"></div>
                 </div>
               </div>
             </div>
@@ -313,17 +350,19 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
               </div>
             </div>
           ) : signedImageUrl || profileImage ? (
-            <SwipeCardImage
-              src={signedImageUrl || profileImage}
-              alt={`${profile.profile.name || 'Profile'}`}
-              className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
-            />
+            <GoldLeafFrame className="w-full h-full">
+              <SwipeCardImage
+                src={signedImageUrl || profileImage}
+                alt={`${profile.profile.name || 'Profile'}`}
+                className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
+              />
+            </GoldLeafFrame>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
-              <div className="text-center text-rose-600">
+            <div className="w-full h-full bg-royal-obsidian flex items-center justify-center">
+              <div className="text-center text-royal-gold">
                 <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">No profile photo</p>
-                <p className="text-sm opacity-75">User hasn't uploaded a photo yet.</p>
+                <p className="text-lg font-medium font-playfair">No profile photo</p>
+                <p className="text-sm opacity-75 font-inter">User hasn't uploaded a photo yet.</p>
               </div>
             </div>
           )}
@@ -332,18 +371,17 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" style={{backdropFilter:'blur(2px)'}}></div>
           
           {/* Basic Info */}
-          <div className="absolute bottom-4 left-4 right-4 text-white drop-shadow-lg">
+          <div className="absolute bottom-4 left-4 right-4 text-royal-gold-light drop-shadow-lg z-10">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-2xl font-bold">{profile.profile.name || 'Unknown'}</h3>
-                <p className="text-lg opacity-90">{profile.profile.age || 'Unknown'} years old</p>
+                <h3 className="text-3xl font-playfair font-bold text-royal-gold">{profile.profile.name || 'Unknown'}</h3>
+                <p className="text-lg opacity-90 font-inter">{profile.profile.age || 'Unknown'} years old</p>
               </div>
               <button
                 onClick={() => setShowDetails(!showDetails)}
-                className="w-10 h-10 bg-white/30 hover:bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
-                style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.10)' }}
+                className="w-10 h-10 bg-royal-gold/20 hover:bg-royal-gold/40 backdrop-blur-md border border-royal-gold/30 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
               >
-                <i className={`ri-${showDetails ? 'arrow-up' : 'information'}-line text-2xl text-rose-500`}></i>
+                <i className={`ri-${showDetails ? 'arrow-up' : 'information'}-line text-2xl text-royal-gold`}></i>
               </button>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">
@@ -359,15 +397,15 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
 
         {/* Detailed Info */}
         {showDetails && (
-          <div className="p-6 space-y-4 animate-fadeIn">
+          <div className="p-6 space-y-4 animate-fadeIn border-t border-royal-glass-border">
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Education</h4>
-              <p className="text-gray-600">{profile.profile.education || 'Not specified'}</p>
+              <h4 className="font-semibold text-royal-gold mb-2 font-playfair">Education</h4>
+              <p className="text-royal-gold-light/70 font-inter">{profile.profile.education || 'Not specified'}</p>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">About</h4>
-              <p className="text-gray-600">{profile.profile.about || 'No information available'}</p>
+              <h4 className="font-semibold text-royal-gold mb-2 font-playfair">About</h4>
+              <p className="text-royal-gold-light/70 font-inter leading-relaxed">{profile.profile.about || 'No information available'}</p>
             </div>
             
             <div>
@@ -380,7 +418,7 @@ export default function SwipeCard({ profile, onSwipe }: SwipeCardProps) {
                     return profile.profile.interests.map((interest, index) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                        className="px-3 py-1 bg-royal-gold/10 text-royal-gold border border-royal-gold/30 rounded-full text-xs font-medium font-inter shadow-sm hover:bg-royal-gold/20 transition-colors duration-150"
                       >
                         {interest}
                       </span>

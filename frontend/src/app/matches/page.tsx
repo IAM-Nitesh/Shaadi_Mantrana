@@ -325,20 +325,20 @@ function MatchesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+    <div className="min-h-screen bg-royal-obsidian">
       
       {/* Main Content */}
   <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
-        <h1 className="text-4xl font-heading text-gray-900 mb-6 px-2">Matches</h1>
+        <h1 className="text-4xl font-heading text-royal-gold mb-6 px-2">Matches</h1>
         {/* Tabs */}
         <div ref={tabsRef} className="mb-6">
-          <div className="flex bg-white rounded-2xl p-1 shadow-sm">
+          <div className="flex bg-royal-gold/5 border border-royal-gold/10 rounded-2xl p-1 shadow-sm">
             <button
               onClick={() => setActiveTab('matches')}
               className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
                 activeTab === 'matches'
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-800'
+                   ? 'bg-royal-gold text-royal-obsidian shadow-lg'
+                  : 'text-royal-gold-light/60 hover:text-royal-gold'
               }`}
             >
               <div className="flex items-center justify-center">
@@ -351,8 +351,8 @@ function MatchesContent() {
               onClick={() => setActiveTab('requests')}
               className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
                 activeTab === 'requests'
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-800'
+                   ? 'bg-royal-gold text-royal-obsidian shadow-lg'
+                  : 'text-royal-gold-light/60 hover:text-royal-gold'
               }`}
             >
               <div className="flex items-center justify-center">
@@ -366,7 +366,7 @@ function MatchesContent() {
         {/* Content with Pull-to-Refresh */}
         <div className="android-scroll">
           {loading ? (
-            <MatchesListSkeleton />
+            <MatchesListSkeleton variant="royal" />
           ) : (
             <>
               {activeTab === 'matches' && (
@@ -392,14 +392,14 @@ function MatchesContent() {
                           key={match.connectionId}
                           href={`/chat?id=${match.connectionId}`}
                           onClick={() => posthog.capture('match_chat_started', { connection_id: match.connectionId })}
-                          className="profile-card bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-pink-200"
+                          className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold/30"
                           style={{
                             animationDelay: `${index * 100}ms`
                           }}
                         >
                           <div className="flex items-center space-x-4">
                             <div className="relative">
-                              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden shadow-lg">
+                              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-royal-gold/20 to-royal-gold/10 flex items-center justify-center overflow-hidden shadow-lg border border-royal-gold/20">
                                 {profileImages.get(match.profile._id) ? (
                                   <ProfileImage
                                     src={profileImages.get(match.profile._id)!}

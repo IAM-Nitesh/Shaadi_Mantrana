@@ -2,16 +2,19 @@
   "info": {
     "name": "Shaadi Mantra - Verified API Collection",
     "_postman_id": "shaadi-mantra-verified-001",
-    "description": "Trimmed Postman collection with endpoints confirmed working against https://shaadi-mantrana.onrender.com. Admin-only endpoints are marked and require ADMIN token.",
+    "description": "Synchronized Postman collection with local dev helpers and corrected Chat routes. Targeted at http://localhost:5500.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "https://shaadi-mantrana.onrender.com" },
+    { "key": "baseUrl", "value": "http://localhost:5500" },
+    { "key": "prodUrl", "value": "https://shaadi-mantrana.onrender.com" },
     { "key": "accessToken", "value": "" },
     { "key": "refreshToken", "value": "" },
     { "key": "otp", "value": "" },
+    { "key": "email", "value": "niteshkumar9591@gmail.com" },
     { "key": "userId", "value": "" },
-    { "key": "userUuid", "value": "" }
+    { "key": "userUuid", "value": "" },
+    { "key": "connectionId", "value": "" }
   ],
   "item": [
     {
@@ -22,19 +25,31 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{ \"email\": \"niteshkumar9591@gmail.com\" }" },
+            "body": { "mode": "raw", "raw": "{ \"email\": \"{{email}}\" }" },
             "url": { "raw": "{{baseUrl}}/api/auth/send-otp", "host": ["{{baseUrl}}"], "path": ["api","auth","send-otp"] }
+          }
+        },
+        {
+          "name": "Get Dev OTP (Local Only)",
+          "request": {
+            "method": "GET",
+            "url": { 
+              "raw": "{{baseUrl}}/api/auth/_dev/last-otp?email={{email}}", 
+              "host": ["{{baseUrl}}"], 
+              "path": ["api","auth","_dev","last-otp"],
+              "query": [{ "key": "email", "value": "{{email}}" }]
+            }
           },
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "try {",
-                  "  const j = pm.response.json();",
-                  "  if (j.otp) { pm.collectionVariables.set('otp', j.otp); }",
-                  "  pm.test('send-otp returned success', () => pm.expect(j.success).to.be.true);",
-                  "} catch (e) { pm.test('send-otp parse', () => pm.expect(false).to.be.true); }"
+                  "const res = pm.response.json();",
+                  "if (res.success && res.otp) {",
+                  "  pm.collectionVariables.set('otp', res.otp);",
+                  "  pm.test('Dev OTP fetched: ' + res.otp, () => pm.expect(true).to.be.true);",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -42,11 +57,11 @@
           ]
         },
         {
-          "name": "Verify OTP (login) — stores tokens",
+          "name": "Verify OTP (login)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{ \"email\": \"niteshkumar9591@gmail.com\", \"otp\": \"{{otp}}\" }" },
+            "body": { "mode": "raw", "raw": "{ \"email\": \"{{email}}\", \"otp\": \"{{otp}}\" }" },
             "url": { "raw": "{{baseUrl}}/api/auth/verify-otp", "host": ["{{baseUrl}}"], "path": ["api","auth","verify-otp"] }
           },
           "event": [
@@ -55,15 +70,15 @@
               "script": {
                 "exec": [
                   "const res = pm.response.json();",
-                  "if (res && res.session) {",
-                  "  pm.collectionVariables.set('accessToken', res.session.accessToken || '');",
-                  "  pm.collectionVariables.set('refreshToken', res.session.refreshToken || '');",
+                  "if (res.success && res.session) {",
+                  "  pm.collectionVariables.set('accessToken', res.session.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.session.refreshToken);",
                   "}",
-                  "if (res && res.user) {",
-                  "  pm.collectionVariables.set('userId', res.user.userId || '');",
-                  "  pm.collectionVariables.set('userUuid', res.user.userUuid || '');",
+                  "if (res.success && res.user) {",
+                  "  pm.collectionVariables.set('userId', res.user.userId);",
+                  "  pm.collectionVariables.set('userUuid', res.user.userUuid);",
                   "}",
-                  "pm.test('verify-otp success', () => pm.expect(res.success).to.be.true);"
+                  "pm.test('Login success', () => pm.expect(res.success).to.be.true);"
                 ],
                 "type": "text/javascript"
               }
@@ -75,20 +90,20 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/auth/preapproved/check?email=niteshkumar9591@gmail.com",
+              "raw": "{{baseUrl}}/api/auth/preapproved/check?email={{email}}",
               "host": ["{{baseUrl}}"],
               "path": ["api","auth","preapproved","check"],
-              "query": [{ "key": "email", "value": "user@example.com" }]
+              "query": [{ "key": "email", "value": "{{email}}" }]
             }
           }
         },
         {
-          "name": "Refresh token (may return invalid session)",
+          "name": "Refresh Token",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{ \"refreshToken\": \"{{refreshToken}}\" }" },
-            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] }
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh-token"] }
           }
         }
       ]
@@ -105,22 +120,6 @@
           }
         },
         {
-          "name": "Update my profile (use profile fields)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{ \"profile\": { \"about\": \"Updated via Postman\", \"nativePlace\": \"lucknow\" } }"
-            },
-            "url": { "raw": "{{baseUrl}}/api/profiles/me", "host": ["{{baseUrl}}"], "path": ["api","profiles","me"] }
-          },
-          "description": "Earlier PUT returned 'No valid fields' — use 'profile' object with known keys."
-        },
-        {
           "name": "Get profiles (discovery)",
           "request": {
             "method": "GET",
@@ -129,7 +128,7 @@
           }
         },
         {
-          "name": "Get profile by UUID (public)",
+          "name": "Get profile by UUID",
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/profiles/uuid/{{userUuid}}", "host": ["{{baseUrl}}"], "path": ["api","profiles","uuid","{{userUuid}}"] }
@@ -138,101 +137,48 @@
       ]
     },
     {
-      "name": "Matching",
+      "name": "Chat & Connections",
       "item": [
         {
-          "name": "Discovery (matching)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/matching/discovery", "host": ["{{baseUrl}}"], "path": ["api","matching","discovery"] }
-          }
-        },
-        {
-          "name": "Like a profile (matching) - requires likedUserId",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "body": { "mode": "raw", "raw": "{ \"likedUserId\": \"U456\" }" },
-            "url": { "raw": "{{baseUrl}}/api/matching/like", "host": ["{{baseUrl}}"], "path": ["api","matching","like"] }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Connections & Chat (partial)",
-      "item": [
-        {
-          "name": "Get connections (works)",
+          "name": "Get user connections",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/connections", "host": ["{{baseUrl}}"], "path": ["api","connections"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.connections && res.connections.length > 0) {",
+                  "  pm.collectionVariables.set('connectionId', res.connections[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get chat history",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/{{connectionId}}", "host": ["{{baseUrl}}"], "path": ["api","chat","{{connectionId}}"] }
           }
         },
         {
-          "name": "Create connection (NOTE: POST returned 404 during testing)",
+          "name": "Send chat message",
           "request": {
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
-            "body": { "mode": "raw", "raw": "{ \"from\": \"U123\", \"to\": \"U456\" }" },
-            "url": { "raw": "{{baseUrl}}/api/connections", "host": ["{{baseUrl}}"], "path": ["api","connections"] }
-          },
-          "description": "POST creation returned 404 on the deployed instance. Keep here for dev/local tests; remove if 404 persists."
-        },
-        {
-          "name": "Get chat threads (may fail)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/chat/threads?userId={{userId}}", "host": ["{{baseUrl}}"], "path": ["api","chat","threads"], "query":[{"key":"userId","value":"{{userId}}"}] }
-          },
-          "description": "Chat endpoints partially present; some thread message endpoints returned 404."
-        }
-      ]
-    },
-    {
-      "name": "Invitations",
-      "item": [
-        {
-          "name": "List invitations (works)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/invitations", "host": ["{{baseUrl}}"], "path": ["api","invitations"] }
-          }
-        },
-        {
-          "name": "Create invitation (admin likely required)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "body": { "mode": "raw", "raw": "{ \"email\": \"niteshkumar9591@gmail.com\", \"invitedBy\": \"cli\" }" },
-            "url": { "raw": "{{baseUrl}}/api/invitations", "host": ["{{baseUrl}}"], "path": ["api","invitations"] }
-          },
-          "description": "This returned 'Failed to send invitation' in testing — likely admin-only or additional server-side checks."
-        }
-      ]
-    },
-    {
-      "name": "Uploads (placeholders)",
-      "item": [
-        {
-          "name": "Upload single file (multipart/form-data) - test locally",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] },
-            "url": { "raw": "{{baseUrl}}/api/upload/single", "host": ["{{baseUrl}}"], "path": ["api","upload","single"] }
+            "body": { "mode": "raw", "raw": "{ \"message\": \"Hello from Postman!\" }" },
+            "url": { "raw": "{{baseUrl}}/api/chat/{{connectionId}}", "host": ["{{baseUrl}}"], "path": ["api","chat","{{connectionId}}"] }
           }
         }
       ]

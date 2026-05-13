@@ -62,8 +62,8 @@ module.exports = {
   isDevelopment: !isProduction,
   PORT: getPort(),
   
-  // Data source configuration (MongoDB only)
-  DATA_SOURCE: 'mongodb',
+  // Data source configuration
+  DATA_SOURCE: process.env.DATA_SOURCE || 'mongodb',
   
   // Database configuration with environment-based selection
   DATABASE: {
@@ -81,8 +81,7 @@ module.exports = {
       maxIdleTimeMS: 30000,
       waitQueueTimeoutMS: 5000, // Reduced from 10000
       bufferCommands: false,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      autoIndex: isProduction, // Disable autoIndex in development for faster startup
       // Network resilience
       family: 4, // Force IPv4
       directConnection: false,
@@ -91,7 +90,7 @@ module.exports = {
       retryReads: true,
       compressors: 'snappy,zlib',
       // Additional connection resilience options
-      ssl: true, // Force SSL for Atlas
+      ssl: isProduction || (getMongoDBURI() && getMongoDBURI().includes('mongodb+srv://')),
       authSource: 'admin', // Explicit auth source
       appName: 'Shaadi-Mantrana-Backend'
     }
@@ -191,7 +190,7 @@ module.exports = {
   // Environment info for debugging
   ENVIRONMENT_INFO: {
     environment: process.env.NODE_ENV || 'development',
-    dataSource: 'mongodb',
+    dataSource: process.env.DATA_SOURCE || 'mongodb',
     mongodbUri: getMongoDBURI() ? getMongoDBURI().replace(/:[^:@]*@/, ':***@') : 'MongoDB URI not configured',
     port: getPort(),
     debugMode: process.env.DEBUG_MODE === 'true' || process.env.NODE_ENV === 'development'

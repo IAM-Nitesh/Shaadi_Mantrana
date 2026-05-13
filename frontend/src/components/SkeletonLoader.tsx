@@ -9,6 +9,7 @@ interface SkeletonProps {
   height?: string | number;
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
   animate?: boolean;
+  variant?: 'default' | 'royal';
 }
 
 export function Skeleton({ 
@@ -16,8 +17,11 @@ export function Skeleton({
   width = '100%', 
   height = '20px', 
   rounded = 'md',
-  animate = true 
+  animate = true,
+  variant = 'default'
 }: SkeletonProps) {
+  const isRoyal = variant === 'royal';
+  
   const roundedClass = useMemo(() => {
     switch (rounded) {
       case 'none': return '';
@@ -33,10 +37,10 @@ export function Skeleton({
   const Component = animate ? motion.div : 'div';
   const animateProps = animate ? {
     animate: {
-      opacity: [0.6, 1, 0.6],
+      opacity: isRoyal ? [0.1, 0.2, 0.1] : [0.6, 1, 0.6],
     },
     transition: {
-      duration: 1.5,
+      duration: 2,
       repeat: Infinity,
       ease: 'easeInOut' as any,
     },
@@ -44,7 +48,7 @@ export function Skeleton({
 
   return (
     <Component
-      className={`bg-gray-200 ${roundedClass} ${className}`}
+      className={`${isRoyal ? 'bg-royal-gold/10' : 'bg-gray-200'} ${roundedClass} ${className}`}
       style={{ width, height }}
       {...animateProps}
     />
@@ -130,34 +134,53 @@ export function ListItemSkeleton() {
 }
 
 // Dashboard Skeleton
-export function DashboardSkeleton() {
+export function DashboardSkeleton({ variant = 'default' }: { variant?: 'default' | 'royal' }) {
+  const isRoyal = variant === 'royal';
   return (
-    <div className="space-y-6 p-4">
+    <div className={`space-y-6 p-4 ${isRoyal ? 'bg-royal-obsidian' : ''}`}>
       {/* Header */}
       <div className="space-y-3">
-        <Skeleton width="200px" height="32px" />
-        <Skeleton width="150px" height="20px" />
+        <Skeleton width="200px" height="32px" variant={variant} />
+        <Skeleton width="150px" height="20px" variant={variant} />
       </div>
       
       {/* Profile Card */}
-      <ProfileCardSkeleton />
+      <div className={`${isRoyal ? 'bg-royal-gold/5 border border-royal-gold/10' : 'bg-white'} rounded-2xl shadow-lg p-6 space-y-4`}>
+        <div className="flex justify-center">
+          <Skeleton width="120px" height="120px" rounded="full" variant={variant} />
+        </div>
+        <div className="text-center">
+          <Skeleton width="60%" height="24px" className="mx-auto mb-2" variant={variant} />
+          <Skeleton width="40%" height="16px" className="mx-auto" variant={variant} />
+        </div>
+        <div className="space-y-3">
+          <Skeleton width="100%" height="16px" variant={variant} />
+          <Skeleton width="80%" height="16px" variant={variant} />
+        </div>
+      </div>
       
       {/* Controls */}
       <div className="flex justify-center space-x-4">
-        <Skeleton width="80px" height="80px" rounded="full" />
-        <Skeleton width="80px" height="80px" rounded="full" />
-        <Skeleton width="80px" height="80px" rounded="full" />
+        <Skeleton width="80px" height="80px" rounded="full" variant={variant} />
+        <Skeleton width="80px" height="80px" rounded="full" variant={variant} />
+        <Skeleton width="80px" height="80px" rounded="full" variant={variant} />
       </div>
     </div>
   );
 }
 
 // Matches List Skeleton
-export function MatchesListSkeleton() {
+export function MatchesListSkeleton({ variant = 'default' }: { variant?: 'default' | 'royal' }) {
   return (
     <div className="space-y-4 p-4">
       {[...Array(5)].map((_, i) => (
-        <ListItemSkeleton key={i} />
+        <div key={i} className={`flex items-center space-x-4 p-4 ${variant === 'royal' ? 'bg-royal-gold/5 border border-royal-gold/10' : 'bg-white'} rounded-xl`}>
+          <Skeleton width="48px" height="48px" rounded="full" variant={variant} />
+          <div className="flex-1 space-y-2">
+            <Skeleton width="60%" height="16px" variant={variant} />
+            <Skeleton width="40%" height="14px" variant={variant} />
+          </div>
+        </div>
       ))}
     </div>
   );

@@ -24,11 +24,21 @@ module.exports = {
           gold: '#CA8A04',
           'gold-light': '#EAB308',
           'gold-dark': '#A16207',
-        }
+        },
+        royal: {
+          obsidian: 'var(--royal-obsidian)',
+          gold: 'var(--royal-gold)',
+          'gold-light': 'var(--royal-gold-light)',
+          crimson: 'var(--royal-crimson)',
+          glass: 'var(--royal-glass)',
+          'glass-border': 'var(--royal-glass-border)',
+        },
       },
       fontFamily: {
         heading: ['var(--font-heading)', 'cursive'],
         body: ['var(--font-body)', 'serif'],
+        playfair: ['var(--font-playfair)', 'serif'],
+        inter: ['var(--font-inter)', 'sans-serif'],
       },
       animation: {
         'gradient': 'gradient 8s ease infinite',
