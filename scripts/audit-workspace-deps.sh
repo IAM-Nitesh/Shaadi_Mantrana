@@ -19,20 +19,35 @@ fi
 
 echo "🔍 Auditing $WORKSPACE dependencies for isolation..."
 
-# 1. Get all unique external imports from src
-# Excludes: react, next, relative imports (./, ../), and internal @/ aliases
-IMPORTS=$(grep -r "from '" "$WS_DIR/src" --include="*.ts" --include="*.tsx" | awk -F"'" '{print $2}' | grep -v "^\." | grep -v "^@/" | sort | uniq)
+# 1. Get all unique external imports from src and lib
+# Logic: Find import/require lines, extract the package name inside quotes,
+# filter out relative paths, internal aliases, and junk.
+IMPORTS=$(grep -rE "(import|from|require\() ['\"]" "$WS_DIR/src" "$WS_DIR/lib" 2>/dev/null | \
+  grep -vE "console\.|//|/\*" | \
+  sed -E "s/.*import .* from ['\"]([^'\"]+)['\"].*/\1/" | \
+  sed -E "s/.*import ['\"]([^'\"]+)['\"].*/\1/" | \
+  sed -E "s/.*require\(['\"]([^'\"]+)['\"]\).*/\1/" | \
+  grep -vE "^(\.|\/|@\/)" | \
+  grep -vE "[:space:]" | \
+  sort | uniq)
 
 # 2. Check each import against package.json
 MISSING_DEPS=()
 PK_JSON="$WS_DIR/package.json"
+
+# SPECIAL CHECK: If tsconfig.json exists, typescript MUST be in package.json
+if [ -f "$WS_DIR/tsconfig.json" ]; then
+  if ! grep -q "\"typescript\":" "$PK_JSON"; then
+    MISSING_DEPS+=("typescript (REQUIRED for TS workspaces)")
+  fi
+fi
 
 for DEP in $IMPORTS; do
   # Handle scoped packages (e.g., @capacitor/device -> @capacitor)
   BASE_DEP=$(echo "$DEP" | awk -F'/' '{if($1 ~ /^@/) print $1"/"$2; else print $1}')
   
   # Skip built-in Node modules
-  if [[ "$BASE_DEP" =~ ^(path|fs|os|crypto|events|util|http|https|url|querystring|stream|buffer|child_process)$ ]]; then
+  if [[ "$BASE_DEP" =~ ^(path|fs|os|crypto|events|util|http|https|url|querystring|stream|buffer|child_process|dns|net|zlib|tls|assert|vm)$ ]]; then
     continue
   fi
 
