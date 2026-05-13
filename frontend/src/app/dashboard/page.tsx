@@ -11,6 +11,7 @@ import { DiscoveryProfile, MatchingService } from '../../services/matching-servi
 import logger from '../../utils/logger';
 import posthog from 'posthog-js';
 import MandalaBackground from '../../components/ui/MandalaBackground';
+import RoyalLoader from '../../components/RoyalLoader';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -127,6 +128,7 @@ function DashboardContent() {
   const currentProfile = profiles[currentProfileIndex];
 
   return (
+    <div 
       ref={containerRef}
       className="min-h-screen bg-royal-obsidian relative overflow-hidden"
       style={{ paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 2rem)' }}
@@ -155,8 +157,10 @@ function DashboardContent() {
       <div ref={cardRef} className="relative flex-1 px-4 pb-20">
         {isFetchingProfiles ? (
           <div className="flex flex-col items-center justify-center h-96 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mb-4" />
-            <p className="text-gray-600">Loading profiles...</p>
+            <RoyalLoader 
+              size="lg" 
+              text="Curating royal profiles..." 
+            />
           </div>
         ) : currentProfile ? (
           <SwipeCard 
@@ -188,15 +192,15 @@ function DashboardContent() {
             <button
               onClick={() => handleSwipe('left')}
               disabled={isAnimating}
-              className="w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-close-line text-2xl text-gray-600"></i>
+              <i className="ri-close-line text-2xl text-royal-gold"></i>
             </button>
             
             <button
               onClick={() => handleSwipe('up')}
               disabled={isAnimating || likesRemaining <= 0}
-              className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="w-16 h-16 bg-gradient-to-r from-royal-crimson to-royal-gold rounded-full shadow-[0_0_20px_rgba(128,0,0,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
             >
               <i className="ri-star-line text-2xl text-white"></i>
             </button>
@@ -204,9 +208,9 @@ function DashboardContent() {
             <button
               onClick={() => handleSwipe('right')}
               disabled={isAnimating || likesRemaining <= 0}
-              className="w-14 h-14 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="w-14 h-14 bg-gradient-to-r from-royal-gold to-royal-gold-light rounded-full shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-heart-line text-2xl text-white"></i>
+              <i className="ri-heart-line text-2xl text-royal-obsidian"></i>
             </button>
           </div>
         </div>

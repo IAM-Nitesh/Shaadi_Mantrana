@@ -22,9 +22,13 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | { verificationId: string } | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  // Check Firebase config on mount
+  const isFirebaseConfigured = !!(process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
 
   // Handle client-side mounting to prevent hydration mismatch
   useEffect(() => {
@@ -50,7 +54,28 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   }, [resendCooldown]);
 
   const handleSendOTP = async () => {
+    setLocalError(null);
     if (!phoneNumber.trim()) {
+      return;
+    }
+
+    // ─── Playwright Test-Mode Bypass ───────────────────────────────────────────
+    // When __PLAYWRIGHT_TEST__ is set via page.addInitScript(), skip Firebase
+    // entirely and transition directly to the OTP screen with a mock result.
+    // This flag is NEVER set in production builds.
+    if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__) {
+      logger.debug('LoginForm: Playwright test mode — bypassing Firebase');
+      setConfirmationResult({ confirm: async () => ({ user: { getIdToken: async () => 'mock-token' } }) } as any);
+      setStep('otp');
+      setResendCooldown(60);
+      return;
+    }
+    // ───────────────────────────────────────────────────────────────────────────
+
+    // Guard: Firebase not configured
+    if (!isFirebaseConfigured) {
+      setLocalError('Authentication service is not configured. Please contact support.');
+      logger.error('LoginForm: Firebase env vars missing — cannot send OTP');
       return;
     }
 
@@ -58,6 +83,14 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber.trim() : `+91${phoneNumber.trim()}`;
 
     setIsSendingOTP(true);
+    
+    // Safety timeout: reset loading state if it takes too long (e.g., hanging recaptcha)
+    const safetyTimeout = setTimeout(() => {
+      if (isSendingOTP) {
+        setIsSendingOTP(false);
+        logger.warn('LoginForm: Send OTP request timed out after 15s');
+      }
+    }, 15000);
 
     try {
       logger.debug('LoginForm: sending Firebase Phone OTP', { phoneNumber: formattedPhone });
@@ -72,15 +105,21 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       } else {
         logger.warn('LoginForm: Phone OTP send failed');
       }
-    } catch (err) {
+    } catch (err: any) {
       logger.error('LoginForm: Phone OTP send error', err);
+      setLocalError(err?.message || 'Failed to send OTP. Please try again.');
     } finally {
+      clearTimeout(safetyTimeout);
       setIsSendingOTP(false);
     }
   };
 
   const handleVerifyOTP = async () => {
     if (!otp.trim() || otp.length !== 6 || !confirmationResult) {
+      if (!confirmationResult) {
+        logger.error('LoginForm: No confirmation result found for verification');
+        setLocalError('Session expired. Please request a new OTP.');
+      }
       return;
     }
 
@@ -111,9 +150,9 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setOtp('');
     setConfirmationResult(null);
   };
-
+  if (step === 'phone') {
     return (
-      <div className="relative min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="relative w-full flex items-center justify-center py-4 overflow-hidden">
         <MandalaBackground opacity={0.1} rotationSpeed={120} />
         
         <div className="w-full max-w-md mx-auto relative z-10">
@@ -125,16 +164,19 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-royal-gold/60 mb-2 uppercase tracking-widest font-inter">
                 Mobile Number
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-royal-gold font-medium">+91</span>
                 <input
                   type="tel"
+                  id="phone-input"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   placeholder="Enter 10 digit number"
+                  maxLength={10}
+                  aria-label="Mobile Number"
                   className="w-full pl-14 pr-4 py-3 bg-royal-obsidian/50 border border-royal-glass-border rounded-xl text-royal-gold-light placeholder:text-royal-gold-light/30 focus:ring-2 focus:ring-royal-gold focus:border-transparent transition-all duration-300"
                   disabled={isSendingOTP}
                 />
@@ -144,28 +186,42 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
             <button
               onClick={handleSendOTP}
+              id="get-otp-btn"
               disabled={phoneNumber.length < 10 || isSendingOTP}
-              className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+              className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] relative overflow-hidden focus:ring-2 focus:ring-offset-2 focus:ring-royal-gold focus:outline-none"
             >
-              {isSendingOTP ? 'Sending OTP...' : 'Get Verification Code'}
+              <span className={isSendingOTP ? 'opacity-0' : 'opacity-100'}>
+                Get Verification Code
+              </span>
+              {isSendingOTP && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-royal-obsidian border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2">Sending...</span>
+                </div>
+              )}
             </button>
 
             {/* Hidden reCAPTCHA container for Firebase */}
             <div id="recaptcha-container"></div>
 
-            {error && (
-              <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg border border-red-100">
-                {error}
+            {(localError || error) && (
+              <div
+                id="login-error-message"
+                role="alert"
+                className="text-royal-crimson text-xs text-center bg-royal-crimson/10 p-3 rounded-xl border border-royal-crimson/20 font-inter"
+              >
+                {localError || error}
               </div>
             )}
           </div>
         </div>
       </div>
+    </div>
     );
   }
 
   return (
-    <div className="relative min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div className="relative w-full flex items-center justify-center py-4 overflow-hidden">
       <MandalaBackground opacity={0.1} rotationSpeed={120} />
       
       <div className="w-full max-w-md mx-auto relative z-10">

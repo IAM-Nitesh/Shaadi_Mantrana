@@ -1,12 +1,12 @@
+import React from 'react';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '../contexts/AuthContext';
-import PageTransitionProvider from '../components/PageTransitionProvider';
-import { PWAProvider } from '../components/PWAProvider';
-import PageDataLoadingProvider from '../components/PageDataLoadingProvider';
 import ToasterClient from '../components/ToasterClient';
-import DevTools from '../components/DevTools';
 import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 import { PostHogProvider } from '../components/PostHogProvider';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Shaadi Mantrana',
@@ -20,7 +20,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#ec4899',
+  themeColor: '#121212',
 };
 
 export default function RootLayout({
@@ -31,22 +31,30 @@ export default function RootLayout({
   const initialUser = null;
 
   return (
-    <html lang="en" data-scroll-behavior="smooth">
-      <body className="font-body antialiased">
+    <html lang="en" className="bg-royal-obsidian">
+      <body className={`${inter.className} font-body antialiased bg-royal-obsidian text-royal-gold-light/90`}>
         <PostHogProvider>
           <AuthProvider initialUser={initialUser}>
-            <PWAProvider>
-              <PageTransitionProvider>
-                <PageDataLoadingProvider>
-                  {children}
-                  <ToasterClient />
-                  <DevTools />
-                  <GlobalBottomNavigation />
-                </PageDataLoadingProvider>
-              </PageTransitionProvider>
-            </PWAProvider>
+            <main>{children}</main>
+            <ToasterClient />
+            <GlobalBottomNavigation />
           </AuthProvider>
         </PostHogProvider>
+
+        {/* Global Failsafe: Force clear any stuck loaders after 10s */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          setTimeout(() => {
+            const loaders = document.querySelectorAll('[class*="loader"], [class*="Loader"]');
+            if (loaders.length > 0) {
+              loaders.forEach(l => {
+                l.style.opacity = '0';
+                l.style.pointerEvents = 'none';
+                setTimeout(() => l.style.display = 'none', 500);
+              });
+              document.body.style.overflow = 'auto';
+            }
+          }, 10000);
+        `}} />
       </body>
     </html>
   );

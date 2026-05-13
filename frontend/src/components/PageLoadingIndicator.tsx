@@ -122,13 +122,13 @@ export default function PageLoadingIndicator() {
           transition={{ duration: 0.08, ease: [0.4, 0, 0.2, 1] }} // Ultra-fast transition
         >
           {/* Simplified progress bar */}
-          <div className="h-1 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 shadow-lg mx-4 rounded-full overflow-hidden w-full max-w-md">
+          <div className="h-1 bg-royal-obsidian border border-royal-gold/20 shadow-lg mx-4 rounded-full overflow-hidden w-full max-w-md backdrop-blur-md">
             <motion.div
-              className="h-full bg-gradient-to-r from-white/20 to-white/40"
+              className="h-full bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_10px_rgba(212,175,55,0.5)]"
               initial={{ width: '0%' }}
               animate={{ width: '100%' }}
               transition={{
-                duration: 0.4, // Ultra-fast progress animation
+                duration: 0.8, // Slightly more majestic duration
                 ease: 'easeInOut',
                 repeat: Infinity,
                 repeatType: 'reverse'

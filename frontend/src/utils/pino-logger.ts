@@ -14,7 +14,7 @@ export function loggerForUser(userUuid?: string) {
   }
 }
 
-const isNode = typeof process !== 'undefined' && (process as any)?.release?.name === 'node';
+const isNode = typeof window === 'undefined' && typeof process !== 'undefined' && (process as any)?.release?.name === 'node';
 // Detect Next.js production build phase to avoid initializing pino transports (file / loki) that
 // can throw 'sonic boom is not ready yet' while webpack evaluates modules during build.
 const isNextBuildPhase = !!(process && (process as any).env && (
@@ -43,8 +43,10 @@ if (isNode && !isNextBuildPhase) {
   try {
     fs = req('fs');
     path = req('path');
-    pino = req('pino');
-    pinoHttp = req('pino-http');
+    const pinoMod = req('pino');
+    pino = pinoMod.default || pinoMod;
+    const pinoHttpMod = req('pino-http');
+    pinoHttp = pinoHttpMod.default || pinoHttpMod;
   } catch (e) {
     // If modules are not available, we'll use fallbacks
     fs = undefined;
@@ -164,7 +166,10 @@ if (isNode && !isNextBuildPhase) {
         );
       } catch (err) {
         // Fallback if pino initialization fails for any reason during runtime
+        // Ensure the fallback has pino-compatible structure to avoid pino-http crashes
         baseLogger = makeFallbackLogger();
+        // Add minimal pino-compatible properties if pino-http checks for them
+        (baseLogger as any)[Symbol.for('pino.metadata')] = true;
         // eslint-disable-next-line no-console
         console.warn('[logger] fallback console logger engaged (pino init failed):', (err as any)?.message);
       }
@@ -176,18 +181,25 @@ if (isNode && !isNextBuildPhase) {
         }
       } catch { /* ignore */ }
 
-      httpLogger = pinoHttp({
-        logger: baseLogger,
-        customLogLevel: function (res: any, err: any) {
-          if (res.statusCode >= 500 || err) return 'error';
-          if (res.statusCode >= 400) return 'warn';
-          return 'info';
-        },
-        serializers: {
-          req: (req: any) => ({ method: req.method, url: req.url, headers: req.headers }),
-          res: (res: any) => ({ statusCode: res.statusCode }),
-        },
-      });
+      if (pinoHttp && typeof pinoHttp === 'function') {
+        try {
+          httpLogger = pinoHttp({
+            logger: baseLogger,
+            customLogLevel: function (res: any, err: any) {
+              if (res.statusCode >= 500 || err) return 'error';
+              if (res.statusCode >= 400) return 'warn';
+              return 'info';
+            },
+            serializers: {
+              req: (req: any) => ({ method: req.method, url: req.url, headers: req.headers }),
+              res: (res: any) => ({ statusCode: res.statusCode }),
+            },
+          });
+        } catch (err) {
+          console.error('pinoHttp initialization failed:', (err as any)?.message);
+          httpLogger = (_req: any, _res: any, next: any) => { if (next) next(); };
+        }
+      }
 
     } catch (e) {
       // If pino initialization fails, keep the fallback logger

@@ -62,8 +62,8 @@ module.exports = {
   isDevelopment: !isProduction,
   PORT: getPort(),
   
-  // Data source configuration (MongoDB only)
-  DATA_SOURCE: 'mongodb',
+  // Data source configuration
+  DATA_SOURCE: process.env.DATA_SOURCE || 'mongodb',
   
   // Database configuration with environment-based selection
   DATABASE: {
@@ -190,7 +190,7 @@ module.exports = {
   // Environment info for debugging
   ENVIRONMENT_INFO: {
     environment: process.env.NODE_ENV || 'development',
-    dataSource: 'mongodb',
+    dataSource: process.env.DATA_SOURCE || 'mongodb',
     mongodbUri: getMongoDBURI() ? getMongoDBURI().replace(/:[^:@]*@/, ':***@') : 'MongoDB URI not configured',
     port: getPort(),
     debugMode: process.env.DEBUG_MODE === 'true' || process.env.NODE_ENV === 'development'

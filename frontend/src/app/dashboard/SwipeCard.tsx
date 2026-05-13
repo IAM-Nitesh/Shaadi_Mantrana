@@ -332,12 +332,12 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
         {/* Main Image */}
         <div className="relative h-96">
           {isLoadingImage && !signedImageUrl ? (
-            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
-              <div className="text-center text-rose-600">
-                <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">Loading profile photo...</p>
+            <div className="w-full h-full bg-royal-obsidian flex items-center justify-center">
+              <div className="text-center text-royal-gold">
+                <div className="text-6xl mb-4 animate-pulse">👤</div>
+                <p className="text-lg font-medium font-playfair tracking-widest uppercase">Revealing Majesty...</p>
                 <div className="mt-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-gold mx-auto"></div>
                 </div>
               </div>
             </div>
