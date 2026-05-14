@@ -1,5 +1,25 @@
 #!/usr/bin/env node
 
+// Environment Diagnostics for Render
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔍 Module Resolution Diagnostic:');
+  console.log('   CWD:', process.cwd());
+  console.log('   __dirname:', __dirname);
+  
+  const fs = require('fs');
+  const path = require('path');
+  const rootNodeModules = path.resolve(__dirname, '../node_modules');
+  
+  // FORCE ROOT NODE_MODULES INTO SEARCH PATH
+  // This ensures that hoisted dependencies (react, react-dom) are found even if loading from workspace
+  if (fs.existsSync(rootNodeModules)) {
+    console.log('✅ Injecting root node_modules into search path:', rootNodeModules);
+    module.paths.push(rootNodeModules);
+  } else {
+    console.warn('⚠️ Root node_modules not found at:', rootNodeModules);
+  }
+}
+
 // Enable on-the-fly JSX/ES transpilation for backend email components
 try {
   require('@babel/register')({
