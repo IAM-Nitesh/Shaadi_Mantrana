@@ -22,11 +22,17 @@ This document tracks recurring CI/CD failures, their root causes, and the determ
 - **Fix**: Verify version existence with `npm show [package] versions` and revert to latest stable/secure patch.
 - **Prevention**: Always run `npm install` locally and verify the registry before committing overrides.
 
-## 🏗️ Pattern: Static Export Incompatibility (Next.js/Capacitor)
+## 🐛 Pattern: Static Export Incompatibility (Next.js/Capacitor)
 - **Symptoms**: Build fails during static worker execution or hydration mismatch on mobile.
 - **Root Cause**: Use of server-only features (e.g., `next/link` without anchors) in a static Capacitor export.
 - **Fix**: Use standard `<a>` tags for mobile-critical flows and lazy-initialize server-side modules.
 - **Prevention**: Run `npm run build` locally in static mode before pushing.
+
+## 📦 Pattern: Puppeteer Download Failure
+- **Symptoms**: `npm install` fails with `Error: ERROR: Failed to set up chrome-headless-shell`.
+- **Root Cause**: Render build environments lack network access or dependencies for browser downloads.
+- **Fix**: Set `PUPPETEER_SKIP_DOWNLOAD=true` in Render environment variables.
+- **Prevention**: Always skip browser downloads in CI/CD environments where they are not needed for the build itself.
 
 ---
 
