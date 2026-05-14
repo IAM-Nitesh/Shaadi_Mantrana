@@ -244,3 +244,12 @@ Resolved 'null object reference' in @capacitor-firebase/authentication by upgrad
 **Insight**:
 Synchronized React and React-Email versions across monorepo to force hoisting to root and resolve MODULE_NOT_FOUND errors on Render.
 
+
+---
+
+### 🎓 Learning: MCP Config: serverUrl vs url
+**Date**: 2026-05-15 00:49:10
+**Version**: 1.0 | **Domain**: System/Tooling | **Expiry Hint**: Permanent
+**Insight**:
+Antigravity uses 'serverUrl' (not 'url') for hosted MCP servers. Using 'url' causes the 'render: serverURL or command must be specified' error, especially when migrating configs from Cursor or Windsurf.
+
