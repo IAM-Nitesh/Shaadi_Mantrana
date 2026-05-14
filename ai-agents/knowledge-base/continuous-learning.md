@@ -253,3 +253,12 @@ Synchronized React and React-Email versions across monorepo to force hoisting to
 **Insight**:
 Antigravity uses 'serverUrl' (not 'url') for hosted MCP servers. Using 'url' causes the 'render: serverURL or command must be specified' error, especially when migrating configs from Cursor or Windsurf.
 
+
+---
+
+### 🎓 Learning: Post-Merge Monitoring
+**Date**: 2026-05-15 01:10:13
+**Version**: 1.0 | **Domain**: Pipeline/DevOps | **Expiry Hint**: Permanent
+**Insight**:
+Formalized a protocol for verifying Vercel/Render status after every merge to main.
+
