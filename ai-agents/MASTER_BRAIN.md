@@ -11,7 +11,7 @@ When a task is received, the AI MUST route it through this matrix to invoke the 
 
 | Category | Persona to Invoke | Knowledge Base Focus | Superpower (Skill) |
 | :--- | :--- | :--- | :--- |
-| **Pipeline/Build/Push** | `personas/ci-engineer.md` | `knowledge-base/ci-failure-patterns.md` | `deployment-readiness`, `verification-before-completion` |
+| **Pipeline/Build/Push** | `personas/ci-engineer.md` | `knowledge-base/deployment-monitoring-protocol.md` | `deployment-readiness`, `verification-before-completion` |
 | **UI/UX/Styles/GSAP** | `personas/premium-ui.md` | `knowledge-base/continuous-learning.md` | `ui-ux-pro-max`, `brainstorming` |
 | **Database/API/Auth** | `personas/backend.md` | `knowledge-base/security-patterns.md` | `systematic-debugging`, `test-driven-development` |
 | **Capacitor/Native/Android**| `personas/mobile.md` | `knowledge-base/mobile-builds.md` | `deployment-readiness`, `verification-before-completion` |

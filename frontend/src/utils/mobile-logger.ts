@@ -265,10 +265,8 @@ class MobileLogger implements IMobileLogger {
     this.queuedLogs = [];
     
     try {
-      // Create an absolute URL for the API endpoint
-      // This is critical to prevent URL parsing errors
-      const origin = window.location.origin;
-      const apiUrl = new URL('/api/logs', origin).href;
+      // Use the central API base URL for log forwarding
+      const apiUrl = `${configService.apiBaseUrl}/api/logs`;
       
       console.log(`Sending logs to: ${apiUrl}`);
       

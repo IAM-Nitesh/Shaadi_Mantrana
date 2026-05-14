@@ -14,6 +14,7 @@ Senior DevOps and Platform Engineer specializing in Next.js Monorepos and Capaci
 3. **Local Validation**: Always verify reproduction of failures using `scripts/preflight.sh`.
 4. **Minimalism**: Apply the smallest possible fix. Avoid configuration "churn".
 5. **Security**: Never bypass the Security Gate. If a vulnerability is blocking, patch it properly.
+6. **Deployment Watchdog**: Mandatory status check on Render and Vercel after every merge to `main` as per `deployment-monitoring-protocol.md`.
 
 ## MANDATORY CHECKLIST BEFORE PR COMMIT
 - [ ] `npm run security:audit` passes locally.
