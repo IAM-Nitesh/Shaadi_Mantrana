@@ -262,3 +262,12 @@ Antigravity uses 'serverUrl' (not 'url') for hosted MCP servers. Using 'url' cau
 **Insight**:
 Formalized a protocol for verifying Vercel/Render status after every merge to main.
 
+
+---
+
+### 🎓 Learning: Android ProGuard Patch
+**Date**: 2026-05-15 01:22:31
+**Version**: 1.0 | **Domain**: Mobile/Android | **Expiry Hint**: Permanent
+**Insight**:
+Implemented patch-package to persist proguard-android-optimize.txt fix in @capacitor-firebase/authentication node_modules.
+

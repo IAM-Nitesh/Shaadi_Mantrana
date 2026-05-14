@@ -13,6 +13,7 @@
     "security:audit": "bash scripts/security-audit-fix.sh",
     "security:fix": "bash scripts/security-audit-fix.sh --fix",
     "prepare": "bash scripts/install-git-hooks.sh >/dev/null 2>&1 || true",
+    "postinstall": "patch-package",
     "dev:backend": "cd backend && npx cross-env NODE_ENV=development node start.js",
     "prod:backend": "cd backend && npx cross-env NODE_ENV=production node start.js",
     "dev:frontend": "cd frontend && npx cross-env NODE_ENV=development npm run dev",
@@ -77,6 +78,7 @@
     "@types/nodemailer": "^6.4.17",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "patch-package": "^8.0.0",
     "typescript": "5.8.2"
   },
   "keywords": [
