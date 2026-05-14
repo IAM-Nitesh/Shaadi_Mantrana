@@ -38,6 +38,7 @@
 | Backend | `src/config/index.js` | 2026-05-12 | Dynamic DATA_SOURCE support added |
 | Frontend | `PostHogProvider.tsx` + `layout.tsx` | 2026-05-12 | Session recording + JS exception capture; typescript moved to deps |
 | Frontend | `src/utils/pino-logger.ts` | 2026-05-12 | Fixed pino/pino-http ESM initialization and fallback crash |
+| Pipeline | Dependency Synchronization | 2026-05-15 | Synced React and React-Email versions to fix Render runtime errors |
 | Frontend | Global Shell (Layout + Nav + CSS) | 2026-05-12 | Modern Royal visual retrofit complete; viewport themeColor synced |
 
 ---
