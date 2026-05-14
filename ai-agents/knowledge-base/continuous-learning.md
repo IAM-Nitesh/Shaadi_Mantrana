@@ -235,3 +235,12 @@ NEXT_PUBLIC_FIREBASE_* vars were absent from all .env files causing silent auth 
 **Insight**:
 Resolved 'null object reference' in @capacitor-firebase/authentication by upgrading to v7.0.0 (Capacitor 7 compatible) and adding 'phone' provider to plugins.FirebaseAuthentication.providers in capacitor.config.json. Reverted manual registration in MainActivity.java as v7 auto-registers correctly.
 
+
+---
+
+### 🎓 Learning: Fixing Backend React Runtime Error
+**Date**: 2026-05-15 00:06:13
+**Version**: 1.0 | **Domain**: Pipeline | **Expiry Hint**: Never
+**Insight**:
+Synchronized React and React-Email versions across monorepo to force hoisting to root and resolve MODULE_NOT_FOUND errors on Render.
+
