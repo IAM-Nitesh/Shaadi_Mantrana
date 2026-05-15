@@ -271,3 +271,12 @@ Formalized a protocol for verifying Vercel/Render status after every merge to ma
 **Insight**:
 Implemented patch-package to persist proguard-android-optimize.txt fix in @capacitor-firebase/authentication node_modules.
 
+
+---
+
+### 🎓 Learning: Firebase Phone Auth Testing
+**Date**: 2026-05-15 08:51:38
+**Version**: 1.0 | **Domain**: Mobile/Auth | **Expiry Hint**: Permanent
+**Insight**:
+Disabling app verification in both Web and Native SDKs is mandatory for test numbers to bypass real SMS OTPs.
+
