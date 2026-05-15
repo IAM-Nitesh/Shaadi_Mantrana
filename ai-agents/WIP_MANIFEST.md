@@ -16,6 +16,7 @@
 | Mobile | `android/build.gradle` + `android/app/build.gradle` (Firebase Crashlytics) | 2026-05-13 — requires Android Studio release build + Play Console upload |
 | UI | `frontend/src/` (Comprehensive UI Revamp) | 2026-05-15 — brainstorming and design phase starting |
 | Product | `docs/superpowers/specs/2026-05-12-shaadi-mantrana-product-blueprint.md` | 2026-05-12 — Strategic baseline established |
+| Mobile | `node_modules/@capacitor-firebase/authentication` ProGuard Patch | 2026-05-15 | Persisted fix for AGP 9+ compatibility |
 
 ---
 
@@ -40,6 +41,8 @@
 | Frontend | `src/utils/pino-logger.ts` | 2026-05-12 | Fixed pino/pino-http ESM initialization and fallback crash |
 | Pipeline | Dependency Synchronization | 2026-05-15 | Synced React and React-Email versions to fix Render runtime errors |
 | System | Render MCP Configuration | 2026-05-15 | Fixed 'serverURL or command must be specified' by switching 'url' to 'serverUrl' |
+| System | Vercel & Render MCP Config | 2026-05-15 | **STABILIZED**: Verified Bearer auth for both; synced global config at `~/.gemini/antigravity/mcp_config.json`; integrated into Master Brain Watchdog. |
+| System | `mcp-infrastructure.md` | 2026-05-15 | Codified setup steps and `mcp-remote` technical rationale |
 | Frontend | Global Shell (Layout + Nav + CSS) | 2026-05-12 | Modern Royal visual retrofit complete; viewport themeColor synced |
 
 ---
