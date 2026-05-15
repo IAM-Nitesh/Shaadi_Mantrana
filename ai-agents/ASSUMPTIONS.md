@@ -89,3 +89,10 @@
 - **Risk if wrong**: If the MCP error is caused by a service-level issue on Render (e.g. account suspension), other Render-hosted services might be at risk.
 - **Status**: `documented`
 - **Validated by**: Successful `curl` (read_url_content) of `https://shaadi-mantrana.onrender.com/health`.
+
+### [2026-05-16] [Branding] Single Source of Truth (SSoT) for Assets
+- **Task**: Consolidating 30+ branding PNGs.
+- **Assumption**: The developer will only update branding/final_icon.png and run 'npm run branding:sync'. All mipmaps and drawables are treated as build artifacts, not source files.
+- **Risk if wrong**: If a developer manually edits a mipmap folder, their changes will be overwritten on the next sync.
+- **Status**: documented
+- **Validated by**: Implementation of scripts/generate-branding-assets.sh

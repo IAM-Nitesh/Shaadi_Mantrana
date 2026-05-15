@@ -316,3 +316,12 @@ Switched Render to explicit Bearer auth and hardened Vercel npx command with -p 
 **Insight**:
 QA persona updated to Senior SDET specializing in Playwright and business logic validation for mobile-first apps.
 
+
+---
+
+### 🎓 Learning: Branding Modernization
+**Date**: 2026-05-16 03:37:26
+**Version**: 1.0 | **Domain**: Branding | **Expiry Hint**: Permanent
+**Insight**:
+Replaced all branding assets with high-fidelity 3D PNG 'Infinite Knot' logo across Web and Android. Standardized UI components to use PNG instead of SVG for visual consistency.
+

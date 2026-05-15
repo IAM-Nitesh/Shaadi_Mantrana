@@ -74,11 +74,10 @@ export default function AdminLayout({
   // Show loading while AuthContext is checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
         <div className="text-center">
           <HeartbeatLoader 
-            logoSize="xxl"
-            textSize="lg"
+            size="xl"
             text="Checking admin access..."
             showText={true}
           />
@@ -93,7 +92,7 @@ export default function AdminLayout({
   // Only render children if authenticated and admin, or on login page
   if ((isAuthenticated && user?.role === 'admin') || pathname === '/admin/login') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-royal-obsidian flex flex-col">
         {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}
         <StandardHeader showProfileLink={false} />
 

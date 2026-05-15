@@ -36,7 +36,8 @@
     "mobile:sync": "npx cap sync android",
     "mobile:open": "npx cap open android",
     "mobile:add:android": "npx cap add android",
-    "mobile:bundle": "cd android && ./gradlew bundleRelease"
+    "mobile:bundle": "cd android && ./gradlew bundleRelease",
+    "branding:sync": "bash scripts/generate-branding-assets.sh"
   },
   "workspaces": [
     "frontend",
