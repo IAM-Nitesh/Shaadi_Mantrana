@@ -1,12 +1,14 @@
 import React from 'react';
-import { Inter } from 'next/font/google';
+// import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '../contexts/AuthContext';
 import ToasterClient from '../components/ToasterClient';
 import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 import { PostHogProvider } from '../components/PostHogProvider';
 
-const inter = Inter({ subsets: ['latin'] });
+// Fallback to system font stack to bypass build-time Google Fonts fetch
+const inter = { className: 'font-sans' };
+// const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Shaadi Mantrana',
