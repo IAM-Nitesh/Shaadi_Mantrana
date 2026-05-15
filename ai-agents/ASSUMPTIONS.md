@@ -83,3 +83,9 @@
 - **Risk if wrong**: Config might be ignored if the tool expects it elsewhere (like ~/.claude/).
 - **Status**: `documented`
 - **Validated by**: Pending - User confirmation.
+### [2026-05-15] [System] Render MCP "Bad Request" does not reflect production health
+- **Task**: Checking last deployment status
+- **Assumption**: The "Bad Request" error from the Render MCP server is a configuration/handshake issue between the tool and the MCP endpoint, and does not indicate a failure of the hosted services. Production health was verified via direct HTTPS requests to the health endpoint.
+- **Risk if wrong**: If the MCP error is caused by a service-level issue on Render (e.g. account suspension), other Render-hosted services might be at risk.
+- **Status**: `documented`
+- **Validated by**: Successful `curl` (read_url_content) of `https://shaadi-mantrana.onrender.com/health`.

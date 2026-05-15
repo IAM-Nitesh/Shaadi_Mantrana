@@ -307,3 +307,12 @@ Codified first-launch steps and mcp-remote rationale for Vercel/Render servers.
 **Insight**:
 Switched Render to explicit Bearer auth and hardened Vercel npx command with -p flag to resolve 'could not determine executable' ambiguity. Identified that mcp-remote port binding (EPERM) is a potential blocker in restricted sandboxes.
 
+
+---
+
+### 🎓 Learning: SDET Persona Integration
+**Date**: 2026-05-15 23:33:12
+**Version**: 1.0 | **Domain**: System | **Expiry Hint**: Permanent
+**Insight**:
+QA persona updated to Senior SDET specializing in Playwright and business logic validation for mobile-first apps.
+

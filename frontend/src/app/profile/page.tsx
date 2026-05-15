@@ -14,7 +14,7 @@ import { DatePicker } from '../../components/date-picker';
 import { format } from 'date-fns';
 import 'react-time-picker/dist/TimePicker.css';
 import { TimePicker } from '../../components/time-picker';
-import HeartbeatLoader from '../../components/HeartbeatLoader';
+import RoyalLoader from '../../components/RoyalLoader';
 import FilterModal, { type FilterState } from '../dashboard/FilterModal';
 import { userNavItems } from '../../config/navigation';
 import { matchesCountService } from '../../services/matches-count-service';
@@ -2251,13 +2251,11 @@ function ProfileContent() {
   // Show loading screen only while loading profile, not for authentication
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
         <div className="text-center">
-          <HeartbeatLoader 
-            logoSize="xxxxl"
-            textSize="xl"
-            text="Loading Your Profile" 
-            className="mb-4"
+          <RoyalLoader 
+            size="xl"
+            text="Gathering your majestic profile details..." 
           />
         </div>
       </div>
@@ -2307,8 +2305,24 @@ function ProfileContent() {
           setProfile(finalProfile);
           setShowWizard(false);
           setIsEditing(false);
+          
           // Force a refresh to recalculate completeness
-          await ProfileService.getUserProfile().then(p => setProfile(p));
+          const updatedProfile = await ProfileService.getUserProfile();
+          setProfile(updatedProfile);
+          
+          // Redirect to dashboard if profile is now 100% complete
+          if (updatedProfile && (updatedProfile.profileCompleteness || 0) >= 100) {
+            try {
+              await OnboardingService.markProfileCompleted();
+              ToastService.success('Your Sacred Profile is complete!');
+              setTimeout(() => {
+                router.push('/dashboard');
+              }, 2000);
+            } catch (error) {
+              logger.error('Error marking profile as completed:', error);
+              router.push('/dashboard'); // Redirect anyway
+            }
+          }
         }}
       />
     );

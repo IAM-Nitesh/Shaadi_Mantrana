@@ -17,6 +17,8 @@
 | UI | `frontend/src/` (Comprehensive UI Revamp) | 2026-05-15 — brainstorming and design phase starting |
 | Product | `docs/superpowers/specs/2026-05-12-shaadi-mantrana-product-blueprint.md` | 2026-05-12 — Strategic baseline established |
 | Mobile | `node_modules/@capacitor-firebase/authentication` ProGuard Patch | 2026-05-15 | Persisted fix for AGP 9+ compatibility |
+| System | `personas/qa.md` (SDET Persona) | 2026-05-15 | Updated for Playwright and business validation focus |
+| Testing | BDD + Allure Integration | 2026-05-15 | playwright-bdd + allure-playwright setup; feature files in flight |
 
 ---
 

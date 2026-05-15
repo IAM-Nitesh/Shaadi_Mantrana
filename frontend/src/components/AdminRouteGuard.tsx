@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import HeartbeatLoader from './HeartbeatLoader';
+import RoyalLoader from './RoyalLoader';
 import { useAuth } from '../contexts/AuthContext';
 
 interface AdminRouteGuardProps {
@@ -32,13 +32,11 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
         <div className="text-center">
-          <HeartbeatLoader
-            logoSize="xxxxl"
-            textSize="xl"
-            text="Verifying Admin Access"
-            className="mb-4"
+          <RoyalLoader
+            size="xl"
+            text="Verifying Majestic Authority..."
           />
         </div>
       </div>

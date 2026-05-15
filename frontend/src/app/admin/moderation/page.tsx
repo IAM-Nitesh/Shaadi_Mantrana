@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import CustomIcon from '../../../components/CustomIcon';
-import HeartbeatLoader from '../../../components/HeartbeatLoader';
+import RoyalLoader from '../../../components/RoyalLoader';
 import { apiClient } from '../../../utils/api-client';
 import logger from '../../../utils/logger';
 import { toast } from 'react-hot-toast';
@@ -66,7 +66,7 @@ export default function PhotoModerationPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <HeartbeatLoader logoSize="xxl" text="Loading pending photos..." showText={true} />
+        <RoyalLoader size="lg" text="Loading pending photos..."  />
       </div>
     );
   }
