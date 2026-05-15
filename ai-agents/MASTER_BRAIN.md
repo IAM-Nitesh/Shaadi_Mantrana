@@ -85,6 +85,7 @@ To prevent regression and "Whack-a-Mole" fixes, the following are mandatory:
 3. **The Preflight Paradox**: FORBIDDEN from claiming a task is "fixed" until `./scripts/preflight.sh` passes.
 4. **Surgical Integrity**: Every JSON/TS edit must be followed by a syntax check. If you touch a Proxy, verify `this` binding and TypeScript types immediately.
 5. **Devil's Advocate**: Before every commit, externalize the most likely failure mode and the most dangerous silent assumption. This is a required output, not optional commentary.
+6. **Deployment Watchdog**: Mandatory status check on Render and Vercel after every merge to `main` as per `deployment-monitoring-protocol.md`. Use `mcp_render_...` and `mcp_vercel_...` tools as the ONLY source of truth for production health.
 
 ---
 
