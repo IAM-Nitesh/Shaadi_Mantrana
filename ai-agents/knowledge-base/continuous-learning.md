@@ -325,3 +325,21 @@ QA persona updated to Senior SDET specializing in Playwright and business logic 
 **Insight**:
 Replaced all branding assets with high-fidelity 3D PNG 'Infinite Knot' logo across Web and Android. Standardized UI components to use PNG instead of SVG for visual consistency.
 
+
+---
+
+### 🎓 Learning: Logo Loading Patterns
+**Date**: 2026-05-16 03:59:52
+**Version**: 1.0 | **Domain**: Frontend/UX | **Expiry Hint**: None
+**Insight**:
+The 'Infinite Knot' logo is used as a standardized loading indicator via RoyalLoader.tsx across AuthGuards, Admin routes, and data-heavy pages. It also features in transitional overlays like Logout and Onboarding with specialized GSAP and CSS animations (heartbeat, pulse, rotating borders).
+
+
+---
+
+### 🎓 Learning: Royal Loading System
+**Date**: 2026-05-16 04:20:05
+**Version**: 1.0 | **Domain**: UI/UX | **Expiry Hint**: None
+**Insight**:
+Implemented a tiered loading system using Sacred Mandala SVG and Royal Skeletons to replace brand logos in loading states.
+

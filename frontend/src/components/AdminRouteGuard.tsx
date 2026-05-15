@@ -32,14 +32,12 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
-        <div className="text-center">
-          <RoyalLoader
-            size="xl"
-            text="Verifying Majestic Authority..."
-          />
-        </div>
-      </div>
+      <RoyalLoader
+        variant="grand"
+        size="xl"
+        fullScreen
+        text="Verifying Majestic Authority..."
+      />
     );
   }
 
