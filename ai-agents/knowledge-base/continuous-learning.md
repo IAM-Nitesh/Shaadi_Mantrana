@@ -280,3 +280,30 @@ Implemented patch-package to persist proguard-android-optimize.txt fix in @capac
 **Insight**:
 Disabling app verification in both Web and Native SDKs is mandatory for test numbers to bypass real SMS OTPs.
 
+
+---
+
+### 🎓 Learning: MCP Configuration
+**Date**: 2026-05-15 09:25:29
+**Version**: 1.0 | **Domain**: System | **Expiry Hint**: Permanent
+**Insight**:
+Use mcp-remote for Vercel and serverUrl for Render. Place configs in mcp_config.json and .cursor/mcp.json.
+
+
+---
+
+### 🎓 Learning: MCP Infrastructure Setup
+**Date**: 2026-05-15 09:31:30
+**Version**: 1.0 | **Domain**: Infrastructure | **Expiry Hint**: Permanent
+**Insight**:
+Codified first-launch steps and mcp-remote rationale for Vercel/Render servers.
+
+
+---
+
+### 🎓 Learning: MCP Infrastructure Hardening
+**Date**: 2026-05-15 09:40:46
+**Version**: 1.0 | **Domain**: System | **Expiry Hint**: Permanent
+**Insight**:
+Switched Render to explicit Bearer auth and hardened Vercel npx command with -p flag to resolve 'could not determine executable' ambiguity. Identified that mcp-remote port binding (EPERM) is a potential blocker in restricted sandboxes.
+
