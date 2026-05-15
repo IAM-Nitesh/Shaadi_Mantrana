@@ -35,5 +35,6 @@ Immediately after any merge to `main`, the acting AI agent MUST execute these st
 ---
 
 ## 📂 Related Files
+- `ai-agents/knowledge-base/mcp-infrastructure.md`: For MCP setup and rationale.
 - `ai-agents/knowledge-base/ci-failure-patterns.md`: For troubleshooting known issues.
 - `ai-agents/MASTER_BRAIN.md`: For orchestration logic.

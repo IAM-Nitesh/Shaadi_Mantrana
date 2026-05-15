@@ -37,6 +37,12 @@ export function getFirebaseAuth(): Auth {
     const app = getFirebaseApp();
     _auth = getAuth(app);
     _auth.useDeviceLanguage();
+    
+    // Enable phone auth testing in non-production environments
+    if (process.env.NEXT_PUBLIC_ENABLE_DEBUG === 'true' || process.env.NODE_ENV === 'development') {
+      _auth.settings.appVerificationDisabledForTesting = true;
+      console.log('Firebase: Phone Auth verification disabled for testing');
+    }
   }
   return _auth;
 }

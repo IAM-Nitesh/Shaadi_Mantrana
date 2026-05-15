@@ -77,3 +77,9 @@
 - **Risk if wrong**: Regional legal nuances (e.g., UAE or US-specific laws) might require refactoring.
 - **Status**: `documented`
 - **Validated by**: Pending - Legal review.
+### [2026-05-15] [System] mcp_config.json belongs in the workspace root
+- **Task**: Resolving MCP initialization errors
+- **Assumption**: The user's tool (e.g. Antigravity/Claude Code) expects mcp_config.json at the root of the monorepo, and placeholders for API keys will be filled by the user.
+- **Risk if wrong**: Config might be ignored if the tool expects it elsewhere (like ~/.claude/).
+- **Status**: `documented`
+- **Validated by**: Pending - User confirmation.
