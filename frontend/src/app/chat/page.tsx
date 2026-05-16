@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ChatComponent from './ChatComponent';
 import CustomIcon from '../../components/CustomIcon';
-import HeartbeatLoader from '../../components/HeartbeatLoader';
+import RoyalLoader from '../../components/RoyalLoader';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
 import { useAuth } from '../../contexts/AuthContext';
@@ -103,15 +103,12 @@ function ChatPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
         <div className="text-center">
-          <HeartbeatLoader 
-            logoSize="xxxxl"
-            textSize="xl"
-            text="Loading Chat" 
-            className="mb-4"
+          <RoyalLoader 
+            size="xl"
+            text="Aligning the stars for your conversation..." 
           />
-          <p className="text-gray-600">Loading your conversation...</p>
         </div>
       </div>
     );
@@ -158,8 +155,8 @@ function ChatPageContent() {
 export default function ChatPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-rose-50 flex items-center justify-center">
-        <HeartbeatLoader logoSize="xxxxl" text="Loading Chat..." />
+      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
+        <RoyalLoader size="xl" text="Summoning the chat chamber..." />
       </div>
     }>
       <ChatPageContent />

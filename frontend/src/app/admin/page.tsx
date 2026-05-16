@@ -317,11 +317,9 @@ function AdminPageContent() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <HeartbeatLoader 
-          logoSize="xxl"
-          textSize="lg"
+          size="xl"
           text="Loading Admin Panel..."
           showText={true}
-          variant="royal"
         />
       </div>
     );
@@ -421,11 +419,9 @@ function AdminPageContent() {
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
               <HeartbeatLoader 
-                logoSize="xxl"
-                textSize="lg"
+                size="xl"
                 text="Loading Users..."
                 showText={true}
-                variant="royal"
               />
             </div>
           ) : users.length === 0 ? (
@@ -815,7 +811,7 @@ function AdminPageContent() {
           <div className="relative z-10 text-center">
             {/* Brand Logo */}
             <div className="w-32 h-32 mx-auto mb-8 animate-pulse">
-              <Image src="/icon.svg" alt="Shaadi Mantrana" width={128} height={128} className="w-full h-full" />
+              <Image src="/icon.png" alt="Shaadi Mantrana" width={128} height={128} className="w-full h-full object-contain" />
             </div>
 
             {/* Loading Spinner */}

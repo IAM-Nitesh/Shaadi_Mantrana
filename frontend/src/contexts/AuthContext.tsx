@@ -188,6 +188,7 @@ export const AuthProvider = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
+        credentials: 'include',
       });
       
       const data = await response.json();
@@ -213,6 +214,7 @@ export const AuthProvider = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
+        credentials: 'include',
       });
       
       const data = await response.json();
@@ -294,7 +296,12 @@ export const AuthProvider = ({
       // --- Web Path ---
       else if ('confirm' in confirmation) {
         const result = await confirmation.confirm(code);
-        finalIdToken = await getIdToken(result.user);
+        // Use mock token in playwright test mode if user is marked as mock
+        if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__ && (result as any).user?.mock) {
+          finalIdToken = 'mock-token';
+        } else {
+          finalIdToken = await getIdToken(result.user);
+        }
       } else {
         throw new Error('Invalid confirmation object');
       }
@@ -303,6 +310,7 @@ export const AuthProvider = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: finalIdToken }),
+        credentials: 'include',
       });
       
       const data = await response.json();

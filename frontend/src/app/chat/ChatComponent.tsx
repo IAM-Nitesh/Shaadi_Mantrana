@@ -813,7 +813,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             whileTap={{ scale: 0.95 }}
           >
             <img 
-              src="/icon.svg" 
+              src="/icon.png" 
               alt="Send" 
               className="w-6 h-6 text-pink-500"
             />

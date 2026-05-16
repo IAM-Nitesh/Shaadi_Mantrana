@@ -27,14 +27,17 @@
     "emails:sync": "node scripts/manage-approved-emails.js sync",
     "keep-alive": "node scripts/keep-alive.js",
     "keep-alive-bg": "node scripts/keep-alive.js &",
-    "test:e2e:playwright": "npx playwright test --config=playwright.config.js",
-    "test:e2e:ui": "npx playwright test --ui --config=playwright.config.js",
+    "test:e2e:playwright": "npx bddgen && npx playwright test --config=playwright.config.js",
+    "test:e2e:ui": "npx bddgen && npx playwright test --ui --config=playwright.config.js",
+    "test:e2e:bdd": "rm -rf allure-results && npx bddgen && npx playwright test",
+    "report:allure": "npx allure generate allure-results --clean -o allure-report && npx allure open allure-report",
     "mobile:build:web": "cd frontend && npm run build",
     "mobile:copy": "npx cap copy",
     "mobile:sync": "npx cap sync android",
     "mobile:open": "npx cap open android",
     "mobile:add:android": "npx cap add android",
-    "mobile:bundle": "cd android && ./gradlew bundleRelease"
+    "mobile:bundle": "cd android && ./gradlew bundleRelease",
+    "branding:sync": "bash scripts/generate-branding-assets.sh"
   },
   "workspaces": [
     "frontend",
@@ -76,10 +79,13 @@
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
     "@types/nodemailer": "^6.4.17",
+    "allure-commandline": "^2.41.0",
+    "allure-playwright": "^3.8.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "mcp-remote": "^0.1.38",
     "patch-package": "^8.0.0",
+    "playwright-bdd": "^8.5.1",
     "typescript": "5.8.2"
   },
   "keywords": [

@@ -224,7 +224,7 @@ export default function AdminBottomNavigation() {
             {/* Success Circle */}
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               <div className="logout-checkmark">
-                <img src="/icon.svg" alt="Shaadi Mantrana" className="w-64 h-64 heartbeat-animation" />
+                <img src="/icon.png" alt="Shaadi Mantrana" className="w-64 h-64 heartbeat-animation object-contain" />
               </div>
             </div>
             

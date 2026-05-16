@@ -43,6 +43,18 @@ const firebaseApp = initializeFirebase();
  * @returns {Promise<Object>} - The decoded token
  */
 const verifyIdToken = async (idToken) => {
+  // --- Playwright/E2E Test Bypass ---
+  // Allow a mock token in development to facilitate stable E2E testing
+  if (process.env.NODE_ENV !== 'production' && idToken === 'mock-token') {
+    logger.info('FirebaseService: Bypassing token verification for E2E test token');
+    return {
+      uid: 'playwright-test-user',
+      phone_number: '+919354799303',
+      email: 'test-9354799303@shaadimantrana.com',
+      name: 'Playwright Test User'
+    };
+  }
+
   if (!firebaseApp) {
     throw new Error('Firebase Admin not initialized');
   }
