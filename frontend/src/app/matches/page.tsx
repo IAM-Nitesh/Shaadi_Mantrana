@@ -391,6 +391,7 @@ function MatchesContent() {
                         <a
                           key={match.connectionId}
                           href={`/chat?id=${match.connectionId}`}
+                          data-testid="profile-card"
                           onClick={() => posthog.capture('match_chat_started', { connection_id: match.connectionId })}
                           className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold/30"
                           style={{
@@ -465,7 +466,8 @@ function MatchesContent() {
                         <a
                           key={likedProfile.likeId}
                           href={`/chat?id=${likedProfile.connectionId}`}
-                                                     className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer hover:border-pink-200"
+                          data-testid="profile-card"
+                          className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer hover:border-pink-200"
                         >
                           <div className="flex items-center space-x-4">
                             <div className="relative">
@@ -505,7 +507,7 @@ function MatchesContent() {
                           </div>
                         </a>
                       ) : (
-                        <div key={likedProfile.likeId} className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md">
+                        <div key={likedProfile.likeId} data-testid="profile-card" className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md">
                           <div className="flex items-center space-x-4">
                             <div className="relative">
                               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">

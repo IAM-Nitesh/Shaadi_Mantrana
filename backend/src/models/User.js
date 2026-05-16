@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   // Basic Information
   email: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
     lowercase: true,
     trim: true,
@@ -328,6 +328,11 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
+  hasCompletedWizard: {
+    type: Boolean,
+    default: false
+  },
+
   // OPTIMIZED: Preferences structure - only store user's actual preferences
   preferences: {
     ageRange: {
@@ -454,6 +459,7 @@ userSchema.methods.toPublicJSON = function() {
     isApprovedByAdmin: user.isApprovedByAdmin,
     profileCompleteness: user.profile?.profileCompleteness || 0,
     hasSeenOnboardingMessage: user.hasSeenOnboardingMessage,
+    hasCompletedWizard: user.hasCompletedWizard,
   };
 };
 

@@ -218,10 +218,10 @@ const matchingRoutes = require('./routes/matchingRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const healthRoutes = require('./routes/health'); // Enhanced health monitoring
-// Debug routes - JWT debugging enabled in production for auth troubleshooting
-let debugRoutes = null;
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_JWT_DEBUG === 'true') {
-  debugRoutes = require('./routes/debugRoutes');
+// Test/Debug routes - Gated for non-production
+let testRoutes = null;
+if (process.env.NODE_ENV !== 'production') {
+  testRoutes = require('./routes/testRoutes');
 }
 
 // API Routes with rate limiting
@@ -234,8 +234,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/chat', chatRoutes);
-if (debugRoutes) {
-  app.use('/api/debug', debugRoutes);
+if (testRoutes) {
+  app.use('/api/test', testRoutes);
 }
 
 // Internal logging ping route (non-production exposure is allowed by default; in prod require token)

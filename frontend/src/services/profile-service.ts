@@ -206,6 +206,7 @@ export class ProfileService {
           userUuid: data.user.userUuid,
           isFirstLogin: data.user.isFirstLogin,
           hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage,
+          hasCompletedWizard: data.user.hasCompletedWizard,
           // Add any other top-level fields that might be needed
           id: data.user.userId?.toString(),
           role: data.user.role || 'user',
@@ -230,6 +231,7 @@ export class ProfileService {
           userUuid: data.profile.userUuid,
           isFirstLogin: data.profile.isFirstLogin,
           hasSeenOnboardingMessage: data.profile.hasSeenOnboardingMessage,
+          hasCompletedWizard: data.profile.hasCompletedWizard,
           id: data.profile.userId?.toString(),
           role: 'user',
           verified: data.profile.verification?.isVerified || false,

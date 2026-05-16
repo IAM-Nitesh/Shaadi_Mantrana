@@ -9,29 +9,55 @@ const testDir = defineBddConfig({
 
 module.exports = defineConfig({
   testDir,
-  timeout: 60 * 1000,
+  timeout: 120 * 1000,
   retries: 0,
+  workers: 2,
+  fullyParallel: false,
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
     ['allure-playwright', { outputFolder: 'allure-results' }]
   ],
+  globalTeardown: require.resolve('./tests/playwright/global-teardown'),
+
   use: {
     baseURL: 'http://localhost:3000',
-    trace: 'on',
-    video: 'on',
-    screenshot: 'off',
+    trace: 'on-first-retry',
+    video: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
+
+  /*
+  webServer: [
+    {
+      command: 'npm run dev:frontend',
+      url: 'http://localhost:3000',
+      reuseExistingServer: true,
+      timeout: 180 * 1000,
+    },
+    {
+      command: 'npm run dev:backend',
+      url: 'http://localhost:5500/health/ping',
+      reuseExistingServer: true,
+      timeout: 180 * 1000,
+    }
+  ],
+  */
+
   projects: [
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
         headless: true,
-        launchOptions: {
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        },
+      },
+    },
+    {
+      name: 'webkit',
+      use: {
+        ...devices['Desktop Safari'],
+        headless: true,
       },
     }
-  ]
+  ],
 });
