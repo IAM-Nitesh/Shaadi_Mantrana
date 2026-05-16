@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import HeartbeatLoader from '../../../components/HeartbeatLoader';
+import RoyalLoader from '../../../components/RoyalLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
 import { apiClient } from '../../../utils/api-client';
@@ -160,11 +160,11 @@ export default function EmailInvitations() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <HeartbeatLoader 
-          logoSize="xxl"
-          textSize="lg"
+        <RoyalLoader 
+          size="lg"
+          
           text="Loading invitations..." 
-          showText={true}
+          
         />
       </div>
     );

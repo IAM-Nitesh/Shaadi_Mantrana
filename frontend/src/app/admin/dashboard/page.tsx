@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
 // AdminRouteGuard and ToastService are unused here
 import { getAdminStats } from '../../../utils/admin-stats';
-import HeartbeatLoader from '../../../components/HeartbeatLoader';
+import RoyalLoader from '../../../components/RoyalLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
 import { apiClient } from '../../../utils/api-client';
@@ -108,11 +108,11 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <HeartbeatLoader 
-          logoSize="xxl"
-          textSize="lg"
+        <RoyalLoader 
+          size="lg"
+          
           text="Loading admin dashboard..." 
-          showText={true}
+          
         />
       </div>
     );

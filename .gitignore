@@ -59,6 +59,9 @@ coverage/
 __tests__/
 test-results/
 playwright-report/
+allure-results/
+allure-report/
+.features-gen/
 *.test.js
 *.spec.js
 

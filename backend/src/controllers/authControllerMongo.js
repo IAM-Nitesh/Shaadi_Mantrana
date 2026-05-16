@@ -144,9 +144,13 @@ const SecurityUtils = {
 
 class AuthController {
   // Login with Firebase ID Token
+  // Login with Firebase ID Token (Phone Auth)
+  // This is the primary anchor for Play Store compliance
   async firebaseLogin(req, res) {
     try {
       const { idToken, fcmToken } = req.body;
+      const { verifyIdToken } = require('../services/firebaseService');
+      const { JWTSessionManager } = require('../middleware/auth');
 
       if (!idToken) {
         return res.status(400).json({
@@ -155,7 +159,7 @@ class AuthController {
         });
       }
 
-      // Verify Firebase Token
+      // 1. Verify token with Firebase
       let decodedToken;
       try {
         decodedToken = await verifyIdToken(idToken);
@@ -170,51 +174,58 @@ class AuthController {
       const { uid, email, phone_number, name, picture } = decodedToken;
       const clientIP = SecurityUtils.getClientIP(req);
 
-      // 1. Try to find user by firebaseUid
-      let user = await User.findOne({ firebaseUid: uid });
-
-      // 2. If not found, try to find by email
-      if (!user && email) {
-        user = await User.findOne({ email: email.toLowerCase() });
-        if (user) {
-          // Link existing email account to Firebase
-          user.firebaseUid = uid;
-          if (phone_number) user.phoneNumber = phone_number;
-          await user.save();
-          logger.info({ event: 'account_linked', email, uid }, 'Linked existing email account to Firebase');
-        }
+      if (!uid || (!phone_number && !email)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid Firebase token: Missing UID, Phone Number, or Email'
+        });
       }
 
-      // 3. If still not found and we have a phone number, try by phone
-      if (!user && phone_number) {
-        user = await User.findOne({ phoneNumber: phone_number });
-        if (user) {
-          user.firebaseUid = uid;
-          await user.save();
-          logger.info({ event: 'account_linked_phone', phone: phone_number, uid }, 'Linked existing phone account to Firebase');
-        }
-      }
+      // 2. Find or Create User
+      // Priority: firebaseUid > phoneNumber > email
+      let user = await User.findOne({ 
+        $or: [
+          { firebaseUid: uid },
+          ...(phone_number ? [{ phoneNumber: phone_number }] : []),
+          ...(email ? [{ email: email.toLowerCase() }] : [])
+        ]
+      });
 
-      // 4. Create new user if not found
       if (!user) {
+        // Create new user for first-time login
         const { v4: uuidv4 } = require('uuid');
         user = new User({
-          email: email || `${uid}@shaadimantrana.firebase`, // Fallback for phone-only login
+          userUuid: uuidv4(),
           firebaseUid: uid,
           phoneNumber: phone_number,
-          userUuid: uuidv4(),
-          isApprovedByAdmin: true, // Default to true or check pre-approval logic
+          email: email || `${uid}@shaadimantrana.firebase`, // Fallback email
+          status: 'active',
           role: 'user',
-          status: 'active', // Set to active for Firebase users
           isFirstLogin: true,
+          verification: {
+            isVerified: true, // Verified via Firebase
+            verifiedAt: new Date()
+          },
           profile: {
             name: name || '',
             images: picture ? [picture] : [],
             profileCompleteness: 0
-          }
+          },
+          photoStatus: 'pending' // Play Store compliance: Force moderation
         });
         await user.save();
-        logger.info({ event: 'firebase_user_created', uid, email }, 'New Firebase user created');
+        logger.info({ event: 'firebase_user_created', uid, phone: phone_number, email }, 'New Firebase user created');
+      } else {
+        // Update existing user with Firebase info if missing
+        let updated = false;
+        if (!user.firebaseUid) { user.firebaseUid = uid; updated = true; }
+        if (phone_number && !user.phoneNumber) { user.phoneNumber = phone_number; updated = true; }
+        if (email && !user.email) { user.email = email.toLowerCase(); updated = true; }
+        
+        if (updated) {
+          await user.save();
+          logger.info({ event: 'account_linked', email: user.email, uid }, 'Updated existing account with Firebase info');
+        }
       }
 
       // Update FCM token if provided
@@ -234,7 +245,7 @@ class AuthController {
       };
       await user.save();
 
-      // Create JWT session for backward compatibility
+      // 3. Create JWT Session
       const session = await JWTSessionManager.createSession(user);
       
       const userData = user.toPublicJSON();
@@ -253,7 +264,8 @@ class AuthController {
         accessToken: session.accessToken,
         user: {
           ...userData,
-          profileCompleteness: completeness
+          profileCompleteness: completeness,
+          isFirstLogin: user.isFirstLogin
         },
         redirectTo,
         session: {
@@ -264,12 +276,14 @@ class AuthController {
         }
       };
 
-      // Set Cookies
+      // 4. Set Cookies
       const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
       const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
       
       res.cookie('accessToken', session.accessToken, cookieOptions);
-      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { maxAge: cookieMaxAge * 2 }));
+      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { 
+        maxAge: isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 
+      }));
       res.cookie('sessionId', session.sessionId, cookieOptions);
 
       res.status(200).json(responseData);
@@ -278,7 +292,7 @@ class AuthController {
       logger.error({ event: 'firebase_login_error', err: error.message }, 'Firebase login error');
       res.status(500).json({
         success: false,
-        error: 'Failed to process Firebase login'
+        error: 'Failed to process Firebase login: ' + (error.message || 'Internal error')
       });
     }
   }
@@ -738,108 +752,6 @@ class AuthController {
     }
   }
 
-  /**
-   * Login using Firebase ID Token (Phone Auth)
-   * This is the primary anchor for Play Store compliance
-   */
-  async firebaseLogin(req, res) {
-    try {
-      const { idToken } = req.body;
-      const { verifyIdToken } = require('../services/firebaseService');
-      const { JWTSessionManager } = require('../middleware/auth');
-
-      if (!idToken) {
-        return res.status(400).json({
-          success: false,
-          error: 'Firebase ID Token is required'
-        });
-      }
-
-      // 1. Verify token with Firebase
-      const decodedToken = await verifyIdToken(idToken);
-      const { uid, phone_number, email } = decodedToken;
-
-      if (!uid || !phone_number) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid Firebase token: Missing UID or Phone Number'
-        });
-      }
-
-      // 2. Find or Create User
-      let user = await User.findOne({ 
-        $or: [
-          { firebaseUid: uid },
-          { phoneNumber: phone_number }
-        ]
-      });
-
-      if (!user) {
-        // Create new user for first-time phone login
-        const { v4: uuidv4 } = require('uuid');
-        user = new User({
-          userUuid: uuidv4(),
-          firebaseUid: uid,
-          phoneNumber: phone_number,
-          email: email || `${uid}@shaadimantrana.firebase`, // Fallback email
-          status: 'active',
-          role: 'user',
-          verification: {
-            isVerified: true, // Phone is verified via Firebase
-            verifiedAt: new Date()
-          },
-          photoStatus: 'pending' // Play Store compliance: Force moderation
-        });
-        await user.save();
-        console.log(`✅ New Firebase user created: ${phone_number} (UUID: ${user.userUuid})`);
-      } else {
-        // Update existing user with Firebase info if missing
-        let updated = false;
-        if (!user.firebaseUid) { user.firebaseUid = uid; updated = true; }
-        if (!user.phoneNumber) { user.phoneNumber = phone_number; updated = true; }
-        
-        if (updated) {
-          await user.save();
-          console.log(`✅ Existing user updated with Firebase info: ${user.email}`);
-        }
-      }
-
-      // 3. Create JWT Session
-      const session = await JWTSessionManager.createSession(user);
-
-      // 4. Set cookies and return response
-      const isAdminUser = user.role === 'admin';
-      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
-      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
-      
-      res.cookie('accessToken', session.accessToken, cookieOptions);
-      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { maxAge: isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 }));
-      res.cookie('sessionId', session.sessionId, cookieOptions);
-
-      res.status(200).json({
-        success: true,
-        accessToken: session.accessToken,
-        user: {
-          ...user.toPublicJSON(),
-          isFirstLogin: user.isFirstLogin,
-          profileCompleteness: user.profile?.profileCompleteness || 0
-        },
-        session: {
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          expiresIn: session.expiresIn,
-          sessionId: session.sessionId
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Firebase Login error:', error);
-      res.status(401).json({
-        success: false,
-        error: 'Authentication failed: ' + (error.message || 'Invalid token')
-      });
-    }
-  }
 
   // Get current user profile
   async getProfile(req, res) {

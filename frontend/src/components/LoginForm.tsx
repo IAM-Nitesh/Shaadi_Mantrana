@@ -8,6 +8,7 @@ import logger from '../utils/logger';
 import { ConfirmationResult } from 'firebase/auth';
 import posthog from 'posthog-js';
 import MandalaBackground from './ui/MandalaBackground';
+import RoyalLoader from './RoyalLoader';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -65,7 +66,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     // This flag is NEVER set in production builds.
     if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__) {
       logger.debug('LoginForm: Playwright test mode — bypassing Firebase');
-      setConfirmationResult({ confirm: async () => ({ user: { getIdToken: async () => 'mock-token' } }) } as any);
+      setConfirmationResult({ 
+        confirm: async (code: string) => {
+          // Validate the test code requested by the user
+          if (code === '123456') {
+            return { user: { mock: true, uid: 'test-user-id' } };
+          }
+          throw new Error('Invalid verification code');
+        }
+      } as any);
       setStep('otp');
       setResendCooldown(60);
       return;
@@ -190,15 +199,13 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               disabled={phoneNumber.length < 10 || isSendingOTP}
               className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] relative overflow-hidden focus:ring-2 focus:ring-offset-2 focus:ring-royal-gold focus:outline-none"
             >
-              <span className={isSendingOTP ? 'opacity-0' : 'opacity-100'}>
-                Get Verification Code
-              </span>
-              {isSendingOTP && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-royal-obsidian border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2">Sending...</span>
-                </div>
-              )}
+              <div className="flex items-center justify-center">
+                {isSendingOTP ? (
+                  <span className="font-bold">Sending...</span>
+                ) : (
+                  <span>Get Verification Code</span>
+                )}
+              </div>
             </button>
 
             {/* Hidden reCAPTCHA container for Firebase */}
@@ -253,8 +260,17 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               disabled={otp.length !== 6 || isVerifyingOTP}
               className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)]"
             >
-              {isVerifyingOTP ? 'Verifying...' : 'Verify Code'}
+              Verify Code
             </button>
+
+            {isVerifyingOTP && (
+              <RoyalLoader 
+                variant="grand" 
+                fullScreen 
+                text="Confirming Sacred Code..." 
+                opacity={0.98}
+              />
+            )}
 
             <div className="text-center">
               <button
