@@ -343,3 +343,12 @@ The 'Infinite Knot' logo is used as a standardized loading indicator via RoyalLo
 **Insight**:
 Implemented a tiered loading system using Sacred Mandala SVG and Royal Skeletons to replace brand logos in loading states.
 
+
+---
+
+### 🎓 Learning: Royal Loading System Architecture
+**Date**: 2026-05-16 05:50:36
+**Version**: 1.0 | **Domain**: UI/UX | **Expiry Hint**: 2026-12-31
+**Insight**:
+Implemented a 3-tier loading ecosystem (Grand, Skeleton, Spark) using GSAP svgOrigin pinning for zero-drift. Defined the 'Diamond Ring' and 'Celestial Aura' patterns for premium branding.
+

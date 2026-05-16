@@ -199,15 +199,13 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               disabled={phoneNumber.length < 10 || isSendingOTP}
               className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] relative overflow-hidden focus:ring-2 focus:ring-offset-2 focus:ring-royal-gold focus:outline-none"
             >
-              <span className={isSendingOTP ? 'opacity-0' : 'opacity-100'}>
-                Get Verification Code
-              </span>
-              {isSendingOTP && (
-                <div className="absolute inset-0 flex items-center justify-center bg-royal-gold">
-                  <RoyalLoader size="sm" showText={false} />
-                  <span className="ml-2 font-bold">Sending...</span>
-                </div>
-              )}
+              <div className="flex items-center justify-center">
+                {isSendingOTP ? (
+                  <span className="font-bold">Sending...</span>
+                ) : (
+                  <span>Get Verification Code</span>
+                )}
+              </div>
             </button>
 
             {/* Hidden reCAPTCHA container for Firebase */}
@@ -262,13 +260,17 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               disabled={otp.length !== 6 || isVerifyingOTP}
               className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)]"
             >
-              {isVerifyingOTP ? (
-                <div className="flex items-center justify-center">
-                  <RoyalLoader size="sm" showText={false} />
-                  <span className="ml-2">Verifying...</span>
-                </div>
-              ) : 'Verify Code'}
+              Verify Code
             </button>
+
+            {isVerifyingOTP && (
+              <RoyalLoader 
+                variant="grand" 
+                fullScreen 
+                text="Confirming Sacred Code..." 
+                opacity={0.98}
+              />
+            )}
 
             <div className="text-center">
               <button

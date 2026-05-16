@@ -18,7 +18,6 @@
 | Product | `docs/superpowers/specs/2026-05-12-shaadi-mantrana-product-blueprint.md` | 2026-05-12 — Strategic baseline established |
 | Mobile | `node_modules/@capacitor-firebase/authentication` ProGuard Patch | 2026-05-15 | Persisted fix for AGP 9+ compatibility |
 | System | `personas/qa.md` (SDET Persona) | 2026-05-15 | Updated for Playwright and business validation focus |
-| UI | Royal Loading System (Mandala + Skeletons) | 2026-05-16 | Completed: Integrated Sacred Mandala & Royal Skeletons across Guards |
 | Testing | BDD + Allure Integration | 2026-05-15 | playwright-bdd + allure-playwright setup; feature files in flight |
 | System | Auth Flow Analysis & Backend Stabilization | 2026-05-16 | Analyzing login use cases; fixing Express 5 path-to-regexp crash |
 
@@ -49,6 +48,7 @@
 | System | Vercel & Render MCP Config | 2026-05-15 | **STABILIZED**: Verified Bearer auth for both; synced global config at `~/.gemini/antigravity/mcp_config.json`; integrated into Master Brain Watchdog. |
 | System | `mcp-infrastructure.md` | 2026-05-15 | Codified setup steps and `mcp-remote` technical rationale |
 | Branding | `branding/` + `scripts/` | 2026-05-16 | **STABILIZED**: Single Source of Truth (SSoT) implemented via `npm run branding:sync`. 30+ platform assets now managed automatically from one source. |
+| UI | **Royal Loading System** | 2026-05-16 | **STABILIZED**: 3-tier high-fidelity ecosystem (Grand, Skeleton, Spark) with 'Diamond Ring' architecture and zero-drift svgOrigin pinning. |
 | Frontend | Global Shell (Layout + Nav + CSS) | 2026-05-12 | Modern Royal visual retrofit complete; viewport themeColor synced |
 
 ---
