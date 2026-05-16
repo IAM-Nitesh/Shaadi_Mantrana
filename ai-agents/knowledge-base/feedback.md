@@ -23,7 +23,13 @@
 
 ## Active Findings
 
-*(No findings yet — this store is initialized as part of the Hardened V2 workflow.)*
+### [2026-05-15] [System] Render MCP server returns "Bad Request"
+- **Task**: Check deployment status
+- **Finding**: All tools prefixed with `mcp_render_` return "Bad Request" (standalone SSE stream closed). Handshake fails despite valid-looking configuration in `mcp_config.json`.
+- **Action Taken**: Verified production health via direct HTTPS requests (`/health` endpoint); backend is healthy. Documented assumption in `ASSUMPTIONS.md`.
+- **Recurrence**: 1
+- **Pattern?**: No
+
 
 ---
 

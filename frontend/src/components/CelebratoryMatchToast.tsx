@@ -95,7 +95,7 @@ export default function CelebratoryMatchToast({
                 }}
               >
                 <img 
-                  src="/icon.svg" 
+                  src="/icon.png" 
                   alt="Shaadi Mantra" 
                   className="w-3 h-3 text-pink-500"
                 />

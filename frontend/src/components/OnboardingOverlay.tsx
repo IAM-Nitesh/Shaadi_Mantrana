@@ -140,7 +140,7 @@ export default function OnboardingOverlay({ isVisible, onComplete }: OnboardingO
                   className="w-24 h-24 mx-auto bg-gradient-to-br from-royal-gold/20 to-transparent rounded-full flex items-center justify-center border border-royal-gold/30 p-5"
                 >
                   <Image
-                    src="/icon.svg"
+                    src="/icon.png"
                     alt="Shaadi Mantrana Logo"
                     width={60}
                     height={60}

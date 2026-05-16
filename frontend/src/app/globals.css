@@ -2347,3 +2347,32 @@ html {
 .profile-card:nth-child(3) { animation-delay: 0.3s; }
 .profile-card:nth-child(4) { animation-delay: 0.4s; }
 .profile-card:nth-child(5) { animation-delay: 0.5s; }
+@keyframes royal-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.royal-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #1a1a1a; /* Elevated Obsidian */
+  border-radius: 1.5rem; /* Royal Card Standard */
+  border: 1px solid rgba(212, 175, 55, 0.05);
+}
+
+.royal-skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(212, 175, 55, 0) 0%,
+    rgba(212, 175, 55, 0.12) 50%,
+    rgba(212, 175, 55, 0) 100%
+  );
+  animation: royal-shimmer 2.5s infinite var(--transition-elegant, ease-in-out);
+}

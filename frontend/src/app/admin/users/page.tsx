@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
-import HeartbeatLoader from '../../../components/HeartbeatLoader';
+import RoyalLoader from '../../../components/RoyalLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import Image from 'next/image';
 import { ImageUploadService } from '../../../services/image-upload-service';
@@ -501,11 +501,11 @@ export default function AdminUsers() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <HeartbeatLoader 
-          logoSize="xxl"
-          textSize="lg"
+        <RoyalLoader 
+          size="lg"
+          
           text="Loading users..." 
-          showText={true}
+          
         />
       </div>
     );

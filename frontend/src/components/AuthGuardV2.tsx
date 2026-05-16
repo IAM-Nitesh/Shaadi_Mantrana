@@ -76,19 +76,15 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
   // Show loading state
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-royal-obsidian">
-        <div className="text-center text-royal-gold">
-          <RoyalLoader 
-            size="xl" 
-            text="Securing your majestic journey..." 
-          />
-        </div>
-      </div>
+      <RoyalLoader
+        variant="grand"
+        size="xl"
+        fullScreen
+        text="Verifying Majestic Authority..."
+      />
     );
   }
 
   // Render protected content
   return <>{children}</>;
 };
-
-

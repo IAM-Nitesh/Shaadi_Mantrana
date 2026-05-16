@@ -94,7 +94,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 relative">
-              <Image src="/icon.svg" alt="Logo" width={32} height={32} className="brightness-125" />
+              <Image src="/icon.png" alt="Logo" width={32} height={32} className="brightness-125 object-contain" />
             </div>
             <div>
               <h1 className="text-royal-gold font-playfair text-lg font-bold">Sacred Profiling</h1>
