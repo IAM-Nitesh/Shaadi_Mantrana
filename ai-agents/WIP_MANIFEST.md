@@ -49,8 +49,9 @@
 | System | `mcp-infrastructure.md` | 2026-05-15 | Codified setup steps and `mcp-remote` technical rationale |
 | Branding | `branding/` + `scripts/` | 2026-05-16 | **STABILIZED**: Single Source of Truth (SSoT) implemented via `npm run branding:sync`. 30+ platform assets now managed automatically from one source. |
 | UI | **Royal Loading System** | 2026-05-16 | **STABILIZED**: 3-tier high-fidelity ecosystem (Grand, Skeleton, Spark) with 'Diamond Ring' architecture and zero-drift svgOrigin pinning. |
-| Frontend | Global Shell (Layout + Nav + CSS) | 2026-05-12 | Modern Royal visual retrofit complete; viewport themeColor synced |
 | Testing | E2E BDD Test Suite (Auth, Navigation, Matching/Chat, Onboarding) | 2026-05-17 | Exact `npm run test:e2e:bdd` verified 14 passed across Chromium and WebKit; global teardown cleaned test personas successfully. |
+| System/Auth | Profile Type Definition Wizard Integration | 2026-05-17 | Resolved Next.js build block by adding hasCompletedWizard field to Profile interface; clean build compiled successfully. |
+| Pipeline | Local Pre-Push E2E Gate | 2026-05-17 | **STABILIZED**: Removed CI workflows and integrated local git pre-push verification with 'npm run e2e'. |
 
 ---
 

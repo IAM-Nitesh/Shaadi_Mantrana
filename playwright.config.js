@@ -27,7 +27,6 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  /*
   webServer: [
     {
       command: 'npm run dev:frontend',
@@ -37,12 +36,11 @@ module.exports = defineConfig({
     },
     {
       command: 'npm run dev:backend',
-      url: 'http://localhost:5500/health/ping',
+      url: 'http://localhost:4000/health/ping',
       reuseExistingServer: true,
       timeout: 180 * 1000,
     }
   ],
-  */
 
   projects: [
     {

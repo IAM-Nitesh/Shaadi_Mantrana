@@ -226,6 +226,13 @@ if (process.env.NODE_ENV !== 'production') {
 
 // API Routes with rate limiting
 app.use('/health', healthRoutes); // Enhanced health monitoring endpoints
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/profiles', profileRoutes);

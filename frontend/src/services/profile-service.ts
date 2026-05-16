@@ -21,6 +21,7 @@ export interface Profile {
   lastActive: string;
   isFirstLogin?: boolean;
   hasSeenOnboardingMessage?: boolean;
+  hasCompletedWizard?: boolean;
   
   // Profile fields (from backend profile.profile)
   gender?: string;

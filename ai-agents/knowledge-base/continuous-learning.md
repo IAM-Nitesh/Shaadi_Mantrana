@@ -433,3 +433,30 @@ Eliminated redirect loops and infinite loaders by removing the 3s unblock timer 
 **Insight**:
 Do not describe BDD E2E as green until the exact npm script has passed. The verified command is npm run test:e2e:bdd, which generated BDD specs, ran Chromium and WebKit, and completed with 14 passed plus successful MongoDB cleanup.
 
+
+---
+
+### 🎓 Learning: TypeScript Profile Interface Wizard Fix
+**Date**: 2026-05-17 03:32:49
+**Version**: 1.0 | **Domain**: System/Auth | **Expiry Hint**: Permanent
+**Insight**:
+Adding 'hasCompletedWizard' to the Profile interface resolved Next.js compilation errors in profile page redirect logic, ensuring a green production build.
+
+
+---
+
+### 🎓 Learning: PR Gate Health Check Target
+**Date**: 2026-05-17 03:48:07
+**Version**: 1.0 | **Domain**: CI | **Expiry Hint**: 2026-12-31
+**Insight**:
+Adding a database-independent /api/health route in the backend prevents wait-on timeouts in cold CI runs while preserving deep database checks under /health.
+
+
+---
+
+### 🎓 Learning: Local Pre-Push E2E Verification
+**Date**: 2026-05-17 03:50:52
+**Version**: 1.0 | **Domain**: CI | **Expiry Hint**: 2026-12-31
+**Insight**:
+Moving heavy E2E verification from sandboxed CI environments to local git pre-push hooks prevents environmental failures while ensuring zero regression pushes.
+
