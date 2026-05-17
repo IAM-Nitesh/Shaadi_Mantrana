@@ -202,15 +202,19 @@ class ProfileController {
         }
       }
 
-      // Handle isFirstLogin flag separately - update in User collection
-      if (updates.isFirstLogin !== undefined) {
-        // Update isFirstLogin in User collection
+      // Handle isFirstLogin and hasCompletedWizard flags separately - update in User collection
+      if (updates.isFirstLogin !== undefined || updates.hasCompletedWizard !== undefined) {
+        const userUpdates = {};
+        if (updates.isFirstLogin !== undefined) userUpdates.isFirstLogin = Boolean(updates.isFirstLogin);
+        if (updates.hasCompletedWizard !== undefined) userUpdates.hasCompletedWizard = Boolean(updates.hasCompletedWizard);
+        
         await User.findByIdAndUpdate(
           userId,
-          { isFirstLogin: Boolean(updates.isFirstLogin) }
+          { $set: userUpdates }
         );
         // Remove from sanitizedUpdates since we handle it separately
         delete updates.isFirstLogin;
+        delete updates.hasCompletedWizard;
       }
 
       console.log('🧹 Final sanitized updates:', sanitizedUpdates);
@@ -498,7 +502,8 @@ class ProfileController {
       res.status(200).json({
         success: true,
         message: 'First login flag updated successfully',
-        isFirstLogin: user.isFirstLogin
+        isFirstLogin: user.isFirstLogin,
+        hasCompletedWizard: user.hasCompletedWizard
       });
 
     } catch (error) {

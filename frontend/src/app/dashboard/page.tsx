@@ -12,6 +12,7 @@ import logger from '../../utils/logger';
 import posthog from 'posthog-js';
 import MandalaBackground from '../../components/ui/MandalaBackground';
 import RoyalLoader from '../../components/RoyalLoader';
+import ToastService from '../../services/toastService';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -68,6 +69,8 @@ function DashboardContent() {
         const result = await MatchingService.likeProfile(currentProfile._id, 'like');
         setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
         posthog.capture('profile_swiped', { action: 'like', likes_remaining: result.remainingLikes });
+        // Fact: Royal feedback (Action 254)
+        ToastService.success('Sacred interest preserved');
       } else if (direction === 'left') {
         await MatchingService.passProfile(currentProfile._id);
         posthog.capture('profile_swiped', { action: 'pass' });
@@ -75,6 +78,8 @@ function DashboardContent() {
         const result = await MatchingService.likeProfile(currentProfile._id, 'super_like');
         setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
         posthog.capture('profile_swiped', { action: 'super_like', likes_remaining: result.remainingLikes });
+        // Fact: Royal feedback (Action 254)
+        ToastService.success('Sacred interest preserved');
       }
     } catch (error) {
       logger.warn('Dashboard: swipe action failed', error);

@@ -285,7 +285,7 @@ function toISODateString(date: string | Date | null): string | null {
 
 function ProfileContent() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, forceRefresh } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -563,111 +563,9 @@ function ProfileContent() {
             // Authentication is handled by useServerAuth hook
   }, []);
 
-  // Handle onboarding message display (moved up to preserve hooks order)
-  useEffect(() => {
-    if (user) {
-      const shouldShow = OnboardingService.shouldShowOnboardingMessage(user);
-      setShowOnboarding(shouldShow);
-      logger.debug('🔍 Profile - Onboarding check (moved):', {
-        isFirstLogin: user.isFirstLogin,
-        hasSeenOnboardingMessage: user.hasSeenOnboardingMessage,
-        profileCompleteness: user.profileCompleteness,
-        shouldShowOnboarding: shouldShow
-      });
-    }
-  }, [user]);
+  // REMOVED: Redundant onboarding check (consolidated below)
 
-  // Fetch profile from backend after authentication
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setLoadingProfile(false);
-      return;
-    }
-    setLoadingProfile(true);
-    ProfileService.getUserProfile().then((apiProfile) => {
-      if (apiProfile) {
-        // Use API profile directly from MongoDB
-        
-        setProfile(apiProfile);
-  // Onboarding handled via client auth status
-        
-        // Profile completion is now handled by the backend
-        
-        // User ID is now handled server-side
-        
-        // Force authentication refresh to get latest user data
-        (async () => {
-          try {
-            await ProfileService.forceAuthRefresh();
-          } catch (error) {
-  
-          }
-        })();
-        
-        // Always fetch signed URL for profile image if it exists
-        if (apiProfile.images) {
-          // Add a small delay to ensure the profile is fully loaded
-          setTimeout(() => {
-            ImageUploadService.getMyProfilePictureSignedUrl()
-              .then((signedUrl) => {
-                if (signedUrl) {
-                  setSignedImageUrl(signedUrl);
-                }
-              })
-              .catch((error) => {
-                // Silently handle error
-              });
-          }, 100);
-        }
-      } else {
-        // No profile found, create empty profile for new user
-        const emptyProfile = {
-          email: '',
-          role: 'user',
-          verified: false,
-          lastActive: new Date().toISOString(),
-          isFirstLogin: true,
-          // Initialize all required fields as empty
-          name: '',
-          gender: '',
-          nativePlace: '',
-          currentResidence: '',
-          maritalStatus: '',
-          manglik: '',
-          dateOfBirth: '',
-          timeOfBirth: '',
-          placeOfBirth: '',
-          height: '',
-          weight: '',
-          complexion: '',
-          education: '',
-          occupation: '',
-          annualIncome: '',
-          eatingHabit: '',
-          smokingHabit: '',
-          drinkingHabit: '',
-          father: '',
-          mother: '',
-          brothers: '',
-          sisters: '',
-          fatherGotra: '',
-          motherGotra: '',
-          grandfatherGotra: '',
-          grandmotherGotra: '',
-          specificRequirements: '',
-          settleAbroad: '',
-          about: '',
-          interests: []
-        };
-        setProfile(emptyProfile);
-        // Onboarding is handled by ServerAuthService.shouldShowOnboarding()
-      }
-      setLoadingProfile(false);
-    }).catch((error) => {
-
-      setLoadingProfile(false);
-    });
-  }, [isAuthenticated]);
+  // REMOVED: Redundant profile fetch (consolidated below)
 
   // REMOVED: This useEffect was causing race conditions
   // All onboarding and redirection logic is now handled in the main authentication useEffect above
@@ -2216,11 +2114,12 @@ function ProfileContent() {
             setShowOnboarding(false);
             setHasSeenOnboarding(true);
             
-            // If profile is incomplete, enable Royal Wizard
-            if ((profileCompletenessFromApi ?? 0) < 100) {
+            // If profile is incomplete AND wizard hasn't been finished, enable Royal Wizard
+            if ((profileCompletenessFromApi ?? 0) < 100 && !profileData.hasCompletedWizard) {
               setShowWizard(true);
               setIsEditing(true); // Keep isEditing for backward compatibility in some components
             }
+
           }
         } else {
           logger.warn('⚠️ Profile data not available or incomplete', {
@@ -2310,6 +2209,18 @@ function ProfileContent() {
           const updatedProfile = await ProfileService.getUserProfile();
           setProfile(updatedProfile);
           
+          // Mark wizard as completed regardless of completeness percentage
+          try {
+            await ProfileService.updateProfile({ hasCompletedWizard: true });
+            logger.info('✅ Wizard marked as completed');
+            
+            // CRITICAL: Refresh auth state so AuthGuard knows wizard is done
+            await forceRefresh();
+            logger.info('🔄 Auth state refreshed after wizard completion');
+          } catch (error) {
+            logger.error('Error marking wizard as completed:', error);
+          }
+
           // Redirect to dashboard if profile is now 100% complete
           if (updatedProfile && (updatedProfile.profileCompleteness || 0) >= 100) {
             try {
@@ -2322,7 +2233,14 @@ function ProfileContent() {
               logger.error('Error marking profile as completed:', error);
               router.push('/dashboard'); // Redirect anyway
             }
+          } else {
+            // For partial completeness, also redirect to dashboard after a short delay
+            ToastService.info('Profile saved! You can complete optional fields later.');
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 1500);
           }
+
         }}
       />
     );

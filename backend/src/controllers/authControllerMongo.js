@@ -254,9 +254,10 @@ class AuthController {
       
       const redirectTo = isAdminUser
         ? '/admin/dashboard'
-        : (user.isFirstLogin || completeness < 100)
+        : (user.isFirstLogin && !user.hasCompletedWizard)
           ? '/profile'
           : '/dashboard';
+
 
       const responseData = {
         success: true,

@@ -20,6 +20,10 @@ function ChatPageContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     if (!id) {
       router.replace('/matches');
       return;
@@ -99,7 +103,7 @@ function ChatPageContent() {
     }
 
     loadMatch();
-  }, [id, router, isAuthenticated, user]);
+  }, [id, router, isAuthenticated, user, authLoading]);
 
   if (loading) {
     return (
@@ -163,4 +167,3 @@ export default function ChatPage() {
     </Suspense>
   );
 }
-
