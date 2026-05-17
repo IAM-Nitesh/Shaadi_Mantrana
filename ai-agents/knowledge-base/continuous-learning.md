@@ -481,9 +481,18 @@ Always prefer execFileSync/spawn over execSync when executing child processes wi
 
 ---
 
-### 🎓 Learning: Scrubbing secrets from push protected branches
-**Date**: 2026-05-17 16:52:09
-**Version**: 1.0 | **Domain**: Security | **Expiry Hint**: Permanent
+### 🎓 Learning: User Schema & Auth Boundaries
+**Date**: 2026-05-18 00:58:41
+**Version**: 1.0 | **Domain**: System/Auth | **Expiry Hint**: Never
 **Insight**:
-GitHub Push Protection blocks commits containing live API keys/tokens (like Vercel personal tokens starting with vcp_ or Render keys starting with rnd_). To bypass the block, the commit history itself must be amended/rewritten using git commit --amend to completely scrub the secrets from the push payload, rather than just adding a new commit on top of it. Scripts should retrieve credentials from process.env dynamically, exiting gracefully with warning instructions if unset, instead of using hardcoded secrets.
+Decoupled email from strict database validation by making it optional, sparse, and unique. Added conditional required validation for phoneNumber and firebaseUid based on status !== 'invited'. Deprecated legacy email-OTP routes/controllers and updated test seed files to ensure consistency across domains.
+
+
+---
+
+### 🎓 Learning: Fix Phone Login Session Validation
+**Date**: 2026-05-18 02:01:10
+**Version**: 1.0 | **Domain**: backend | **Expiry Hint**: never
+**Insight**:
+Make email field optional in Session schema to support phone-only signups
 
