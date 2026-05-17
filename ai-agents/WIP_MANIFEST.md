@@ -54,7 +54,7 @@
 | System/Auth | User DB Schema & Auth Boundaries | 2026-05-17 | **STABILIZED**: Decoupled email requirements, added conditional schema validation triggers, deprecated legacy email controllers/routes, and updated test seeding. |
 | System/Auth | Session DB Schema & Phone Login | 2026-05-17 | **STABILIZED**: Made email field optional in Session schema to prevent validation failures during phone-only logins. |
 | Pipeline | Local Pre-Push E2E Gate | 2026-05-17 | **STABILIZED**: Removed CI workflows and integrated local git pre-push verification with 'npm run e2e'. |
-| Pipeline | Security Gate Secrets Sanitization | 2026-05-17 | **STABILIZED**: Purged hardcoded Render/Vercel secrets from commit history and replaced with environment variables, clearing Push Protection block. |
+| Pipeline | Firebase Dependency Synchronization | 2026-05-18 | **STABILIZED**: Synced Firebase SDK to v11.2.0 across root and frontend to resolve Vercel build issues and satisfy peer dependencies. |
 
 ---
 
