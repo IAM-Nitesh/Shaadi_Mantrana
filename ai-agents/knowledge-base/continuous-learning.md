@@ -496,3 +496,12 @@ Decoupled email from strict database validation by making it optional, sparse, a
 **Insight**:
 Make email field optional in Session schema to support phone-only signups
 
+
+---
+
+### 🎓 Learning: Firebase Auth Resolution
+**Date**: 2026-05-18 03:02:58
+**Version**: 1.0 | **Domain**: Pipeline | **Expiry Hint**: Never
+**Insight**:
+Synchronizing Firebase Web SDK versions to ^11.2.0 across root and frontend package manifests resolves Vercel module resolution errors for Capacitor Firebase Authentication peer dependency.
+
