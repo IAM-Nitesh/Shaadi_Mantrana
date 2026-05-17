@@ -23,12 +23,12 @@ interface SmoothNavigationProps {
 }
 
 // Simplified navigation item component with subtle animations
-const NavigationItem = memo(({ 
-  item, 
-  isActive, 
-  isDisabled, 
-  onNavigate, 
-  onHover 
+const NavigationItem = memo(({
+  item,
+  isActive,
+  isDisabled,
+  onNavigate,
+  onHover
 }: {
   item: NavItem;
   isActive: boolean;
@@ -45,11 +45,11 @@ const NavigationItem = memo(({
       group
       min-h-[80px] flex-1
     `;
-    
+
     if (isDisabled) {
       return `${baseClasses} text-gray-300 cursor-not-allowed opacity-50`;
     }
-    
+
     return `${baseClasses} text-royal-gold`;
   }, [isDisabled]);
 
@@ -65,15 +65,15 @@ const NavigationItem = memo(({
       transform
       text-royal-gold/70
     `;
-    
+
     if (isDisabled) {
       return `${baseClasses} text-gray-300`;
     }
-    
+
     if (isActive) {
       return `${baseClasses} font-semibold`;
     }
-    
+
     return `${baseClasses} text-royal-gold/50`;
   }, [isActive, isDisabled]);
 
@@ -96,8 +96,8 @@ const NavigationItem = memo(({
         }}
         transition={{ duration: 0.08 }} // Ultra-fast transition
       >
-        <CustomIcon 
-          name={isActive && item.activeIcon ? item.activeIcon : item.icon} 
+        <CustomIcon
+          name={isActive && item.activeIcon ? item.activeIcon : item.icon}
           className="text-2xl"
         />
       </motion.div>
@@ -142,7 +142,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
 
   // Performance optimization: Memoized route preloading
   const routePaths = useMemo(() => items.map(item => item.href), [items]);
-  
+
   // Preload routes for better performance
   useEffect(() => {
     const routesToPreload = routePaths.filter(href => href !== pathname);
@@ -155,7 +155,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
   const handleNavigation = useCallback(async (href: string) => {
     // Check if user is trying to access restricted features
     const isRestrictedRoute = href === '/dashboard' || href === '/matches';
-    
+
     if (isRestrictedRoute && user) {
       // Access Control Logic: Only allow access if profileCompleteness is 100%
       // Support multiple user shapes: user.profileCompleteness (top-level),
@@ -165,15 +165,16 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
         (user as any).profile?.profileCompleteness ??
         ((user as any).profileCompleted ? 100 : undefined)
       )) || 0;
-      const canAccess = completeness >= 100;
-      const isFirstLogin = (user as any).isFirstLogin;
-      
+      const hasCompletedWizard = (user as any)?.hasCompletedWizard || (user as any)?.profile?.hasCompletedWizard;
+      const canAccess = completeness >= 100 || hasCompletedWizard;
+      const isFirstLogin = (user as any)?.isFirstLogin;
+
       if (!canAccess) {
         // Show toast notification
-        const message = isFirstLogin 
-          ? 'Please complete the onboarding process first' 
+        const message = isFirstLogin
+          ? 'Please complete the onboarding process first'
           : 'Please complete your profile to access this feature';
-        
+
         toast.error(message, {
           icon: '🔒',
           style: {
@@ -182,13 +183,13 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
             color: '#fff',
           },
         });
-        
+
         // Redirect to profile page with optimized transition
         navigateTo('/profile', { immediate: true });
         return;
       }
     }
-    
+
     // Use optimized navigation for better performance
     navigateTo(href, { immediate: true });
   }, [user, navigateTo]);
@@ -199,7 +200,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
   }, []);
 
   // Performance optimization: Memoized navigation items
-  const navigationItems = useMemo(() => 
+  const navigationItems = useMemo(() =>
     items.map(item => {
       const isActive = pathname === item.href;
       const isRestrictedRoute = item.href === '/dashboard' || item.href === '/matches';
@@ -208,7 +209,8 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
         (user as any).profile?.profileCompleteness ??
         ((user as any).profileCompleted ? 100 : undefined)
       )) || 0;
-      const canAccess = user ? (completeness >= 100) : false;
+      const hasCompletedWizard = (user as any)?.hasCompletedWizard || (user as any)?.profile?.hasCompletedWizard;
+      const canAccess = user ? (completeness >= 100 || hasCompletedWizard) : false;
       const isFirstLogin = user ? user.isFirstLogin : false;
       const isDisabled = isRestrictedRoute && !canAccess;
 
@@ -221,11 +223,13 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
   );
 
   return (
-    <motion.div
+    <motion.nav
+      role="navigation"
+      data-testid="bottom-nav"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`fixed inset-x-0 z-50 bg-royal-obsidian/90 backdrop-blur-xl border-t border-royal-glass-border shadow-[0_-4px_20px_rgba(0,0,0,0.5)] ${className}`}
+      className={`fixed inset-x-0 z-[100] bg-royal-obsidian/90 backdrop-blur-xl border-t border-royal-glass-border shadow-[0_-4px_20px_rgba(0,0,0,0.5)] ${className}`}
       style={{
         bottom: '0px',
         height: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom, 0px))',
@@ -246,7 +250,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
           ))}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </motion.nav>
   );
 }
 

@@ -275,9 +275,21 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       const response = await ChatService.sendMessage(connectionId, messageText);
       
       if (response.success) {
-        // Don't add message to local state here - it will be received via Socket.IO
-        // This prevents duplicate messages from appearing
-        console.log('Message sent successfully, waiting for Socket.IO broadcast');
+        const sentMessage: ChatMessageUI = {
+          id: response.messageId || response.id || `local-${Date.now()}`,
+          text: response.message || messageText,
+          timestamp: new Date(),
+          isOwn: true,
+          status: 'sent'
+        };
+
+        setMessages(prev => {
+          if (prev.some(existing => existing.id === sentMessage.id)) {
+            return prev;
+          }
+          return [...prev, sentMessage];
+        });
+
         posthog.capture('message_sent', { connection_id: connectionId });
       } else {
         logger.error('Failed to send message:', response.message);
