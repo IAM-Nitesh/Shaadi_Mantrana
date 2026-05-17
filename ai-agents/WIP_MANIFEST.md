@@ -51,6 +51,8 @@
 | UI | **Royal Loading System** | 2026-05-16 | **STABILIZED**: 3-tier high-fidelity ecosystem (Grand, Skeleton, Spark) with 'Diamond Ring' architecture and zero-drift svgOrigin pinning. |
 | Testing | E2E BDD Test Suite (Auth, Navigation, Matching/Chat, Onboarding) | 2026-05-17 | Exact `npm run test:e2e:bdd` verified 14 passed across Chromium and WebKit; global teardown cleaned test personas successfully. |
 | System/Auth | Profile Type Definition Wizard Integration | 2026-05-17 | Resolved Next.js build block by adding hasCompletedWizard field to Profile interface; clean build compiled successfully. |
+| System/Auth | User DB Schema & Auth Boundaries | 2026-05-17 | **STABILIZED**: Decoupled email requirements, added conditional schema validation triggers, deprecated legacy email controllers/routes, and updated test seeding. |
+| System/Auth | Session DB Schema & Phone Login | 2026-05-17 | **STABILIZED**: Made email field optional in Session schema to prevent validation failures during phone-only logins. |
 | Pipeline | Local Pre-Push E2E Gate | 2026-05-17 | **STABILIZED**: Removed CI workflows and integrated local git pre-push verification with 'npm run e2e'. |
 
 ---
