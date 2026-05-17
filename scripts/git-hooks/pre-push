@@ -38,7 +38,8 @@ echo ""
 # Run E2E Playwright tests locally
 cd "$ROOT_DIR"
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
-npm run test:e2e:bdd
+export GIT_HOOK=true
+npm run e2e
 E2E_STATUS=$?
 
 if [ $E2E_STATUS -ne 0 ]; then

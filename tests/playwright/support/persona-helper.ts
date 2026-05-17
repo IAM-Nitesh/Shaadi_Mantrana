@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as path from 'path';
 
 export class PersonaHelper {
@@ -11,7 +11,7 @@ export class PersonaHelper {
   static switchTo(persona: string) {
     console.log(`🧠 Master Brain: Switching to persona [${persona.toUpperCase()}]`);
     try {
-      execSync(`node ${this.scriptPath} --as ${persona}`, { stdio: 'inherit' });
+      execFileSync('node', [this.scriptPath, '--as', persona], { stdio: 'inherit' });
     } catch (error) {
       console.error(`❌ Failed to switch persona: ${error}`);
       throw error;

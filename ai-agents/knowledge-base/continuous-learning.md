@@ -460,3 +460,21 @@ Adding a database-independent /api/health route in the backend prevents wait-on 
 **Insight**:
 Moving heavy E2E verification from sandboxed CI environments to local git pre-push hooks prevents environmental failures while ensuring zero regression pushes.
 
+
+---
+
+### 🎓 Learning: Loopback DNS & Allure Video Pairing
+**Date**: 2026-05-17 10:30:18
+**Version**: 1.0 | **Domain**: E2E & CI/CD | **Expiry Hint**: Never
+**Insight**:
+1. Restricted sandboxes block all socket bindings with EPERM, but developers should use standard localhost matching for local dev environments to avoid webServer mismatches. 2. Use semicolon separator (;) in npm script pairing to guarantee Allure report opens even on test failures, and set Playwright video to 'on' for complete playback context.
+
+
+---
+
+### 🎓 Learning: ExecFileSync Refactoring
+**Date**: 2026-05-17 10:37:08
+**Version**: 1.0 | **Domain**: Security & Architecture | **Expiry Hint**: Never
+**Insight**:
+Always prefer execFileSync/spawn over execSync when executing child processes with dynamic parameters, preventing command injection and shell traversal vulnerabilities.
+
