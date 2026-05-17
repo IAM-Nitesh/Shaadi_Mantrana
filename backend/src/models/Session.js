@@ -19,7 +19,7 @@ const sessionSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     index: true
   },
   role: {

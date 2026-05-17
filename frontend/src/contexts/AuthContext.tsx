@@ -178,56 +178,15 @@ export const AuthProvider = ({
   }, [initialUser, checkAuth]);
 
   const sendOtp = async (email: string) => {
-    try {
-      setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-        credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send OTP');
-      }
-      
-      return true;
-    } catch (err: any) {
-      setError(err.message);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    logger.warn('AuthContext: Attempted legacy email sendOtp (deprecated)', { email });
+    setError('Legacy email OTP authentication is deprecated. Please use Firebase Phone OTP.');
+    return false;
   };
 
   const login = async (email: string, otp: string) => {
-    try {
-      setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
-        credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-      
-      await checkAuth();
-      return true;
-    } catch (err: any) {
-      setError(err.message);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    logger.warn('AuthContext: Attempted legacy email login (deprecated)', { email });
+    setError('Legacy email OTP authentication is deprecated. Please use Firebase Phone OTP.');
+    return false;
   };
 
   const signInWithPhone = async (phoneNumber: string): Promise<ConfirmationResult | { verificationId: string } | null> => {
