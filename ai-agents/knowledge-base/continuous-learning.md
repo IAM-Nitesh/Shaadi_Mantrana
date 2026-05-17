@@ -478,3 +478,12 @@ Moving heavy E2E verification from sandboxed CI environments to local git pre-pu
 **Insight**:
 Always prefer execFileSync/spawn over execSync when executing child processes with dynamic parameters, preventing command injection and shell traversal vulnerabilities.
 
+
+---
+
+### 🎓 Learning: Scrubbing secrets from push protected branches
+**Date**: 2026-05-17 16:52:09
+**Version**: 1.0 | **Domain**: Security | **Expiry Hint**: Permanent
+**Insight**:
+GitHub Push Protection blocks commits containing live API keys/tokens (like Vercel personal tokens starting with vcp_ or Render keys starting with rnd_). To bypass the block, the commit history itself must be amended/rewritten using git commit --amend to completely scrub the secrets from the push payload, rather than just adding a new commit on top of it. Scripts should retrieve credentials from process.env dynamically, exiting gracefully with warning instructions if unset, instead of using hardcoded secrets.
+
