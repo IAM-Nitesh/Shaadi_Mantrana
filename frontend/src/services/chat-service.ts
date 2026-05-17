@@ -2,11 +2,10 @@
 import { supabase, getChatChannel } from '../utils/supabase';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
-import { getCurrentUser } from './auth-utils';
+import { getAuthHeaders, getCurrentUser, isAuthenticated } from './auth-utils';
 import { apiClient } from '../utils/api-client';
 import { config as configService } from './configService';
 import { MatchingService } from './matching-service';
-import { getAuthHeaders, isAuthenticated } from './auth-utils';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface ChatMessage {
@@ -43,11 +42,6 @@ export class ChatService {
    */
   static async sendMessage(connectionId: string, message: string): Promise<any> {
     try {
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        throw new Error('No authentication token found');
-      }
-
       const authHeaders = await getAuthHeaders();
       const currentUser = await getCurrentUser();
 

@@ -102,7 +102,7 @@ export class OnboardingService {
   const completeness = getUserCompleteness(user);
   return user.isFirstLogin && 
        !user.hasSeenOnboardingMessage && 
-       completeness < 100;
+       !user.hasCompletedWizard;
   }
 
   /**
@@ -113,7 +113,7 @@ export class OnboardingService {
     
     // Access Control Logic: Only allow access if profileCompleteness is 100%
   const completeness = getUserCompleteness(user);
-  return completeness >= 100;
+  return completeness >= 100 || user.hasCompletedWizard;
   }
 
   /**
@@ -134,16 +134,17 @@ export class OnboardingService {
 
     // Access Control Logic: Only allow access if profileCompleteness is 100%
     
-    // Case 1: First-time user (isFirstLogin = true)
-    if (user.isFirstLogin) {
+    // Case 1: First-time user (isFirstLogin = true) - only if wizard not completed
+    if (user.isFirstLogin && !user.hasCompletedWizard) {
+      return '/profile';
+    }
+ 
+    // Case 2: Returning user with incomplete profile - only if wizard not completed
+    const completeness = getUserCompleteness(user);
+    if (completeness < 100 && !user.hasCompletedWizard) {
       return '/profile';
     }
 
-    // Case 2: Returning user with incomplete profile (profileCompleteness < 100%)
-  const completeness = getUserCompleteness(user);
-  if (completeness < 100) {
-      return '/profile';
-    }
 
     // Case 3: User with complete profile (profileCompleteness = 100%)
     // Allow access to all pages - NO REDIRECT NEEDED

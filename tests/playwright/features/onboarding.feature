@@ -1,10 +1,8 @@
 Feature: Sacred Onboarding
 
   Scenario: Complete the entire profiling journey
-    Given I am a logged-in first-time user
-    And I have clicked "Begin Sacred Profiling"
-    
-    # Step 1: Personal Grace
+    Given the test user is in the "fresh" state
+    And I navigate to "/profile"
     Then I should see the "Personal Grace" section
     When I fill in "Name of the Devout" with "Aaryan Sharma"
     And I select "Male" for "Gender"
