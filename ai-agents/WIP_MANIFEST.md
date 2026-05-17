@@ -18,8 +18,8 @@
 | Product | `docs/superpowers/specs/2026-05-12-shaadi-mantrana-product-blueprint.md` | 2026-05-12 — Strategic baseline established |
 | Mobile | `node_modules/@capacitor-firebase/authentication` ProGuard Patch | 2026-05-15 | Persisted fix for AGP 9+ compatibility |
 | System | `personas/qa.md` (SDET Persona) | 2026-05-15 | Updated for Playwright and business validation focus |
-| Testing | BDD + Allure Integration | 2026-05-15 | playwright-bdd + allure-playwright setup; feature files in flight |
-| System | Auth Flow Analysis & Backend Stabilization | 2026-05-16 | Analyzing login use cases; fixing Express 5 path-to-regexp crash |
+| System | AuthGuardV2 & AuthContext Stabilization | 2026-05-16 | **STABILIZED**: Derived auth state from server cookies; eliminated localStorage hacks and 3s unblock timers; fixed backend JSX crash; implemented high-fidelity fallback states. |
+| Testing | Automated Cleanup Infrastructure | 2026-05-16 | **COMPLETE**: Integrated `global-teardown.ts` and `cleanup-test-data.js` into Playwright suite |
 
 
 ---
@@ -49,7 +49,12 @@
 | System | `mcp-infrastructure.md` | 2026-05-15 | Codified setup steps and `mcp-remote` technical rationale |
 | Branding | `branding/` + `scripts/` | 2026-05-16 | **STABILIZED**: Single Source of Truth (SSoT) implemented via `npm run branding:sync`. 30+ platform assets now managed automatically from one source. |
 | UI | **Royal Loading System** | 2026-05-16 | **STABILIZED**: 3-tier high-fidelity ecosystem (Grand, Skeleton, Spark) with 'Diamond Ring' architecture and zero-drift svgOrigin pinning. |
-| Frontend | Global Shell (Layout + Nav + CSS) | 2026-05-12 | Modern Royal visual retrofit complete; viewport themeColor synced |
+| Testing | E2E BDD Test Suite (Auth, Navigation, Matching/Chat, Onboarding) | 2026-05-17 | Exact `npm run test:e2e:bdd` verified 14 passed across Chromium and WebKit; global teardown cleaned test personas successfully. |
+| System/Auth | Profile Type Definition Wizard Integration | 2026-05-17 | Resolved Next.js build block by adding hasCompletedWizard field to Profile interface; clean build compiled successfully. |
+| System/Auth | User DB Schema & Auth Boundaries | 2026-05-17 | **STABILIZED**: Decoupled email requirements, added conditional schema validation triggers, deprecated legacy email controllers/routes, and updated test seeding. |
+| System/Auth | Session DB Schema & Phone Login | 2026-05-17 | **STABILIZED**: Made email field optional in Session schema to prevent validation failures during phone-only logins. |
+| Pipeline | Local Pre-Push E2E Gate | 2026-05-17 | **STABILIZED**: Removed CI workflows and integrated local git pre-push verification with 'npm run e2e'. |
+| Pipeline | Security Gate Secrets Sanitization | 2026-05-17 | **STABILIZED**: Purged hardcoded Render/Vercel secrets from commit history and replaced with environment variables, clearing Push Protection block. |
 
 ---
 

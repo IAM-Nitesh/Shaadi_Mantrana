@@ -83,7 +83,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
   };
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 bg-royal-obsidian flex flex-col overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 z-[200] bg-royal-obsidian flex flex-col overflow-hidden">
       {/* Background Mandala */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <MandalaBackground rotationSpeed={180} />

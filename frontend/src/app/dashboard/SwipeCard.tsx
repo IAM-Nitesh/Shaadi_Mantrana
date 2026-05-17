@@ -298,6 +298,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
     <div className="relative">
       <div
         ref={cardRef}
+        data-testid="profile-card"
         className={`shadow-2xl rounded-3xl overflow-hidden cursor-grab select-none transition-transform duration-200 border border-royal-glass-border ${
           isMounted && isDragging ? 'cursor-grabbing scale-105 shadow-royal-gold/20' : 'hover:scale-[1.01] hover:shadow-2xl'
         } ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}

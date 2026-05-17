@@ -6,6 +6,8 @@ import ToasterClient from '../components/ToasterClient';
 import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 import { PostHogProvider } from '../components/PostHogProvider';
 
+import PageTransitionProvider from '../components/PageTransitionProvider';
+
 // Fallback to system font stack to bypass build-time Google Fonts fetch
 const inter = { className: 'font-sans' };
 // const inter = Inter({ subsets: ['latin'] });
@@ -37,9 +39,11 @@ export default function RootLayout({
       <body className={`${inter.className} font-body antialiased bg-royal-obsidian text-royal-gold-light/90`}>
         <PostHogProvider>
           <AuthProvider initialUser={initialUser}>
-            <main>{children}</main>
-            <ToasterClient />
-            <GlobalBottomNavigation />
+            <PageTransitionProvider>
+              <main>{children}</main>
+              <ToasterClient />
+              <GlobalBottomNavigation />
+            </PageTransitionProvider>
           </AuthProvider>
         </PostHogProvider>
 

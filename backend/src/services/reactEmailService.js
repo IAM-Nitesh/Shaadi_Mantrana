@@ -1,5 +1,8 @@
 // Register Babel to handle JSX files
-require('@babel/register');
+require('@babel/register')({
+  presets: ['@babel/preset-env', ['@babel/preset-react', { runtime: 'automatic' }]],
+  extensions: ['.js', '.jsx', '.ts', '.tsx']
+});
 
 const React = require('react');
 const { render } = require('@react-email/render');

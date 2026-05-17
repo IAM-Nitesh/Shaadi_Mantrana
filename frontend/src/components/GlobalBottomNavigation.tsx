@@ -16,7 +16,11 @@ export default function GlobalBottomNavigation() {
   if (!mounted) return null;
   
   // Show bottom navigation on main app pages
-  const showNav = ['/dashboard', '/matches', '/profile', '/settings'].includes(pathname ?? '');
+  const currentPath = pathname ?? '';
+  const showNav = currentPath.startsWith('/dashboard') || 
+                  currentPath.startsWith('/matches') || 
+                  currentPath.startsWith('/profile') || 
+                  currentPath.startsWith('/settings');
   
   if (!showNav) return null;
   

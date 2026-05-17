@@ -14,8 +14,9 @@ const userSchema = new mongoose.Schema({
   // Basic Information
   email: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
+    sparse: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
@@ -26,14 +27,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true,
-    trim: true
+    trim: true,
+    required: [function() {
+      return this.status !== 'invited';
+    }, 'Firebase UID is required when status is active']
   },
 
   phoneNumber: {
     type: String,
     unique: true,
     sparse: true,
-    trim: true
+    trim: true,
+    required: [function() {
+      return this.status !== 'invited';
+    }, 'Phone number is required when status is active']
   },
 
   // Push Notifications
@@ -328,6 +335,11 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
+  hasCompletedWizard: {
+    type: Boolean,
+    default: false
+  },
+
   // OPTIMIZED: Preferences structure - only store user's actual preferences
   preferences: {
     ageRange: {
@@ -454,6 +466,7 @@ userSchema.methods.toPublicJSON = function() {
     isApprovedByAdmin: user.isApprovedByAdmin,
     profileCompleteness: user.profile?.profileCompleteness || 0,
     hasSeenOnboardingMessage: user.hasSeenOnboardingMessage,
+    hasCompletedWizard: user.hasCompletedWizard,
   };
 };
 

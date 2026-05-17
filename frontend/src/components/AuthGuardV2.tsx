@@ -19,6 +19,11 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
   const { user, isAuthenticated, isLoading, redirectTo } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = React.useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isLoading) {
@@ -27,9 +32,12 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
     }
 
     // Not authenticated - redirect to login
-    if (!isAuthenticated) {
-      console.warn('🚫 AuthGuardV2: Not authenticated, redirecting to login');
-      router.replace('/');
+    if (!isAuthenticated && mounted) {
+      const isLoginPage = pathname === '/' || pathname === '/login';
+      if (!isLoginPage) {
+        console.warn('🚫 AuthGuardV2: Not authenticated, redirecting to login');
+        router.replace('/login');
+      }
       return;
     }
 
@@ -46,35 +54,39 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
       return;
     }
 
+    // Short-circuit for Admin role - Admins are exempt from profile completeness checks
+    if (user?.role === 'admin') {
+      console.log('👑 AuthGuardV2: Admin authority recognized. Bypassing completeness checks.');
+      return;
+    }
+
     // Enforce profile completion for dashboard and matches pages (business rule)
     const currentPath = pathname || '';
     const requiresFullProfile = currentPath.includes('/dashboard') || currentPath.includes('/matches');
     
-    if (requiresFullProfile && user && (user?.profileCompleteness ?? 0) < 100) {
-      console.warn(`🚫 AuthGuardV2: Access to ${currentPath} requires 100% profile completion (current: ${user?.profileCompleteness ?? 0}%)`);
+    if (requiresFullProfile && user && (user?.profileCompleteness ?? 0) < 100 && !user.hasCompletedWizard) {
+      console.warn(`🚫 AuthGuardV2: Access to ${currentPath} requires 100% profile completion (current: ${user?.profileCompleteness ?? 0}%) and wizard not completed`);
       router.replace('/profile');
       return;
     }
 
     // Check profile completeness requirement passed via prop
-    if (requiresCompleteProfile && user && (user?.profileCompleteness ?? 0) < 100) {
-      console.warn('📝 AuthGuardV2: Profile incomplete, redirecting to profile page');
+    if (requiresCompleteProfile && user && (user?.profileCompleteness ?? 0) < 100 && !user.hasCompletedWizard) {
+      console.warn('📝 AuthGuardV2: Profile incomplete and wizard not finished, redirecting to profile page');
       router.replace('/profile');
       return;
     }
 
-    // Check if user needs to be redirected based on auth state
-    if (redirectTo && pathname !== redirectTo && !pathname?.includes('/admin')) {
-      console.log(`🔀 AuthGuardV2: Redirecting to ${redirectTo}`);
-      router.replace(redirectTo);
-      return;
-    }
+    // (Removed strict redirectTo enforcement. Protected pages manage their own access.)
 
     console.log('✅ AuthGuardV2: User authorized to access page');
-  }, [isAuthenticated, isLoading, user, requiredRole, requiresCompleteProfile, redirectTo, router, pathname]);
+  }, [isAuthenticated, isLoading, user, requiredRole, requiresCompleteProfile, redirectTo, router, pathname, mounted]);
 
-  // Show loading state
-  if (isLoading || !isAuthenticated) {
+  // Show nothing until mounted to prevent hydration mismatch
+  if (!mounted) return null;
+
+  // Show loading state ONLY during the active check
+  if (isLoading) {
     return (
       <RoyalLoader
         variant="grand"
@@ -83,6 +95,12 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
         text="Verifying Majestic Authority..."
       />
     );
+  }
+
+  // If not authenticated, the useEffect will handle redirect. 
+  // Return null to avoid showing a "flash" of content or a stuck loader.
+  if (!isAuthenticated) {
+    return null;
   }
 
   // Render protected content

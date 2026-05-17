@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # Git pre-push hook — Shaadi Mantrana
-# Blocks git push if critical/high security vulnerabilities exist.
+# Blocks git push if critical/high security vulnerabilities exist or E2E tests fail.
 # Installed automatically by: bash scripts/install-git-hooks.sh
 # ============================================================
 
@@ -13,25 +13,44 @@ echo "🔐 Running security audit before push..."
 echo ""
 
 if [ ! -f "$SCRIPT" ]; then
-  echo "⚠ Security script not found at $SCRIPT — skipping"
-  exit 0
+  echo "⚠ Security script not found at $SCRIPT — skipping security gate"
+else
+  chmod +x "$SCRIPT"
+  # Use --auto-fix: handles both safe fix AND clean reinstall for workspace pin issues
+  bash "$SCRIPT" --auto-fix
+  STATUS=$?
+
+  if [ $STATUS -ne 0 ]; then
+    echo ""
+    echo "❌ Push BLOCKED due to unresolved security vulnerabilities."
+    echo "   Review the output above and fix manually if needed."
+    echo "   Then re-run: git push"
+    echo ""
+    exit 1
+  fi
+  echo "✅ Security gate passed."
 fi
 
-chmod +x "$SCRIPT"
+echo ""
+echo "🚀 Running local E2E validation tests..."
+echo ""
 
-# Use --auto-fix: handles both safe fix AND clean reinstall for workspace pin issues
-bash "$SCRIPT" --auto-fix
-STATUS=$?
+# Run E2E Playwright tests locally
+cd "$ROOT_DIR"
+export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
+export GIT_HOOK=true
+npm run e2e
+E2E_STATUS=$?
 
-if [ $STATUS -ne 0 ]; then
+if [ $E2E_STATUS -ne 0 ]; then
   echo ""
-  echo "❌ Push BLOCKED due to unresolved security vulnerabilities."
-  echo "   Review the output above and fix manually if needed."
+  echo "❌ Push BLOCKED due to E2E test failures."
+  echo "   Please fix failing E2E tests before pushing."
   echo "   Then re-run: git push"
   echo ""
   exit 1
 fi
 
 echo ""
-echo "✅ Security gate passed — proceeding with push."
+echo "✅ Security gate and E2E validation passed — proceeding with push."
 exit 0

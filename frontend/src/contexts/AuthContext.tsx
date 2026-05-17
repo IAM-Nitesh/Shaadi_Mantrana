@@ -14,7 +14,7 @@ import posthog from 'posthog-js';
 import { Capacitor } from '@capacitor/core';
 import { NativeAuthService } from '../services/NativeAuthService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:4000' : '');
 
 export interface User {
   userId: string;
@@ -26,6 +26,7 @@ export interface User {
   isFirstLogin?: boolean;
   isApprovedByAdmin?: boolean;
   hasSeenOnboardingMessage?: boolean;
+  hasCompletedWizard?: boolean;
   phoneNumber?: string;
 }
 
@@ -56,19 +57,13 @@ export const AuthProvider = ({
   initialUser?: User | null; 
 }) => {
   const [user, setUser] = useState<User | null>(initialUser);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Default to true to prevent premature redirects
   const [error, setError] = useState<string | null>(null);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [authState, setAuthState] = useState<AuthContextType['authState']>('unknown');
   const [isExpired, setIsExpired] = useState(false);
 
-  // Guaranteed unblock timer
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+
 
   const checkAuth = useCallback(async () => {
     try {
@@ -102,7 +97,7 @@ export const AuthProvider = ({
       // });
       
       if (!response.ok) {
-        // logger.warn('❌ AuthContext: Auth status check failed:', response.status);
+        console.warn('❌ AuthContext: Auth status check failed:', response.status);
         setUser(null);
         setRedirectTo('/login');
         setIsExpired(response.status === 401);
@@ -111,7 +106,7 @@ export const AuthProvider = ({
       }
       
       const data = await response.json();
-      // logger.debug('🔍 AuthContext: Auth status data:', data);
+      console.log('🔍 AuthContext: Auth status data:', data);
       
       if (data.authenticated && data.user) {
         const userData = {
@@ -124,15 +119,16 @@ export const AuthProvider = ({
           isFirstLogin: data.user.isFirstLogin || false,
           isApprovedByAdmin: data.user.isApprovedByAdmin || false,
           hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false,
+          hasCompletedWizard: data.user.hasCompletedWizard || false,
         };
         
-        // logger.info('✅ AuthContext: User authenticated:', userData);
+        console.log('✅ AuthContext: User authenticated:', userData);
         setUser(userData);
         // posthog.identify(userData.userId, { role: userData.role });
         
         if (userData.role === 'admin') {
           setRedirectTo('/admin/dashboard');
-        } else if (userData.profileCompleteness < 100 || userData.isFirstLogin) {
+        } else if (userData.isFirstLogin && !userData.hasCompletedWizard) {
           setRedirectTo('/profile');
         } else {
           setRedirectTo('/dashboard');
@@ -140,7 +136,7 @@ export const AuthProvider = ({
         setIsExpired(false);
         setAuthState('authenticated');
       } else {
-        // logger.debug('❌ AuthContext: User not authenticated');
+        console.log('❌ AuthContext: User not authenticated');
         setUser(null);
         setRedirectTo('/login');
         setIsExpired(false);
@@ -148,13 +144,14 @@ export const AuthProvider = ({
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        // logger.error('❌ AuthContext: Auth check timed out after 5s');
+        console.error('❌ AuthContext: Auth check timed out after 5s');
       } else {
-        // logger.error('❌ AuthContext: Auth check error:', err);
+        console.error('❌ AuthContext: Auth check error:', err);
       }
       setUser(null);
       setRedirectTo('/login');
       setAuthState('error');
+      setIsLoading(false); // Immediate unlock on error
     } finally {
       setIsLoading(false);
       // logger.debug('🔍 AuthContext: isLoading set to false');
@@ -172,7 +169,7 @@ export const AuthProvider = ({
       setIsLoading(false);
       if (initialUser.role === 'admin') {
         setRedirectTo('/admin/dashboard');
-      } else if ((initialUser.profileCompleteness || 0) < 100) {
+      } else if (initialUser.isFirstLogin && !initialUser.hasCompletedWizard) {
         setRedirectTo('/profile');
       } else {
         setRedirectTo('/dashboard');
@@ -181,56 +178,15 @@ export const AuthProvider = ({
   }, [initialUser, checkAuth]);
 
   const sendOtp = async (email: string) => {
-    try {
-      setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-        credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send OTP');
-      }
-      
-      return true;
-    } catch (err: any) {
-      setError(err.message);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    logger.warn('AuthContext: Attempted legacy email sendOtp (deprecated)', { email });
+    setError('Legacy email OTP authentication is deprecated. Please use Firebase Phone OTP.');
+    return false;
   };
 
   const login = async (email: string, otp: string) => {
-    try {
-      setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
-        credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-      
-      await checkAuth();
-      return true;
-    } catch (err: any) {
-      setError(err.message);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    logger.warn('AuthContext: Attempted legacy email login (deprecated)', { email });
+    setError('Legacy email OTP authentication is deprecated. Please use Firebase Phone OTP.');
+    return false;
   };
 
   const signInWithPhone = async (phoneNumber: string): Promise<ConfirmationResult | { verificationId: string } | null> => {
@@ -263,7 +219,16 @@ export const AuthProvider = ({
       const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
       return confirmationResult;
     } catch (err: any) {
+      // --- Playwright/E2E Test Bypass ---
+      if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__) {
+        logger.info('AuthContext: Bypassing real Phone Auth for E2E test');
+        return {
+          confirm: async (code: string) => ({ user: { uid: 'playwright-test-user', mock: true } })
+        } as any;
+      }
+      
       setError(err.message || 'Verification failed. Please check your number.');
+
       logger.error('Phone Sign-In Error:', err);
       
       // Reset container on failure to allow retry
@@ -296,8 +261,9 @@ export const AuthProvider = ({
       // --- Web Path ---
       else if ('confirm' in confirmation) {
         const result = await confirmation.confirm(code);
-        // Use mock token in playwright test mode if user is marked as mock
-        if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__ && (result as any).user?.mock) {
+        // Use mock token in playwright test mode
+        if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__) {
+          logger.info('AuthContext: Using mock-token for Playwright test');
           finalIdToken = 'mock-token';
         } else {
           finalIdToken = await getIdToken(result.user);

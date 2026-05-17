@@ -352,3 +352,147 @@ Implemented a tiered loading system using Sacred Mandala SVG and Royal Skeletons
 **Insight**:
 Implemented a 3-tier loading ecosystem (Grand, Skeleton, Spark) using GSAP svgOrigin pinning for zero-drift. Defined the 'Diamond Ring' and 'Celestial Aura' patterns for premium branding.
 
+
+---
+
+### 🎓 Learning: Express 5 vs Monorepo Hoisting
+**Date**: 2026-05-16 12:20:31
+**Version**: 1.0 | **Domain**: System | **Expiry Hint**: Permanent
+**Insight**:
+Root package.json Express 5 hoisting caused path-to-regexp crash in Express 4 backend. Aligned to 4.21.2.
+
+
+---
+
+### 🎓 Learning: Authentication Redirection Trap
+**Date**: 2026-05-16 12:20:31
+**Version**: 1.0 | **Domain**: Logic | **Expiry Hint**: Refactor pending
+**Insight**:
+Users are redirected to /profile until 100% completeness, even after wizard completion. Needs hasCompletedWizard flag.
+
+
+---
+
+### 🎓 Learning: Wizard Redirection Fix
+**Date**: 2026-05-16 12:26:28
+**Version**: 1.0 | **Domain**: Logic | **Expiry Hint**: Permanent
+**Insight**:
+Implemented hasCompletedWizard flag to decouple UX flow from 100% profile completeness calculation.
+
+
+---
+
+### 🎓 Learning: E2E Session Injection Breakthrough
+**Date**: 2026-05-16 17:59:48
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: Never revert to manual OTP automation for business suites.
+**Insight**:
+Decoupled business logic tests from Firebase infrastructure. Use POST /api/debug/test-session for persona-based authentication injection in Playwright. Reverted client-side security bypasses.
+
+
+---
+
+### 🎓 Learning: Secure Session Injection for E2E
+**Date**: 2026-05-16 18:39:42
+**Version**: 1.0 | **Domain**: Testing/Security | **Expiry Hint**: Permanent
+**Insight**:
+Deterministic auth via JWTSessionManager + LocalStorage warm-up prevents brittle UI auth failures.
+
+
+---
+
+### 🎓 Learning: Unified Auth Injection Bridge
+**Date**: 2026-05-16 18:49:53
+**Version**: 1.0 | **Domain**: SDET | **Expiry Hint**: permanent
+**Insight**:
+When an application has a dual-source-of-truth for auth (Cookies + LocalStorage), E2E tests must inject both via a Unified Bridge in navigation steps to prevent legacy component failures.
+
+
+---
+
+### 🎓 Learning: Playwright Deterministic Locators
+**Date**: 2026-05-16 19:35:09
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: 2027-05-16
+**Insight**:
+For custom React components like RoyalInput that lack explicit label-input ID bindings, use the CSS pattern 'div:has(label:text-is(...)) input' instead of fragile getByLabel calls. Always fact-check locators against frontend source code to avoid UI assumptions.
+
+
+---
+
+### 🎓 Learning: AuthGuardV2 Stabilization
+**Date**: 2026-05-16 21:22:08
+**Version**: 1.0 | **Domain**: System/Auth | **Expiry Hint**: Permanent
+**Insight**:
+Eliminated redirect loops and infinite loaders by removing the 3s unblock timer and returning null during AuthGuard redirects. Fixed backend JSX crash via explicit @babel/register configuration.
+
+
+---
+
+### 🎓 Learning: E2E BDD exact suite verified
+**Date**: 2026-05-17 03:17:03
+**Version**: 1.0 | **Domain**: QA/E2E | **Expiry Hint**: Revalidate whenever Playwright config, auth guards, onboarding, matching, chat, or persona mocks change
+**Insight**:
+Do not describe BDD E2E as green until the exact npm script has passed. The verified command is npm run test:e2e:bdd, which generated BDD specs, ran Chromium and WebKit, and completed with 14 passed plus successful MongoDB cleanup.
+
+
+---
+
+### 🎓 Learning: TypeScript Profile Interface Wizard Fix
+**Date**: 2026-05-17 03:32:49
+**Version**: 1.0 | **Domain**: System/Auth | **Expiry Hint**: Permanent
+**Insight**:
+Adding 'hasCompletedWizard' to the Profile interface resolved Next.js compilation errors in profile page redirect logic, ensuring a green production build.
+
+
+---
+
+### 🎓 Learning: PR Gate Health Check Target
+**Date**: 2026-05-17 03:48:07
+**Version**: 1.0 | **Domain**: CI | **Expiry Hint**: 2026-12-31
+**Insight**:
+Adding a database-independent /api/health route in the backend prevents wait-on timeouts in cold CI runs while preserving deep database checks under /health.
+
+
+---
+
+### 🎓 Learning: Local Pre-Push E2E Verification
+**Date**: 2026-05-17 03:50:52
+**Version**: 1.0 | **Domain**: CI | **Expiry Hint**: 2026-12-31
+**Insight**:
+Moving heavy E2E verification from sandboxed CI environments to local git pre-push hooks prevents environmental failures while ensuring zero regression pushes.
+
+
+---
+
+### 🎓 Learning: Loopback DNS & Allure Video Pairing
+**Date**: 2026-05-17 10:30:18
+**Version**: 1.0 | **Domain**: E2E & CI/CD | **Expiry Hint**: Never
+**Insight**:
+1. Restricted sandboxes block all socket bindings with EPERM, but developers should use standard localhost matching for local dev environments to avoid webServer mismatches. 2. Use semicolon separator (;) in npm script pairing to guarantee Allure report opens even on test failures, and set Playwright video to 'on' for complete playback context.
+
+
+---
+
+### 🎓 Learning: ExecFileSync Refactoring
+**Date**: 2026-05-17 10:37:08
+**Version**: 1.0 | **Domain**: Security & Architecture | **Expiry Hint**: Never
+**Insight**:
+Always prefer execFileSync/spawn over execSync when executing child processes with dynamic parameters, preventing command injection and shell traversal vulnerabilities.
+
+
+---
+
+### 🎓 Learning: User Schema & Auth Boundaries
+**Date**: 2026-05-18 00:58:41
+**Version**: 1.0 | **Domain**: System/Auth | **Expiry Hint**: Never
+**Insight**:
+Decoupled email from strict database validation by making it optional, sparse, and unique. Added conditional required validation for phoneNumber and firebaseUid based on status !== 'invited'. Deprecated legacy email-OTP routes/controllers and updated test seed files to ensure consistency across domains.
+
+
+---
+
+### 🎓 Learning: Fix Phone Login Session Validation
+**Date**: 2026-05-18 02:01:10
+**Version**: 1.0 | **Domain**: backend | **Expiry Hint**: never
+**Insight**:
+Make email field optional in Session schema to support phone-only signups
+
