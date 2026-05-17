@@ -3,13 +3,13 @@
     "render": {
       "serverUrl": "https://mcp.render.com/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_RENDER_API_KEY"
+        "Authorization": "Bearer ${RENDER_API_KEY}"
       }
     },
     "vercel": {
       "serverUrl": "https://mcp.vercel.com",
       "headers": {
-        "Authorization": "Bearer YOUR_VERCEL_TOKEN"
+        "Authorization": "Bearer ${VERCEL_TOKEN}"
       }
     }
   }
