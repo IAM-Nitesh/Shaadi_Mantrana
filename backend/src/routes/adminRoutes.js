@@ -1153,7 +1153,7 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
       email,
       userUuid,
       role: 'user',
-      status: 'active',
+      status: 'invited',
       isFirstLogin: true,
       hasSeenOnboardingMessage: false, // New users haven't seen onboarding
       isApprovedByAdmin: true,

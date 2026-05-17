@@ -38,6 +38,7 @@ router.post('/session', async (req, res) => {
     // Master Brain: Direct In-Process Seeding (Non-blocking)
     const PERSONA_CONFIGS = {
       admin: {
+        firebaseUid: 'mock_firebase_uid_admin',
         phoneNumber: '9898989898',
         email: 'admin.test@shaadimantrana.com',
         role: 'admin',
@@ -47,6 +48,7 @@ router.post('/session', async (req, res) => {
         profile: { name: 'Test Admin', profileCompleteness: 100 }
       },
       fresh: {
+        firebaseUid: 'mock_firebase_uid_fresh',
         phoneNumber: '9999999999',
         email: 'fresh.test@shaadimantrana.com',
         role: 'user',
@@ -56,6 +58,7 @@ router.post('/session', async (req, res) => {
         profile: { name: 'Fresh User', profileCompleteness: 0 }
       },
       incomplete: {
+        firebaseUid: 'mock_firebase_uid_incomplete',
         phoneNumber: '9354799303',
         email: 'incomplete.test@shaadimantrana.com',
         role: 'user',
@@ -65,6 +68,7 @@ router.post('/session', async (req, res) => {
         profile: { name: 'Incomplete User', profileCompleteness: 60 }
       },
       complete: {
+        firebaseUid: 'mock_firebase_uid_complete',
         phoneNumber: '9876543210',
         email: 'complete.test@shaadimantrana.com',
         role: 'user',
