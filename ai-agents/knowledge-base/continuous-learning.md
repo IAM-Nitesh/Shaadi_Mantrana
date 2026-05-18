@@ -505,3 +505,21 @@ Make email field optional in Session schema to support phone-only signups
 **Insight**:
 Synchronizing Firebase Web SDK versions to ^11.2.0 across root and frontend package manifests resolves Vercel module resolution errors for Capacitor Firebase Authentication peer dependency.
 
+
+---
+
+### 🎓 Learning: api.shaadimantrana.live TLS Resolution
+**Date**: 2026-05-19 02:33:02
+**Version**: 1.0 | **Domain**: DNS/Infrastructure | **Expiry Hint**: Never
+**Insight**:
+Conflicting registrar nameservers (split between registrar and Vercel) and Vercel wildcard domain intercepts will block Render Let's Encrypt certificate challenge verification. Release wildcard/subdomain claims in Vercel and keep registrar nameservers unified to allow clean ACME challenges.
+
+
+---
+
+### 🎓 Learning: Admin Logout Overlay Default Visibility Fix
+**Date**: 2026-05-19 02:43:39
+**Version**: 1.0 | **Domain**: UI/UX | **Expiry Hint**: Never
+**Insight**:
+Ensure interactive modals or full-screen overlays (like logout animation overlays) inside global shell components (like AdminBottomNavigation) are hidden by default using style={{ display: 'none' }} or hidden classes. Otherwise, they cover page components immediately upon mounting, causing immediate visual lockout.
+
