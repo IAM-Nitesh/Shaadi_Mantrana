@@ -160,3 +160,45 @@ If you want the site to send a real SMS verification code to actual mobile devic
 3. Change `NEXT_PUBLIC_ENABLE_DEBUG` to `false` (or delete it if it defaults to `false`).
 4. Redeploy the frontend to Vercel.
 *(This will disable Testing Mode. The frontend will now load the real ReCAPTCHA widget to verify human interaction and successfully trigger a real SMS to your phone number)*.
+
+---
+
+## Section 6: Fixing `api.shaadimantrana.live` TLS Certificate
+
+### 🔍 Problem Summary
+The SSL/TLS certificate for our custom Render API subdomain `api.shaadimantrana.live` was stuck on "Pending" status in the Render Dashboard, even though the domain ownership itself was successfully "Verified" via our DNS settings.
+
+### 🛠️ Investigation & Root Causes
+Through live DNS lookups and configuration audits, we discovered three overlapping issues that were blocking Render from issuing the certificate:
+
+1. **Mixed Nameservers (DNS Split)**:
+   The domain `shaadimantrana.live` had conflicting nameservers configured at the registrar (Name.com). It was pointing to both `name.com` AND `ns2.vercel-dns.com` nameservers, leading to inconsistent DNS query responses.
+   
+2. **Subdomain Interference in Vercel**:
+   Vercel's dashboard for the frontend project still had `api.shaadimantrana.live` registered as a domain with an "Invalid Configuration" status.
+   
+3. **ACME Certificate Interception**:
+   Because Vercel was active for `api.shaadimantrana.live`, it was intercepting the HTTP-01 ACME challenge requests sent by Render's Let's Encrypt validation process, causing Render's cert generation to fail.
+
+### 💡 The Resolution Steps
+We executed the following steps to establish a clean, standard DNS architecture:
+
+1. **Cleaned Registrar Nameservers**:
+   Updated the registrar configuration on Name.com to point **strictly** to Name.com's default nameservers. Removed all Vercel nameservers from the main domain registrar settings.
+   
+2. **Released Subdomain Claim in Vercel**:
+   Deleted the `api.shaadimantrana.live` subdomain entry entirely from the Vercel project configuration, freeing the domain from Vercel's control.
+   
+3. **Configured Correct DNS Records at Registrar**:
+   Maintained a clean CNAME record inside Name.com pointing `api.shaadimantrana.live` directly to `shaadi-mantrana.onrender.com`.
+   
+4. **Triggered Render Verification**:
+   Re-verified the custom domain within Render, allowing the Let's Encrypt ACME challenges to route cleanly to Render and successfully issue the TLS certificate.
+
+### 📋 Clean Final DNS State
+
+| Domain | Provider | Status | Role |
+| :--- | :--- | :--- | :--- |
+| `www.shaadimantrana.live` | Vercel | ✅ Valid / SSL Active | Production Frontend (Next.js) |
+| `www.shaadimantrana.app` | Vercel | ✅ Valid / SSL Active | Alternative Frontend Alias |
+| `api.shaadimantrana.live` | Render | ✅ SSL Active / CNAME Active | Production Backend API (Express/Mongo) |
