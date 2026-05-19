@@ -1,10 +1,14 @@
+const path = require('path');
+
 // Load environment variables based on NODE_ENV
 require('dotenv').config({
-  path: `.env.${process.env.NODE_ENV || 'development'}`
+  path: path.resolve(__dirname, `../../.env.${process.env.NODE_ENV || 'development'}`)
 });
 
 // Fallback to .env if environment-specific file doesn't exist
-require('dotenv').config();
+require('dotenv').config({
+  path: path.resolve(__dirname, '../../.env')
+});
 
 // MongoDB connection string selection
 const getPort = () => {
