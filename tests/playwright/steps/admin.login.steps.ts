@@ -178,12 +178,7 @@ When('I click the logout button in the admin nav bar', async ({ page }) => {
 // THEN steps
 // ─────────────────────────────────────────────────────────────────────────────
 
-Then('I should see the "Shaadi Mantrana" heading on the login screen', async ({ page }) => {
-  // FACT: Phone step renders <h2 class="... text-royal-gold ...">Shaadi Mantrana</h2>
-  await expect(
-    page.locator('h2').filter({ hasText: /Shaadi Mantrana/i }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
+
 
 Then('I should see a phone number input field', async ({ page }) => {
   await expect(
@@ -214,11 +209,8 @@ Then('the "Get Verification Code" button should be enabled', async ({ page }) =>
   await expect(btn).toBeEnabled({ timeout: 10_000 });
 });
 
-Then('I should see the {string} heading', async ({ page }, text) => {
-  await expect(
-    page.locator('h1, h2, h3').filter({ hasText: new RegExp(text, 'i') }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
+
+
 
 Then('I should see 6 OTP input boxes', async ({ page }) => {
   // FACT: OTPInput renders 6 <input type="text"> inside div.royal-otp-wrapper
@@ -233,17 +225,10 @@ Then('I should see a login error message', async ({ page }) => {
   ).toBeVisible({ timeout: 15_000 });
 });
 
-Then('I should see the admin dashboard title', async ({ page }) => {
-  await expect(
-    page.locator('h1').filter({ hasText: /Admin/i }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
 
-Then('I should see the "Admin Dashboard" heading', async ({ page }) => {
-  await expect(
-    page.locator('h1').filter({ hasText: /Admin Dashboard/i }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
+
+
+
 
 Then('I should see the {string} widget', async ({ page }, widgetTitle) => {
   // FACT: Admin dashboard renders div.dashboard-widget with h3 headings
@@ -270,17 +255,7 @@ Then('I should be on the {string} page', async ({ page }, path) => {
   await expect(page).toHaveURL(new RegExp(path.replace(/\//g, '\\/')), { timeout: 15_000 });
 });
 
-Then('I should see the {string} heading', async ({ page }, text) => {
-  await expect(
-    page.locator('h1').filter({ hasText: new RegExp(text, 'i') }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
 
-Then('I should see the "User Management" heading', async ({ page }) => {
-  await expect(
-    page.locator('h1').filter({ hasText: /User Management/i }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
 
 Then('I should see the {string} stat card', async ({ page }, label) => {
   // FACT: stat cards contain a <div class="text-sm text-gray-500"> with the label text
@@ -324,11 +299,7 @@ Then('I should eventually be redirected to the {string} page', async ({ page }, 
   await expect(page).toHaveURL(new RegExp(`${path.replace(/\//g, '\\/')}$`), { timeout: 15_000 });
 });
 
-Then('I should see the "Admin Access" heading', async ({ page }) => {
-  await expect(
-    page.locator('h1').filter({ hasText: /Admin Access/i }).first()
-  ).toBeVisible({ timeout: 15_000 });
-});
+
 
 Then('I should see a button labelled {string}', async ({ page }, label) => {
   await expect(
