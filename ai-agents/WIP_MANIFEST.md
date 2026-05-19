@@ -55,6 +55,8 @@
 | System/Auth | Session DB Schema & Phone Login | 2026-05-17 | **STABILIZED**: Made email field optional in Session schema to prevent validation failures during phone-only logins. |
 | Pipeline | Local Pre-Push E2E Gate | 2026-05-17 | **STABILIZED**: Removed CI workflows and integrated local git pre-push verification with 'npm run e2e'. |
 | Pipeline | Firebase Dependency Synchronization | 2026-05-18 | **STABILIZED**: Synced Firebase SDK to v11.2.0 across root and frontend to resolve Vercel build issues and satisfy peer dependencies. |
+| System/Auth | Phone Admin elevation, promote-to-admin Phone Query, config dotenv CWD path fix | 2026-05-18 | **STABILIZED**: Elevated the production phone-only admin account, upgraded promotion script to support phone-only queries, resolved config dotenv paths relative to __dirname for CWD-agnostic CLI execution, and documented Section 6 in the admin-playbook. |
+| UI/UX | Admin Bottom Navigation Logout Overlay Visibility | 2026-05-18 | **STABILIZED**: Resolved issue where logout overlay displayed immediately on admin dashboard mount by adding style display none by default. |
 
 ---
 

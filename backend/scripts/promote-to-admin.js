@@ -37,17 +37,25 @@ async function promoteToAdmin() {
     await mongoose.connect(mongoUri, config.DATABASE.OPTIONS);
     console.log('✅ Connected to MongoDB');
 
-    // Find the user by email
-    const email = targetEmail;
-    const user = await User.findOne({ email });
+    // Find the user by email or phone number
+    const identifier = targetEmail.trim();
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { phoneNumber: identifier }
+      ]
+    });
     
     if (!user) {
-      console.log('❌ User not found:', email);
+      console.log('❌ User not found with email or phone number:', identifier);
       return;
     }
 
+    const userIdentifier = user.email || user.phoneNumber;
+
     console.log('👤 Found user:', {
-      email: user.email,
+      email: user.email || 'None (Phone Signup)',
+      phoneNumber: user.phoneNumber || 'None',
       currentRole: user.role,
       userUuid: user.userUuid
     });
@@ -59,7 +67,7 @@ async function promoteToAdmin() {
     });
 
     const answer = await new Promise((resolve) => {
-      rl.question(`\n⚠️  Are you sure you want to promote ${email} to admin? (y/N): `, resolve);
+      rl.question(`\n⚠️  Are you sure you want to promote ${userIdentifier} to admin? (y/N): `, resolve);
     });
 
     rl.close();
@@ -69,7 +77,7 @@ async function promoteToAdmin() {
       return;
     }
 
-    console.log(`\n🔧 Promoting ${email} to admin role...`);
+    console.log(`\n🔧 Promoting ${userIdentifier} to admin role...`);
 
     // Update user role to admin
     user.role = 'admin';
@@ -77,7 +85,8 @@ async function promoteToAdmin() {
 
     console.log('✅ User promoted to admin successfully!');
     console.log('📊 Updated user info:', {
-      email: user.email,
+      email: user.email || 'None',
+      phoneNumber: user.phoneNumber || 'None',
       role: user.role,
       userUuid: user.userUuid
     });
