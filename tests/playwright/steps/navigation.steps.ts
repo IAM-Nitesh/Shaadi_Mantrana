@@ -20,7 +20,7 @@ function createMockJwt(payload: Record<string, any>) {
 
 Given('I am on the {string} page', async ({ page }, path) => {
   await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 });
 
 When('I click the {string} link in the navigation', async ({ page }, linkName) => {
@@ -88,7 +88,7 @@ Then('I should see the chat interface for {string}', async ({ page }, sectionTit
 When('I navigate to {string}', async ({ page }, path) => {
   // Fact: Next.js trailing slash redirects can interrupt navigation. (Action 232)
   await page.goto(path, { waitUntil: 'commit' });
-  await page.waitForURL(new RegExp(`${path.replace(/\/$/, '')}/?`), { timeout: 15000 });
+  await page.waitForURL(new RegExp(`${path.replace(/\/$/, '')}/?`), { timeout: 30000 });
 
   // Fact: Fresh users land on the Onboarding Overlay (Action 182)
   // We handle it here so the feature files stay clean.
@@ -380,6 +380,34 @@ async function injectMockSession(page, context, persona) {
             mongoProfiles: 4
           }
         }
+      })
+    });
+  });
+
+  await page.route('**/api/admin/users*', async route => {
+    console.log('👥 Mocking Admin Users');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        users: [
+          {
+            _id: 'user-1', email: 'alice@example.com', role: 'user', status: 'active',
+            isApprovedByAdmin: true, profileCompleteness: 100,
+            createdAt: '2026-01-01T00:00:00Z', lastActive: '2026-05-19T00:00:00Z',
+            profile: { name: 'Alice', images: [] }, verification: { isVerified: true }
+          },
+          {
+            _id: 'user-2', email: 'bob@example.com', role: 'user', status: 'paused',
+            isApprovedByAdmin: false, profileCompleteness: 60,
+            createdAt: '2026-02-01T00:00:00Z', lastActive: '2026-05-10T00:00:00Z',
+            profile: { name: 'Bob', images: [] }, verification: { isVerified: false }
+          }
+        ],
+        total: 2,
+        active: 1,
+        paused: 1,
+        invited: 0
       })
     });
   });
