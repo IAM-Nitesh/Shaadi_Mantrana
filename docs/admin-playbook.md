@@ -13,13 +13,20 @@ For security reasons, the database does not permit direct signup of administrato
 2. This creates their primary Firebase UID and standard database record in MongoDB as a `user` role with an `active` status.
 
 ### Phase B: Elevating to Admin via Mongoose CLI
-A production script is supplied at `backend/scripts/promote-to-admin.js` to elevate any user account to `admin` securely.
+A production script is supplied at `backend/scripts/promote-to-admin.js` to elevate any user account to `admin` securely using their **email**, **phone number**, or **user UUID**.
 
 1. SSH into the production server or open a secure terminal session inside the hosting console (e.g., Render/AWS).
 2. Set the strict environment override flag (`FORCE_PROMOTE_ADMIN=true`) along with the production database connection string.
-3. Run the promotion script with the admin's email or registered email:
+3. Run the promotion script with the admin's email, phone number, or user UUID:
    ```bash
+   # Via Email:
    FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js admin_email@domain.com
+   
+   # Via Phone Number:
+   FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "+917086875013"
+   
+   # Via User UUID:
+   FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "f3f603fd-5a6f-4122-b2f6-eaa86410e40a"
    ```
 4. Confirm the interactive prompt. The script directly sets `role = 'admin'` in MongoDB.
 
