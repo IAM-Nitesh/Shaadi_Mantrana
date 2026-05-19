@@ -23,7 +23,7 @@ A production script is supplied at `backend/scripts/promote-to-admin.js` to elev
    FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js admin_email@domain.com
    
    # Via Phone Number:
-   FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "+917086875013"
+   FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "+91XXXXXXXXXX"
    
    # Via User UUID:
    FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "f3f603fd-5a6f-4122-b2f6-eaa86410e40a"
@@ -144,7 +144,7 @@ When Testing Mode is active in the frontend build, the client-side Firebase SDK 
 ### Test Numbers vs. Real Numbers
 
 * **Pre-configured Test Phone Numbers**: If you use a pre-configured test phone number (defined in your Firebase Console), Google's backend accepts the dummy token and lets you log in instantly using the pre-configured OTP.
-* **Real, Non-Test Phone Numbers**: If you use a real, non-test phone number (like `+917086875013`), Google's backend refuses to send a real SMS because the ReCAPTCHA token is dummy (`MALFORMED`). This prevents automated bots from draining your SMS quota.
+* **Real, Non-Test Phone Numbers**: If you use a real, non-test phone number (like `+91XXXXXXXXXX`), Google's backend refuses to send a real SMS because the ReCAPTCHA token is dummy (`MALFORMED`). This prevents automated bots from draining your SMS quota.
 
 ---
 
@@ -155,10 +155,10 @@ If you want to keep testing mode enabled (bypassing ReCAPTCHA to log in instantl
 1. Go to your **Firebase Console**.
 2. Navigate to **Authentication** ➔ **Sign-in method** ➔ **Phone**.
 3. Expand the **Phone** provider settings and locate the section **"Phone numbers for testing (optional)"**.
-4. Add your phone number `+917086875013` and set a custom verification code (e.g., `123456`).
+4. Add your phone number `+91XXXXXXXXXX` and set a custom verification code (e.g., `123456`).
 5. Save changes.
 6. Try logging in again—you can now log in instantly on `https://www.shaadimantrana.live` using your number and the code `123456`!
-*(You can also use the existing configured test number: `+919354799303` with OTP `123456`)*.
+*(You can also use the existing configured test number: `+91YYYYYYYYYY` with OTP `123456`)*.
 
 #### 📲 Option B: Enable Real SMS Sending (For Production Rollout)
 If you want the site to send a real SMS verification code to actual mobile devices:
