@@ -37,7 +37,7 @@ router.get('/users', authenticateToken, adminMiddleware, async (req, res) => {
     const transformedUsers = allUsers.map(user => {
       return {
         _id: user._id,
-        email: user.email,
+        phoneNumber: user.phoneNumber || 'No phone',  // Primary identifier (email hidden)
         firstName: user.profile?.name?.split(' ')[0] || '',
         lastName: user.profile?.name?.split(' ').slice(1).join(' ') || '',
         fullName: user.profile?.name || '',
@@ -73,31 +73,60 @@ router.get('/users', authenticateToken, adminMiddleware, async (req, res) => {
 // Add new user (admin only)
 router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, phoneNumber } = req.body;
 
-    if (!email) {
+    // Require at least one: phone (primary) or email (secondary)
+    if (!phoneNumber && !email) {
       return res.status(400).json({
         success: false,
-        error: 'Email is required'
+        error: 'Either phoneNumber or email is required'
       });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    // Validate phone number format if provided (E.164 international format)
+    if (phoneNumber) {
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(phoneNumber.toString().trim())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid phone number format. Use E.164 format (e.g., +919876543210)'
+        });
+      }
+    }
+
+    // Check if user with phone already exists (if phone provided)
+    if (phoneNumber) {
+      const normalizedPhone = phoneNumber.toString().trim();
+      const existingUserByPhone = await User.findOne({ phoneNumber: normalizedPhone });
+      if (existingUserByPhone) {
+        return res.status(409).json({
+          success: false,
+          error: 'User with this phone number already exists'
+        });
+      }
+    }
+
+    // Normalize email if provided
+    const normalizedEmail = email ? email.toLowerCase().trim() : null;
+
+    // Check if user with email already exists (if email provided)
+    if (normalizedEmail) {
+      const existingUserByEmail = await User.findOne({ email: normalizedEmail });
+      if (existingUserByEmail) {
+        return res.status(409).json({
+          success: false,
+          error: 'User with this email already exists'
+        });
+      }
+    }
+
     const userUuid = uuidv4();
     const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        error: 'User with this email already exists'
-      });
-    }
 
     // Create new user directly in User collection with proper fields
     const newUser = new User({
       email: normalizedEmail,
+      phoneNumber: phoneNumber ? phoneNumber.toString().trim() : null,
       userUuid: userUuid,
       role: 'user',
       status: 'invited',
@@ -170,20 +199,22 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
 
     await newUser.save();
 
-    // Create invitation record
-    const invitation = new Invitation({
-      email: normalizedEmail,
-      uuid: userUuid,
-      invitationId,
-      status: 'sent',
-      sentDate: new Date(),
-      count: 1,
-      sentBy: req.user.userId
-    });
+    // Create invitation record (if email provided)
+    let invitation = null;
+    if (normalizedEmail) {
+      invitation = new Invitation({
+        email: normalizedEmail,
+        uuid: userUuid,
+        invitationId,
+        status: 'sent',
+        sentDate: new Date(),
+        count: 1,
+        sentBy: req.user.userId
+      });
+      await invitation.save();
+    }
 
-    await invitation.save();
-
-    console.log(`✅ New user created by admin: ${normalizedEmail} (UUID: ${userUuid})`);
+    console.log(`✅ New user created by admin: phone=${phoneNumber}, email=${normalizedEmail}, UUID=${userUuid}`);
 
     res.status(201).json({
       success: true,
@@ -191,6 +222,7 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
       user: {
         _id: newUser._id,
         email: newUser.email,
+        phoneNumber: newUser.phoneNumber,
         userUuid: newUser.userUuid,
         role: newUser.role,
         status: newUser.status,
