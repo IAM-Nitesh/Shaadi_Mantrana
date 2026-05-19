@@ -69,7 +69,6 @@ export default function AdminLayout({
     setAuthError(null);
     
     // Redirect to dashboard if accessing admin root
-    const cleanPath = pathname.replace(/\/$/, '');
     if (cleanPath === '/admin') {
       router.replace('/admin/dashboard');
     }
