@@ -20,8 +20,11 @@ export default function AdminLayout({
 
   // Handle authentication and admin access checks
   useEffect(() => {
+    // Normalize pathname to handle Next.js trailingSlash config
+    const cleanPath = pathname.replace(/\/$/, '');
+    
     // Skip authentication check for login page
-    if (pathname === '/admin/login') {
+    if (cleanPath === '/admin/login') {
       return;
     }
 
@@ -66,7 +69,7 @@ export default function AdminLayout({
     setAuthError(null);
     
     // Redirect to dashboard if accessing admin root
-    if (pathname === '/admin') {
+    if (cleanPath === '/admin') {
       router.replace('/admin/dashboard');
     }
   }, [pathname, router, isLoading, isAuthenticated, user]);
@@ -90,7 +93,8 @@ export default function AdminLayout({
   }
 
   // Only render children if authenticated and admin, or on login page
-  if ((isAuthenticated && user?.role === 'admin') || pathname === '/admin/login') {
+  const cleanPath = pathname.replace(/\/$/, '');
+  if ((isAuthenticated && user?.role === 'admin') || cleanPath === '/admin/login') {
     return (
       <div className="min-h-screen bg-royal-obsidian flex flex-col">
         {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}

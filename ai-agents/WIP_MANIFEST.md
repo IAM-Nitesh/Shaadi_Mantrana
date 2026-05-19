@@ -57,6 +57,7 @@
 | Pipeline | Firebase Dependency Synchronization | 2026-05-18 | **STABILIZED**: Synced Firebase SDK to v11.2.0 across root and frontend to resolve Vercel build issues and satisfy peer dependencies. |
 | System/Auth | Phone Admin elevation, promote-to-admin Phone Query, config dotenv CWD path fix | 2026-05-18 | **STABILIZED**: Elevated the production phone-only admin account, upgraded promotion script to support phone-only queries, resolved config dotenv paths relative to __dirname for CWD-agnostic CLI execution, and documented Section 6 in the admin-playbook. |
 | UI/UX | Admin Bottom Navigation Logout Overlay Visibility | 2026-05-18 | **STABILIZED**: Resolved issue where logout overlay displayed immediately on admin dashboard mount by adding style display none by default. |
+| Testing | Admin E2E Playwright Suite | 2026-05-19 | **STABILIZED**: Reached 50/50 passing state. Resolved regex step conflicts, configured Playwright bypass for Firebase OTPs, injected `/api/admin/users` and `/api/auth/status` mocks, fixed WebKit timeout flakes (`domcontentloaded`), and resolved Next.js `trailingSlash` auth guard redirect bug. |
 
 ---
 
