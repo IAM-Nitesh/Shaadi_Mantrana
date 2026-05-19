@@ -20,7 +20,7 @@ function createMockJwt(payload: Record<string, any>) {
 
 Given('I am on the {string} page', async ({ page }, path) => {
   await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 });
 
 When('I click the {string} link in the navigation', async ({ page }, linkName) => {
