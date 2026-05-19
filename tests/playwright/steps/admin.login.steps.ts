@@ -36,6 +36,10 @@ import { expect } from '@playwright/test';
 
 const { Given, When, Then } = createBdd();
 
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GIVEN
 // ─────────────────────────────────────────────────────────────────────────────
@@ -179,19 +183,19 @@ Then('the admin nav bar should have a {string} link', async ({ page }, linkName)
   const adminNav = page.locator('[aria-label="Admin bottom navigation"]');
   await expect(adminNav).toBeVisible({ timeout: 15_000 });
   await expect(
-    adminNav.locator('span, a').filter({ hasText: new RegExp(`^${linkName}$`, 'i') }).first()
+    adminNav.locator('span, a').filter({ hasText: new RegExp(`^${escapeRegExp(linkName)}$`, 'i') }).first()
   ).toBeVisible({ timeout: 10_000 });
 });
 
 // UNIQUE: "admin {string} page" prefix differs from navigation's "the {string} page"
 Then('I should be on the admin {string} page', async ({ page }, path) => {
-  await expect(page).toHaveURL(new RegExp(path.replace(/\//g, '\\/')), { timeout: 15_000 });
+  await expect(page).toHaveURL(new RegExp(escapeRegExp(path)), { timeout: 15_000 });
 });
 
 // UNIQUE: "stat card" suffix — no existing step
 Then('I should see the {string} stat card', async ({ page }, label) => {
   await expect(
-    page.locator('.user-card').filter({ hasText: new RegExp(label, 'i') }).first()
+    page.locator('.user-card').filter({ hasText: new RegExp(escapeRegExp(label), 'i') }).first()
   ).toBeVisible({ timeout: 15_000 });
 });
 
@@ -205,7 +209,7 @@ Then('I should see a user table with at least one row', async ({ page }) => {
 // UNIQUE: "column header" suffix — no existing step
 Then('the user table should have the {string} column header', async ({ page }, colName) => {
   await expect(
-    page.locator('thead th').filter({ hasText: new RegExp(colName, 'i') }).first()
+    page.locator('thead th').filter({ hasText: new RegExp(escapeRegExp(colName), 'i') }).first()
   ).toBeVisible({ timeout: 10_000 });
 });
 
@@ -226,12 +230,12 @@ Then('the logout animation overlay should be visible', async ({ page }) => {
 
 // UNIQUE: "eventually redirected" — navigation has "redirected to the {string} page" (different phrasing)
 Then('I should eventually be redirected to the {string} page', async ({ page }, path) => {
-  await expect(page).toHaveURL(new RegExp(`${path.replace(/\//g, '\\/')}$`), { timeout: 15_000 });
+  await expect(page).toHaveURL(new RegExp(`${escapeRegExp(path)}$`), { timeout: 15_000 });
 });
 
 // UNIQUE: "button labelled" — no existing step uses this exact phrasing
 Then('I should see a button labelled {string}', async ({ page }, label) => {
   await expect(
-    page.getByRole('button', { name: new RegExp(label, 'i') }).first()
+    page.getByRole('button', { name: new RegExp(escapeRegExp(label), 'i') }).first()
   ).toBeVisible({ timeout: 10_000 });
 });
