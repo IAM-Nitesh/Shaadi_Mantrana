@@ -46,10 +46,17 @@ Given('I am on the {string} page with no session', async ({ page, context }, pat
   await context.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
+    // Enable Playwright bypass — LoginForm.handleSendOTP skips Firebase when this is set
     (window as any).__PLAYWRIGHT_TEST__ = true;
   });
+  // Mock auth BEFORE navigation — ensures AuthContext resolves as unauthenticated immediately
+  // without making a real network call that could cause race conditions or redirect to '/'
+  await page.route('**/api/auth/status', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ authenticated: false, user: null })
+  }));
   await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

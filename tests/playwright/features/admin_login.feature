@@ -86,14 +86,14 @@ Feature: Admin Login & Access Control
   # ── OTP Screen Transition ────────────────────────────────────────────────────
 
   Scenario: After entering phone number the OTP screen appears (Playwright test mode)
-    Given I am on the "/login" page
+    Given I am on the "/login" page with no session
     When I type "7086875013" into the phone input
     And I click the "Get Verification Code" button
     Then I should see the "Verify Mobile" heading on the login screen
     And I should see 6 OTP input boxes
 
   Scenario: Admin can go back to phone entry from OTP screen
-    Given I am on the "/login" page
+    Given I am on the "/login" page with no session
     When I type "7086875013" into the phone input
     And I click the "Get Verification Code" button
     Then I should see the "Verify Mobile" heading on the login screen
@@ -101,13 +101,13 @@ Feature: Admin Login & Access Control
     Then I should see the "Shaadi Mantrana" heading on the login screen
 
   Scenario: Verify Code button is disabled until all 6 OTP digits are entered
-    Given I am on the "/login" page
+    Given I am on the "/login" page with no session
     When I type "7086875013" into the phone input
     And I click the "Get Verification Code" button
     Then the "Verify Code" button should be disabled
 
   Scenario: Admin login fails with wrong OTP and shows an error
-    Given I am on the "/login" page
+    Given I am on the "/login" page with no session
     When I type "7086875013" into the phone input
     And I click the "Get Verification Code" button
     And I enter the OTP "999999"
