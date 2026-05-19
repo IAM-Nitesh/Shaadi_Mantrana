@@ -523,3 +523,12 @@ Conflicting registrar nameservers (split between registrar and Vercel) and Verce
 **Insight**:
 Ensure interactive modals or full-screen overlays (like logout animation overlays) inside global shell components (like AdminBottomNavigation) are hidden by default using style={{ display: 'none' }} or hidden classes. Otherwise, they cover page components immediately upon mounting, causing immediate visual lockout.
 
+
+---
+
+### 🎓 Learning: Admin Login E2E Test Suite
+**Date**: 2026-05-19 21:07:22
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: Revalidate when admin UI structure changes
+**Insight**:
+Admin login BDD tests use injectAdminSession (mocked API routes) not real Firebase. Key locators: #phone-input, #get-otp-btn, div.royal-otp-wrapper input, .logout-overlay (display:none by default), [aria-label='Admin bottom navigation']. Step definitions in tests/playwright/steps/admin.login.steps.ts, feature in tests/playwright/features/admin_login.feature.
+
