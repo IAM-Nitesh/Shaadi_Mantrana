@@ -532,3 +532,21 @@ Ensure interactive modals or full-screen overlays (like logout animation overlay
 **Insight**:
 Admin login BDD tests use injectAdminSession (mocked API routes) not real Firebase. Key locators: #phone-input, #get-otp-btn, div.royal-otp-wrapper input, .logout-overlay (display:none by default), [aria-label='Admin bottom navigation']. Step definitions in tests/playwright/steps/admin.login.steps.ts, feature in tests/playwright/features/admin_login.feature.
 
+
+---
+
+### 🎓 Learning: Admin E2E Failure Triage Method
+**Date**: 2026-05-19 21:44:53
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: Check before every new feature file
+**Insight**:
+Before writing any step, grep ALL step files for BOTH string AND regex patterns (grep including /regex/). The root cause of repeated step conflicts was missing regex patterns like /^I click the '([^']+)' button$/ in navigation.steps.ts. Also: always mock /api/auth/status as {authenticated:false} in no-session steps, and mock /api/admin/users alongside /api/admin/stats. Use page snapshot YAML from error-context.md as primary evidence — it shows exactly what the browser sees.
+
+
+---
+
+### 🎓 Learning: Next.js trailingSlash vs usePathname & WebKit networkidle
+**Date**: 2026-05-19 22:40:35
+**Version**: 1.0 | **Domain**: Architecture & Testing | **Expiry Hint**: Permanent
+**Insight**:
+1) Next.js trailingSlash:true causes usePathname() to return paths with trailing slashes (e.g. '/admin/login/'). Always strip it with .replace(/\/$/, '') before strict equality checks in route guards to prevent incorrect redirects. 2) WebKit tests can hang indefinitely on waitForLoadState('networkidle') due to HMR/telemetry WebSocket connections. Always use 'domcontentloaded' instead.
+
