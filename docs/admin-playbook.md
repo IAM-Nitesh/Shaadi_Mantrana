@@ -202,3 +202,51 @@ We executed the following steps to establish a clean, standard DNS architecture:
 | `www.shaadimantrana.live` | Vercel | ✅ Valid / SSL Active | Production Frontend (Next.js) |
 | `www.shaadimantrana.app` | Vercel | ✅ Valid / SSL Active | Alternative Frontend Alias |
 | `api.shaadimantrana.live` | Render | ✅ SSL Active / CNAME Active | Production Backend API (Express/Mongo) |
+
+---
+
+## Section 7: Admin E2E BDD Testing & Troubleshooting
+
+### 🚀 Execution Command
+To run the full E2E Behavior-Driven Development (BDD) test suite locally across Chromium and WebKit:
+```bash
+npm run test:e2e:bdd
+```
+
+### 🎭 Authentication Mocking Mechanics
+The E2E suite bypasses real Firebase SMS OTP checks during automated testing by injecting a mock session. This is orchestrated in `tests/playwright/steps/navigation.steps.ts` via the `injectMockSession` helper:
+1. **Playwright Test Flag**: Sets `window.__PLAYWRIGHT_TEST__ = true` in the browser context, prompting the frontend `LoginForm` component to skip Firebase OTP and proceed in test-bypass mode.
+2. **Backend Auth Mock**: Intercepts and mocks `**/api/auth/status` to instantly return authenticated status and session data for the corresponding persona:
+   * **Admin Persona**: `role: 'admin'`, `isApprovedByAdmin: true`, `profileCompleteness: 100`.
+3. **Database & Cache Clearance**: Resets `localStorage`, `sessionStorage`, and cookies before injecting credentials.
+4. **Data Seed Mocks**: Registers mock endpoints for `/api/admin/stats` and `/api/admin/users` to dynamically populate dashboard cards and tables without requiring an active backend connection.
+
+### ⚠️ Common E2E Gotchas & Fixes
+
+#### 1. Next.js `trailingSlash` Redirect Bug
+* **Symptom**: Unauthenticated tests visiting `/admin/login` were redirected to `/` (Home) instead of staying on the gateway screen.
+* **Root Cause**: Next.js is configured with `trailingSlash: true` in `next.config.js`. This makes `usePathname()` return `'/admin/login/'` (with a trailing slash) instead of `'/admin/login'`. In the `AdminLayout` auth guard, the strict check `if (pathname === '/admin/login')` failed, executing the unauthenticated fallback redirect to `/`.
+* **Fix**: Normalize the pathname before any routing checks:
+  ```typescript
+  const cleanPath = pathname.replace(/\/$/, '');
+  if (cleanPath === '/admin/login') { ... }
+  ```
+
+#### 2. WebKit HMR/WebSocket Hanging
+* **Symptom**: WebKit tests timed out (120000ms exceeded) during navigation steps.
+* **Root Cause**: Playwright's `page.waitForLoadState('networkidle')` waits for the network to be silent. Next.js dev server's Hot Module Replacement (HMR) WebSocket connections remain active, causing WebKit to hang indefinitely.
+* **Fix**: Standardize on `domcontentloaded` for navigation load state verification:
+  ```typescript
+  await page.waitForLoadState('domcontentloaded');
+  ```
+
+#### 3. CodeQL Compliance (Regex Injection Protection)
+* **Symptom**: CodeQL flagged dynamic RegExp creation in step definitions with "Incomplete string escaping or encoding".
+* **Root Cause**: Replaced slashes manually (e.g. `path.replace(/\//g, '\\/')`) without sanitizing other regex metacharacters.
+* **Fix**: Use a comprehensive escaping utility before passing any dynamic string parameters into `new RegExp()`:
+  ```typescript
+  function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  ```
+
