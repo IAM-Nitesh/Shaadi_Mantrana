@@ -1,9 +1,18 @@
 Feature: Admin Login & Access Control
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Business Rule: Admin = role 'admin' in DB. Login flow is shared (Firebase
-  # Phone OTP). Backend sets redirectTo '/admin/dashboard' for admin accounts.
-  # Test mode: __PLAYWRIGHT_TEST__ bypasses Firebase — OTP "123456" always passes.
+  # Step pattern map (every step resolves to exactly ONE handler):
+  #
+  # navigation.steps.ts handles:
+  #   Given 'I am on the {string} page'
+  #   Given 'the test user is in the {string} state'
+  #   When  /^I click the "([^"]+)" button$/       ← ALL button clicks
+  #   When  'I navigate to {string}'
+  #   Then  'I should see the {string} heading'
+  #   Then  'I should see the admin dashboard title'
+  #   Then  'I should be redirected to the {string} page'
+  #
+  # admin.login.steps.ts handles everything else below.
   # ─────────────────────────────────────────────────────────────────────────────
 
   # ── Happy Path ───────────────────────────────────────────────────────────────
@@ -88,7 +97,7 @@ Feature: Admin Login & Access Control
     When I type "7086875013" into the phone input
     And I click the "Get Verification Code" button
     Then I should see the "Verify Mobile" heading on the login screen
-    When I click the "← Change Phone Number" link
+    When I click the "← Change Phone Number" back link
     Then I should see the "Shaadi Mantrana" heading on the login screen
 
   Scenario: Verify Code button is disabled until all 6 OTP digits are entered
