@@ -44,7 +44,7 @@
     "gsap": "^3.12.5",
     "lucide-react": "^0.477.0",
     "next": "^15.5.18",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.15",
     "posthog-js": "^1.373.1",
     "react": "18.3.1",
     "react-day-picker": "^8.10.1",
