@@ -48,6 +48,7 @@
 | System | Vercel & Render MCP Config | 2026-05-15 | **STABILIZED**: Verified Bearer auth for both; synced global config at `~/.gemini/antigravity/mcp_config.json`; integrated into Master Brain Watchdog. |
 | System | `mcp-infrastructure.md` | 2026-05-15 | Codified setup steps and `mcp-remote` technical rationale |
 | Branding | `branding/` + `scripts/` | 2026-05-16 | **STABILIZED**: Single Source of Truth (SSoT) implemented via `npm run branding:sync`. 30+ platform assets now managed automatically from one source. |
+| Backend | Admin Phone Workflow | 2026-05-20 | **COMPLETE**: Phone-based user creation (E.164 validation), email hiding in admin UI, graceful profile picture fallback (404→200 default avatar). Backend tests created. Frontend component updates pending. |
 | UI | **Royal Loading System** | 2026-05-16 | **STABILIZED**: 3-tier high-fidelity ecosystem (Grand, Skeleton, Spark) with 'Diamond Ring' architecture and zero-drift svgOrigin pinning. |
 | Testing | E2E BDD Test Suite (Auth, Navigation, Matching/Chat, Onboarding) | 2026-05-17 | Exact `npm run test:e2e:bdd` verified 14 passed across Chromium and WebKit; global teardown cleaned test personas successfully. |
 | System/Auth | Profile Type Definition Wizard Integration | 2026-05-17 | Resolved Next.js build block by adding hasCompletedWizard field to Profile interface; clean build compiled successfully. |
