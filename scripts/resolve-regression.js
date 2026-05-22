@@ -138,7 +138,7 @@ if (fs.existsSync(featureFilePath)) {
 Feature: Regression Test - ${matchedTitle}
 
   Scenario: Prevent regression and verify fix
-    Given I am logged in as an active user
+    Given I am a logged-in user with a complete profile
     # TODO: Implement reproduction steps for: ${matchedTitle}
     # Then verify correct state is preserved
 `;
