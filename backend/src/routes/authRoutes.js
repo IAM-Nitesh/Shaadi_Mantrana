@@ -37,9 +37,9 @@ router.get('/email/health', async (req, res) => {
   }
 });
 
-// OTP endpoints (Legacy email OTP endpoints deprecated and commented out)
-// router.post('/send-otp', (req, res) => authController.sendOTP(req, res));
-// router.post('/verify-otp', (req, res) => authController.verifyOTP(req, res));
+// OTP endpoints (Legacy email OTP endpoints deprecated)
+router.post('/send-otp', (req, res) => authController.sendOTP(req, res));
+router.post('/verify-otp', (req, res) => authController.verifyOTP(req, res));
 router.post('/firebase-login', (req, res) => authController.firebaseLogin(req, res));
 
 // Profile endpoints

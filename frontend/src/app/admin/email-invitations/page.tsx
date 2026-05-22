@@ -10,7 +10,8 @@ import { apiClient } from '../../../utils/api-client';
 
 interface Invitation {
   _id: string;
-  email: string;
+  phoneNumber?: string;
+  email?: string;
   status: string;
   createdAt: string;
   sentAt?: string;
@@ -22,7 +23,7 @@ export default function EmailInvitations() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [newEmail, setNewEmail] = useState('');
+  const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [sendingInvitation, setSendingInvitation] = useState(false);
   const [resendingInvitation, setResendingInvitation] = useState<string | null>(null);
 
@@ -57,15 +58,22 @@ export default function EmailInvitations() {
   };
 
   const sendNewInvitation = async () => {
-    if (!newEmail.trim()) return;
+    if (!newPhoneNumber.trim()) return;
 
     try {
       setSendingInvitation(true);
       // Admin authentication is already handled by AdminLayout
       
-      logger.debug('Sending invitation to:', newEmail.trim());
+      const phoneNumber = newPhoneNumber.trim();
+      logger.debug('Sending invitation to phone:', phoneNumber);
       
-      const response = await apiClient.post('/api/admin/invitations', { email: newEmail.trim() }, {
+      // Validate E.164 format for phone numbers
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        throw new Error('Please enter a valid phone number in +91 format (e.g., +919876543210)');
+      }
+      
+      const response = await apiClient.post('/api/admin/invitations', { phoneNumber }, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -78,7 +86,7 @@ export default function EmailInvitations() {
       if (response.ok) {
         const responseData = response.data;
         logger.debug('Success response:', responseData);
-        setNewEmail('');
+        setNewPhoneNumber('');
         await fetchInvitations();
       } else {
         const errorData: any = response.data || { error: 'Unknown error' };
@@ -192,10 +200,10 @@ export default function EmailInvitations() {
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8 pt-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-          <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mr-3" />
-          Email Invitations
+          <CustomIcon name="ri-phone-line" className="text-4xl text-blue-600 mr-3" />
+          Phone Invitations
         </h1>
-        <p className="text-gray-600">Send and manage email invitations to new users</p>
+        <p className="text-gray-600">Send and manage phone invitations to new users</p>
       </div>
 
       {/* Add New Invitation */}
@@ -207,18 +215,18 @@ export default function EmailInvitations() {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="Enter email address"
+              type="tel"
+              value={newPhoneNumber}
+              onChange={(e) => setNewPhoneNumber(e.target.value)}
+              placeholder="Enter phone number (+919876543210)"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
+            <p className="text-xs text-gray-500 mt-2">Format: +91 followed by 10 digits (e.g., +919876543210)</p>
           </div>
           <button
             onClick={sendNewInvitation}
-            disabled={!newEmail.trim() || sendingInvitation}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
+            disabled={!newPhoneNumber.trim() || sendingInvitation}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
             {sendingInvitation ? (
               <>
                 <div className="flex items-center justify-center mr-2">
@@ -251,7 +259,7 @@ export default function EmailInvitations() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
+                    Phone Number
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
@@ -267,10 +275,10 @@ export default function EmailInvitations() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-                          <CustomIcon name="ri-mail-line" className="text-lg" />
+                          <CustomIcon name="ri-phone-line" className="text-lg" />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{invitation.email}</div>
+                          <div className="text-sm font-medium text-gray-900">{invitation.phoneNumber || invitation.email || 'No contact'}</div>
                           {invitation.uuid && (
                             <div className="text-xs text-gray-500">UUID: {invitation.uuid}</div>
                           )}
@@ -293,9 +301,9 @@ export default function EmailInvitations() {
 
           {invitations.length === 0 && (
             <div className="text-center py-12">
-              <CustomIcon name="ri-mail-line" className="text-6xl text-gray-300 mx-auto mb-4" />
+              <CustomIcon name="ri-phone-line" className="text-6xl text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No invitations found</h3>
-              <p className="text-gray-500">No email invitations have been sent yet.</p>
+              <p className="text-gray-500">No phone invitations have been sent yet.</p>
             </div>
           )}
         </div>
