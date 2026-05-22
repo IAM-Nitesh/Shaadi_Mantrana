@@ -30,7 +30,7 @@ class InviteEmailService {
       // If provider is not SMTP (e.g. resend), skip creating SMTP transporter
       const provider = (config.EMAIL.PROVIDER || 'smtp').toLowerCase();
       if (provider !== 'smtp') {
-        console.log(`📧 Invite email: skipping SMTP transporter because provider is '${provider}'`);
+        console.log('📧 Invite email: skipping SMTP transporter because provider: %s', provider);
         this.initialized = true;
         return;
       }
@@ -131,7 +131,7 @@ class InviteEmailService {
 
       // If email service is disabled or not working, just log the link
       if (!config.EMAIL.ENABLED) {
-        console.log(`📧 Onboarding link for ${userEmail}: ${inviteLink} (Email service disabled - using console)`);
+        console.log('📧 Onboarding link for %s: %s (Email service disabled - using console)', userEmail, inviteLink);
         return {
           success: true,
           messageId: 'console-' + Date.now(),
@@ -147,7 +147,7 @@ class InviteEmailService {
           const subject = '🎉 Welcome to Shaadi Mantrana - Your Journey Begins!';
           const htmlContent = await this.generateOnboardingEmailHTML(userEmail, inviteLink, userUuid);
           const result = await this.sendViaResend(userEmail, subject, htmlContent);
-          console.log(`✅ Onboarding email sent via Resend to ${userEmail}`);
+          console.log('✅ Onboarding email sent via Resend to %s', userEmail);
           return {
             success: true,
             messageId: result.messageId,
@@ -155,7 +155,7 @@ class InviteEmailService {
             method: 'resend'
           };
         } catch (error) {
-          console.error(`❌ Resend send failed for ${userEmail}:`, error.message);
+          console.error('❌ Resend send failed for %s: %s', userEmail, error.message);
           // fall through to transporter or console fallback
         }
       }
@@ -182,12 +182,12 @@ class InviteEmailService {
         }
       };
 
-      console.log(`📧 Attempting to send onboarding email to ${userEmail}...`);
+      console.log('📧 Attempting to send onboarding email to %s...', userEmail);
       // Send email
       const result = await this.transporter.sendMail(mailOptions);
       
-      console.log(`✅ Onboarding email sent successfully to ${userEmail}`);
-      console.log(`📧 Message ID: ${result.messageId}`);
+      console.log('✅ Onboarding email sent successfully to %s', userEmail);
+      console.log('📧 Message ID: %s', result.messageId);
       
       return {
         success: true,
@@ -197,13 +197,13 @@ class InviteEmailService {
       };
 
     } catch (error) {
-      console.error(`❌ Failed to send onboarding email to ${userEmail}:`, error.message);
+      console.error('❌ Failed to send onboarding email to %s: %s', userEmail, error.message);
       
       // Fallback for development or when email fails
       const baseUrl = config.FRONTEND_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
       const inviteLink = `${baseUrl}?invite=${userUuid}&email=${encodeURIComponent(userEmail)}`;
       
-      console.log(`📧 Development fallback - Onboarding link for ${userEmail}: ${inviteLink}`);
+      console.log('📧 Development fallback - Onboarding link for %s: %s', userEmail, inviteLink);
       
       return {
         success: true,
@@ -229,7 +229,7 @@ class InviteEmailService {
 
       // If email service is disabled or not working, just log the link
       if (!config.EMAIL.ENABLED) {
-        console.log(`📧 Invitation link for ${userEmail}: ${inviteLink} (Email service disabled - using console)`);
+        console.log('📧 Invitation link for %s: %s (Email service disabled - using console)', userEmail, inviteLink);
         return {
           success: true,
           messageId: 'console-' + Date.now(),
@@ -245,7 +245,7 @@ class InviteEmailService {
           const subject = '🎉 Welcome to Shaadi Mantrana - Your Exclusive Invitation';
           const htmlContent = await this.generateInviteEmailHTML(userEmail, inviteLink, userUuid);
           const result = await this.sendViaResend(userEmail, subject, htmlContent);
-          console.log(`✅ Invitation email sent via Resend to ${userEmail}`);
+          console.log('✅ Invitation email sent via Resend to %s', userEmail);
           return {
             success: true,
             messageId: result.messageId,
@@ -253,7 +253,7 @@ class InviteEmailService {
             method: 'resend'
           };
         } catch (error) {
-          console.error(`❌ Resend send failed for ${userEmail}:`, error.message);
+          console.error('❌ Resend send failed for %s: %s', userEmail, error.message);
           // fall through to transporter or console fallback
         }
       }
@@ -280,12 +280,12 @@ class InviteEmailService {
         }
       };
 
-      console.log(`📧 Attempting to send invitation email to ${userEmail}...`);
+      console.log('📧 Attempting to send invitation email to %s...', userEmail);
       // Send email
       const result = await this.transporter.sendMail(mailOptions);
       
-      console.log(`✅ Invitation email sent successfully to ${userEmail}`);
-      console.log(`📧 Message ID: ${result.messageId}`);
+      console.log('✅ Invitation email sent successfully to %s', userEmail);
+      console.log('📧 Message ID: %s', result.messageId);
       
       return {
         success: true,
@@ -295,13 +295,13 @@ class InviteEmailService {
       };
 
     } catch (error) {
-      console.error(`❌ Failed to send invitation email to ${userEmail}:`, error.message);
+      console.error('❌ Failed to send invitation email to %s: %s', userEmail, error.message);
       
       // Fallback for development or when email fails
       const baseUrl = config.FRONTEND_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
       const inviteLink = `${baseUrl}?invite=${userUuid}&email=${encodeURIComponent(userEmail)}`;
       
-      console.log(`📧 Development fallback - Invitation link for ${userEmail}: ${inviteLink}`);
+      console.log('📧 Development fallback - Invitation link for %s: %s', userEmail, inviteLink);
       
       return {
         success: true,

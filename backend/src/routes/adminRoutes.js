@@ -214,7 +214,7 @@ router.post('/users', authenticateToken, adminMiddleware, async (req, res) => {
       await invitation.save();
     }
 
-    console.log(`✅ New user created by admin: phone=${phoneNumber}, email=${normalizedEmail}, UUID=${userUuid}`);
+    console.log('✅ New user created by admin: phone=%s, email=%s, UUID=%s', phoneNumber, normalizedEmail, userUuid);
 
     res.status(201).json({
       success: true,
@@ -675,12 +675,12 @@ const sendInvitationEmail = async (userId, adminUserId) => {
       }
     });
     await preapprovedEntry.save();
-    console.log(`✅ User entry created for ${user.email}`);
+    console.log('✅ User entry created for %s', user.email);
   } else {
     // Update existing user entry to ensure it's approved
     preapprovedEntry.isApprovedByAdmin = true;
     await preapprovedEntry.save();
-    console.log(`✅ User entry updated for ${user.email}`);
+    console.log('✅ User entry updated for %s', user.email);
   }
 
   // Send invitation email using user's UUID
@@ -759,7 +759,7 @@ router.patch('/users/:userId/resume', authenticateToken, adminMiddleware, async 
     
     await user.save();
 
-    console.log(`✅ User ${user.email} resumed successfully with status: active, approved: ${user.isApprovedByAdmin}`);
+    console.log('✅ User %s resumed successfully with status: active, approved: %s', user.email, user.isApprovedByAdmin);
 
     res.status(200).json({
       success: true,
@@ -818,7 +818,7 @@ router.patch('/users/:userId/pause', authenticateToken, adminMiddleware, async (
     
     await user.save();
 
-    console.log(`✅ User ${user.email} paused successfully with status: paused, approved: ${user.isApprovedByAdmin}`);
+    console.log('✅ User %s paused successfully with status: paused, approved: %s', user.email, user.isApprovedByAdmin);
 
     res.status(200).json({
       success: true,
@@ -897,9 +897,9 @@ router.post('/users/:userId/resend-invite', authenticateToken, adminMiddleware, 
       const emailResult = await InviteEmailService.sendInviteEmail(user.email, user.userUuid);
       
       if (emailResult.success) {
-        console.log(`✅ Invitation email resent successfully to ${user.email}`);
+        console.log('✅ Invitation email resent successfully to %s', user.email);
       } else {
-        console.log(`⚠️ Email service issue for ${user.email}:`, emailResult.emailError);
+        console.log('⚠️ Email service issue for %s: %s', user.email, emailResult.emailError);
       }
     } catch (emailError) {
       console.error('❌ Failed to resend invitation email:', emailError);
