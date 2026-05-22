@@ -5,8 +5,12 @@ require('dotenv').config();
 const User = require('../src/models/User');
 
 async function checkUser() {
-  const uri = process.env.MONGODB_URI || 'mongodb+srv://shaadimantrauser:J5ehVPHj04cCY4HS@cluster-m0freetier.5xmurlk.mongodb.net/shaadimantrana_prod';
-  console.log('Connecting to MongoDB URI:', uri.replace(/:[^:@]*@/, ':***@'));
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('MONGODB_URI is required but not set. Set process.env.MONGODB_URI before running this script.');
+    process.exit(1);
+  }
+  console.log('Connecting to MongoDB...');
   
   try {
     await mongoose.connect(uri);
