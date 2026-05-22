@@ -1043,14 +1043,21 @@ const uploadController = {
       // Check if profile picture exists
       const exists = await b2Storage.profilePictureExists(userId);
       if (!exists) {
-        return res.status(404).json({
-          success: false,
-          message: 'Profile picture not found',
-          code: 'PROFILE_PICTURE_NOT_FOUND'
+        // Return default placeholder instead of 404
+        return res.status(200).json({
+          success: true,
+          data: {
+            url: process.env.DEFAULT_PROFILE_PICTURE_URL || '/images/default-avatar.png',
+            isDefault: true,
+            userId: userId
+          },
+          metadata: {
+            timestamp: new Date().toISOString()
+          }
         });
       }
 
-      // Generate signed URL
+      // Generate signed URL for existing picture
       const signedUrl = await b2Storage.getSignedUrl(userId, parseInt(expiry));
 
       const processingTime = Date.now() - startTime;
@@ -1060,7 +1067,78 @@ const uploadController = {
         data: {
           url: signedUrl,
           expiry: parseInt(expiry),
-          userId: userId
+          userId: userId,
+          isDefault: false
+        },
+        metadata: {
+          processingTime: `${processingTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      // Even on error, return default image instead of failing
+      console.error('Error getting profile picture URL:', error);
+      res.status(200).json({
+        success: true,
+        data: {
+          url: process.env.DEFAULT_PROFILE_PICTURE_URL || '/images/default-avatar.png',
+          isDefault: true,
+          error: error.message
+        }
+      });
+    }
+  },
+
+  /**
+   * Get signed URL for current user's profile picture
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getMyProfilePictureUrl(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const userId = req.user.userId;
+      const { expiry = 3600 } = req.query; // Default 1 hour
+
+      logger.info({ userId }, 'Profile picture signed URL requested');
+
+      // Initialize B2 storage service
+      const b2Storage = new B2StorageService();
+
+      // Check if profile picture exists
+      const exists = await b2Storage.profilePictureExists(userId);
+      logger.debug({ userId, exists }, 'Profile picture existence checked');
+      
+      if (!exists) {
+        logger.warn({ userId }, 'Profile picture not found; returning default');
+        // Return default placeholder instead of 404
+        return res.status(200).json({
+          success: true,
+          data: {
+            url: process.env.DEFAULT_PROFILE_PICTURE_URL || '/images/default-avatar.png',
+            isDefault: true,
+            userId: userId
+          },
+          metadata: {
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      // Generate signed URL
+      const signedUrl = await b2Storage.getSignedUrl(userId, parseInt(expiry));
+      logger.info({ userId, expiry: parseInt(expiry) }, 'Profile picture signed URL generated');
+
+      const processingTime = Date.now() - startTime;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          url: signedUrl,
+          expiry: parseInt(expiry),
+          userId: userId,
+          isDefault: false
         },
         metadata: {
           processingTime: `${processingTime}ms`,
@@ -1069,8 +1147,16 @@ const uploadController = {
       });
 
     } catch (error) {
-      console.error('❌ Profile picture URL generation failed:', error);
-      const processingTime = Date.now() - startTime;
+      console.error('❌ My profile picture URL generation failed:', error);
+      // Even on error, return default image instead of failing
+      res.status(200).json({
+        success: true,
+        data: {
+          url: process.env.DEFAULT_PROFILE_PICTURE_URL || '/images/default-avatar.png',
+          isDefault: true,
+          error: error.message
+        }
+      });
       
       res.status(500).json({
         success: false,
@@ -1104,11 +1190,18 @@ const uploadController = {
       logger.debug({ userId, exists }, 'Profile picture existence checked');
       
       if (!exists) {
-        logger.warn({ userId }, 'Profile picture not found');
-        return res.status(404).json({
-          success: false,
-          message: 'Profile picture not found',
-          code: 'PROFILE_PICTURE_NOT_FOUND'
+        logger.warn({ userId }, 'Profile picture not found; returning default');
+        // Return default placeholder instead of 404
+        return res.status(200).json({
+          success: true,
+          data: {
+            url: process.env.DEFAULT_PROFILE_PICTURE_URL || '/images/default-avatar.png',
+            isDefault: true,
+            userId: userId
+          },
+          metadata: {
+            timestamp: new Date().toISOString()
+          }
         });
       }
 
@@ -1123,7 +1216,8 @@ const uploadController = {
         data: {
           url: signedUrl,
           expiry: parseInt(expiry),
-          userId: userId
+          userId: userId,
+          isDefault: false
         },
         metadata: {
           processingTime: `${processingTime}ms`,
@@ -1133,14 +1227,14 @@ const uploadController = {
 
     } catch (error) {
       console.error('❌ My profile picture URL generation failed:', error);
-      const processingTime = Date.now() - startTime;
-      
-      res.status(500).json({
-        success: false,
-        message: 'Failed to generate profile picture URL',
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
-        code: 'PROFILE_PICTURE_URL_ERROR',
-        processingTime: `${processingTime}ms`
+      // Even on error, return default image instead of failing
+      res.status(200).json({
+        success: true,
+        data: {
+          url: process.env.DEFAULT_PROFILE_PICTURE_URL || '/images/default-avatar.png',
+          isDefault: true,
+          error: error.message
+        }
       });
     }
   },

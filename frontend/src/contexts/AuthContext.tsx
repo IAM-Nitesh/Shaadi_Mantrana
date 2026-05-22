@@ -184,7 +184,7 @@ export const AuthProvider = ({
   };
 
   const login = async (email: string, otp: string) => {
-    logger.warn('AuthContext: Attempted legacy email login (deprecated)', { email });
+    +  logger.warn('AuthContext: Attempted legacy email sendOtp (deprecated)');
     setError('Legacy email OTP authentication is deprecated. Please use Firebase Phone OTP.');
     return false;
   };

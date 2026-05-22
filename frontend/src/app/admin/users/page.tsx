@@ -13,7 +13,11 @@ import { apiClient } from '../../../utils/api-client';
 
 interface User {
   _id: string;
-  email: string;
+  phoneNumber?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
   role: string;
   status: string;
   createdAt: string;
@@ -31,6 +35,7 @@ interface User {
     approvalType?: string;
   };
   isUpdating?: boolean;
+  userUuid?: string;
 }
 
 interface UserStats {
@@ -52,7 +57,8 @@ export default function AdminUsers() {
   const [confirmAction, setConfirmAction] = useState<{
     userId: string;
     action: 'pause' | 'resume';
-    userEmail: string;
+    userEmail?: string;
+    userPhone?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -147,7 +153,8 @@ export default function AdminUsers() {
       if (data.users && data.users.length > 0) {
         logger.debug('🔍 Users: User details:');
         data.users.forEach((user: any, index: number) => {
-          logger.debug(`   ${index + 1}. ${user.email} - Role: ${user.role}, Status: ${user.status}, Approved: ${user.approvedByAdmin}, Profile Complete: ${user.profileCompleteness || 0}%`);
+          const identifier = user.phoneNumber || user.email || 'Unknown';
+          logger.debug(`   ${index + 1}. ${identifier} - Role: ${user.role}, Status: ${user.status}, Approved: ${user.approvedByAdmin}, Profile Complete: ${user.profileCompleteness || 0}%`);
         });
       }
       
@@ -157,7 +164,8 @@ export default function AdminUsers() {
       ) || [];
       logger.debug('🔍 Invited users found:', invitedUsers.length);
       invitedUsers.forEach((user: any, index: number) => {
-        logger.debug(`   Invited ${index + 1}: ${user.email} - Profile: ${user.profileCompleteness || 0}%, Approved: ${user.approvedByAdmin}`);
+        const identifier = user.phoneNumber || user.email || 'Unknown';
+        logger.debug(`   Invited ${index + 1}: ${identifier} - Profile: ${user.profileCompleteness || 0}%, Approved: ${user.approvedByAdmin}`);
       });
       
       setUsers(data.users || []);
@@ -314,7 +322,8 @@ export default function AdminUsers() {
       );
 
       // Show success message
-      ToastService.success(`User ${result.user?.email || 'resumed'} successfully`);
+      const userIdentifier = result.user?.phoneNumber || result.user?.email || 'User';
+      ToastService.success(`${userIdentifier} resumed successfully`);
 
       // Refetch users to update stats
       fetchUsers();
@@ -381,7 +390,8 @@ export default function AdminUsers() {
       );
 
       // Show success message
-      ToastService.success(`User ${result.user?.email || 'paused'} successfully`);
+      const userIdentifier = result.user?.phoneNumber || result.user?.email || 'User';
+      ToastService.success(`${userIdentifier} paused successfully`);
 
       // Refetch users to update stats
       fetchUsers();
@@ -402,11 +412,16 @@ export default function AdminUsers() {
     }
   };
 
-  const resendInvite = async (userId: string, userEmail: string) => {
+  const resendInvite = async (userId: string, userEmail?: string, phoneNumber?: string) => {
     try {
       // Admin authentication is already handled by AdminLayout
+      const userIdentifier = phoneNumber || userEmail || 'Unknown';
+      logger.debug(`📧 Resending invitation to ${userIdentifier}`);
 
-      const response = await apiClient.post(`/api/admin/users/${userId}/resend-invite`, { email: userEmail }, {
+      const response = await apiClient.post(`/api/admin/users/${userId}/resend-invite`, { 
+        email: userEmail,
+        phoneNumber: phoneNumber // Send phoneNumber as well for backend to use
+      }, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -418,12 +433,14 @@ export default function AdminUsers() {
       }
 
       const result = response.data;
-      logger.debug('✅ Invitation resent successfully:', result);
+      logger.debug(`✅ Invitation resent successfully to ${userIdentifier}:`, result);
+      ToastService.success(`Invitation resent to ${userIdentifier}`);
 
       // Refetch users to update any invitation-related data
       fetchUsers();
     } catch (error) {
       logger.error('Error resending invitation:', error);
+      ToastService.error(error instanceof Error ? error.message : 'Failed to resend invitation');
     }
   };
 
@@ -470,13 +487,13 @@ export default function AdminUsers() {
     }
   };
 
-  const handlePauseUser = (userId: string, userEmail: string) => {
-    setConfirmAction({ userId, action: 'pause', userEmail });
+  const handlePauseUser = (userId: string, userEmail?: string, userPhone?: string) => {
+    setConfirmAction({ userId, action: 'pause', userEmail, userPhone });
     setOpenDropdown(null);
   };
 
-  const handleResumeUser = (userId: string, userEmail: string) => {
-    setConfirmAction({ userId, action: 'resume', userEmail });
+  const handleResumeUser = (userId: string, userEmail?: string, userPhone?: string) => {
+    setConfirmAction({ userId, action: 'resume', userEmail, userPhone });
     setOpenDropdown(null);
   };
 
@@ -649,10 +666,12 @@ export default function AdminUsers() {
                             if (hasImage) {
                               logger.debug(`🔍 Image URL for ${user._id}: ${hasImage.substring(0, 50)}...`);
                             }
+                            const displayName = user.profile?.name || user.fullName || user.phoneNumber || user.email || 'U';
+                            const firstChar = displayName.charAt(0).toUpperCase();
                             return hasImage ? (
                               <Image
                                 src={hasImage}
-                                alt={user.profile?.name || user.email}
+                                alt={displayName}
                                 width={40}
                                 height={40}
                                 className="w-full h-full object-cover"
@@ -663,7 +682,7 @@ export default function AdminUsers() {
                                   target.style.display = 'none';
                                   const parent = target.parentElement;
                                   if (parent) {
-                                    parent.innerHTML = `<span class="text-white font-semibold">${user.email.charAt(0).toUpperCase()}</span>`;
+                                    parent.innerHTML = `<span class="text-white font-semibold">${firstChar}</span>`;
                                   }
                                 }}
                                 onLoad={() => {
@@ -672,16 +691,18 @@ export default function AdminUsers() {
                               />
                             ) : (
                               <span className="text-white font-semibold">
-                                {user.email.charAt(0).toUpperCase()}
+                                {firstChar}
                               </span>
                             );
                           })()}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.profile?.name || 'No Name'}
+                            {user.profile?.name || user.fullName || 'No Name'}
                           </div>
-                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-sm text-gray-500">
+                            {user.phoneNumber || user.email || 'No contact info'}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -769,7 +790,7 @@ export default function AdminUsers() {
                                       {/* Show Pause button for active users */}
                                       {userStatus === 'active' && isApproved === true && (
                                         <button
-                                          onClick={() => handlePauseUser(user._id, user.email)}
+                                          onClick={() => handlePauseUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
                                           className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -785,7 +806,7 @@ export default function AdminUsers() {
                                       {/* Show Resume button for paused users */}
                                       {userStatus === 'paused' && isApproved === false && (
                                         <button
-                                          onClick={() => handleResumeUser(user._id, user.email)}
+                                          onClick={() => handleResumeUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
                                           className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -801,7 +822,7 @@ export default function AdminUsers() {
                                       {/* Show Resume button for users with 100% profile but not approved */}
                                       {profileCompleteness === 100 && userStatus !== 'active' && isApproved === false && (
                                         <button
-                                          onClick={() => handleResumeUser(user._id, user.email)}
+                                          onClick={() => handleResumeUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
                                           className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -817,7 +838,7 @@ export default function AdminUsers() {
                                       {/* Show Pause button for users with 100% profile and approved */}
                                       {profileCompleteness === 100 && userStatus !== 'paused' && isApproved === true && (
                                         <button
-                                          onClick={() => handlePauseUser(user._id, user.email)}
+                                          onClick={() => handlePauseUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
                                           className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -833,7 +854,7 @@ export default function AdminUsers() {
                                       {/* Always show Resend Invite for all users */}
                                       <button
                                         onClick={() => {
-                                          resendInvite(user._id, user.email);
+                                          resendInvite(user._id, user.email, user.phoneNumber);
                                           setOpenDropdown(null);
                                         }}
                                         disabled={user.isUpdating}
@@ -883,7 +904,7 @@ export default function AdminUsers() {
                   {confirmAction.action === 'pause' ? 'Pause User' : 'Resume User'}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  {confirmAction.userEmail}
+                  {confirmAction.userPhone || confirmAction.userEmail || 'User'}
                 </p>
               </div>
             </div>

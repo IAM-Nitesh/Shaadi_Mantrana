@@ -13,13 +13,20 @@ For security reasons, the database does not permit direct signup of administrato
 2. This creates their primary Firebase UID and standard database record in MongoDB as a `user` role with an `active` status.
 
 ### Phase B: Elevating to Admin via Mongoose CLI
-A production script is supplied at `backend/scripts/promote-to-admin.js` to elevate any user account to `admin` securely.
+A production script is supplied at `backend/scripts/promote-to-admin.js` to elevate any user account to `admin` securely using their **email**, **phone number**, or **user UUID**.
 
 1. SSH into the production server or open a secure terminal session inside the hosting console (e.g., Render/AWS).
 2. Set the strict environment override flag (`FORCE_PROMOTE_ADMIN=true`) along with the production database connection string.
-3. Run the promotion script with the admin's email or registered email:
+3. Run the promotion script with the admin's email, phone number, or user UUID:
    ```bash
+   # Via Email:
    FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js admin_email@domain.com
+   
+   # Via Phone Number:
+   FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "+91XXXXXXXXXX"
+   
+   # Via User UUID:
+   FORCE_PROMOTE_ADMIN=true NODE_ENV=production node backend/scripts/promote-to-admin.js "f3f603fd-5a6f-4122-b2f6-eaa86410e40a"
    ```
 4. Confirm the interactive prompt. The script directly sets `role = 'admin'` in MongoDB.
 
@@ -137,7 +144,7 @@ When Testing Mode is active in the frontend build, the client-side Firebase SDK 
 ### Test Numbers vs. Real Numbers
 
 * **Pre-configured Test Phone Numbers**: If you use a pre-configured test phone number (defined in your Firebase Console), Google's backend accepts the dummy token and lets you log in instantly using the pre-configured OTP.
-* **Real, Non-Test Phone Numbers**: If you use a real, non-test phone number (like `+917086875013`), Google's backend refuses to send a real SMS because the ReCAPTCHA token is dummy (`MALFORMED`). This prevents automated bots from draining your SMS quota.
+* **Real, Non-Test Phone Numbers**: If you use a real, non-test phone number (like `+91XXXXXXXXXX`), Google's backend refuses to send a real SMS because the ReCAPTCHA token is dummy (`MALFORMED`). This prevents automated bots from draining your SMS quota.
 
 ---
 
@@ -148,10 +155,10 @@ If you want to keep testing mode enabled (bypassing ReCAPTCHA to log in instantl
 1. Go to your **Firebase Console**.
 2. Navigate to **Authentication** ➔ **Sign-in method** ➔ **Phone**.
 3. Expand the **Phone** provider settings and locate the section **"Phone numbers for testing (optional)"**.
-4. Add your phone number `+917086875013` and set a custom verification code (e.g., `123456`).
+4. Add your phone number `+91XXXXXXXXXX` and set a custom verification code (e.g., `123456`).
 5. Save changes.
 6. Try logging in again—you can now log in instantly on `https://www.shaadimantrana.live` using your number and the code `123456`!
-*(You can also use the existing configured test number: `+919354799303` with OTP `123456`)*.
+*(You can also use the existing configured test number: `+91YYYYYYYYYY` with OTP `123456`)*.
 
 #### 📲 Option B: Enable Real SMS Sending (For Production Rollout)
 If you want the site to send a real SMS verification code to actual mobile devices:
@@ -202,3 +209,51 @@ We executed the following steps to establish a clean, standard DNS architecture:
 | `www.shaadimantrana.live` | Vercel | ✅ Valid / SSL Active | Production Frontend (Next.js) |
 | `www.shaadimantrana.app` | Vercel | ✅ Valid / SSL Active | Alternative Frontend Alias |
 | `api.shaadimantrana.live` | Render | ✅ SSL Active / CNAME Active | Production Backend API (Express/Mongo) |
+
+---
+
+## Section 7: Admin E2E BDD Testing & Troubleshooting
+
+### 🚀 Execution Command
+To run the full E2E Behavior-Driven Development (BDD) test suite locally across Chromium and WebKit:
+```bash
+npm run test:e2e:bdd
+```
+
+### 🎭 Authentication Mocking Mechanics
+The E2E suite bypasses real Firebase SMS OTP checks during automated testing by injecting a mock session. This is orchestrated in `tests/playwright/steps/navigation.steps.ts` via the `injectMockSession` helper:
+1. **Playwright Test Flag**: Sets `window.__PLAYWRIGHT_TEST__ = true` in the browser context, prompting the frontend `LoginForm` component to skip Firebase OTP and proceed in test-bypass mode.
+2. **Backend Auth Mock**: Intercepts and mocks `**/api/auth/status` to instantly return authenticated status and session data for the corresponding persona:
+   * **Admin Persona**: `role: 'admin'`, `isApprovedByAdmin: true`, `profileCompleteness: 100`.
+3. **Database & Cache Clearance**: Resets `localStorage`, `sessionStorage`, and cookies before injecting credentials.
+4. **Data Seed Mocks**: Registers mock endpoints for `/api/admin/stats` and `/api/admin/users` to dynamically populate dashboard cards and tables without requiring an active backend connection.
+
+### ⚠️ Common E2E Gotchas & Fixes
+
+#### 1. Next.js `trailingSlash` Redirect Bug
+* **Symptom**: Unauthenticated tests visiting `/admin/login` were redirected to `/` (Home) instead of staying on the gateway screen.
+* **Root Cause**: Next.js is configured with `trailingSlash: true` in `next.config.js`. This makes `usePathname()` return `'/admin/login/'` (with a trailing slash) instead of `'/admin/login'`. In the `AdminLayout` auth guard, the strict check `if (pathname === '/admin/login')` failed, executing the unauthenticated fallback redirect to `/`.
+* **Fix**: Normalize the pathname before any routing checks:
+  ```typescript
+  const cleanPath = pathname.replace(/\/$/, '');
+  if (cleanPath === '/admin/login') { ... }
+  ```
+
+#### 2. WebKit HMR/WebSocket Hanging
+* **Symptom**: WebKit tests timed out (120000ms exceeded) during navigation steps.
+* **Root Cause**: Playwright's `page.waitForLoadState('networkidle')` waits for the network to be silent. Next.js dev server's Hot Module Replacement (HMR) WebSocket connections remain active, causing WebKit to hang indefinitely.
+* **Fix**: Standardize on `domcontentloaded` for navigation load state verification:
+  ```typescript
+  await page.waitForLoadState('domcontentloaded');
+  ```
+
+#### 3. CodeQL Compliance (Regex Injection Protection)
+* **Symptom**: CodeQL flagged dynamic RegExp creation in step definitions with "Incomplete string escaping or encoding".
+* **Root Cause**: Replaced slashes manually (e.g. `path.replace(/\//g, '\\/')`) without sanitizing other regex metacharacters.
+* **Fix**: Use a comprehensive escaping utility before passing any dynamic string parameters into `new RegExp()`:
+  ```typescript
+  function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  ```
+
