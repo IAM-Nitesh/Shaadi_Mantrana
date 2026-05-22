@@ -14,11 +14,11 @@ async function promoteToAdmin() {
       process.exit(1);
     }
 
-    // Get target email from command line arguments
-    const targetEmail = process.argv[2];
-    if (!targetEmail) {
-      console.error('❌ Target email is required');
-      console.error('   Usage: node promote-to-admin.js <email>');
+    // Get target identifier from command line arguments
+    const targetIdentifier = process.argv[2];
+    if (!targetIdentifier) {
+      console.error('❌ Target email, phone number, or userUuid is required');
+      console.error('   Usage: node promote-to-admin.js <email | phoneNumber | userUuid>');
       process.exit(1);
     }
 
@@ -37,17 +37,18 @@ async function promoteToAdmin() {
     await mongoose.connect(mongoUri, config.DATABASE.OPTIONS);
     console.log('✅ Connected to MongoDB');
 
-    // Find the user by email or phone number
-    const identifier = targetEmail.trim();
+    // Find the user by email, phone number, or userUuid
+    const identifier = targetIdentifier.trim();
     const user = await User.findOne({
       $or: [
         { email: identifier.toLowerCase() },
-        { phoneNumber: identifier }
+        { phoneNumber: identifier },
+        { userUuid: identifier }
       ]
     });
     
     if (!user) {
-      console.log('❌ User not found with email or phone number:', identifier);
+      console.log('❌ User not found with email, phone number, or userUuid:', identifier);
       return;
     }
 
