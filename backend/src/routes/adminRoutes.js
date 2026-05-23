@@ -602,13 +602,19 @@ const sendInvitationEmail = async (userId, adminUserId) => {
   await user.save();
 
   // Check if invitation already exists
-  let invitation = await Invitation.findOne({ email: user.email });
+  let invitation = null;
+  if (user.phoneNumber) {
+    invitation = await Invitation.findOne({ phoneNumber: user.phoneNumber });
+  } else if (user.email) {
+    invitation = await Invitation.findOne({ email: user.email });
+  }
   
   if (!invitation) {
     // Create new invitation record
     invitation = new Invitation({
       uuid: user.userUuid,
-      email: user.email,
+      email: user.email || undefined,
+      phoneNumber: user.phoneNumber || undefined,
       invitationId: `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       sentBy: adminUserId
     });
@@ -869,7 +875,13 @@ router.post('/users/:userId/resend-invite', authenticateToken, adminMiddleware, 
     const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Update or create invitation record
-    let invitation = await Invitation.findOne({ email: user.email });
+    let invitation = null;
+    if (user.phoneNumber) {
+      invitation = await Invitation.findOne({ phoneNumber: user.phoneNumber });
+    } else if (user.email) {
+      invitation = await Invitation.findOne({ email: user.email });
+    }
+
     if (invitation) {
       // Update existing invitation
       invitation.count += 1;
@@ -880,7 +892,8 @@ router.post('/users/:userId/resend-invite', authenticateToken, adminMiddleware, 
     } else {
       // Create new invitation
       invitation = new Invitation({
-        email: user.email,
+        email: user.email || undefined,
+        phoneNumber: user.phoneNumber || undefined,
         uuid: user.userUuid,
         invitationId,
         status: 'sent',
@@ -956,13 +969,19 @@ router.post('/users/send-bulk-invites', authenticateToken, adminMiddleware, asyn
     
     for (const user of users) {
       // Check if invitation already exists
-      let invitation = await Invitation.findOne({ email: user.email });
+      let invitation = null;
+      if (user.phoneNumber) {
+        invitation = await Invitation.findOne({ phoneNumber: user.phoneNumber });
+      } else if (user.email) {
+        invitation = await Invitation.findOne({ email: user.email });
+      }
       
       if (!invitation) {
         // Create new invitation record
         invitation = new Invitation({
           uuid: user.userUuid,
-          email: user.email,
+          email: user.email || undefined,
+          phoneNumber: user.phoneNumber || undefined,
           invitationId: `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           sentBy: req.user.userId
         });

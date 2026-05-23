@@ -13,7 +13,7 @@ const getPendingPhotos = async (req, res) => {
       'profile.photoStatus': 'pending',
       'profile.images': { $exists: true, $ne: null }
     })
-    .select('userUuid email profile.name profile.images profile.photoStatus createdAt')
+    .select('userUuid email phoneNumber profile.name profile.images profile.photoStatus createdAt')
     .sort({ createdAt: 1 });
 
     res.status(200).json({
@@ -23,6 +23,7 @@ const getPendingPhotos = async (req, res) => {
         userId: u._id,
         userUuid: u.userUuid,
         email: u.email,
+        phoneNumber: u.phoneNumber,
         name: u.profile?.name || 'Unknown',
         images: Array.isArray(u.profile?.images) ? u.profile.images : (u.profile?.images ? [u.profile.images] : []),
         status: u.profile?.photoStatus,

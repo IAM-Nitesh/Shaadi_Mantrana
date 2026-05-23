@@ -10,7 +10,8 @@ import { toast } from 'react-hot-toast';
 interface PendingUser {
   userId: string;
   userUuid: string;
-  email: string;
+  email?: string;
+  phoneNumber?: string;
   name: string;
   images: string[];
   status: string;
@@ -114,7 +115,7 @@ export default function PhotoModerationPage() {
               {/* User Info */}
               <div className="p-4 flex-1">
                 <h3 className="font-bold text-gray-800 text-lg truncate">{user.name}</h3>
-                <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                <p className="text-sm text-gray-500 truncate">{user.phoneNumber || user.email || 'Phone Signup'}</p>
               </div>
 
               {/* Actions */}
