@@ -1306,10 +1306,10 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
         // Don't fail the request, just log the error
       }
     } else {
-      console.log(`ℹ️ No email provided for SMS invitation to ${normalizedPhone}`);
+      console.log('ℹ️ No email provided for SMS invitation to', normalizedPhone);
     }
 
-    console.log(`✅ Complete invitation process completed for ${identifier}`);
+    console.log('✅ Complete invitation process completed for identifier:', identifier);
 
     res.status(201).json({
       success: true,

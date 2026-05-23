@@ -97,6 +97,27 @@ To prevent regression and "Whack-a-Mole" fixes, the following are mandatory:
 
 ---
 
+## CodeQL Alerts and Security Audit Triggers
+The current GitHub CodeQL findings should be treated as active security audit triggers. When a CodeQL alert appears, the AI must:
+1. Confirm the exact file and line number from the GitHub alert.
+2. Identify whether the finding is:
+   - `externally-controlled format string`
+   - `inefficient regular expression`
+   - `database query built from user-controlled sources`
+   - `missing CSRF middleware`
+   - `incomplete URL scheme check`
+   - `insecure randomness`
+   - `incomplete multi-character sanitization`
+   - `regular expression injection`
+   - `sensitive server cookie exposed to the client`
+   - `clear text transmission of sensitive cookie`
+   - `workflow does not contain permissions`
+3. Prioritize fixing unsafe data handling and sanitization before updating status.
+4. If the alert is a GitHub Actions workflow issue, ensure the workflow uses explicit `permissions:` scopes.
+5. Add a `knowledge-base/feedback.md` entry for any recurring or systemic CodeQL pattern.
+
+---
+
 ## 📂 DIRECTORY STRUCTURE
 - `MASTER_BRAIN.md`: This file. The orchestration layer.
 - `GLOBAL_RULES.md`: Architectural guardrails.
