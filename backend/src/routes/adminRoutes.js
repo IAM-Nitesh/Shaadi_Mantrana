@@ -1219,8 +1219,8 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
 
     // Create new user in database with isApprovedByAdmin as true
     const newUser = new User({
-      email: normalizedEmail,
-      phoneNumber: normalizedPhone,
+      email: normalizedEmail || undefined,
+      phoneNumber: normalizedPhone || undefined,
       userUuid,
       role: 'user',
       status: 'invited',
@@ -1256,8 +1256,8 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
 
     // Create invitation record
     const invitation = new Invitation({
-      email: normalizedEmail,
-      phoneNumber: normalizedPhone,
+      email: normalizedEmail || undefined,
+      phoneNumber: normalizedPhone || undefined,
       uuid: userUuid,
       invitationId,
       status: 'sent',
