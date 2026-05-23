@@ -17,7 +17,13 @@ function createCsrfToken() {
 
 function isSafeOrigin(origin) {
   if (!origin || typeof origin !== 'string') return false;
-  return Array.from(allowedOrigins).some(allowed => origin.startsWith(allowed));
+  try {
+    const originUrl = new URL(origin);
+    const originHost = originUrl.origin; // Gets scheme + host + port
+    return allowedOrigins.has(originHost);
+  } catch {
+    return false;
+  }
 }
 
 function ensureCsrfCookie(req, res, next) {

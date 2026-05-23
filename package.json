@@ -90,6 +90,7 @@
     "mcp-remote": "^0.1.38",
     "patch-package": "^8.0.0",
     "playwright-bdd": "^8.5.1",
+    "pino-pretty": "^11.0.0",
     "typescript": "5.8.2"
   },
   "keywords": [

@@ -249,8 +249,6 @@ class ValidationUtils {
     return input
       .trim()
       .replace(/[<>\"'&]/g, '') // Remove XSS characters
-      .replace(/javascript\s*:/gi, '') // Remove javascript: protocols
-      .replace(/on[a-z]+\s*=/gi, '') // Remove event handlers
       .replace(/[\u0000-\u001F\u007F]/g, '') // Strip control characters
       .substring(0, 1000); // Limit length
   }

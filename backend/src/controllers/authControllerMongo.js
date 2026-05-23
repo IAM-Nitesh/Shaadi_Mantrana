@@ -27,7 +27,7 @@ function getCookieOptions(req, options = {}) {
   
   return {
     httpOnly: true,           // Prevents XSS attacks
-    secure: isProduction,     // HTTPS only in production
+    secure: isProduction,     // HTTPS-only in production, allow HTTP in development
     sameSite: isProduction ? 'none' : 'lax',  // 'none' for cross-site (Vercel->Render)
     path: '/',
     ...options
