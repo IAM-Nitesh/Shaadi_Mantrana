@@ -31,8 +31,26 @@ try {
 
 const warnDest = pino.destination({ dest: importantLogFile, sync: false });
 
+const enablePretty = process.env.LOG_PRETTY === 'true' || (process.env.NODE_ENV !== 'production' && process.stdout.isTTY);
+let prettyDestination;
+if (enablePretty) {
+  try {
+    prettyDestination = pino.transport({
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:standard',
+        ignore: 'pid,hostname'
+      }
+    });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('pino-pretty unavailable, falling back to JSON streams', e?.message || e);
+  }
+}
+
 const streams = [
-  { level, stream: process.stdout },
+  { level, stream: prettyDestination || process.stdout },
 ];
 if (warnDest) streams.push({ level: 'warn', stream: warnDest });
 
@@ -138,7 +156,21 @@ const baseLogger = pino({
     git_sha: gitSha,
   },
   redact: {
-    paths: ['req.headers.authorization', 'user.email', 'user.phone', 'body.password', 'body.token'],
+    paths: [
+      'req.headers.authorization',
+      'req.headers.cookie',
+      'req.headers["set-cookie"]',
+      'req.headers.x-api-key',
+      'req.query.token',
+      'req.query.*token',
+      'user.email',
+      'user.phone',
+      'body.password',
+      'body.token',
+      'body.credit_card',
+      'body.card_number',
+      'body.cvv'
+    ],
     censor: '[REDACTED]',
   },
   timestamp: pino.stdTimeFunctions.isoTime,
@@ -175,7 +207,15 @@ const httpLogger = pinoHttp({
     return 'info';
   },
   serializers: {
-    req: (req) => ({ method: req.method, url: req.url, headers: req.headers }),
+    req: (req) => ({
+      method: req.method,
+      url: req.url,
+      headers: {
+        'user-agent': req.headers['user-agent'],
+        'content-type': req.headers['content-type'],
+        'x-forwarded-for': req.headers['x-forwarded-for']
+      }
+    }),
     res: (res) => ({ statusCode: res.statusCode }),
   },
 });

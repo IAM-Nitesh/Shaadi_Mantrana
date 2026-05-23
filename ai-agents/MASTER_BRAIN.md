@@ -115,6 +115,7 @@ The current GitHub CodeQL findings should be treated as active security audit tr
 3. Prioritize fixing unsafe data handling and sanitization before updating status.
 4. If the alert is a GitHub Actions workflow issue, ensure the workflow uses explicit `permissions:` scopes.
 5. Add a `knowledge-base/feedback.md` entry for any recurring or systemic CodeQL pattern.
+6. For dependency remediation, prefer root workspace `package.json` `overrides` when the vulnerability is transitive and verify with `npm audit`, `npm install --package-lock-only`, and workspace builds. Document the decision in `ai-agents/knowledge-base/dependency-fixes.md`.
 
 ---
 

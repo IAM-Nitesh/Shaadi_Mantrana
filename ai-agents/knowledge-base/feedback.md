@@ -50,3 +50,10 @@
 - **Action Taken**: Re-ran the exact `npm run test:e2e:bdd` script outside the browser sandbox; verified 14 passed across Chromium and WebKit with successful MongoDB test-data cleanup. Final status now distinguishes script/harness fixes from application-flow fixes and uses command output as the source of truth.
 - **Recurrence**: 2
 - **Pattern?**: Yes — appended to `PENDING_ISSUES.md` for human conversion into an `ai-regression` issue.
+
+### [2026-05-24] [Dependency] Root workspace overrides used for transitive security fixes
+- **Task**: Remediate monorepo vulnerability alerts and maintain safe dependency versions
+- **Finding**: Some vulnerabilities were only patchable through root workspace `package.json` overrides because the affected packages were transitive dependencies in multiple subprojects.
+- **Action Taken**: Applied root `overrides` for safe release versions; verified with `npm audit` and monorepo workspace builds; documented the decision in `ai-agents/knowledge-base/dependency-fixes.md`.
+- **Recurrence**: 1
+- **Pattern?**: No

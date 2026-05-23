@@ -30,21 +30,22 @@ async function checkEndpoint(host, port, persona) {
 }
 
 async function run() {
-  console.log('--- SECURITY AUDIT: TEST SESSION ENDPOINT ---');
+  const tlog = require('../scripts/test-logger');
+  tlog.info('--- SECURITY AUDIT: TEST SESSION ENDPOINT ---');
   
   // 1. Test via 127.0.0.1 (Internal - Should be 200 or 400 if bad payload, but NOT 404 unless disabled)
   // Note: Since I am on the same machine, I am "Internal"
   const internalStatus = await checkEndpoint('127.0.0.1', 5500, 'admin');
-  console.log(`Internal (127.0.0.1) Status: ${internalStatus}`);
+  tlog.info(`Internal (127.0.0.1) Status: ${internalStatus}`);
 
   // 2. Test via localhost (Internal)
   const localhostStatus = await checkEndpoint('localhost', 5500, 'admin');
-  console.log(`Localhost Status: ${localhostStatus}`);
+  tlog.info(`Localhost Status: ${localhostStatus}`);
 
-  console.log('\n--- VERIFICATION CRITERIA ---');
-  console.log('1. If internalStatus is 200, the route is functional.');
-  console.log('2. If you were external, you MUST receive 404.');
-  console.log('-------------------------------------------');
+  tlog.info('\n--- VERIFICATION CRITERIA ---');
+  tlog.info('1. If internalStatus is 200, the route is functional.');
+  tlog.info('2. If you were external, you MUST receive 404.');
+  tlog.info('-------------------------------------------');
 }
 
 run();

@@ -9,11 +9,13 @@ export class PersonaHelper {
    * @param persona 'admin' | 'fresh' | 'incomplete' | 'complete'
    */
   static switchTo(persona: string) {
-    console.log(`🧠 Master Brain: Switching to persona [${persona.toUpperCase()}]`);
+    // @ts-ignore
+    const tlog = require('../../../scripts/test-logger');
+    tlog.info(`🧠 Master Brain: Switching to persona [${persona.toUpperCase()}]`);
     try {
       execFileSync('node', [this.scriptPath, '--as', persona], { stdio: 'inherit' });
     } catch (error) {
-      console.error(`❌ Failed to switch persona: ${error}`);
+      tlog.error(`❌ Failed to switch persona: ${error}`);
       throw error;
     }
   }
