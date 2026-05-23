@@ -60,11 +60,30 @@ export class SecurityUtils {
 
   // Sanitize user input for safe display
   static sanitizeInput(input: string): string {
+    if (!input || typeof input !== 'string') return '';
+
     return input
-      .replace(/[<>]/g, '') // Remove angle brackets
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+=/gi, '') // Remove event handlers
-      .trim();
+      .trim()
+      .replace(/[<>\"'&]/g, '') // Remove dangerous characters
+      .replace(/javascript\s*:/gi, '') // Remove javascript: protocols
+      .replace(/on[a-z]+\s*=/gi, '') // Remove inline event handlers
+      .replace(/[\u0000-\u001F\u007F]/g, '') // Strip control characters
+      .substring(0, 1000);
+  }
+
+  // Sanitize URLs and enforce allowed URL schemes
+  static sanitizeUrl(url: string): string {
+    if (!url || typeof url !== 'string') return '';
+
+    const trimmed = url.trim();
+    try {
+      const normalized = new URL(trimmed, window.location.origin);
+      const allowedSchemes = ['https:', 'http:', 'mailto:'];
+      if (!allowedSchemes.includes(normalized.protocol)) return '';
+      return normalized.toString();
+    } catch {
+      return '';
+    }
   }
 
   // Validate file upload

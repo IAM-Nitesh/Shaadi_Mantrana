@@ -1,6 +1,7 @@
 // JWT Authentication Middleware
 // Handles JWT token verification and session management
 
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { Session } = require('../models');
@@ -64,7 +65,7 @@ class JWTSessionManager {
       email: user.email,
       role: user.role || 'user',
       verified: user.verified || true,
-      sessionId: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
+      sessionId: `${Date.now()}-${crypto.randomBytes(16).toString('hex')}`
     };
 
     if (AUTH_DEBUG) console.log('🔍 JWTSessionManager: Creating payload:', payload);

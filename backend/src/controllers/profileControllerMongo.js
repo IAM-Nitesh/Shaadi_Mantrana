@@ -556,7 +556,7 @@ class ProfileController {
 
         if (prefs.location && prefs.location.length > 0) {
           queryFilters['profile.location'] = {
-            $in: prefs.location.map(loc => new RegExp(loc, 'i'))
+            $in: prefs.location.map(loc => new RegExp(SecurityUtils.escapeRegExp(loc), 'i'))
           };
         }
       } else {
@@ -568,11 +568,11 @@ class ProfileController {
         }
 
         if (filters.location) {
-          queryFilters['profile.location'] = new RegExp(filters.location, 'i');
+          queryFilters['profile.location'] = new RegExp(SecurityUtils.escapeRegExp(filters.location), 'i');
         }
 
         if (filters.profession) {
-          queryFilters['profile.profession'] = new RegExp(filters.profession, 'i');
+          queryFilters['profile.profession'] = new RegExp(SecurityUtils.escapeRegExp(filters.profession), 'i');
         }
 
         if (filters.verified !== undefined) {

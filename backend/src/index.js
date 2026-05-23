@@ -23,6 +23,7 @@ const { requestLogger, errorLogger } = require('./middleware/requestLogger');
 
 // Central logger instance (single import to avoid redeclaration)
 const { logger } = require('./utils/pino-logger');
+const { ensureCsrfCookie, validateCsrf } = require('./middleware/csrf');
 
 const app = express();
 // Use centralized config for PORT to keep defaults consistent
@@ -184,6 +185,8 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+app.use(ensureCsrfCookie);
+app.use(validateCsrf);
 
 // Request logging middleware (before routes)
 app.use(requestLogger);
