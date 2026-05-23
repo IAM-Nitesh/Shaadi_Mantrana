@@ -235,6 +235,7 @@ __mocks__/
 test/
 tmp/
 temp/
+tmp-logs/
 .cache/
 
 # --- Android/Capacitor/Next.js/Static Build Output (already covered, but explicit for clarity) ---

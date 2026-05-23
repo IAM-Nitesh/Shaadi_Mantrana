@@ -439,8 +439,9 @@ async function injectMockSession(page, context, persona) {
 
   // Fact: Navigate AFTER all mocks are registered.
   console.log(`🚀 Initiating Initial Navigation for Persona: ${persona}`);
-  await page.goto('/dashboard', { waitUntil: 'load', timeout: 30000 }).catch(() => {
-    console.log('⚠️ Initial navigation to /dashboard timed out, proceeding anyway...');
+  const initialPath = persona === 'admin' ? '/admin/dashboard' : '/dashboard';
+  await page.goto(initialPath, { waitUntil: 'load', timeout: 30000 }).catch(() => {
+    console.log(`⚠️ Initial navigation to ${initialPath} timed out, proceeding anyway...`);
   });
 
   // Fact: For state-locked users, wait for the redirect destination. For others, wait for visible main content.
