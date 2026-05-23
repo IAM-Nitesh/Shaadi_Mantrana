@@ -59,6 +59,7 @@ coverage/
 __tests__/
 test-results/
 playwright-report/
+playwright-report-prod/
 allure-results/
 allure-report/
 .features-gen/
