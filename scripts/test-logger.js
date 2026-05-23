@@ -1,7 +1,7 @@
 // Lightweight test logger used by scripts, artifacts and tests to avoid
 // noisy console output and accidental leakage of secrets in test logs.
-const MASK_RE_EMAIL = /([\w.+-]{3})([\w.+-]*)(@[^\s@]+)/g;
-const MASK_RE_PHONE = /(\d{3})(\d+)(\d{2})/g;
+const MASK_RE_EMAIL = /([\w.+-]{1,3})([\w.+-]*)(@[^\s@]+)/g;
+const MASK_RE_PHONE = /(\d{1,3})(\d*)(\d{0,2})/g;
 
 function mask(msg) {
   if (typeof msg !== 'string') {

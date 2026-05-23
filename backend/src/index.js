@@ -296,9 +296,9 @@ app.post('/api/logs', clientLogLimiter, (req, res) => {
       const sanitizeField = (obj, field, mask = '***') => {
         if (obj && obj[field]) {
           if (field === 'email' && typeof obj[field] === 'string') {
-            obj[field] = obj[field].replace(/(.{3})(.*)(@.*)/, '$1***$3');
+            obj[field] = obj[field].replace(/(.{1,3})(.*)(@.*)/, '$1***$3');
           } else if (field === 'phone' && typeof obj[field] === 'string') {
-            obj[field] = obj[field].replace(/(\d{3})(\d+)(\d{2})/, '$1***$3');
+            obj[field] = obj[field].replace(/(\d{1,3})(\d*)(\d{0,2})/, '$1***$3');
           } else {
             obj[field] = mask;
           }

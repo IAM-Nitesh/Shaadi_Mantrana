@@ -34,8 +34,8 @@ function getCurrentEnv() {
 function setEnvironment(env) {
   console.log(`🔄 Switching to ${env} environment...\n`);
   
-  // Set environment variable for current session
-  process.env.NODE_ENV = env;
+  // Note: Node.js cannot modify parent shell environment directly
+  // This script provides guidance on the required environment variables
   
   // Show what will change
   console.log('📋 Environment Changes:');
@@ -65,8 +65,10 @@ function setEnvironment(env) {
     console.log('   NODE_ENV=development npm run dev');
   }
   
-  console.log('\n⚠️  Note: This only affects the current terminal session.');
-  console.log('   For permanent changes, set NODE_ENV in your shell profile.');
+  console.log('\n💡 To apply this environment to your shell, run:');
+  console.log(`   export NODE_ENV=${env}`);
+  
+  console.log('\n⚠️  Note: You must manually export the variable or prefix your commands.');
 }
 
 function showStatus() {
