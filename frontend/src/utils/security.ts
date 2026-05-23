@@ -65,8 +65,6 @@ export class SecurityUtils {
     return input
       .trim()
       .replace(/[<>\"'&]/g, '') // Remove dangerous characters
-      .replace(/javascript\s*:/gi, '') // Remove javascript: protocols
-      .replace(/on[a-z]+\s*=/gi, '') // Remove inline event handlers
       .replace(/[\u0000-\u001F\u007F]/g, '') // Strip control characters
       .substring(0, 1000);
   }

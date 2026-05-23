@@ -7,13 +7,13 @@
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 SCRIPT="$ROOT_DIR/scripts/security-audit-fix.sh"
-DEVILS_ADVOCATE_FILE="$ROOT_DIR/tmp-logs/devils_advocate.txt"
+DEVILS_ADVOCATE_FILE="$ROOT_DIR/devils-advocate/risk-assessment.txt"
 
 echo ""
 echo "😈 Verifying Devil's Advocate risk assessment..."
 if [ ! -f "$DEVILS_ADVOCATE_FILE" ] || [ ! -s "$DEVILS_ADVOCATE_FILE" ]; then
   echo "❌ Push BLOCKED: No Devil's Advocate risk analysis found."
-  echo "   Please write a risk statement to: tmp-logs/devils_advocate.txt"
+  echo "   Please write a risk statement to: devils-advocate/risk-assessment.txt"
   echo "   containing the most likely failure modes and silent assumptions."
   echo ""
   exit 1

@@ -43,7 +43,8 @@ const getPendingPhotos = async (req, res) => {
 // Moderate a user's photo
 const moderatePhoto = async (req, res) => {
   try {
-    const { userId, status, reason } = req.body;
+    const userId = req.body.userId ? String(req.body.userId) : null;
+    const { status, reason } = req.body;
 
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({

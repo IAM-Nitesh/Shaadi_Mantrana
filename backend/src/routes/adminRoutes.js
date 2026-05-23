@@ -1299,7 +1299,7 @@ router.post('/invitations', authenticateToken, adminMiddleware, async (req, res)
         if (emailResult.success) {
           console.log(`✅ Invitation email sent successfully to ${normalizedEmail}`);
         } else {
-          console.log(`⚠️ Email service issue for ${normalizedEmail}:`, emailResult.emailError);
+          console.log('⚠️ Email service issue for', normalizedEmail, ':', emailResult.emailError);
         }
       } catch (emailError) {
         console.error('❌ Failed to send invitation email:', emailError);
