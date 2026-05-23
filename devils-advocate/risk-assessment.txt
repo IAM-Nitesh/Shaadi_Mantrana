@@ -1,0 +1,16 @@
+# Devil's Advocate Risk Assessment: Security Audit & Cleanup Phase
+
+**1. Dependency Breakage Risks**
+We aggressively ran `npm update` to resolve several High and Moderate CVEs (e.g. `serialize-javascript`, `braces`, `uuid`). The silent assumption is that these minor version updates are perfectly backwards compatible. If they deprecate sub-methods or change structural types, production build scripts or deep rendering paths may fail in unforeseen edge cases that the TypeScript compiler missed due to loosely typed libraries.
+
+**2. Insecure Cookie "Secure: true" Hardcode**
+We hardcoded `secure: true` for the session cookies to satisfy CodeQL's static analysis. The silent assumption is that local development will strictly occur on `localhost` (which browsers inherently treat as secure). If any engineer attempts to test over the local network via IP (e.g., `http://192.168.x.x:3000`) on their phone, authentication will silently fail because the browser will drop the session cookie.
+
+**3. NoSQL Injection Castings**
+We explicitly cast `req.body.targetUserId` and `req.body.connectionId` to Strings to prevent object-based NoSQL injections. The failure mode here is if an attacker intentionally sends an array of objects to trigger a `TypeError` during the `String()` cast, causing an unhandled promise rejection or crashing the server thread if error handling isn't robust across the middleware boundary.
+
+**4. CodeRabbit Fixes**
+We updated `isSafeOrigin` to use strict URL parsing, masked PII (phone/email) in logs, and removed `.toLowerCase()` from `sanitizeInput`. The silent assumption is that no legacy clients were unintentionally relying on the loose origin matching or case-insensitivity bugs, and that PII masking won't break any automated log parsers tracking metrics.
+
+**Conclusion**
+These are the accepted risks for securing the endpoints against CodeQL analysis and merging a 0-vulnerability dependency tree.

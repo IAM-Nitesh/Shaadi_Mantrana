@@ -36,13 +36,10 @@ const SecurityUtils = {
     
     return input
       .trim()
-      .toLowerCase()
       .replace(/[<>\"'&]/g, '') // Remove XSS characters
       .replace(/[\u0000-\u001F\u007F]/g, '') // Strip control characters
       .substring(0, 255); // Limit length
   },
-
-  // Escape user data for safe regular expression building
   escapeRegExp: (value) => {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   },
@@ -52,7 +49,7 @@ const SecurityUtils = {
     if (!url || typeof url !== 'string') return '';
     const trimmed = url.trim();
     try {
-      const normalized = new URL(trimmed, 'https://example.com');
+      const normalized = new URL(trimmed); // Throws for relative URLs
       const allowedSchemes = ['https:', 'http:', 'mailto:'];
       if (!allowedSchemes.includes(normalized.protocol)) return '';
       return normalized.toString();
@@ -60,8 +57,6 @@ const SecurityUtils = {
       return '';
     }
   },
-
-  // Basic encryption (for demo purposes - use proper encryption in production)
   encrypt: (text) => {
     try {
       return Buffer.from(text).toString('base64');
