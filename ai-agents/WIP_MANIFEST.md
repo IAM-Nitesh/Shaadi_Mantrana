@@ -12,7 +12,7 @@
 
 | Domain | Interface / File in Flight | Expected Stable By |
 | :--- | :--- | :--- |
-| **⚠️ STANDING** | **Check `ai-agents/PENDING_ISSUES.md` before opening new work this sprint** | Never — permanent standing reminder |
+| **⚠️ STANDING** | **Check `ai-agents/PENDING_ISSUES.md` before opening new work this sprint** | Never — permanent reminder |
 | Mobile | `android/build.gradle` + `android/app/build.gradle` (Firebase Crashlytics) | 2026-05-13 — requires Android Studio release build + Play Console upload |
 | UI | `frontend/src/` (Comprehensive UI Revamp) | 2026-05-15 — brainstorming and design phase starting |
 | Product | `docs/superpowers/specs/2026-05-12-shaadi-mantrana-product-blueprint.md` | 2026-05-12 — Strategic baseline established |
@@ -28,6 +28,7 @@
 
 | Domain | Interface / File | Stabilized On | Notes |
 | :--- | :--- | :--- | :--- |
+| Testing | BDD E2E Phone Invitation & Data Safety | 2026-05-23 | **COMPLETE**: Added feature spec and step definitions validating phone invitations & Data Safety UI changes. |
 | UI/Backend | Data Safety, Photo Moderation & Invitation Uniqueness | 2026-05-23 | **STABILIZED**: Revamped /admin/data-safety page, contact fallbacks on /admin/moderation, unique phone invitations at both API validation & DB index levels. |
 | Testing | `tests/playwright/` (Login Validation) | 2026-05-12 | Comprehensive E2E suite for Phone/OTP journey + UI Debug mode |
 | Frontend | Login UI Persistence | 2026-05-12 | Fixed vanishing form by decoupling interactive actions from global isLoading |

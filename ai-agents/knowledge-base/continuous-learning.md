@@ -575,3 +575,12 @@ Making email optional in Invitation mongoose schema and mapping phoneNumber and 
 **Insight**:
 Mongoose sparse change does not automatically drop old non-sparse unique indexes in MongoDB; they must be manually dropped so Mongoose can rebuild them with sparse: true option.
 
+
+---
+
+### 🎓 Learning: E2E BDD Phone Invitation Mocks
+**Date**: 2026-05-23 18:14:43
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: 2 sprints
+**Insight**:
+Playwright-bdd requires unique and distinct step definitions and mock data handlers to validate admin invitations and styled UI changes
+
