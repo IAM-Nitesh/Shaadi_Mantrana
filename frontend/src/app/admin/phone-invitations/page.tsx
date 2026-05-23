@@ -218,10 +218,10 @@ export default function PhoneInvitations() {
               type="tel"
               value={newPhoneNumber}
               onChange={(e) => setNewPhoneNumber(e.target.value)}
-              placeholder="Enter phone number (+919876543210)"
+              placeholder="Enter phone number"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
-            <p className="text-xs text-gray-500 mt-2">Format: +91 followed by 10 digits (e.g., +919876543210)</p>
+            <p className="text-xs text-gray-500 mt-2">Format: +91 followed by 10 digits</p>
           </div>
           <button
             onClick={sendNewInvitation}
