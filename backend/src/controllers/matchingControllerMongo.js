@@ -192,7 +192,8 @@ class MatchingController {
   async likeProfile(req, res) {
     try {
       const userId = req.user.userId;
-      const { targetUserId, type = 'like' } = req.body;
+      const targetUserId = req.body.targetUserId ? String(req.body.targetUserId) : null;
+      const type = req.body.type ? String(req.body.type) : 'like';
       
       // Like request logging removed for production security
       
@@ -393,7 +394,7 @@ class MatchingController {
   async markToastSeenOnChatEntry(req, res) {
     try {
       const userId = req.user.userId;
-      const { connectionId } = req.body;
+      const connectionId = req.body.connectionId ? String(req.body.connectionId) : null;
       
       console.log(`🎯 Marking toast as seen on chat entry - User: ${userId}, Connection: ${connectionId}`);
       
@@ -431,7 +432,7 @@ class MatchingController {
       
       // Debug: Check all DailyLike records for this connection
       const allDailyLikes = await DailyLike.find({ connectionId: connectionId });
-      console.log(`🔍 All DailyLike records for connection ${connectionId}:`, allDailyLikes.length);
+      console.log('🔍 All DailyLike records for connection', connectionId, ':', allDailyLikes.length);
       allDailyLikes.forEach((like, index) => {
         console.log(`  ${index + 1}. User: ${like.userId}, Liked: ${like.likedProfileId}, Mutual: ${like.isMutualMatch}`);
       });
@@ -585,7 +586,7 @@ class MatchingController {
   async markMatchToastSeen(req, res) {
     try {
       const userId = req.user.userId;
-      const { targetUserId } = req.body;
+      const targetUserId = req.body.targetUserId ? String(req.body.targetUserId) : null;
       
       console.log(`🎯 Marking match toast as seen - User: ${userId}, Target: ${targetUserId}`);
       
@@ -732,7 +733,7 @@ class MatchingController {
   async passProfile(req, res) {
     try {
       const userId = req.user.userId;
-      const { targetUserId } = req.body;
+      const targetUserId = req.body.targetUserId ? String(req.body.targetUserId) : null;
       
       if (!targetUserId) {
         return res.status(400).json({ success: false, error: 'Target user ID is required' });
@@ -760,7 +761,8 @@ class MatchingController {
   async unmatchProfile(req, res) {
     try {
       const userId = req.user.userId;
-      const { targetUserId, connectionId: bodyConnectionId } = req.body;
+      const targetUserId = req.body.targetUserId ? String(req.body.targetUserId) : null;
+      const bodyConnectionId = req.body.connectionId ? String(req.body.connectionId) : null;
 
       if (targetUserId && !mongoose.isValidObjectId(targetUserId)) {
         return res.status(400).json({ success: false, error: 'Invalid target user ID' });

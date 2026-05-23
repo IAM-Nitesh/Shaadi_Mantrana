@@ -20,6 +20,8 @@ const sanitizeEmailForLog = (email) => {
   return `${username.slice(0, 3)}***@${domain}`;
 };
 
+const getSanitizedEmail = (email) => sanitizeEmailForLog(email || 'none');
+
 // Utility to sanitize request body for logging
 const sanitizeRequestBody = (body) => {
   if (!body || typeof body !== 'object') return body;
@@ -132,7 +134,7 @@ const errorLogger = (err, req, res, next) => {
     event: 'uncaught_error',
     request_id: requestId,
     user_uuid: userUuid,
-    email: req.user?.email || 'none',
+    email: getSanitizedEmail(req.user?.email),
     method: req.method,
     url: req.originalUrl,
     error: {
@@ -152,7 +154,7 @@ const logSuccess = (operation, details = {}) => {
     const requestId = req.requestId || 'unknown';
     
     const { logger } = require('../utils/pino-logger');
-  logger.info({ request_id: requestId, user_uuid: userUuid, email: req.user?.email || 'none', operation, ...details }, `SUCCESS: ${operation}`);
+    logger.info({ request_id: requestId, user_uuid: userUuid, email: getSanitizedEmail(req.user?.email), operation, ...details }, `SUCCESS: ${operation}`);
     
     next();
   };
@@ -169,7 +171,7 @@ const logCritical = (operation, details = {}) => {
                      '127.0.0.1';
     
     const { logger } = require('../utils/pino-logger');
-  logger.warn({ request_id: requestId, user_uuid: userUuid, email: req.user?.email || 'none', operation, clientIP, userAgent: req.headers['user-agent'] || 'unknown', timestamp: new Date().toISOString(), ...details }, `CRITICAL: ${operation}`);
+    logger.warn({ request_id: requestId, user_uuid: userUuid, email: getSanitizedEmail(req.user?.email), operation, clientIP, userAgent: req.headers['user-agent'] || 'unknown', timestamp: new Date().toISOString(), ...details }, `CRITICAL: ${operation}`);
     
     next();
   };
