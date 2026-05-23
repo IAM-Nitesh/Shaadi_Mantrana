@@ -53,6 +53,13 @@ const moderatePhoto = async (req, res) => {
       });
     }
 
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
+
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
