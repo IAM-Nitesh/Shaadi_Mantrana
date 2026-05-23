@@ -110,6 +110,16 @@ test.describe('Admin Flows on Production (Pure UI Validations)', () => {
     await expect(sendBtn).not.toHaveText(/Sending\.\.\./);
     console.log('✅ Phone Invitation Action completed (Check terminal for any network errors)');
 
+    // --- NEW: Resend Invite Flow ---
+    console.log('Testing Resend Invite Flow...');
+    const resendBtn = page.getByRole('button', { name: /Resend/i }).first();
+    if (await resendBtn.isVisible()) {
+      await resendBtn.click();
+      await expect(resendBtn).not.toHaveText(/Sending\.\.\./);
+      await page.waitForLoadState('networkidle');
+      console.log('✅ Resend Invite completed');
+    }
+
     // 3. Specific Flow: User Management Refresh
     console.log('Testing User Management Flow...');
     await page.goto('/admin/users');
@@ -121,7 +131,64 @@ test.describe('Admin Flows on Production (Pure UI Validations)', () => {
     await refreshBtn.click();
     // Wait for the button to return to "Refresh"
     await expect(refreshBtn).toHaveText(/Refresh/);
+    await page.waitForLoadState('networkidle'); // Allow background user list fetches to complete
     console.log('✅ User Management Refresh completed');
+
+    // --- NEW: Pause / Resume User Flow ---
+    console.log('Testing Pause/Resume User Flow on test user...');
+    
+    // The user list is a table. Find the row for our test user
+    const testUserRow = page.locator('tr').filter({ hasText: '+910000000000' }).first();
+    
+    if (await testUserRow.isVisible()) {
+      const pauseBtn = testUserRow.getByRole('button', { name: /Pause/i, exact: true });
+      const resumeBtn = testUserRow.getByRole('button', { name: /Resume/i, exact: true });
+      const rowResendBtn = testUserRow.getByRole('button', { name: /Resend Invite/i, exact: true });
+      
+      if (await rowResendBtn.isVisible()) {
+        console.log('Resending invite from Users table...');
+        await rowResendBtn.click();
+        await page.waitForLoadState('networkidle');
+        console.log('✅ User Resend Invite triggered');
+      }
+
+      if (await pauseBtn.isVisible()) {
+        console.log('Pausing test user...');
+        await pauseBtn.click();
+        
+        // Wait for confirmation modal
+        const confirmModalBtn = page.getByRole('button', { name: /Pause User/i, exact: true }).last();
+        await confirmModalBtn.waitFor({ state: 'visible' });
+        await confirmModalBtn.click();
+        await page.waitForLoadState('networkidle');
+        console.log('✅ User paused');
+        
+        // Let's also test Resume since they are now paused!
+        console.log('Resuming test user...');
+        await resumeBtn.waitFor({ state: 'visible' });
+        await resumeBtn.click();
+        
+        const confirmResumeModalBtn = page.getByRole('button', { name: /Resume User/i, exact: true }).last();
+        await confirmResumeModalBtn.waitFor({ state: 'visible' });
+        await confirmResumeModalBtn.click();
+        await page.waitForLoadState('networkidle');
+        console.log('✅ User resumed');
+
+      } else if (await resumeBtn.isVisible()) {
+        console.log('Test user is already paused. Resuming test user...');
+        await resumeBtn.click();
+        
+        const confirmResumeModalBtn = page.getByRole('button', { name: /Resume User/i, exact: true }).last();
+        await confirmResumeModalBtn.waitFor({ state: 'visible' });
+        await confirmResumeModalBtn.click();
+        await page.waitForLoadState('networkidle');
+        console.log('✅ User resumed');
+      } else {
+        console.log('Test user row found, but Pause/Resume buttons are not visible.');
+      }
+    } else {
+      console.log('Test user row (+910000000000) not found on the first page. Skipping Pause/Resume test.');
+    }
 
     // 4. Specific Flow: Photo Moderation Check
     console.log('Testing Photo Moderation Flow...');
@@ -138,6 +205,10 @@ test.describe('Admin Flows on Production (Pure UI Validations)', () => {
     ]);
 
     if (await approveBtn.isVisible()) {
+      // Check if Reject button is also visible
+      const rejectBtn = page.getByRole('button', { name: /Reject/i }).first();
+      await expect(rejectBtn).toBeVisible();
+
       console.log('Pending photos found. Clicking Approve on the first one...');
       await approveBtn.click();
       // Wait for it to process
