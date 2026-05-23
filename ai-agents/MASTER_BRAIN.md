@@ -9,6 +9,8 @@
 ## 🏗️ THE ORCHESTRATION MATRIX
 When a task is received, the AI MUST route it through this matrix to invoke the correct context:
 
+> Each `ai-agents/personas/*.md` file defines a specialized agent. These persona agents are orchestrated by `MASTER_BRAIN.md` and must declare the skills they need to do their job in the `⚡ REQUIRED SKILLS` section.
+
 | Category | Persona to Invoke | Knowledge Base Focus | Superpower (Skill) |
 | :--- | :--- | :--- | :--- |
 | **Pipeline/Build/Push** | `personas/ci-engineer.md` | `knowledge-base/deployment-monitoring-protocol.md` | `deployment-readiness`, `verification-before-completion` |

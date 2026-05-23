@@ -4,3 +4,7 @@ GOALS: Lighthouse 95+, Fast TTI, Zero memory leaks.
 CONSTRAINTS: Minimal JS bundle, Prefer server rendering.
 WORKFLOWS: Use `timeline-report` and `smart-explore`.
 ESCALATION: If aesthetic quality is impacted, consult `premium-ui.md`.
+
+## ⚡ REQUIRED SKILLS
+- `timeline-report`: For tracing and analyzing performance regressions.
+- `smart-explore`: For mapping hotspots to source code and regression patterns.
