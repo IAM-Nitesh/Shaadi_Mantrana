@@ -277,7 +277,8 @@ app.post('/api/logs', clientLogLimiter, (req, res) => {
     const apiKey = req.headers['x-client-log-key'] || req.query.key;
     const expectedKey = process.env.LOKI_CLIENT_API_KEY || process.env.NEXT_PUBLIC_LOKI_CLIENT_API_KEY;
     if (!expectedKey || apiKey !== expectedKey) {
-      logger.warn({ event: 'client_log_unauthorized', ip: req.ip, headers: req.headers }, 'Unauthorized client log attempt');
+      // Avoid logging full headers which may contain sensitive values.
+      logger.warn({ event: 'client_log_unauthorized', ip: req.ip, note: 'invalid_client_log_key' }, 'Unauthorized client log attempt');
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
@@ -295,9 +296,9 @@ app.post('/api/logs', clientLogLimiter, (req, res) => {
       const sanitizeField = (obj, field, mask = '***') => {
         if (obj && obj[field]) {
           if (field === 'email' && typeof obj[field] === 'string') {
-            obj[field] = obj[field].replace(/(.{3})(.*)(@.*)/, '$1***$3');
+            obj[field] = obj[field].replace(/(.{1,3})(.*)(@.*)/, '$1***$3');
           } else if (field === 'phone' && typeof obj[field] === 'string') {
-            obj[field] = obj[field].replace(/(\d{3})(\d+)(\d{2})/, '$1***$3');
+            obj[field] = obj[field].replace(/(\d{1,3})(\d*)(\d{0,2})/, '$1***$3');
           } else {
             obj[field] = mask;
           }

@@ -3,15 +3,16 @@ const { spawn } = require('child_process');
 const child = spawn('npx', ['playwright', 'test', 'tests/playwright/features/auth_guard.feature', '--project=chromium'], {
   env: { ...process.env, DEBUG: 'pw:api' }
 });
+const tlog = require('../scripts/test-logger');
 
 child.stdout.on('data', (data) => {
-  console.log(data.toString());
+  tlog.info(data.toString());
 });
 
 child.stderr.on('data', (data) => {
-  console.error(data.toString());
+  tlog.error(data.toString());
 });
 
 child.on('close', (code) => {
-  console.log(`Process exited with code ${code}`);
+  tlog.info(`Process exited with code ${code}`);
 });

@@ -1,16 +1,19 @@
 import { test, expect } from '@playwright/test';
 
+// @ts-ignore
+const tlog = require('../../scripts/test-logger');
+
 test.describe('Login Page Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
     page.on('console', msg => {
       if (msg.type() === 'error') {
-        console.log(`BROWSER_ERROR: ${msg.text()}`);
+        tlog.error(`BROWSER_ERROR: ${msg.text()}`);
       }
     });
     await page.goto('/login/');
   });
 
-  test('should load the login page and show brand name', async ({ page }) => {
+  test('should render the login heading', async ({ page }) => {
     // Wait for the splash screen/GSAP animations to stabilize
     // Increased timeout to 15s to handle hydration delays
     await page.waitForSelector('h1, h2', { state: 'visible', timeout: 15000 });
