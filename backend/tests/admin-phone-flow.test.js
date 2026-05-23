@@ -88,12 +88,3 @@ describe('Admin User Creation - Phone Number Support', () => {
     });
   });
 });
-      .post('/admin/users')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({});
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toContain('phone|email|required');
-  });
-
-});
