@@ -566,3 +566,21 @@ Automated git pre-push hooks to verify presence of a non-empty Devil's Advocate 
 **Version**: 1.0 | **Domain**: Backend | **Expiry Hint**: 30 days
 **Insight**:
 Making email optional in Invitation mongoose schema and mapping phoneNumber and uuid on list API prevents admin UI errors when sending mobile number invites.
+
+---
+
+### 🎓 Learning: Mongoose Stale Unique Indexes Require Drop
+**Date**: 2026-05-23 17:56:14
+**Version**: 1.0 | **Domain**: Database | **Expiry Hint**: 1 year
+**Insight**:
+Mongoose sparse change does not automatically drop old non-sparse unique indexes in MongoDB; they must be manually dropped so Mongoose can rebuild them with sparse: true option.
+
+
+---
+
+### 🎓 Learning: E2E BDD Phone Invitation Mocks
+**Date**: 2026-05-23 18:14:43
+**Version**: 1.0 | **Domain**: Testing | **Expiry Hint**: 2 sprints
+**Insight**:
+Playwright-bdd requires unique and distinct step definitions and mock data handlers to validate admin invitations and styled UI changes
+
