@@ -8,6 +8,8 @@ on:
 
 jobs:
   keep-alive:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 5 # Prevent hanging jobs
 
@@ -92,4 +94,4 @@ jobs:
         # Example for Slack webhook:
         # curl -X POST -H 'Content-type: application/json' \
         #   --data '{"text":"🚨 Render service appears to be down! Check workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
-        #   ${{ secrets.SLACK_WEBHOOK_URL }}
+        #   <YOUR_SLACK_WEBHOOK_URL_OR_SECRET_REFERENCE>

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { User } = require('../models');
 const logger = require('../utils/logger');
 
@@ -43,6 +44,13 @@ const getPendingPhotos = async (req, res) => {
 const moderatePhoto = async (req, res) => {
   try {
     const { userId, status, reason } = req.body;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
 
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({
