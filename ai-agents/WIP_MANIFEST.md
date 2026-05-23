@@ -13,6 +13,7 @@
 | Domain | Interface / File in Flight | Expected Stable By |
 | :--- | :--- | :--- |
 | **⚠️ STANDING** | **Check `ai-agents/PENDING_ISSUES.md` before opening new work this sprint** | Never — permanent standing reminder |
+| UI/Backend | Data Safety, Photo Moderation & Invitation Uniqueness | 2026-05-23 |
 | Mobile | `android/build.gradle` + `android/app/build.gradle` (Firebase Crashlytics) | 2026-05-13 — requires Android Studio release build + Play Console upload |
 | UI | `frontend/src/` (Comprehensive UI Revamp) | 2026-05-15 — brainstorming and design phase starting |
 | Product | `docs/superpowers/specs/2026-05-12-shaadi-mantrana-product-blueprint.md` | 2026-05-12 — Strategic baseline established |
