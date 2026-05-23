@@ -412,6 +412,49 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
+  // Mock Admin Invitations API
+  let mockInvitations = [
+    { _id: 'invite-1', phoneNumber: '+917086875013', status: 'sent', createdAt: '2026-05-20T00:00:00Z', sentAt: '2026-05-20T00:00:00Z' }
+  ];
+
+  await page.route('**/api/admin/invitations', async route => {
+    const method = route.request().method();
+    console.log(`✉️ Mocking Admin Invitations API: ${method} ${route.request().url()}`);
+    
+    if (method === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, invitations: mockInvitations })
+      });
+    } else if (method === 'POST') {
+      const payload = route.request().postDataJSON() || {};
+      const phoneNumber = payload.phoneNumber;
+      
+      if (phoneNumber === '+918888888888') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: false, error: 'Invitation already sent to this phone number' })
+        });
+      } else {
+        const newInv = {
+          _id: `invite-${Date.now()}`,
+          phoneNumber,
+          status: 'sent',
+          createdAt: new Date().toISOString(),
+          sentAt: new Date().toISOString()
+        };
+        mockInvitations.unshift(newInv);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, invitation: newInv })
+        });
+      }
+    }
+  });
+
   // 5. Image Upload & URL Mocks
   await page.route('**/api/upload/profile-picture/**/url**', async route => {
     console.log(`🖼️ Mocking Profile Picture URL: ${route.request().url()}`);

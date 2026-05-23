@@ -59,7 +59,7 @@ const invitationSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 invitationSchema.index({ email: 1 });
-invitationSchema.index({ phoneNumber: 1 });
+invitationSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
 invitationSchema.index({ sentDate: -1 });
 
 module.exports = mongoose.model('Invitation', invitationSchema);
