@@ -9,8 +9,11 @@ const invitationSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
     lowercase: true,
+    trim: true
+  },
+  phoneNumber: {
+    type: String,
     trim: true
   },
   invitationId: {
@@ -56,6 +59,7 @@ const invitationSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 invitationSchema.index({ email: 1 });
+invitationSchema.index({ phoneNumber: 1 });
 invitationSchema.index({ sentDate: -1 });
 
 module.exports = mongoose.model('Invitation', invitationSchema);
