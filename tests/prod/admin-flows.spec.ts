@@ -52,38 +52,18 @@ test.describe('Admin Flows on Production (Pure UI Validations)', () => {
 
     // Wait for the OTP input fields to appear
     console.log('\n--- OTP Request Sent ---');
-    console.log('Waiting for the OTP input fields to render...');
     
-    // We expect the OTP fields to appear. They are inputs with type text and max length 1 inside the otp-wrapper.
     const firstOtpInput = page.locator('.royal-otp-wrapper input').first();
     await firstOtpInput.waitFor({ state: 'visible', timeout: 30000 });
 
-    // Ask user for OTP
-    const otp = await askQuestion('\n>> Please enter the 6-digit OTP received on your phone: ');
+    console.log('\n⚠️  ACTION REQUIRED ⚠️');
+    console.log('>> The browser is visible. Please click on the OTP field in the browser');
+    console.log('>> and manually type the 6-digit OTP you received.');
+    console.log('>> Then click "Verify Code".');
+    console.log('>> The script will pause here and wait for you to login successfully...');
     
-    if (otp.length !== 6) {
-      throw new Error('OTP must be exactly 6 digits');
-    }
-
-    console.log('Entering OTP...');
-    
-    // Fill the OTP fields
-    const otpInputs = page.locator('.royal-otp-wrapper input');
-    for (let i = 0; i < 6; i++) {
-      await otpInputs.nth(i).fill(otp[i]);
-    }
-
-    // Click verify
-    const verifyBtn = page.getByRole('button', { name: 'Verify Code' });
-    await verifyBtn.click();
-
-    console.log('Validating successful login & redirection...');
-
-    // Wait for redirection to dashboard or admin/dashboard
-    await page.waitForURL('**/admin/dashboard', { timeout: 30000 });
-    
-    // Check that we are on admin dashboard
-    await expect(page).toHaveURL(/.*\/admin\/dashboard/);
+    // Wait up to 2 minutes for the user to manually enter the OTP and reach the dashboard
+    await expect(page).toHaveURL(/.*\/admin\/dashboard.*/, { timeout: 120 * 1000 });
     console.log('✅ Successfully reached Admin Dashboard');
 
     // 1. Validate Dashboard
