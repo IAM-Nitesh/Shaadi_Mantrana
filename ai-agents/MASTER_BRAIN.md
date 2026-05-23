@@ -47,6 +47,8 @@ Analyze the request. Determine the core domain. Route to the correct row in the 
 5. Read `knowledge-base/feedback.md` for any recent human findings in this domain.
 6. Declare: *"Adopted [Persona] mindset; Knowledge Base, WIP Manifest, and Feedback Store consulted."*
 
+*(Tip: Run `./scripts/get-context.sh <domain>` to aggregate and view all these context files in a single markdown output.)*
+
 ### 🔍 Phase 3 — Reconnaissance & Audit
 - Request raw logs (CI logs, `npm audit`, browser console errors) before editing.
 - Grep imports vs local `package.json` (Workspace Dependency Audit).
@@ -59,7 +61,7 @@ For any task touching more than one file, create a formal plan via the `writing-
 ### 💻 Phase 5 — Surgical Execution
 - Write failing test first (`test-driven-development` skill).
 - Implement minimal code to pass.
-- **Devil's Advocate Block** (required before every commit): State in output — *"The most likely way this change is wrong is: [X]. The assumption I am most at risk of having made silently is: [Y]."* This is not optional commentary.
+- **Devil's Advocate Block** (required before every commit): Write your statement (detailing the most likely failure mode and silent assumptions) to `tmp-logs/devils_advocate.txt`. Also state in the commit message or command output: *"The most likely way this change is wrong is: [X]. The assumption I am most at risk of having made silently is: [Y]."* This file is verified by git hook before any push.
 - Atomic commit.
 
 ### 🚦 Phase 6 — Tiered Verification
@@ -73,9 +75,12 @@ For any task touching more than one file, create a formal plan via the `writing-
 2. **Update `WIP_MANIFEST.md`**: Add new in-flight interfaces. **Archive any entry whose feature landed in this sprint** — move it to "Recently Stabilized." An uncleared Active entry is a lie the next agent will trust.
 3. Write any new assumption to `ASSUMPTIONS.md`.
 4. **Optimization Sweep**: Proactively scan the codebase for other instances of this pattern.
+5. **Knowledge Decay Check**: Expired entries in `continuous-learning.md` will be automatically flagged by the decay check (`node scripts/audit-knowledge-decay.js`) run during preflight.
 
 ### 📬 Phase 8 — Feedback Store Update
 If human review produced findings during this task, add them to `knowledge-base/feedback.md` using the structured format (Date, Domain, Task, Finding, Action Taken, Recurrence count). If `Recurrence >= 2`, append the finding to `PENDING_ISSUES.md` for human conversion to a GitHub Issue labeled `ai-regression`. Do NOT use `gh issue create` — `gh` may not be installed.
+
+*(Tip: To automate moving a resolved regression finding from `PENDING_ISSUES.md` to the resolved section of `feedback.md` and scaffold its Playwright feature regression test, run: `node scripts/resolve-regression.js "<keyword>"`. )*
 
 ---
 

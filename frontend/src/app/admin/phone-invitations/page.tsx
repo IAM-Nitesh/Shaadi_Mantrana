@@ -18,7 +18,7 @@ interface Invitation {
   uuid?: string;
 }
 
-export default function EmailInvitations() {
+export default function PhoneInvitations() {
   const router = useRouter();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);

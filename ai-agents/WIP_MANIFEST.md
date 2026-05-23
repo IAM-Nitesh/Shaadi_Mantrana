@@ -59,6 +59,7 @@
 | System/Auth | Phone Admin elevation, promote-to-admin Phone Query, config dotenv CWD path fix | 2026-05-18 | **STABILIZED**: Elevated the production phone-only admin account, upgraded promotion script to support phone-only queries, resolved config dotenv paths relative to __dirname for CWD-agnostic CLI execution, and documented Section 6 in the admin-playbook. |
 | UI/UX | Admin Bottom Navigation Logout Overlay Visibility | 2026-05-18 | **STABILIZED**: Resolved issue where logout overlay displayed immediately on admin dashboard mount by adding style display none by default. |
 | Testing | Admin E2E Playwright Suite | 2026-05-19 | **STABILIZED**: Reached 50/50 passing state. Resolved regex step conflicts, configured Playwright bypass for Firebase OTPs, injected `/api/admin/users` and `/api/auth/status` mocks, fixed WebKit timeout flakes (`domcontentloaded`), and resolved Next.js `trailingSlash` auth guard redirect bug. |
+| UI/Backend | Phone Invitations & Admin URIs | 2026-05-23 | **STABILIZED**: Renamed email-invitations to phone-invitations in frontend Next.js routing, updated navigation links, made email optional and added phoneNumber in Invitation schema, mapped phoneNumber and uuid in GET /invitations API response, and resolved admin test navigation race conditions. |
 
 ---
 

@@ -1124,6 +1124,8 @@ router.get('/invitations', authenticateToken, adminMiddleware, async (req, res) 
     const transformedInvitations = invitations.map(invitation => ({
       _id: invitation._id,
       email: invitation.email,
+      phoneNumber: invitation.phoneNumber,
+      uuid: invitation.uuid,
       firstName: invitation.firstName || '',
       lastName: invitation.lastName || '',
       status: invitation.status,

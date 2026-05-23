@@ -23,6 +23,14 @@ npm run security:audit || {
   exit 1
 }
 
+# 2.3 KNOWLEDGE DECAY AUDIT
+echo "🧠 Checking Continuous Learning Expiry..."
+node scripts/audit-knowledge-decay.js --strict || {
+  echo "❌ KNOWLEDGE DECAY AUDIT FAILED."
+  exit 1
+}
+
+
 # 2.5 WORKSPACE ISOLATION CHECK
 echo "🏢 Checking Workspace Isolation (Vercel Compatibility)..."
 bash scripts/audit-workspace-deps.sh frontend || exit 1

@@ -10,7 +10,7 @@
 
 ## Pending (Needs GitHub Issue)
 
-### [2026-05-17] QA/E2E closure overclaimed green state before exact-suite verification
+### ~~[2026-05-17] QA/E2E closure overclaimed green state before exact-suite verification~~
 - **Feedback source**: `ai-agents/knowledge-base/feedback.md`
 - **Pattern**: AI summaries repeatedly used completion language such as "Green State", "fact-checked", or "perfectly synchronized" before the exact `npm run test:e2e:bdd` command had passed.
 - **Requested GitHub issue**: Add an `ai-regression` issue requiring QA closure summaries to include the exact command, browser/project scope, pass/fail count, and cleanup status before claiming green.

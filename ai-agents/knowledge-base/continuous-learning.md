@@ -550,3 +550,19 @@ Before writing any step, grep ALL step files for BOTH string AND regex patterns 
 **Insight**:
 1) Next.js trailingSlash:true causes usePathname() to return paths with trailing slashes (e.g. '/admin/login/'). Always strip it with .replace(/\/$/, '') before strict equality checks in route guards to prevent incorrect redirects. 2) WebKit tests can hang indefinitely on waitForLoadState('networkidle') due to HMR/telemetry WebSocket connections. Always use 'domcontentloaded' instead.
 
+---
+
+### 🎓 Learning: Hardened AI OS Git Hook and Decay Check Automation
+**Date**: 2026-05-23 01:38:33
+**Version**: 1.0 | **Domain**: Pipeline | **Expiry Hint**: Permanent
+**Insight**:
+Automated git pre-push hooks to verify presence of a non-empty Devil's Advocate block, added a Node decay checker into the preflight checklist, and automated the movement of regression issues from pending issues to resolved feedback files while generating corresponding Playwright test stubs.
+
+
+---
+
+### 🎓 Learning: Phone Invitations Hardening
+**Date**: 2026-05-23 16:05:01
+**Version**: 1.0 | **Domain**: Backend | **Expiry Hint**: 30 days
+**Insight**:
+Making email optional in Invitation mongoose schema and mapping phoneNumber and uuid on list API prevents admin UI errors when sending mobile number invites.
