@@ -243,7 +243,7 @@ android/app/src/main/assets/www/cache/
 android/app/src/main/assets/www/server/
 android/app/src/main/assets/www/static/
 
-# --- Legacy & Scratch Directories (Deleted to reduce bloat) ---
+# --- Legacy & Scratch Directories (Removed from repo; patterns prevent re-creation) ---
 ai-agents/legacy/
 docs/legacy/
 backend/scratch/

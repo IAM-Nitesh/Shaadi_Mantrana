@@ -5,7 +5,10 @@ const { User } = require('../src/models');
 async function createTestUser() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://shaadimantrauser_dev:z2CNxqEaEel3tVNw@cluster0-m0freetier.hdkszsj.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0-M0freeTier&maxPoolSize=10&serverSelectionTimeoutMS=5000&socketTimeoutMS=30000&connectTimeoutMS=8000&maxIdleTimeMS=30000&minPoolSize=2&heartbeatFrequencyMS=5000&retryReads=true&ssl=true&authSource=admin');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI environment variable is required');
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
     
     const testEmail = 'test@example.com';
