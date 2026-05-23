@@ -25,7 +25,7 @@ export default function DataSafety() {
         <div className="safety-card bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-10">
           <div className="flex items-center mb-8">
             <div className="bg-blue-100 rounded-full w-14 h-14 flex items-center justify-center mr-5">
-              <CustomIcon name="ri-lock-password-line" className="text-3xl text-blue-600" />
+              <CustomIcon name="ri-lock-line" className="text-3xl text-blue-600" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Admin Security & Actions</h2>
@@ -47,9 +47,9 @@ export default function DataSafety() {
             </div>
             
             <div className="text-center p-6 bg-yellow-50 rounded-xl">
-              <div className="text-4xl text-yellow-600 mx-auto mb-4">📧</div>
+              <div className="text-4xl text-yellow-600 mx-auto mb-4">📱</div>
               <h3 className="font-semibold text-gray-800 mb-3 text-lg">Invitation Control</h3>
-              <p className="text-sm text-gray-600">Send and track email invitations</p>
+              <p className="text-sm text-gray-600">Send and track phone invitations</p>
             </div>
           </div>
           
@@ -72,8 +72,8 @@ export default function DataSafety() {
                 <span className="text-gray-700">Resume user accounts</span>
               </div>
               <div className="flex items-center">
-                <div className="text-blue-500 mr-4 text-xl">📧</div>
-                <span className="text-gray-700">Send email invitations</span>
+                <div className="text-blue-500 mr-4 text-xl">📱</div>
+                <span className="text-gray-700">Send phone invitations</span>
               </div>
               <div className="flex items-center">
                 <div className="text-purple-500 mr-4 text-xl">🖼️</div>
@@ -91,7 +91,7 @@ export default function DataSafety() {
         <div className="safety-card bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-10">
           <div className="flex items-center mb-8">
             <div className="bg-purple-100 rounded-full w-14 h-14 flex items-center justify-center mr-5">
-              <CustomIcon name="ri-database-line" className="text-3xl text-purple-600" />
+              <CustomIcon name="ri-file-text-line" className="text-3xl text-purple-600" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Data Access & Management</h2>
@@ -156,7 +156,7 @@ export default function DataSafety() {
         <div className="safety-card bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
           <div className="flex items-center mb-8">
             <div className="bg-orange-100 rounded-full w-14 h-14 flex items-center justify-center mr-5">
-              <CustomIcon name="ri-customer-service-2-line" className="text-3xl text-orange-600" />
+              <CustomIcon name="ri-customer-service-line" className="text-3xl text-orange-600" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Admin Support & Resources</h2>
@@ -164,11 +164,11 @@ export default function DataSafety() {
             </div>
           </div>
           
-          <div className="text-center p-8 bg-blue-50 rounded-xl max-w-md mx-auto">
-            <CustomIcon name="ri-mail-line" className="text-4xl text-blue-600 mx-auto mb-4" />
-            <h3 className="font-semibold text-gray-800 mb-3 text-lg">Admin Support</h3>
-            <p className="text-sm text-gray-600 mb-4">For admin access and technical support</p>
-            <a href="mailto:shaadimantrana.help@gmail.com" className="text-blue-600 hover:text-blue-700 font-medium">
+          <div className="text-center p-8 bg-blue-950 border border-blue-900/50 rounded-2xl max-w-md mx-auto shadow-md">
+            <CustomIcon name="ri-mail-line" className="text-4xl text-blue-400 mx-auto mb-4" />
+            <h3 className="font-semibold text-white mb-3 text-lg">Admin Support</h3>
+            <p className="text-sm text-blue-200 mb-4">For admin access and technical support</p>
+            <a href="mailto:shaadimantrana.help@gmail.com" className="text-royal-gold hover:text-royal-gold-light font-medium block transition-colors">
               shaadimantrana.help@gmail.com
             </a>
           </div>

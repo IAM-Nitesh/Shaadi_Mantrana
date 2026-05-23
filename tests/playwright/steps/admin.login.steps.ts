@@ -239,3 +239,34 @@ Then('I should see a button labelled {string}', async ({ page }, label) => {
     page.getByRole('button', { name: new RegExp(escapeRegExp(label), 'i') }).first()
   ).toBeVisible({ timeout: 10_000 });
 });
+
+// UNIQUE: "input with placeholder" — no existing step uses this exact phrasing
+Then('I should see an input with placeholder {string}', async ({ page }, placeholder) => {
+  await expect(page.locator(`input[placeholder="${placeholder}"]`).first()).toBeVisible({ timeout: 10_000 });
+});
+
+// UNIQUE: "into the invitation phone input" — no existing step uses this exact phrasing
+When('I type {string} into the invitation phone input', async ({ page }, phoneVal) => {
+  const input = page.locator('input[placeholder="Enter phone number"]').first();
+  await expect(input).toBeVisible({ timeout: 10_000 });
+  await input.fill(phoneVal);
+});
+
+// UNIQUE: "invited phone number" — no existing step uses this exact phrasing
+Then('I should see the invited phone number {string} in the invitation history table', async ({ page }, phoneNumber) => {
+  await expect(page.locator('tbody tr').filter({ hasText: phoneNumber }).first()).toBeVisible({ timeout: 15_000 });
+});
+
+// UNIQUE: "invitation error" — no existing step uses this exact phrasing
+Then('I should see the invitation error {string}', async ({ page }, errorText) => {
+  await expect(page.locator('p').filter({ hasText: new RegExp(escapeRegExp(errorText), 'i') }).first()).toBeVisible({ timeout: 15_000 });
+});
+
+// UNIQUE: "admin support email" — no existing step uses this exact phrasing
+Then('I should see the admin support email {string} within the styled box', async ({ page }, email) => {
+  const box = page.locator('.bg-blue-950').first();
+  await expect(box).toBeVisible({ timeout: 10_000 });
+  const mailLink = box.locator(`a[href="mailto:${email}"]`).first();
+  await expect(mailLink).toHaveText(email);
+});
+
