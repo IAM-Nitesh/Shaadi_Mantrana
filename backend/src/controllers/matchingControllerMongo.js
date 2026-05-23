@@ -1,6 +1,7 @@
 // MongoDB-integrated Matching Controller
 const mongoose = require('mongoose');
 const { User, Connection, DailyLike } = require('../models');
+const { SecurityUtils } = require('../utils/security');
 
 class MatchingController {
   // Get profiles for discovery (with daily limit)
@@ -761,11 +762,14 @@ class MatchingController {
       const userId = req.user.userId;
       const { targetUserId, connectionId: bodyConnectionId } = req.body;
 
-      console.log(`🚫 Unmatch request - User: ${userId}, Target: ${targetUserId || 'N/A'}, ConnectionId: ${bodyConnectionId || 'N/A'}`);
-
-      if (!targetUserId && !bodyConnectionId) {
-        return res.status(400).json({ success: false, error: 'Either targetUserId or connectionId is required' });
+      if (targetUserId && !mongoose.isValidObjectId(targetUserId)) {
+        return res.status(400).json({ success: false, error: 'Invalid target user ID' });
       }
+      if (bodyConnectionId && !mongoose.isValidObjectId(bodyConnectionId)) {
+        return res.status(400).json({ success: false, error: 'Invalid connection ID' });
+      }
+      
+      console.log('🚫 Unmatch request - User:', userId, 'Target:', targetUserId || 'N/A', 'ConnectionId:', bodyConnectionId || 'N/A');
 
       // Prevent self-unmatch when targetUserId provided
       if (targetUserId && userId === targetUserId) {
