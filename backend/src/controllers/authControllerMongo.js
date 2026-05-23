@@ -281,13 +281,22 @@ class AuthController {
 
       // 4. Set Cookies
       const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
-      const cookieOptions = getCookieOptions(req, { maxAge: cookieMaxAge });
+      const isProdEnv = process.env.NODE_ENV === 'production';
       
-      res.cookie('accessToken', session.accessToken, cookieOptions);
-      res.cookie('refreshToken', session.refreshToken, getCookieOptions(req, { 
+      const sessionCookieOptions = {
+        httpOnly: true,
+        secure: isProdEnv,
+        sameSite: isProdEnv ? 'none' : 'lax',
+        path: '/',
+        maxAge: cookieMaxAge
+      };
+      
+      res.cookie('accessToken', session.accessToken, sessionCookieOptions);
+      res.cookie('refreshToken', session.refreshToken, { 
+        ...sessionCookieOptions,
         maxAge: isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 
-      }));
-      res.cookie('sessionId', session.sessionId, cookieOptions);
+      });
+      res.cookie('sessionId', session.sessionId, sessionCookieOptions);
 
       res.status(200).json(responseData);
 
