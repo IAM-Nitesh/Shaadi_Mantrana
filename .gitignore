@@ -40,6 +40,10 @@ frontend/.env*
 backend/.env*
 !*.example
 !*.template
+backend/.env.development 
+backend/.env.production
+frontend/.env.development 
+frontend/.env.production
 
 # Logs
 *.log
