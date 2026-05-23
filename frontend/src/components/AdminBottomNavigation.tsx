@@ -110,15 +110,15 @@ export default function AdminBottomNavigation() {
           </a>
 
           <a
-            href="/admin/email-invitations"
+            href="/admin/phone-invitations"
             className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
-              pathname === '/admin/email-invitations' 
+              pathname === '/admin/phone-invitations' 
                 ? 'text-blue-600 font-semibold' 
                 : 'text-gray-600 hover:text-blue-600'
             }`}
           >
             <div className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${
-              pathname === '/admin/email-invitations' 
+              pathname === '/admin/phone-invitations' 
                 ? 'bg-blue-100 text-blue-600 shadow-md' 
                 : 'hover:bg-gray-100'
             }`}>

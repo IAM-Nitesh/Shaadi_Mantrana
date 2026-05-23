@@ -23,13 +23,6 @@
 
 ## Active Findings
 
-### [2026-05-17] [QA/E2E] Do not claim green before exact-suite verification
-- **Task**: Review and stabilize Shaadi Mantrana Playwright BDD E2E suite
-- **Finding**: Human review correctly rejected language like "Green State", "fact-checked", and "perfectly synchronized" when the last known evidence still showed failures and only partial browser validation.
-- **Action Taken**: Re-ran the exact `npm run test:e2e:bdd` script outside the browser sandbox; verified 14 passed across Chromium and WebKit with successful MongoDB test-data cleanup. Final status now distinguishes script/harness fixes from application-flow fixes and uses command output as the source of truth.
-- **Recurrence**: 2
-- **Pattern?**: Yes — appended to `PENDING_ISSUES.md` for human conversion into an `ai-regression` issue.
-
 ### [2026-05-15] [System] Render MCP server returns "Bad Request"
 - **Task**: Check deployment status
 - **Finding**: All tools prefixed with `mcp_render_` return "Bad Request" (standalone SSE stream closed). Handshake fails despite valid-looking configuration in `mcp_config.json`.
@@ -50,3 +43,10 @@
 - **Action Taken**: Verified Production environment via browser subagent; Production is 100% healthy.
 - **Recurrence**: 1
 - **Pattern?**: No
+
+### [2026-05-17] [QA/E2E] Do not claim green before exact-suite verification
+- **Task**: Review and stabilize Shaadi Mantrana Playwright BDD E2E suite
+- **Finding**: Human review correctly rejected language like "Green State", "fact-checked", and "perfectly synchronized" when the last known evidence still showed failures and only partial browser validation.
+- **Action Taken**: Re-ran the exact `npm run test:e2e:bdd` script outside the browser sandbox; verified 14 passed across Chromium and WebKit with successful MongoDB test-data cleanup. Final status now distinguishes script/harness fixes from application-flow fixes and uses command output as the source of truth.
+- **Recurrence**: 2
+- **Pattern?**: Yes — appended to `PENDING_ISSUES.md` for human conversion into an `ai-regression` issue.

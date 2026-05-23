@@ -39,10 +39,10 @@ export default function AdminNavigation() {
       active: pathname === '/admin/users'
     },
     {
-      href: '/admin/email-invitations',
+      href: '/admin/phone-invitations',
       label: 'Invitations',
       icon: 'ri-mail-line',
-      active: pathname === '/admin/email-invitations'
+      active: pathname === '/admin/phone-invitations'
     },
     {
       href: '/admin/data-safety',
