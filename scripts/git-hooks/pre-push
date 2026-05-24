@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
 # Git pre-push hook — Shaadi Mantrana
-# Blocks git push if critical/high security vulnerabilities exist or E2E tests fail.
+# Blocks git push if critical/high security vulnerabilities exist.
+# E2E tests run ONLY when dev servers are already live (opt-in).
 # Installed automatically by: bash scripts/install-git-hooks.sh
 # ============================================================
 
@@ -9,6 +10,7 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 SCRIPT="$ROOT_DIR/scripts/security-audit-fix.sh"
 DEVILS_ADVOCATE_FILE="$ROOT_DIR/devils-advocate/risk-assessment.txt"
 
+# ── Devil's Advocate gate ─────────────────────────────────────────────────────
 echo ""
 echo "😈 Verifying Devil's Advocate risk assessment..."
 if [ ! -f "$DEVILS_ADVOCATE_FILE" ] || [ ! -s "$DEVILS_ADVOCATE_FILE" ]; then
@@ -25,16 +27,15 @@ else
   echo "✅ Devil's Advocate gate passed."
 fi
 
+# ── Security audit ────────────────────────────────────────────────────────────
 echo ""
 echo "🔐 Running security audit before push..."
 echo ""
-
 
 if [ ! -f "$SCRIPT" ]; then
   echo "⚠ Security script not found at $SCRIPT — skipping security gate"
 else
   chmod +x "$SCRIPT"
-  # Use --auto-fix: handles both safe fix AND clean reinstall for workspace pin issues
   bash "$SCRIPT" --auto-fix
   STATUS=$?
 
@@ -49,24 +50,64 @@ else
   echo "✅ Security gate passed."
 fi
 
-echo ""
-echo "🚀 Running local E2E validation tests..."
-echo ""
+# ── E2E gate (server-aware) ───────────────────────────────────────────────────
+# Only run E2E tests when both dev servers are already listening.
+# This prevents the hook from hanging trying to boot Next.js + the backend
+# during a plain `git push` from a cold terminal.
+#
+# To run E2E as part of the push, start your servers first:
+#   npm run dev:frontend  (port 3000)
+#   npm run dev:backend   (port 4000)
+# Then push normally.  The hook will detect them and run the full suite.
+#
+# To FORCE a push without E2E (emergency / CI already covers it):
+#   git push --no-verify
 
-# Run E2E Playwright tests locally
 cd "$ROOT_DIR"
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
-export GIT_HOOK=true
-npm run e2e
-E2E_STATUS=$?
 
-if [ $E2E_STATUS -ne 0 ]; then
+FRONTEND_UP=false
+BACKEND_UP=false
+
+# Quick TCP check — 1 second timeout each
+if curl -sf --max-time 1 http://localhost:3000 > /dev/null 2>&1; then
+  FRONTEND_UP=true
+fi
+if curl -sf --max-time 1 http://localhost:4000/health/ping > /dev/null 2>&1; then
+  BACKEND_UP=true
+fi
+
+echo ""
+if [ "$FRONTEND_UP" = true ] && [ "$BACKEND_UP" = true ]; then
+  echo "🚀 Dev servers detected — running local E2E validation tests..."
   echo ""
-  echo "❌ Push BLOCKED due to E2E test failures."
-  echo "   Please fix failing E2E tests before pushing."
-  echo "   Then re-run: git push"
+  export GIT_HOOK=true
+  npm run e2e
+  E2E_STATUS=$?
+
+  if [ $E2E_STATUS -ne 0 ]; then
+    echo ""
+    echo "❌ Push BLOCKED due to E2E test failures."
+    echo "   Please fix failing E2E tests before pushing."
+    echo "   To bypass (not recommended): git push --no-verify"
+    echo ""
+    exit 1
+  fi
+
   echo ""
-  exit 1
+  echo "✅ E2E validation passed — proceeding with push."
+else
+  echo "⚡ Dev servers not running — skipping E2E gate."
+  if [ "$FRONTEND_UP" = false ]; then
+    echo "   Frontend (localhost:3000): not detected"
+  fi
+  if [ "$BACKEND_UP" = false ]; then
+    echo "   Backend  (localhost:4000): not detected"
+  fi
+  echo ""
+  echo "   To run E2E during push: start both servers, then git push"
+  echo "   To force a push with E2E check: git push --no-verify is NOT needed;"
+  echo "   simply start the servers and push."
 fi
 
 echo ""
