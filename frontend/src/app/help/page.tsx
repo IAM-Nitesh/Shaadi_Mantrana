@@ -37,22 +37,22 @@ export default function Help() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-royal-obsidian">
   {/* Content (global header provides the banner/back button) */}
   <div className="pb-8 px-4" style={{ paddingTop: 'var(--header-height)' }}>
         {/* Contact Support */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6 transform hover:scale-105 transition-all duration-200">
+        <div className="card-modern p-6 mb-6 transform hover:scale-105 transition-all duration-200">
           <div className="text-center">
             <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CustomIcon name="ri-customer-service-line" className="text-2xl text-rose-500" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Need Help?</h2>
-            <p className="text-gray-600 mb-6">Our admin team is here to help you with any questions or issues.</p>
+            <h2 className="text-xl font-semibold text-royal-gold font-playfair mb-2">Need Help?</h2>
+            <p className="text-white/80 font-inter mb-6">Our admin team is here to help you with any questions or issues.</p>
             
             <div className="space-y-3">
               <button
                 onClick={() => ContactService.handleEmailContact()}
-                className="flex items-center justify-center space-x-3 w-full bg-white border-2 border-rose-500 text-rose-500 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className="flex items-center justify-center space-x-3 w-full bg-royal-glass border border-royal-glass-border border-2 border-rose-500 text-rose-500 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 <CustomIcon name="ri-mail-line" />
                 <span>Email Support</span>
@@ -69,20 +69,20 @@ export default function Help() {
         </div>
 
         {/* FAQ Section */}
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Frequently Asked Questions</h2>
+        <div className="bg-royal-glass border border-royal-glass-border rounded-xl shadow-sm">
+          <div className="p-4 border-b border-royal-gold/10">
+            <h2 className="font-semibold text-royal-gold font-playfair">Frequently Asked Questions</h2>
           </div>
           
           <div className="divide-y divide-gray-100">
             {faqs.map((faq, index) => (
               <details key={index} className="group">
-                <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors duration-200">
-                  <span className="font-medium text-gray-800">{faq.question}</span>
-                  <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400 group-open:rotate-90 transition-transform duration-200" />
+                <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-royal-gold/5 transition-colors duration-200">
+                  <span className="font-medium text-royal-gold font-playfair">{faq.question}</span>
+                  <CustomIcon name="ri-arrow-right-s-line" className="text-royal-gold/40 group-open:rotate-90 transition-transform duration-200" />
                 </summary>
                 <div className="px-4 pb-4">
-                  <p className="text-gray-600 text-sm leading-relaxed">{faq.answer}</p>
+                  <p className="text-white/80 font-inter text-sm leading-relaxed">{faq.answer}</p>
                 </div>
               </details>
             ))}
@@ -90,14 +90,14 @@ export default function Help() {
         </div>
 
         {/* Data Deletion Request */}
-        <div className="bg-white rounded-xl p-4 shadow-sm mt-4">
+        <div className="bg-royal-glass border border-royal-glass-border rounded-xl p-4 shadow-sm mt-4">
           <div className="text-center">
-            <h3 className="font-semibold text-gray-800 mb-2">Data Deletion Request</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="font-semibold text-royal-gold font-playfair mb-2">Data Deletion Request</h3>
+            <p className="text-sm text-white/80 font-inter mb-4">
               You have the right to request deletion of all your personal data from our systems. This includes your profile, messages, photos, and all associated data.
             </p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-yellow-800">
+            <div className="bg-royal-gold/5 border border-royal-gold/20 rounded-lg p-3 mb-4">
+              <p className="text-xs text-royal-gold">
                 ⚠️ This action is permanent and cannot be undone. You will lose access to all matches, conversations, and profile data.
               </p>
             </div>
@@ -111,7 +111,7 @@ export default function Help() {
               >
                 Request Complete Data Deletion
               </button>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-royal-gold/60 mt-2">
                 We will process your request within 30 days as per GDPR/CCPA requirements
               </p>
             </div>
@@ -119,10 +119,10 @@ export default function Help() {
         </div>
 
         {/* Data Export */}
-        <div className="bg-white rounded-xl p-4 shadow-sm mt-4">
+        <div className="bg-royal-glass border border-royal-glass-border rounded-xl p-4 shadow-sm mt-4">
           <div className="text-center">
-            <h3 className="font-semibold text-gray-800 mb-2">Export Your Data</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="font-semibold text-royal-gold font-playfair mb-2">Export Your Data</h3>
+            <p className="text-sm text-white/80 font-inter mb-4">
               Request a copy of all your personal data stored in our systems.
             </p>
             <button
@@ -130,7 +130,7 @@ export default function Help() {
                 'Data Export Request',
                 'I would like to request an export of all my personal data from Shaadi Mantrana app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]'
               )}
-              className="inline-block bg-white border-2 border-rose-500 text-rose-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-50 transition-all duration-200 shadow-lg"
+              className="inline-block bg-royal-glass border border-royal-glass-border border-2 border-rose-500 text-rose-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-50 transition-all duration-200 shadow-lg"
             >
               Request Data Export
             </button>
@@ -138,10 +138,10 @@ export default function Help() {
         </div>
 
         {/* App Info */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mt-4 border border-rose-100">
+        <div className="card-modern p-6 mt-4 border border-rose-100">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3">
-              <div className="w-8 h-8 bg-white border-2 border-rose-400 rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-royal-glass border border-royal-glass-border border-2 border-rose-400 rounded-lg flex items-center justify-center shadow-sm">
                 <img src="/icon.png" alt="Shaadi Mantrana" className="w-5 h-5 object-contain" />
               </div>
               <div>
@@ -160,7 +160,7 @@ export default function Help() {
                 </div>
               </div>
             </div>
-            <div className="text-sm text-gray-600 space-y-1">
+            <div className="text-sm text-white/80 font-inter space-y-1">
               <p className="font-medium text-rose-600">v1.0 • 100% Free Platform</p>
               <p className="text-xs flex items-center justify-center space-x-3">
                 <span className="flex items-center space-x-1">

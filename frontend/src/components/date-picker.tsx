@@ -69,7 +69,7 @@ export function DatePicker({ date, onChange, className }: {
           {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-white shadow-lg rounded-lg" align="start" sideOffset={4}>
+      <PopoverContent className="w-auto p-0 card-modern shadow-lg rounded-lg" align="start" sideOffset={4}>
         <div className="p-3 border-b">
           <div className="flex gap-2 mb-2">
             <select

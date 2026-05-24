@@ -169,7 +169,7 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
   return (
     <div 
       ref={backdropRef} 
-      className="fixed inset-0 z-[70] flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]"
+      className="fixed inset-0 z-[70] flex items-end bg-black/70 backdrop-blur-md"
       onClick={handleBackdropClick}
       style={{ pointerEvents: 'auto' }}
     >

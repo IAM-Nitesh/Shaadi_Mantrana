@@ -11,16 +11,16 @@ export default function ToasterClient() {
       toastOptions={{
         duration: 3000,
         style: {
-          background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)',
-          color: '#1f2937',
+          background: 'rgba(18, 18, 18, 0.85)', // royal-obsidian with opacity
+          color: '#ffffff',
           borderRadius: '16px',
           padding: '16px 20px',
           fontSize: '14px',
           fontWeight: '500',
           fontFamily: 'Inter, system-ui, sans-serif',
-          boxShadow: '0 10px 25px rgba(236, 72, 153, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
-          border: '1px solid rgba(236, 72, 153, 0.1)',
-          backdropFilter: 'blur(10px)',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.1)',
+          border: '1px solid rgba(212, 175, 55, 0.2)', // royal-gold-border
+          backdropFilter: 'blur(16px)',
           maxWidth: '400px',
           minWidth: '300px',
           cursor: 'pointer',
@@ -30,42 +30,42 @@ export default function ToasterClient() {
         success: {
           duration: 5000,
           style: {
-            background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-            color: '#065f46',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            boxShadow: '0 10px 25px rgba(16, 185, 129, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
+            background: 'rgba(18, 18, 18, 0.9)',
+            color: '#D4AF37', // royal-gold
+            border: '1px solid rgba(212, 175, 55, 0.4)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.15)',
           },
           iconTheme: {
-            primary: '#10b981',
-            secondary: '#ffffff',
+            primary: '#D4AF37',
+            secondary: '#121212',
           },
         },
         error: {
           duration: 5000,
           style: {
-            background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-            color: '#991b1b',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            boxShadow: '0 10px 25px rgba(239, 68, 68, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
+            background: 'rgba(18, 18, 18, 0.9)',
+            color: '#ff6b6b', // light crimson/red for readability
+            border: '1px solid rgba(128, 0, 0, 0.4)', // royal-crimson border
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(128, 0, 0, 0.2)',
           },
           iconTheme: {
-            primary: '#ef4444',
+            primary: '#800000', // royal-crimson
             secondary: '#ffffff',
           },
         },
         loading: {
           style: {
-            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-            color: '#0c4a6e',
-            border: '1px solid rgba(59, 130, 246, 0.2)',
-            boxShadow: '0 10px 25px rgba(59, 130, 246, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
+            background: 'rgba(18, 18, 18, 0.9)',
+            color: '#F9E29C', // royal-gold-light
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.1)',
           },
           iconTheme: {
-            primary: '#3b82f6',
-            secondary: '#ffffff',
+            primary: '#D4AF37',
+            secondary: '#121212',
           },
         },
-        className: 'toast-animation swipeable-toast',
+        className: 'toast-animation swipeable-toast card-modern',
       }}
       containerStyle={{
         top: 20,

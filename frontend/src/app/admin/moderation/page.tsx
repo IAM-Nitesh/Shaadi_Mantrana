@@ -80,27 +80,27 @@ export default function PhotoModerationPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-          <CustomIcon name="ri-image-check-line" className="text-rose-500 mr-3" />
+        <h1 className="text-3xl font-bold text-royal-gold font-playfair flex items-center">
+          <CustomIcon name="ri-image-check-line" className="text-royal-gold mr-3" />
           Photo Moderation
         </h1>
-        <p className="text-gray-600 mt-2">Approve or reject user profile photos for compliance.</p>
+        <p className="text-white/80 font-inter mt-2">Approve or reject user profile photos for compliance.</p>
       </div>
 
       {users.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-gray-100">
-          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CustomIcon name="ri-checkbox-circle-line" className="text-4xl text-green-500" />
+        <div className="bg-royal-glass rounded-2xl shadow-sm p-12 text-center border border-royal-glass-border">
+          <div className="w-20 h-20 bg-royal-gold/5 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CustomIcon name="ri-checkbox-circle-line" className="text-4xl text-royal-gold-light" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">All Caught Up!</h2>
-          <p className="text-gray-500 mt-2">There are no pending photos to moderate at this time.</p>
+          <h2 className="text-xl font-semibold text-royal-gold font-playfair">All Caught Up!</h2>
+          <p className="text-royal-gold/60 mt-2">There are no pending photos to moderate at this time.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {users.map(user => (
-            <div key={user.userId} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 flex flex-col">
+            <div key={user.userId} className="bg-royal-glass rounded-2xl shadow-lg overflow-hidden border border-royal-glass-border flex flex-col">
               {/* Image Preview */}
-              <div className="aspect-square bg-gray-100 relative group">
+              <div className="aspect-square bg-royal-gold/10 relative group">
                 {user.images && user.images.length > 0 ? (
                   <img 
                     src={user.images[0]} 
@@ -108,7 +108,7 @@ export default function PhotoModerationPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center text-royal-gold/40">
                     <CustomIcon name="ri-user-smile-line" className="text-6xl" />
                   </div>
                 )}
@@ -119,16 +119,16 @@ export default function PhotoModerationPage() {
 
               {/* User Info */}
               <div className="p-4 flex-1">
-                <h3 className="font-bold text-gray-800 text-lg truncate">{user.name}</h3>
-                <p className="text-sm text-gray-500 truncate">{user.phoneNumber || user.email || 'Phone Signup'}</p>
+                <h3 className="font-bold text-royal-gold font-playfair text-lg truncate">{user.name}</h3>
+                <p className="text-sm text-royal-gold/60 truncate">{user.phoneNumber || user.email || 'Phone Signup'}</p>
               </div>
 
               {/* Actions */}
-              <div className="p-4 bg-gray-50 border-t border-gray-100 grid grid-cols-2 gap-3">
+              <div className="p-4 bg-royal-obsidian border-t border-royal-glass-border grid grid-cols-2 gap-3">
                 <button
                   onClick={() => handleModerate(user.userId, 'rejected')}
                   disabled={processingId === user.userId}
-                  className="flex items-center justify-center px-4 py-2 bg-white border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors font-medium disabled:opacity-50"
+                  className="flex items-center justify-center px-4 py-2 bg-royal-glass border border-royal-crimson/50 text-royal-crimson rounded-xl hover:bg-royal-crimson/10 transition-colors font-medium disabled:opacity-50"
                 >
                   <CustomIcon name="ri-close-circle-line" className="mr-2" />
                   Reject
@@ -136,7 +136,7 @@ export default function PhotoModerationPage() {
                 <button
                   onClick={() => handleModerate(user.userId, 'approved')}
                   disabled={processingId === user.userId}
-                  className="flex items-center justify-center px-4 py-2 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition-colors font-medium shadow-md shadow-rose-200 disabled:opacity-50"
+                  className="flex items-center justify-center px-4 py-2 bg-royal-gold text-white rounded-xl hover:bg-rose-600 transition-colors font-medium shadow-md shadow-rose-200 disabled:opacity-50"
                 >
                   <CustomIcon name="ri-checkbox-circle-line" className="mr-2" />
                   Approve
