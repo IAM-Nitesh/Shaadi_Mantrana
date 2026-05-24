@@ -144,6 +144,8 @@ test.describe('First-Time User Flows on Production', () => {
     await selects.nth(1).selectOption({ value: '30' }); // Minute: 30
     await selects.nth(2).selectOption({ value: 'PM' }); // AM/PM: PM
     
+    // Wait for React to process the state changes before clicking Set Time
+    await page.waitForTimeout(500);
     await timePopover.getByRole('button', { name: 'Set Time' }).click();
 
     // Place of Birth
