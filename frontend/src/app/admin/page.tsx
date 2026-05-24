@@ -331,37 +331,37 @@ function AdminPageContent() {
       <div className="max-w-7xl mx-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-rose-100 admin-card-hover animate-slide-in-top">
+          <div className="bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border admin-card-hover animate-slide-in-top">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
-                <CustomIcon name="ri-user-line" size={24} className="text-blue-600" />
+              <div className="w-12 h-12 bg-royal-gold/10 rounded-xl flex items-center justify-center mr-4">
+                <CustomIcon name="ri-user-line" size={24} className="text-royal-gold" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-sm font-medium text-white/80 font-inter">Total Users</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers || users.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-rose-100 admin-card-hover animate-slide-in-top" style={{ animationDelay: '0.1s' }}>
+          <div className="bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border admin-card-hover animate-slide-in-top" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mr-4">
-                <CustomIcon name="ri-user-add-line" size={24} className="text-green-600" />
+              <div className="w-12 h-12 bg-royal-gold/10 rounded-xl flex items-center justify-center mr-4">
+                <CustomIcon name="ri-user-add-line" size={24} className="text-royal-gold-light" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Preapproved Emails</p>
+                <p className="text-sm font-medium text-white/80 font-inter">Preapproved Emails</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.totalPreapproved || 0}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-rose-100 admin-card-hover animate-slide-in-top" style={{ animationDelay: '0.2s' }}>
+          <div className="bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border admin-card-hover animate-slide-in-top" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mr-4">
+              <div className="w-12 h-12 bg-royal-gold/10 rounded-xl flex items-center justify-center mr-4">
                 <CustomIcon name="ri-user-settings-line" size={24} className="text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Paused Users</p>
+                <p className="text-sm font-medium text-white/80 font-inter">Paused Users</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.pausedUsers || users.filter(u => !u.approvedByAdmin).length}</p>
               </div>
             </div>
@@ -369,16 +369,16 @@ function AdminPageContent() {
         </div>
 
         {/* Actions Bar */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-rose-100 animate-slide-in-top" style={{ animationDelay: '0.3s' }}>
+        <div className="bg-royal-glass rounded-2xl shadow-lg p-6 mb-8 border border-royal-glass-border animate-slide-in-top" style={{ animationDelay: '0.3s' }}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">User Management</h2>
-              <p className="text-sm text-gray-600">Add new users and manage existing accounts</p>
+              <p className="text-sm text-white/80 font-inter">Add new users and manage existing accounts</p>
             </div>
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowAddUserModal(true)}
-                className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                className="px-6 py-3 bg-gradient-to-r from-royal-gold to-royal-gold-light text-white rounded-xl font-semibold hover:from-royal-gold-light hover:to-royal-gold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
               >
                 <CustomIcon name="ri-user-add-line" size={20} />
                 <span>Add User</span>
@@ -397,25 +397,25 @@ function AdminPageContent() {
 
         {/* Success/Error Messages */}
         {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-fade-in">
+          <div className="mb-6 p-4 bg-royal-gold/5 border border-green-200 rounded-xl animate-fade-in">
             <div className="flex items-center">
-              <CustomIcon name="ri-check-line" size={20} className="text-green-600 mr-2" />
+              <CustomIcon name="ri-check-line" size={20} className="text-royal-gold-light mr-2" />
               <p className="text-green-800 font-medium">{success}</p>
             </div>
           </div>
         )}
         
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl animate-fade-in">
+          <div className="mb-6 p-4 bg-royal-crimson/10 border border-royal-crimson/50 rounded-xl animate-fade-in">
             <div className="flex items-center">
-              <CustomIcon name="ri-error-warning-line" size={20} className="text-red-600 mr-2" />
+              <CustomIcon name="ri-error-warning-line" size={20} className="text-royal-crimson mr-2" />
               <p className="text-red-800 font-medium">{error}</p>
             </div>
           </div>
         )}
 
         {/* Users Table */}
-        <div ref={tableRef} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-rose-100 animate-slide-in-top" style={{ animationDelay: '0.4s' }}>
+        <div ref={tableRef} className="bg-royal-glass rounded-2xl shadow-lg overflow-hidden border border-royal-glass-border animate-slide-in-top" style={{ animationDelay: '0.4s' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
               <RoyalLoader 
@@ -427,18 +427,18 @@ function AdminPageContent() {
             </div>
           ) : users.length === 0 ? (
             <div className="p-12 text-center">
-              <CustomIcon name="ri-user-line" size={64} className="text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg font-medium">No users found</p>
-              <p className="text-gray-500">Start by adding your first user</p>
+              <CustomIcon name="ri-user-line" size={64} className="text-royal-gold/40 mx-auto mb-4" />
+              <p className="text-white/80 font-inter text-lg font-medium">No users found</p>
+              <p className="text-royal-gold/60">Start by adding your first user</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gradient-to-r from-rose-50 to-pink-50">
+                  <thead className="bg-royal-glass">
                     <tr>
                       <th 
-                        className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-rose-100 transition-colors"
+                        className="px-6 py-4 text-left text-xs font-semibold text-royal-gold-light uppercase tracking-wider cursor-pointer hover:bg-rose-100 transition-colors"
                         onClick={() => handleSort('firstName')}
                       >
                         <div className="flex items-center space-x-1">
@@ -447,13 +447,13 @@ function AdminPageContent() {
                             <CustomIcon 
                               name={sortDirection === 'asc' ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} 
                               size={16} 
-                              className="text-rose-600" 
+                              className="text-royal-gold" 
                             />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-rose-100 transition-colors"
+                        className="px-6 py-4 text-left text-xs font-semibold text-royal-gold-light uppercase tracking-wider cursor-pointer hover:bg-rose-100 transition-colors"
                         onClick={() => handleSort('email')}
                       >
                         <div className="flex items-center space-x-1">
@@ -462,16 +462,16 @@ function AdminPageContent() {
                             <CustomIcon 
                               name={sortDirection === 'asc' ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} 
                               size={16} 
-                              className="text-rose-600" 
+                              className="text-royal-gold" 
                             />
                           )}
                         </div>
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-royal-gold-light uppercase tracking-wider">
                         Status
                       </th>
                       <th 
-                        className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-rose-100 transition-colors"
+                        className="px-6 py-4 text-left text-xs font-semibold text-royal-gold-light uppercase tracking-wider cursor-pointer hover:bg-rose-100 transition-colors"
                         onClick={() => handleSort('createdAt')}
                       >
                         <div className="flex items-center space-x-1">
@@ -480,30 +480,30 @@ function AdminPageContent() {
                             <CustomIcon 
                               name={sortDirection === 'asc' ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} 
                               size={16} 
-                              className="text-rose-600" 
+                              className="text-royal-gold" 
                             />
                           )}
                         </div>
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-royal-gold-light uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
+                  <tbody className="bg-royal-glass divide-y divide-gray-100">
                     {currentUsers.map((user) => (
-                      <tr key={user._id} className="hover:bg-rose-50 transition-colors">
+                      <tr key={user._id} className="hover:bg-royal-gold/5 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
                               user.isPending 
-                                ? 'bg-yellow-100' 
+                                ? 'bg-royal-gold/10' 
                                 : 'bg-gradient-to-r from-rose-100 to-pink-100'
                             }`}>
                               <CustomIcon 
                                 name={user.isPending ? "ri-time-line" : "ri-user-line"} 
                                 size={20} 
-                                className={user.isPending ? "text-yellow-600" : "text-rose-600"} 
+                                className={user.isPending ? "text-yellow-600" : "text-royal-gold"} 
                               />
                             </div>
                             <div>
@@ -516,20 +516,20 @@ function AdminPageContent() {
                               <div className="flex items-center space-x-2 mt-1">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   user.role === 'admin' 
-                                    ? 'bg-purple-100 text-purple-800' 
+                                    ? 'bg-royal-gold/10 text-purple-800' 
                                     : user.isPending
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-gray-100 text-gray-800'
+                                    ? 'bg-royal-gold/10 text-yellow-800'
+                                    : 'bg-royal-gold/10 text-royal-gold font-playfair'
                                 }`}>
                                   {user.isPending ? 'Pending' : user.role}
                                 </span>
                                 {user.isFirstLogin && !user.isPending && (
-                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-royal-gold/10 text-blue-800">
                                     New
                                   </span>
                                 )}
                                 {user.isPending && (
-                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-royal-gold/10 text-orange-800">
                                     Invited
                                   </span>
                                 )}
@@ -544,10 +544,10 @@ function AdminPageContent() {
                           <div className="flex flex-col space-y-1">
                             {user.role === 'admin' ? (
                               <>
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-royal-gold/10 text-purple-800">
                                   Admin
                                 </span>
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-royal-gold/10 text-green-800">
                                   Active
                                 </span>
                               </>
@@ -555,17 +555,17 @@ function AdminPageContent() {
                               <>
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   user.status === 'active' 
-                                    ? 'bg-green-100 text-green-800' 
+                                    ? 'bg-royal-gold/10 text-green-800' 
                                     : user.status === 'invited'
-                                    ? 'bg-blue-100 text-blue-800'
+                                    ? 'bg-royal-gold/10 text-blue-800'
                                     : 'bg-red-100 text-red-800'
                                 }`}>
                                   {user.status}
                                 </span>
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   user.approvedByAdmin 
-                                    ? 'bg-blue-100 text-blue-800' 
-                                    : 'bg-yellow-100 text-yellow-800'
+                                    ? 'bg-royal-gold/10 text-blue-800' 
+                                    : 'bg-royal-gold/10 text-yellow-800'
                                 }`}>
                                   {user.approvedByAdmin ? 'Approved' : 'Paused'}
                                 </span>
@@ -573,7 +573,7 @@ function AdminPageContent() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-royal-gold/60">
                           {new Date(user.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -584,7 +584,7 @@ function AdminPageContent() {
                           {user.role !== 'admin' ? (
                             <Menu as="div" className="relative inline-block text-left">
                               <div>
-                                <Menu.Button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <Menu.Button className="p-2 text-royal-gold/40 hover:text-white/80 font-inter hover:bg-royal-gold/10 rounded-lg transition-colors">
                                   <EllipsisVerticalIconTyped className="h-5 w-5" aria-hidden={true} />
                                 </Menu.Button>
                               </div>
@@ -597,7 +597,7 @@ function AdminPageContent() {
                                 leaveFrom="transform opacity-100 scale-100"
                                 leaveTo="transform opacity-0 scale-95"
                               >
-                                <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg z-50 focus:outline-none">
+                                <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right bg-royal-glass border border-royal-glass-border rounded-lg shadow-lg z-50 focus:outline-none">
                                   <div className="py-1">
                                     {!user.isPending && !user.invitationSent && (
                                       <Menu.Item as="button">
@@ -605,7 +605,7 @@ function AdminPageContent() {
                                           <span
                                             onClick={() => sendInvite(user._id, user.email)}
                                             className={`block w-full text-left px-4 py-2 text-sm ${
-                                              active ? 'bg-blue-50 text-blue-600' : 'text-blue-600'
+                                              active ? 'bg-royal-gold/5 text-royal-gold' : 'text-royal-gold'
                                             }${sendingInvite === user._id ? ' opacity-50 cursor-not-allowed' : ''}`}
                                             style={{ pointerEvents: sendingInvite === user._id ? 'none' : 'auto' }}
                                           >
@@ -622,7 +622,7 @@ function AdminPageContent() {
                                             onClick={() => pauseUser(user._id, !user.approvedByAdmin)}
                                             disabled={pausingUser === user._id}
                                             className={`block w-full text-left px-4 py-2 text-sm ${
-                                              active ? 'bg-yellow-50 text-yellow-600' : 'text-yellow-600'
+                                              active ? 'bg-royal-gold/5 text-yellow-600' : 'text-yellow-600'
                                             } disabled:opacity-50`}
                                           >
                                             {pausingUser === user._id 
@@ -641,7 +641,7 @@ function AdminPageContent() {
                                             onClick={() => pauseUser(user._id, true)}
                                             disabled={pausingUser === user._id}
                                             className={`block w-full text-left px-4 py-2 text-sm ${
-                                              active ? 'bg-green-50 text-green-600' : 'text-green-600'
+                                              active ? 'bg-royal-gold/5 text-royal-gold-light' : 'text-royal-gold-light'
                                             } disabled:opacity-50`}
                                           >
                                             {pausingUser === user._id ? 'Resuming...' : 'Resume'}
@@ -654,7 +654,7 @@ function AdminPageContent() {
                               </Transition>
                             </Menu>
                           ) : (
-                            <span className="text-gray-400 text-xs">Admin</span>
+                            <span className="text-royal-gold/40 text-xs">Admin</span>
                           )}
                         </td>
                       </tr>
@@ -665,16 +665,16 @@ function AdminPageContent() {
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="px-6 py-4 bg-royal-obsidian border-t border-royal-glass-border">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-royal-gold-light">
                       Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, users.length)} of {users.length} users
                     </div>
                     <div className="flex space-x-2">
                       <button
                         onClick={() => setCurrentPage(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-royal-gold/60 bg-royal-glass border border-gray-300 rounded-lg hover:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Previous
                       </button>
@@ -686,7 +686,7 @@ function AdminPageContent() {
                           className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                             currentPage === page
                               ? 'bg-rose-600 text-white'
-                              : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                              : 'text-royal-gold/60 bg-royal-glass border border-gray-300 hover:bg-royal-obsidian'
                           }`}
                         >
                           {page}
@@ -696,7 +696,7 @@ function AdminPageContent() {
                       <button
                         onClick={() => setCurrentPage(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-royal-gold/60 bg-royal-glass border border-gray-300 rounded-lg hover:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Next
                       </button>
@@ -712,19 +712,19 @@ function AdminPageContent() {
       {/* Add User Modal */}
       {showAddUserModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div ref={modalRef} className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div ref={modalRef} className="bg-royal-glass rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900">Add New User</h3>
               <button
                 onClick={() => setShowAddUserModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="text-royal-gold/40 hover:text-white/80 font-inter p-2 hover:bg-royal-gold/10 rounded-lg transition-colors"
               >
                 <CustomIcon name="ri-close-line" size={24} />
               </button>
             </div>
             
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-royal-gold-light mb-2">
                 Email Address
               </label>
               <input
@@ -740,7 +740,7 @@ function AdminPageContent() {
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowAddUserModal(false)}
-                className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-3 text-royal-gold-light bg-royal-gold/10 rounded-lg hover:bg-royal-gold/20 transition-colors"
                 disabled={addingUser}
               >
                 Cancel
@@ -748,7 +748,7 @@ function AdminPageContent() {
               <button
                 onClick={addUser}
                 disabled={addingUser || !newUserEmail.trim()}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-royal-gold to-royal-gold-light text-white rounded-lg hover:from-royal-gold-light hover:to-royal-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {addingUser ? 'Adding...' : 'Add User'}
               </button>
@@ -820,13 +820,13 @@ function AdminPageContent() {
 
             {/* Loading Text */}
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Logging out...</h2>
-            <p className="text-gray-600 mb-8">Thank you for using Shaadi Mantrana</p>
+            <p className="text-white/80 font-inter mb-8">Thank you for using Shaadi Mantrana</p>
 
             {/* Progress dots */}
             <div className="flex justify-center space-x-2">
               <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-royal-gold rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
           </div>
         </div>

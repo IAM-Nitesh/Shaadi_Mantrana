@@ -32,7 +32,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       >
         {/* Confetti Animation */}
@@ -66,7 +66,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
           initial={{ scale: 0.8, y: 50 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.8, y: 50 }}
-          className="relative bg-white rounded-3xl p-8 shadow-2xl max-w-md mx-4 text-center"
+          className="relative card-modern rounded-3xl p-8 shadow-2xl max-w-md mx-4 text-center"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Pulsing Heart Background */}
@@ -108,7 +108,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-3xl font-bold text-gray-800 mb-2"
+              className="text-3xl font-bold text-royal-gold font-playfair mb-2"
             >
               It's a Match! 🎉
             </motion.h2>
@@ -117,7 +117,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="text-lg text-gray-600 mb-6"
+              className="text-lg text-royal-gold/60 font-inter mb-6"
             >
               {matchName ? `You and ${matchName} liked each other!` : 'You both liked each other!'}
             </motion.p>
@@ -146,7 +146,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
               
               <button
                 onClick={onClose}
-                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                className="w-full bg-gray-100 text-white/80 font-inter py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
               >
                 Keep Swiping
               </button>

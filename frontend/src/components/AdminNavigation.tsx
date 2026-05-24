@@ -60,7 +60,7 @@ export default function AdminNavigation() {
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-2">
+      <div className="card-modern rounded-2xl shadow-xl border border-royal-glass-border p-2">
         <div className="flex space-x-1">
           {navItems.map((item) => (
             <a
@@ -69,7 +69,7 @@ export default function AdminNavigation() {
               className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 ${
                 item.active
                   ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  : 'text-royal-gold/60 font-inter hover:text-royal-gold font-playfair hover:bg-royal-gold/10'
               }`}
             >
               <CustomIcon name={item.icon} className="mr-2" />

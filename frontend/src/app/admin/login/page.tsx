@@ -20,20 +20,20 @@ export default function AdminLogin() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <div className="bg-royal-glass rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
         <div className="mb-8">
-          <CustomIcon name="ri-shield-check-line" className="text-6xl text-blue-500 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Access</h1>
-          <p className="text-gray-600">Login to access admin features</p>
+          <CustomIcon name="ri-shield-check-line" className="text-6xl text-royal-gold mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-royal-gold font-playfair mb-2">Admin Access</h1>
+          <p className="text-white/80 font-inter">Login to access admin features</p>
         </div>
         
         <div className="mb-6">
           <CustomIcon name="ri-information-line" className="text-4xl text-blue-400 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Login Required</h2>
-          <p className="text-gray-600 mb-4">
+          <h2 className="text-xl font-semibold text-royal-gold font-playfair mb-2">Login Required</h2>
+          <p className="text-white/80 font-inter mb-4">
             Please login to your Shaadi Mantrana account to access admin features.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-royal-gold/60">
             Only users with administrator privileges can access the admin dashboard.
           </p>
         </div>
@@ -41,7 +41,7 @@ export default function AdminLogin() {
         <div className="space-y-3">
           <button
             onClick={() => router.push('/')}
-            className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200"
+            className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-royal-gold to-royal-gold-light text-white font-semibold rounded-xl hover:from-royal-gold-light hover:to-royal-gold transition-all duration-200"
           >
             <CustomIcon name="ri-login-box-line" className="mr-2" />
             Login to Shaadi Mantrana
@@ -49,15 +49,15 @@ export default function AdminLogin() {
           
           <button
             onClick={() => router.push('/profile')}
-            className="w-full flex items-center justify-center px-6 py-3 bg-white text-gray-600 border-2 border-gray-200 rounded-xl hover:border-blue-300 transition-all duration-200"
+            className="w-full flex items-center justify-center px-6 py-3 bg-royal-glass text-white/80 font-inter border-2 border-royal-glass-border rounded-xl hover:border-blue-300 transition-all duration-200"
           >
             <CustomIcon name="ri-user-line" className="mr-2" />
             View Profile
           </button>
         </div>
         
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500">
+        <div className="mt-6 pt-6 border-t border-royal-glass-border">
+          <p className="text-xs text-royal-gold/60">
             Admin email: codebynitesh@gmail.com
           </p>
         </div>

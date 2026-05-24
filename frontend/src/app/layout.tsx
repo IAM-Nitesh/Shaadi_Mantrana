@@ -7,6 +7,7 @@ import GlobalBottomNavigation from '../components/GlobalBottomNavigation';
 import { PostHogProvider } from '../components/PostHogProvider';
 
 import PageTransitionProvider from '../components/PageTransitionProvider';
+import CapacitorInit from '../components/CapacitorInit';
 
 // Fallback to system font stack to bypass build-time Google Fonts fetch
 const inter = { className: 'font-sans' };
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="en" className="bg-royal-obsidian">
       <body className={`${inter.className} font-body antialiased bg-royal-obsidian text-royal-gold-light/90`}>
         <PostHogProvider>
+          <CapacitorInit />
           <AuthProvider initialUser={initialUser}>
             <PageTransitionProvider>
               <main>{children}</main>

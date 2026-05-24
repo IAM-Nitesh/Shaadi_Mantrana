@@ -252,7 +252,7 @@ function SettingsContent() {
           <SettingsRow
             href="/terms"
             icon="ri-file-list-3-line"
-            label="Terms of Service"
+            label="Terms of Condition"
           />
           <SettingsRow
             href="/privacy"

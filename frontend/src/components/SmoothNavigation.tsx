@@ -22,6 +22,9 @@ interface SmoothNavigationProps {
   className?: string;
 }
 
+import { useRipple, RippleEffect } from './Ripple';
+import HapticsService from '../services/hapticsService';
+
 // Simplified navigation item component with subtle animations
 const NavigationItem = memo(({
   item,
@@ -36,10 +39,12 @@ const NavigationItem = memo(({
   onNavigate: (href: string) => void;
   onHover: (href: string | null) => void;
 }) => {
+  const { ripples, addRipple, removeRipple } = useRipple();
+
   const getNavItemClasses = useMemo(() => {
     const baseClasses = `
       flex flex-col items-center justify-center
-      relative overflow-visible
+      relative overflow-hidden
       mobile-touch-feedback android-touch-target
       transition-all duration-150 ease-out
       group
@@ -54,7 +59,7 @@ const NavigationItem = memo(({
   }, [isDisabled]);
 
   const getIconClasses = useMemo(() => {
-    const baseClasses = `nav-icon ${isActive ? 'active' : ''}`;
+    const baseClasses = `nav-icon ${isActive ? 'active' : ''} relative z-10`;
     return baseClasses;
   }, [isActive]);
 
@@ -62,7 +67,7 @@ const NavigationItem = memo(({
     const baseClasses = `
       text-xs font-medium
       transition-all duration-150 ease-out
-      transform
+      transform relative z-10
       text-royal-gold/70
     `;
 
@@ -77,9 +82,23 @@ const NavigationItem = memo(({
     return `${baseClasses} text-royal-gold/50`;
   }, [isActive, isDisabled]);
 
+  const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isDisabled) return;
+    
+    // Add visual ripple
+    addRipple(e as any);
+    
+    // Trigger haptic feedback based on active state
+    if (!isActive) {
+      HapticsService.selection();
+    }
+    
+    onNavigate(item.href);
+  };
+
   return (
     <motion.button
-      onClick={() => !isDisabled && onNavigate(item.href)}
+      onClick={handleInteraction}
       onMouseEnter={() => onHover(item.href)}
       onMouseLeave={() => onHover(null)}
       className={getNavItemClasses}
@@ -88,6 +107,9 @@ const NavigationItem = memo(({
       whileTap={{ scale: isDisabled ? 1 : 0.99 }} // Minimal press effect
       transition={{ duration: 0.08 }} // Ultra-fast transition
     >
+      {/* Ripple Effect */}
+      <RippleEffect ripples={ripples} removeRipple={removeRipple} color="rgba(212, 175, 55, 0.15)" />
+
       {/* Icon */}
       <motion.div
         className={getIconClasses}
@@ -119,7 +141,7 @@ const NavigationItem = memo(({
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.08 }} // Ultra-fast badge animation
-          className="absolute top-0 right-0 translate-x-1 -translate-y-1 text-red-700 text-[12px] font-extrabold leading-none pointer-events-none drop-shadow-sm"
+          className="absolute top-0 right-0 translate-x-1 -translate-y-1 text-red-700 text-[12px] font-extrabold leading-none pointer-events-none drop-shadow-sm z-20"
           aria-label={`You have ${item.badge} matches`}
         >
           <span className="select-none">{item.badge > 99 ? '99+' : item.badge}</span>

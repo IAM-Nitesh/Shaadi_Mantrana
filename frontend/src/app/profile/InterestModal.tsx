@@ -71,7 +71,7 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   };
 
   return (
-  <div ref={backdropRef} className="fixed inset-0 z-[99999] flex items-end bg-gradient-to-br from-black/60 via-black/40 to-rose-100/30 backdrop-blur-[2.5px]">
+  <div ref={backdropRef} className="fixed inset-0 z-[99999] flex items-end bg-black/70 backdrop-blur-md">
       <div
         ref={modalRef}
         className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[100000]"

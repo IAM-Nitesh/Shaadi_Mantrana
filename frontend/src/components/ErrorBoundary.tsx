@@ -56,7 +56,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+            className="card-modern rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
           >
             {/* Error Icon */}
             <motion.div
@@ -73,7 +73,7 @@ export class ErrorBoundary extends Component<Props, State> {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-2xl font-bold text-gray-800 mb-4"
+              className="text-2xl font-bold text-royal-gold font-playfair mb-4"
             >
               Oops! Something went wrong
             </motion.h2>
@@ -82,7 +82,7 @@ export class ErrorBoundary extends Component<Props, State> {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-gray-600 mb-6"
+              className="text-royal-gold/60 font-inter mb-6"
             >
               We encountered an unexpected error. Don't worry, your data is safe.
             </motion.p>
@@ -98,7 +98,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <summary className="cursor-pointer text-sm text-gray-500 mb-2">
                   Error Details (Development)
                 </summary>
-                <div className="bg-gray-100 rounded-lg p-3 text-xs font-mono text-gray-700 overflow-auto">
+                <div className="bg-gray-100 rounded-lg p-3 text-xs font-mono text-white/80 font-inter overflow-auto">
                   <div className="mb-2">
                     <strong>Error:</strong> {this.state.error.message}
                   </div>
@@ -131,7 +131,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleGoHome}
-                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                className="w-full bg-gray-100 text-white/80 font-inter py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
               >
                 <CustomIcon name="ri-home-line" className="inline mr-2" />
                 Go to Home
