@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../../components/CustomIcon';
+import ToastService from '../../../services/toastService';
 import RoyalLoader from '../../../components/RoyalLoader';
 import { safeGsap } from '../../../components/SafeGsap';
 import logger from '../../../utils/logger';
@@ -86,6 +87,7 @@ export default function PhoneInvitations() {
       if (response.ok) {
         const responseData = response.data;
         logger.debug('Success response:', responseData);
+        ToastService.success('Invitation sent successfully');
         setNewPhoneNumber('');
         await fetchInvitations();
       } else {
@@ -95,7 +97,7 @@ export default function PhoneInvitations() {
       }
     } catch (error) {
       logger.error('Error sending invitation:', error);
-      setError(`Failed to send invitation: ${error.message}`);
+      ToastService.error(`Failed to send invitation: ${error.message}`);
     } finally {
       setSendingInvitation(false);
     }
@@ -117,12 +119,13 @@ export default function PhoneInvitations() {
             ? { ...inv, status: 'sent', sentAt: new Date().toISOString() }
             : inv
         ));
+        ToastService.success('Invitation resent successfully');
       } else {
         throw new Error('Failed to resend invitation');
       }
     } catch (error) {
       logger.error('Error resending invitation:', error);
-      setError('Failed to resend invitation');
+      ToastService.error('Failed to resend invitation');
     } finally {
       setResendingInvitation(null);
     }
