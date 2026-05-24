@@ -1,7 +1,6 @@
- 'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
-;
 import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
@@ -10,8 +9,89 @@ import { matchesCountService } from '../../services/matches-count-service';
 import { safeGsap } from '../../components/SafeGsap';
 import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
-import { userNavItems } from '../../config/navigation';
 import posthog from 'posthog-js';
+
+// ─────────────────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────────────────
+
+interface SettingsRowProps {
+  href?: string;
+  onClick?: () => void;
+  icon: string;
+  label: string;
+  sublabel?: string;
+  danger?: boolean;
+}
+
+function SettingsRow({ href, onClick, icon, label, sublabel, danger }: SettingsRowProps) {
+  const inner = (
+    <div
+      className={`flex items-center justify-between px-5 py-4 transition-all duration-200 group
+        ${danger
+          ? 'hover:bg-royal-crimson/10 active:bg-royal-crimson/15'
+          : 'hover:bg-royal-gold/5 active:bg-royal-gold/10'
+        }`}
+    >
+      <div className="flex items-center gap-4">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-200
+          ${danger
+            ? 'bg-royal-crimson/10 group-hover:bg-royal-crimson/20'
+            : 'bg-royal-gold/10 group-hover:bg-royal-gold/15'
+          }`}
+        >
+          <CustomIcon
+            name={icon}
+            size={18}
+            className={danger ? 'text-royal-crimson' : 'text-royal-gold'}
+          />
+        </div>
+        <div>
+          <p className={`text-sm font-medium ${danger ? 'text-royal-crimson' : 'text-white'}`}>
+            {label}
+          </p>
+          {sublabel && <p className="text-xs text-royal-gold/40 mt-0.5">{sublabel}</p>}
+        </div>
+      </div>
+      <CustomIcon
+        name="ri-arrow-right-s-line"
+        size={20}
+        className={danger ? 'text-royal-crimson/50' : 'text-royal-gold/30 group-hover:text-royal-gold/60'}
+      />
+    </div>
+  );
+
+  if (href) {
+    return <a href={href} className="block">{inner}</a>;
+  }
+  return <button onClick={onClick} className="w-full text-left">{inner}</button>;
+}
+
+interface SettingsSectionProps {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+}
+
+function SettingsSection({ title, icon, children }: SettingsSectionProps) {
+  return (
+    <div className="card-modern overflow-hidden">
+      {/* Section header */}
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-royal-gold/10">
+        <CustomIcon name={icon} size={14} className="text-royal-gold/50" />
+        <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-royal-gold/50">
+          {title}
+        </span>
+      </div>
+      {/* Rows */}
+      <div className="divide-y divide-royal-gold/5">{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Main Content
+// ─────────────────────────────────────────────────────────
 
 function SettingsContent() {
   const router = useRouter();
@@ -24,152 +104,194 @@ function SettingsContent() {
     const unsubscribe = matchesCountService.subscribe((count) => {
       setMatchesCount(count);
     });
-
-    // initial fetch
     matchesCountService.fetchCount();
-
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
 
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-  };
+  const handleLogout = () => setShowLogoutConfirm(true);
 
   const confirmLogout = async () => {
     try {
       setShowLogoutConfirm(false);
       posthog.capture('user_logged_out');
       posthog.reset();
-      // call client logout helper
       await logout();
-      // optionally call server-side logout handler
-      if (typeof logout === 'function') {
-        try { logout(); } catch (e) { /* ignore */ }
-      }
 
-      // show a small animation then redirect
       setShowLogoutAnimation(true);
-      // try a safe gsap timeline if available (non-blocking)
       try {
         const tl = safeGsap.timeline?.();
         if (tl) {
-          tl.to?.('.settings-container', { opacity: 0, duration: 0.4 });
-          tl.to?.('.logout-overlay', { opacity: 1, duration: 0.5 });
+          tl.to?.('.settings-container', { opacity: 0, duration: 0.35 });
+          tl.to?.('.logout-overlay', { opacity: 1, duration: 0.4 });
         }
       } catch (e) {
-        // don't fail on animation errors
         logger.warn('GSAP timeline failed', e);
       }
 
-      setTimeout(() => {
-        router.push('/');
-      }, 700);
+      setTimeout(() => router.push('/'), 700);
     } catch (error) {
       logger.error('Error during logout:', error);
       ToastService.error('An error occurred during logout. Please try again.');
     }
   };
 
-  const cancelLogout = () => {
-    setShowLogoutConfirm(false);
-  };
+  const cancelLogout = () => setShowLogoutConfirm(false);
 
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 relative settings-container">
-      {/* Logout confirmation modal */}
+    <div className="min-h-screen bg-royal-obsidian relative settings-container">
+
+      {/* ── Logout Confirmation Modal ──────────────────── */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-lg">
-            <div className="text-center mb-4">
-              <h3 className="text-xl font-bold">Ready to log out?</h3>
-              <p className="text-sm text-slate-600">We'll miss you — you can sign in again anytime.</p>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div
+            className="bg-royal-obsidian/95 border border-royal-gold/15 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_60px_rgba(212,175,55,0.08)]"
+            style={{ animation: 'fadeInScale 0.2s ease-out' }}
+          >
+            {/* Icon */}
+            <div className="w-14 h-14 rounded-2xl bg-royal-crimson/10 flex items-center justify-center mx-auto mb-4">
+              <CustomIcon name="ri-logout-box-r-line" size={26} className="text-royal-crimson" />
             </div>
-            <div className="flex space-x-3">
-              <button onClick={cancelLogout} className="flex-1 py-3 rounded-lg bg-rose-50 text-rose-700">Stay</button>
-              <button onClick={confirmLogout} className="flex-1 py-3 rounded-lg bg-rose-500 text-white">Log out</button>
+            <h3 className="text-lg font-playfair font-bold text-white text-center mb-1">
+              Ready to leave?
+            </h3>
+            <p className="text-sm text-royal-gold/50 text-center mb-6">
+              Your sacred journey awaits your return.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 py-3 rounded-xl border border-royal-gold/20 text-royal-gold/70 text-sm font-medium hover:border-royal-gold/40 hover:text-royal-gold transition-all duration-200"
+              >
+                Stay
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-3 rounded-xl bg-royal-crimson/90 hover:bg-royal-crimson text-white text-sm font-semibold shadow-[0_0_20px_rgba(220,38,38,0.2)] hover:shadow-[0_0_30px_rgba(220,38,38,0.35)] transition-all duration-200"
+              >
+                Log Out
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Optional minimal overlay to show during logout */}
+      {/* ── Logout Animation Overlay ───────────────────── */}
       {showLogoutAnimation && (
-        <div className="logout-overlay fixed inset-0 bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-8 rounded-xl shadow-xl text-center">
-            <h2 className="font-bold">Logged out</h2>
-            <p className="text-sm text-slate-600">Redirecting...</p>
+        <div className="logout-overlay fixed inset-0 bg-royal-obsidian flex items-center justify-center z-[9999] opacity-0">
+          <div className="text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-royal-gold/10 flex items-center justify-center mx-auto">
+              <CustomIcon name="ri-moon-line" size={24} className="text-royal-gold" />
+            </div>
+            <p className="font-playfair text-royal-gold text-lg">Until next time…</p>
+            <p className="text-royal-gold/40 text-xs tracking-widest uppercase">Redirecting</p>
           </div>
         </div>
       )}
 
-  <div className="p-4 space-y-4" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
-        <h1 className="text-4xl font-heading text-gray-900 mb-6">Settings</h1>
-
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold">Account</h2>
-          </div>
-          <div className="divide-y">
-            <a href="/profile" className="flex items-center justify-between p-4 hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-user-line" className="text-gray-600" />
-                </div>
-                <span>Edit Profile</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </a>
-          </div>
+      {/* ── Page Content ───────────────────────────────── */}
+      <div
+        className="px-4 space-y-5"
+        style={{
+          paddingTop: 'calc(var(--header-height, 4rem) + 1.5rem)',
+          paddingBottom: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom, 0px) + 1.5rem)',
+        }}
+      >
+        {/* ── Page Header ── */}
+        <div className="mb-2">
+          <h1 className="text-3xl font-playfair font-bold text-royal-gold">Settings</h1>
+          <p className="text-royal-gold/40 text-xs tracking-widest uppercase mt-1">
+            Manage your sacred account
+          </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold">Support</h2>
+        {/* ── Account Info Card ── */}
+        {user && (
+          <div className="card-modern p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-royal-gold/10 flex items-center justify-center flex-shrink-0">
+              <CustomIcon name="ri-user-3-line" size={22} className="text-royal-gold" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-medium text-sm truncate">
+                {(user as any).name || 'Sacred Member'}
+              </p>
+              <p className="text-royal-gold/40 text-xs truncate">
+                {(user as any).phoneNumber || (user as any).email || 'Verified Account'}
+              </p>
+            </div>
+            <div className="ml-auto flex-shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-royal-gold/10 border border-royal-gold/20 text-[10px] text-royal-gold font-medium tracking-wide">
+                <CustomIcon name="ri-shield-check-line" size={10} className="text-royal-gold" />
+                Verified
+              </span>
+            </div>
           </div>
-          <div className="divide-y">
-            <a href="/help" className="flex items-center justify-between p-4 hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-question-line" className="text-gray-600" />
-                </div>
-                <span>Help & Support</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </a>
-            <a href="/terms" className="flex items-center justify-between p-4 hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-file-text-line" className="text-gray-600" />
-                </div>
-                <span>Terms of Service</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </a>
-            <a href="/privacy" className="flex items-center justify-between p-4 hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <CustomIcon name="ri-shield-line" className="text-gray-600" />
-                </div>
-                <span>Privacy Policy</span>
-              </div>
-              <CustomIcon name="ri-arrow-right-s-line" className="text-gray-400" />
-            </a>
-          </div>
-        </div>
+        )}
 
-        <div className="bg-white rounded-xl shadow-sm">
-          <button onClick={handleLogout} className="w-full py-4 bg-rose-500 text-white rounded-xl font-semibold">Logout</button>
-        </div>
+        {/* ── Account Section ── */}
+        <SettingsSection title="Account" icon="ri-account-circle-line">
+          <SettingsRow
+            href="/profile"
+            icon="ri-user-heart-line"
+            label="Sacred Profile"
+            sublabel="Edit your profile details"
+          />
+        </SettingsSection>
+
+        {/* ── Support Section ── */}
+        <SettingsSection title="Support" icon="ri-customer-service-line">
+          <SettingsRow
+            href="/help"
+            icon="ri-question-line"
+            label="Help & Support"
+            sublabel="FAQs and contact us"
+          />
+          <SettingsRow
+            href="/terms"
+            icon="ri-file-list-3-line"
+            label="Terms of Service"
+          />
+          <SettingsRow
+            href="/privacy"
+            icon="ri-shield-keyhole-line"
+            label="Privacy Policy"
+          />
+        </SettingsSection>
+
+        {/* ── Danger Zone ── */}
+        <SettingsSection title="Session" icon="ri-door-open-line">
+          <SettingsRow
+            onClick={handleLogout}
+            icon="ri-logout-box-r-line"
+            label="Log Out"
+            sublabel="End your current session"
+            danger
+          />
+        </SettingsSection>
+
+        {/* ── App Version ── */}
+        <p className="text-center text-[10px] text-royal-gold/20 tracking-widest uppercase pb-2">
+          Shaadi Mantrana · v2.0
+        </p>
       </div>
 
-      {/* Bottom Navigation is handled globally in layout.tsx */}
+      {/* Subtle fade-in animation keyframes */}
+      <style jsx>{`
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.96) translateY(6px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────
+// Page export
+// ─────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   return (

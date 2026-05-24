@@ -556,23 +556,22 @@ userSchema.pre('findOneAndUpdate', async function(next) {
       if (set[path] !== undefined) merged[key] = set[path];
     }
 
-    // Compute completeness using the same logic as controller
+    // Compute completeness using the canonical 12 mandatory text fields + 1 photo = 13 total.
+    // This matches frontend/src/constants/profileCompleteness.ts exactly.
     const computeCompletion = (profile) => {
       if (!profile) return 0;
-      const requiredFields = [
-        'name', 'gender', 'dateOfBirth', 'timeOfBirth', 'placeOfBirth',
-        'height', 'weight', 'complexion', 'education', 'occupation',
-        'maritalStatus', 'manglik', 'eatingHabit', 'smokingHabit',
-        'drinkingHabit', 'nativePlace', 'currentResidence',
-        'fatherGotra', 'motherGotra', 'father', 'mother',
-        'settleAbroad', 'about'
+      const mandatoryFields = [
+        'name', 'gender', 'dateOfBirth', 'maritalStatus',
+        'education', 'occupation', 'nativePlace', 'height',
+        'complexion', 'manglik', 'eatingHabit', 'about'
       ];
 
-      // 23 text fields + 1 image field = 24 total fields
-      const increment = 100 / 24;
+      // 12 text fields + 1 image field = 13 total
+      const total = mandatoryFields.length + 1;
+      const increment = 100 / total;
       let completion = 0;
 
-      requiredFields.forEach(field => {
+      mandatoryFields.forEach(field => {
         const val = profile[field];
         if (typeof val === 'string' && val.trim() !== '') {
           completion += increment;
