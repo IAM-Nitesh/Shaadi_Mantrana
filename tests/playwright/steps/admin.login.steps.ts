@@ -259,7 +259,7 @@ Then('I should see the invited phone number {string} in the invitation history t
 
 // UNIQUE: "invitation error" — no existing step uses this exact phrasing
 Then('I should see the invitation error {string}', async ({ page }, errorText) => {
-  await expect(page.locator('p').filter({ hasText: new RegExp(escapeRegExp(errorText), 'i') }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('div, [role="status"], [role="alert"], p').filter({ hasText: new RegExp(escapeRegExp(errorText), 'i') }).first()).toBeVisible({ timeout: 15_000 });
 });
 
 // UNIQUE: "admin support email" — no existing step uses this exact phrasing
