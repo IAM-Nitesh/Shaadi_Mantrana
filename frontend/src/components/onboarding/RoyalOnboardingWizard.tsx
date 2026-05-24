@@ -152,14 +152,11 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
           <button
             onClick={handleNext}
             disabled={isSaving}
-            className="flex-1 group relative overflow-hidden bg-royal-gold text-royal-obsidian py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50"
+            className={`flex-1 group relative overflow-hidden bg-royal-gold text-royal-obsidian py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50 ${isSaving ? 'shimmer-button' : ''}`}
           >
             <span className="relative z-10">
               {isSaving ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-royal-obsidian border-t-transparent rounded-full animate-spin" />
-                  <span>Preserving...</span>
-                </div>
+                <span>Preserving...</span>
               ) : (
                 currentStepIndex === STEPS.length - 1 ? 'Finalize Vows' : 'Continue Journey'
               )}

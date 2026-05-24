@@ -648,7 +648,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               disabled={isUnmatching}
               title="Unmatch"
               aria-label="Unmatch"
-              className={`px-3 py-1 bg-red-600 text-white rounded-full text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`px-3 py-1 bg-red-600 text-white rounded-full text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${isUnmatching ? 'shimmer-button' : ''}`}
               aria-busy={isUnmatching}
             >
               {isUnmatching ? 'Unmatching...' : 'Unmatch'}

@@ -170,13 +170,10 @@ export default function PhoneInvitations() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <RoyalLoader 
-          size="lg"
-          
-          text="Loading invitations..." 
-          
-        />
+      <div className="container mx-auto px-4 py-6 mt-8 space-y-8">
+        <RoyalLoader variant="skeleton" className="w-64 h-12 rounded-xl mb-8" />
+        <RoyalLoader variant="skeleton" className="w-full h-40 rounded-2xl" />
+        <RoyalLoader variant="skeleton" className="w-full h-96 rounded-2xl" />
       </div>
     );
   }
@@ -229,21 +226,9 @@ export default function PhoneInvitations() {
           <button
             onClick={sendNewInvitation}
             disabled={!newPhoneNumber.trim() || sendingInvitation}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-            {sendingInvitation ? (
-              <>
-                <div className="flex items-center justify-center mr-2">
-                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center animate-pulse">
-                    <span className="text-xs">💝</span>
-                  </div>
-                </div>
-                Sending...
-              </>
-            ) : (
-              <>
-                Send Invitation
-              </>
-            )}
+            className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${sendingInvitation ? 'shimmer-button' : ''}`}
+          >
+            {sendingInvitation ? 'Sending...' : 'Send Invitation'}
           </button>
         </div>
       </div>

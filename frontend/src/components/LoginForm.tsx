@@ -197,7 +197,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               onClick={handleSendOTP}
               id="get-otp-btn"
               disabled={phoneNumber.length < 10 || isSendingOTP}
-              className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] relative overflow-hidden focus:ring-2 focus:ring-offset-2 focus:ring-royal-gold focus:outline-none"
+              className={`w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] relative overflow-hidden focus:ring-2 focus:ring-offset-2 focus:ring-royal-gold focus:outline-none ${isSendingOTP ? 'shimmer-button' : ''}`}
             >
               <div className="flex items-center justify-center">
                 {isSendingOTP ? (
@@ -258,7 +258,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             <button
               onClick={handleVerifyOTP}
               disabled={otp.length !== 6 || isVerifyingOTP}
-              className="w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+              className={`w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] ${isVerifyingOTP ? 'shimmer-button' : ''}`}
             >
               Verify Code
             </button>
