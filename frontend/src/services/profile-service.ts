@@ -425,7 +425,7 @@ export class ProfileService {
       // Get auth headers (includes Authorization if using token-based auth)
       const authHeaders = await getAuthHeaders();
 
-      const response = await apiClient.patch('/api/profiles/me', profileData, {
+      const response = await apiClient.put('/api/profiles/me', profileData, {
         headers: {
           ...authHeaders,
           'Content-Type': 'application/json'
