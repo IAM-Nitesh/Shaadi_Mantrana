@@ -91,7 +91,7 @@ When('I navigate to {string}', async ({ page }, path) => {
   // Fact: Next.js trailing slash redirects can interrupt navigation. (Action 232)
   try {
     await page.goto(path, { waitUntil: 'commit' });
-  } catch (e) {
+  } catch (e: any) {
     if (!e.message.includes('interrupted by another navigation')) {
       throw e;
     }
@@ -125,7 +125,7 @@ Given('I am a logged-in user with a complete profile', async ({ page, context })
   await injectMockSession(page, context, 'complete');
 });
 
-async function injectMockSession(page, context, persona) {
+async function injectMockSession(page: any, context: any, persona: any) {
   const PERSONA_DATA: Record<string, any> = {
     admin: { userId: 'admin_id', userUuid: 'admin_id', email: 'admin@example.test', role: 'admin', isFirstLogin: false, isApprovedByAdmin: true, hasSeenOnboardingMessage: true, hasCompletedWizard: true, profileCompleteness: 100 },
     fresh: { userId: 'fresh_id', userUuid: 'fresh_id', email: 'fresh@example.test', role: 'user', isFirstLogin: true, isApprovedByAdmin: true, hasSeenOnboardingMessage: false, hasCompletedWizard: false, profileCompleteness: 0 },
@@ -138,7 +138,7 @@ async function injectMockSession(page, context, persona) {
   personaByPage.set(page, normalizedPersona);
   const token = createMockJwt({ userId: user.userId, _id: user.userId, id: user.userId, role: user.role });
 
-  await context.addInitScript(({ token, user }) => {
+  await context.addInitScript(({ token, user }: { token: string, user: any }) => {
     (window as any).__PLAYWRIGHT_TEST__ = true;
     (window as any).CURRENT_USER_UUID = user.userUuid || user.userId;
     localStorage.setItem('accessToken', token);
@@ -156,7 +156,7 @@ async function injectMockSession(page, context, persona) {
   }]);
 
   // Capture browser logs for debugging
-  page.on('console', msg => {
+  page.on('console', (msg: any) => {
     if (msg.type() === 'error' || msg.text().includes('Auth') || msg.text().includes('Guard')) {
       if (msg.type() === 'error') {
         tlog.error(`[Browser ${msg.type()}] ${msg.text()}`);
@@ -173,7 +173,7 @@ async function injectMockSession(page, context, persona) {
   tlog.info(`🛠️ Registering Mocks for Persona: ${persona} (User: ${user.userId})`);
   
   // 1. Auth Status & Token
-  await page.route('**/api/auth/status', async route => {
+  await page.route('**/api/auth/status', async (route: any) => {
     tlog.info('📡 Mocking: /api/auth/status');
     await route.fulfill({
       status: 200,
@@ -182,7 +182,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/auth/token', async route => {
+  await page.route('**/api/auth/token', async (route: any) => {
     tlog.info('📡 Mocking: /api/auth/token');
     await route.fulfill({
       status: 200,
@@ -195,7 +195,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/auth/refresh', async route => {
+  await page.route('**/api/auth/refresh', async (route: any) => {
     tlog.info('📡 Mocking: /api/auth/refresh');
     await route.fulfill({
       status: 200,
@@ -205,7 +205,7 @@ async function injectMockSession(page, context, persona) {
   });
 
   // 2. Profile Mocks
-  await page.route('**/api/profiles/me*', async route => {
+  await page.route('**/api/profiles/me*', async (route: any) => {
     tlog.info(`👤 Mocking Profile Me: ${route.request().url()}`);
     if (['PATCH', 'PUT'].includes(route.request().method())) {
       const body = route.request().postDataJSON?.() || {};
@@ -247,7 +247,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/profiles/onboarding-flag', async route => {
+  await page.route('**/api/profiles/onboarding-flag', async (route: any) => {
     tlog.info('🎯 Mocking Onboarding Flag Update');
     user.hasSeenOnboardingMessage = true;
     await route.fulfill({
@@ -257,7 +257,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/profiles/me/onboarding', async route => {
+  await page.route('**/api/profiles/me/onboarding', async (route: any) => {
     tlog.info('🎯 Mocking Profile Onboarding Update');
     user.hasSeenOnboardingMessage = true;
     await route.fulfill({
@@ -268,7 +268,7 @@ async function injectMockSession(page, context, persona) {
   });
 
   // 3. Discovery & Matching Mocks
-  await page.route('**/api/matching/discovery*', async route => {
+  await page.route('**/api/matching/discovery*', async (route: any) => {
     tlog.info('🔍 Mocking Discovery Profiles');
     await route.fulfill({
       status: 200,
@@ -283,7 +283,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/matching/matches*', async route => {
+  await page.route('**/api/matching/matches*', async (route: any) => {
     tlog.info('🤝 Mocking Matches List');
     await route.fulfill({
       status: 200,
@@ -299,7 +299,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/matching/liked*', async route => {
+  await page.route('**/api/matching/liked*', async (route: any) => {
     tlog.info('👍 Mocking Liked Profiles');
     await route.fulfill({
       status: 200,
@@ -312,7 +312,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/matching/mutual*', async route => {
+  await page.route('**/api/matching/mutual*', async (route: any) => {
     tlog.info('🤝 Mocking Mutual Matches');
     await route.fulfill({
       status: 200,
@@ -327,7 +327,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/matching/like', async route => {
+  await page.route('**/api/matching/like', async (route: any) => {
     tlog.info('❤️ Mocking Like Action');
     await route.fulfill({
       status: 200,
@@ -336,7 +336,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/matching/mark-toast-seen-chat', async route => {
+  await page.route('**/api/matching/mark-toast-seen-chat', async (route: any) => {
     tlog.info('👁️ Mocking Match Toast Seen');
     await route.fulfill({
       status: 200,
@@ -346,7 +346,7 @@ async function injectMockSession(page, context, persona) {
   });
 
   // 4. Connection & Chat Mocks
-  await page.route('**/api/connections/**', async route => {
+  await page.route('**/api/connections/**', async (route: any) => {
     tlog.info(`💬 Mocking Connection Detail: ${route.request().url()}`);
     await route.fulfill({
       status: 200,
@@ -365,7 +365,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/chat/**', async route => {
+  await page.route('**/api/chat/**', async (route: any) => {
     tlog.info(`💌 Mocking Chat API: ${route.request().method()} ${route.request().url()}`);
     const method = route.request().method();
     await route.fulfill({
@@ -377,7 +377,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/admin/stats', async route => {
+  await page.route('**/api/admin/stats', async (route: any) => {
     tlog.info('📊 Mocking Admin Stats');
     await route.fulfill({
       status: 200,
@@ -396,7 +396,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/admin/users*', async route => {
+  await page.route('**/api/admin/users*', async (route: any) => {
     tlog.info('👥 Mocking Admin Users');
     await route.fulfill({
       status: 200,
@@ -429,7 +429,7 @@ async function injectMockSession(page, context, persona) {
     { _id: 'invite-1', phoneNumber: '+917086875013', status: 'sent', createdAt: '2026-05-20T00:00:00Z', sentAt: '2026-05-20T00:00:00Z' }
   ];
 
-  await page.route('**/api/admin/invitations', async route => {
+  await page.route('**/api/admin/invitations', async (route: any) => {
     const method = route.request().method();
     tlog.info(`✉️ Mocking Admin Invitations API: ${method} ${route.request().url()}`);
     
@@ -468,7 +468,7 @@ async function injectMockSession(page, context, persona) {
   });
 
   // 5. Image Upload & URL Mocks
-  await page.route('**/api/upload/profile-picture/**/url**', async route => {
+  await page.route('**/api/upload/profile-picture/**/url**', async (route: any) => {
     tlog.info(`🖼️ Mocking Profile Picture URL: ${route.request().url()}`);
     await route.fulfill({
       status: 200,
@@ -480,7 +480,7 @@ async function injectMockSession(page, context, persona) {
     });
   });
 
-  await page.route('**/api/upload/profile-picture/url**', async route => {
+  await page.route('**/api/upload/profile-picture/url**', async (route: any) => {
     tlog.info(`🖼️ Mocking Profile Picture URL: ${route.request().url()}`);
     await route.fulfill({
       status: 200,
@@ -516,7 +516,7 @@ async function injectMockSession(page, context, persona) {
   tlog.info(`🎭 Mock Session Active for: ${persona}`);
 }
 
-async function dismissOnboardingOverlay(page) {
+async function dismissOnboardingOverlay(page: any) {
   const onboardingOverlay = page.getByRole('button', { name: /Begin Sacred Profiling/i });
   try {
     if (await onboardingOverlay.isVisible({ timeout: 10000 })) {
