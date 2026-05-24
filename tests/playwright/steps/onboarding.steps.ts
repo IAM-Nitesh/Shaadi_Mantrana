@@ -38,13 +38,13 @@ Then('I should see the {string} section', async ({ page }, sectionTitle: string)
     }
 
     if (await isVisible(beginButton, 1000)) {
-      await beginButton.click({ force: true });
+      await beginButton.click({ force: true, timeout: 2000 }).catch(() => {});
       await page.waitForTimeout(750);
       continue;
     }
 
     if (await isVisible(refineButton, 1000)) {
-      await refineButton.click({ force: true });
+      await refineButton.click({ force: true, timeout: 2000 }).catch(() => {});
       await page.waitForTimeout(750);
       continue;
     }
