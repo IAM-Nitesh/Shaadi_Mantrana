@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import ToastService from '../../services/toastService';
 import CelebratoryMatchToast from '../../components/CelebratoryMatchToast';
-import { MatchesListSkeleton } from '../../components/SkeletonLoader';
+import RoyalLoader from '../../components/RoyalLoader';
 import { ProfileImage } from '../../components/LazyImage';
 // import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 // import { useHapticFeedback } from '../../hooks/useHapticFeedback';
@@ -366,7 +366,17 @@ function MatchesContent() {
         {/* Content with Pull-to-Refresh */}
         <div className="android-scroll">
           {loading ? (
-            <MatchesListSkeleton variant="royal" />
+            <div className="space-y-4 p-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 p-4 bg-royal-gold/5 border border-royal-gold/10 rounded-xl">
+                  <RoyalLoader variant="skeleton" className="w-12 h-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <RoyalLoader variant="skeleton" className="w-3/5 h-4 rounded-md" />
+                    <RoyalLoader variant="skeleton" className="w-2/5 h-3.5 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <>
               {activeTab === 'matches' && (
