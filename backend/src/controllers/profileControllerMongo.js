@@ -203,6 +203,7 @@ class ProfileController {
       }
 
       // Handle isFirstLogin and hasCompletedWizard flags separately - update in User collection
+      let updatedUserFlags = false;
       if (updates.isFirstLogin !== undefined || updates.hasCompletedWizard !== undefined) {
         const userUpdates = {};
         if (updates.isFirstLogin !== undefined) userUpdates.isFirstLogin = Boolean(updates.isFirstLogin);
@@ -212,6 +213,7 @@ class ProfileController {
           userId,
           { $set: userUpdates }
         );
+        updatedUserFlags = true;
         // Remove from sanitizedUpdates since we handle it separately
         delete updates.isFirstLogin;
         delete updates.hasCompletedWizard;
@@ -219,11 +221,27 @@ class ProfileController {
 
       console.log('🧹 Final sanitized updates:', sanitizedUpdates);
       
-      if (Object.keys(sanitizedUpdates).length === 0) {
+      if (Object.keys(sanitizedUpdates).length === 0 && !updatedUserFlags) {
         console.log('❌ No valid fields to update');
         return res.status(400).json({
           success: false,
           error: 'No valid fields to update'
+        });
+      }
+
+      // If only flags were updated, fetch the user and return success immediately
+      if (Object.keys(sanitizedUpdates).length === 0 && updatedUserFlags) {
+        const user = await User.findById(userId);
+        return res.status(200).json({
+          success: true,
+          message: 'Profile flags updated successfully',
+          user: {
+            ...user.toPublicJSON(),
+            isFirstLogin: user.isFirstLogin,
+            hasCompletedWizard: user.hasCompletedWizard,
+            profileCompleteness: user.profile?.profileCompleteness || 0,
+            hasSeenOnboardingMessage: user.hasSeenOnboardingMessage || false
+          }
         });
       }
 
