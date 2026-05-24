@@ -548,7 +548,8 @@ class AuthController {
                 isFirstLogin: dbUser.isFirstLogin,
                 isApprovedByAdmin: dbUser.isApprovedByAdmin,
                 profileCompleteness: profileCompleteness,
-                hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false
+                hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false,
+                hasCompletedWizard: dbUser.hasCompletedWizard || false
               };
               console.log('✅ getAuthStatus: User authenticated successfully:', {
                 email: user.email,
@@ -574,7 +575,7 @@ class AuthController {
         const completeness = user.profileCompleteness || 0;
         const redirectTo = isAdminUser
           ? '/admin/dashboard'
-          : (user.isFirstLogin || completeness < 100)
+          : (user.isFirstLogin || (completeness < 100 && !user.hasCompletedWizard))
             ? '/profile'
             : '/dashboard';
 
