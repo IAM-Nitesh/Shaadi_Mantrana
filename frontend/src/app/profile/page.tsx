@@ -573,45 +573,45 @@ function ProfileContent() {
   // Calculate profile completeness at the top level so it's available everywhere
   const calculateProfileCompletion = (profile: any): number => {
     if (!profile) return 0;
-    // If backend provides profileCompleteness, use it as the authoritative source
-    if (profile.profileCompleteness !== undefined) {
-      return profile.profileCompleteness;
-    }
-    // Fallback to frontend calculation if backend doesn't provide profileCompleteness
+    // Calculate completion dynamically based on the 24 mandatory fields
     const requiredFields = [
-      'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-      'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-      'maritalStatus', 'father', 'mother', 'about', 'images',
-      'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
-      'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
-      'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
-      'interests'
+      'name', 'gender', 'dateOfBirth', 'timeOfBirth', 'placeOfBirth',
+      'height', 'weight', 'complexion', 'education', 'occupation',
+      'maritalStatus', 'manglik', 'eatingHabit', 'smokingHabit',
+      'drinkingHabit', 'nativePlace', 'currentResidence',
+      'fatherGotra', 'motherGotra', 'father', 'mother',
+      'settleAbroad', 'about'
     ];
-    const optionalFields = [];
-    let completedFields = 0;
-    let totalWeight = 0;
+    
+    // 23 text fields + 1 image field = 24 total fields
+    const increment = 100 / 24;
+    let completion = 0;
+
     requiredFields.forEach(field => {
-      totalWeight += 1;
-      if (profile[field]) {
-        if (field === 'images') {
-          if (Array.isArray(profile[field]) && profile[field].length > 0) {
-            completedFields += 1;
-          } else if (typeof profile[field] === 'string' && profile[field] && profile[field].trim() !== '') {
-            completedFields += 1;
-          }
-        } else if (typeof profile[field] === 'string' && profile[field] && profile[field].trim() !== '') {
-          completedFields += 1;
-        } else if (typeof profile[field] === 'number' && profile[field] > 0) {
-          completedFields += 1;
-        }
+      const val = profile[field];
+      if (typeof val === 'string' && val.trim() !== '') {
+        completion += increment;
+      } else if (typeof val === 'number' && val > 0) {
+        completion += increment;
       }
     });
-    const percentage = Math.min(100, Math.round((completedFields / totalWeight) * 100));
-    return percentage;
+    
+    // Check images separately (including temp images selected but not yet saved)
+    const hasExistingImage = profile.images && (
+      (Array.isArray(profile.images) && profile.images.length > 0) || 
+      (typeof profile.images === 'string' && profile.images.trim() !== '')
+    );
+    const hasTempImage = tempImageFile || tempImageUrl || signedImageUrl;
+    
+    if (hasExistingImage || hasTempImage) {
+      completion += increment;
+    }
+
+    return Math.min(100, Math.round(completion));
   };
 
-  // Use backend profileCompleteness as the authoritative source
-  const calculatedCompleteness = profile?.profileCompleteness || 0;
+  // Real-time calculated completeness
+  const calculatedCompleteness = calculateProfileCompletion(profile);
   
   // Helper function to check if a field is required
   const isRequiredField = (fieldName: string) => {
