@@ -110,14 +110,24 @@ test.describe('First-Time User Flows on Production', () => {
     console.log('Testing Profile Navigation and Save...');
     await page.goto('/profile');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('h1').filter({ hasText: /My Profile/i }).first()).toBeVisible();
+    await expect(page.locator('h1').filter({ hasText: /(My Profile|Sacred Profile)/i }).first()).toBeVisible();
 
-    const saveBtn = page.getByRole('button', { name: /Save Changes/i });
+    // The profile page is in view mode by default. Click "Refine" to enter edit mode.
+    const refineBtn = page.locator('button').filter({ hasText: 'Refine' });
+    try {
+      await refineBtn.waitFor({ state: 'visible', timeout: 5000 });
+      console.log('Found Refine button. Clicking it to enter edit mode...');
+      await refineBtn.click({ force: true });
+    } catch (e) {
+      console.log('Refine button not visible, assuming we are already in edit mode.');
+    }
+
+    const saveBtn = page.getByRole('button', { name: /Save( Changes| Complete Profile)?/i });
     await expect(saveBtn).toBeVisible();
 
     // Just click save to ensure profile endpoints are working without crashing
     await saveBtn.click();
-    await expect(page.locator('div, [role="status"]').filter({ hasText: /Profile updated successfully/i }).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('div, [role="status"]').filter({ hasText: /Profile (saved|updated)/i }).first()).toBeVisible({ timeout: 10000 });
     console.log('✅ Profile saved successfully');
     
     console.log('🎉 First-Time User flows validated successfully!');
