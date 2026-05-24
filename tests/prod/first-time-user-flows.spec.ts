@@ -141,33 +141,35 @@ test.describe('First-Time User Flows on Production', () => {
       if (await input.count() > 0) await input.fill('14:30');
     });
     // Place of Birth
-    await page.locator('[data-field="placeOfBirth"] input').fill('Delhi');
+    await page.locator('[data-field="placeOfBirth"]').fill('Delhi');
     // Weight
-    await page.locator('[data-field="weight"] input').fill('70');
+    await page.locator('[data-field="weight"]').fill('70');
+    // Complexion
+    await page.locator('[data-field="complexion"]').selectOption({ label: 'Medium' });
     
     // Manglik
-    await page.locator('[data-field="manglik"] select').selectOption({ label: 'No' });
+    await page.locator('[data-field="manglik"]').selectOption({ label: 'No' });
     
     // Eating Habit
-    await page.locator('[data-field="eatingHabit"] select').selectOption({ label: 'Vegetarian' });
+    await page.locator('[data-field="eatingHabit"]').selectOption({ label: 'Vegetarian' });
     // Smoking
-    await page.locator('[data-field="smokingHabit"] select').selectOption({ label: 'No' });
+    await page.locator('[data-field="smokingHabit"]').selectOption({ label: 'No' });
     // Drinking
-    await page.locator('[data-field="drinkingHabit"] select').selectOption({ label: 'No' });
+    await page.locator('[data-field="drinkingHabit"]').selectOption({ label: 'No' });
     
     // Current Residence
-    await page.locator('[data-field="currentResidence"] input').fill('Mumbai');
+    await page.locator('[data-field="currentResidence"]').fill('Mumbai');
     
     // Gotra Details
-    await page.locator('[data-field="fatherGotra"] input').fill('Kashyap');
-    await page.locator('[data-field="motherGotra"] input').fill('Bharadwaj');
+    await page.locator('[data-field="fatherGotra"]').fill('Kashyap');
+    await page.locator('[data-field="motherGotra"]').fill('Bharadwaj');
     
     // Family Details
-    await page.locator('[data-field="father"] input').fill('Rajesh Sharma');
-    await page.locator('[data-field="mother"] input').fill('Sunita Sharma');
+    await page.locator('[data-field="father"]').fill('Rajesh Sharma');
+    await page.locator('[data-field="mother"]').fill('Sunita Sharma');
     
     // Settle Abroad
-    await page.locator('[data-field="settleAbroad"] select').selectOption({ label: 'No' });
+    await page.locator('[data-field="settleAbroad"]').selectOption({ label: 'No' });
 
     // Just click save to ensure profile endpoints are working without crashing
     await saveBtn.click();
