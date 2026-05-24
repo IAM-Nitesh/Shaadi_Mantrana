@@ -593,6 +593,8 @@ function ProfileContent() {
         completion += increment;
       } else if (typeof val === 'number' && val > 0) {
         completion += increment;
+      } else if (val instanceof Date && !isNaN(val.getTime())) {
+        completion += increment;
       }
     });
     
