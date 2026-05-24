@@ -63,7 +63,7 @@ export function TimePicker({
           {time ? `${pad(hour)}:${pad(minute)} ${ampm}` : <span>Pick a time</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-4 bg-white shadow-lg rounded-lg" align="start" sideOffset={4}>
+      <PopoverContent className="w-64 p-4 card-modern shadow-lg rounded-lg" align="start" sideOffset={4}>
         <div className="flex items-center gap-2 mb-4">
           <select
             className="p-2 border rounded focus:outline-none"

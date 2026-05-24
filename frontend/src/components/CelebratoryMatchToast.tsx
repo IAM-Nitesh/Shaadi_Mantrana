@@ -66,7 +66,7 @@ export default function CelebratoryMatchToast({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-rose-50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-royal-obsidian/95 backdrop-blur-md"
         onClick={onClose}
       >
         {/* Simplified Floating Hearts Background */}
@@ -147,7 +147,7 @@ export default function CelebratoryMatchToast({
                 <img 
                   src="/icon.svg" 
                   alt="Shaadi Mantra" 
-                  className="w-24 h-24 text-rose-500"
+                  className="w-24 h-24 text-royal-gold"
                 />
               </motion.div>
               
@@ -172,11 +172,11 @@ export default function CelebratoryMatchToast({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.4 }}
             >
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              <h2 className="text-3xl font-bold text-royal-gold font-playfair mb-4">
                 It's a Match! 🎉
               </h2>
-              <p className="text-xl text-gray-600 mb-8">
-                You and <span className="font-semibold text-rose-600">{matchName}</span> liked each other!
+              <p className="text-xl text-royal-gold/60 font-inter mb-8">
+                You and <span className="font-semibold text-royal-gold">{matchName}</span> liked each other!
               </p>
             </motion.div>
 
@@ -197,7 +197,7 @@ export default function CelebratoryMatchToast({
               
               <button
                 onClick={handleKeepSwiping}
-                className="w-full py-4 px-6 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 transform hover:scale-105 flex items-center justify-center text-lg"
+                className="w-full py-4 px-6 card-modern border-2 border-royal-glass-border text-white/80 font-inter font-semibold rounded-2xl hover:bg-royal-gold/10 hover:border-royal-gold/50 transition-all duration-200 transform hover:scale-105 flex items-center justify-center text-lg"
               >
                 <span>Keep Swiping</span>
               </button>

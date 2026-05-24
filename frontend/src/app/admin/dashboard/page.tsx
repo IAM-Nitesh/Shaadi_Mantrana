@@ -124,12 +124,12 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Dashboard</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <CustomIcon name="ri-error-warning-line" className="text-6xl text-royal-crimson mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-royal-gold font-playfair mb-2">Error Loading Dashboard</h2>
+          <p className="text-white/80 font-inter mb-4">{error}</p>
           <button
             onClick={fetchDashboardData}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 btn-gradient-modern rounded-xl  transition-colors"
           >
             Retry
           </button>
@@ -142,49 +142,49 @@ export default function AdminDashboard() {
     <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8 pt-4">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-            <CustomIcon name="ri-dashboard-line" className="text-4xl text-blue-600 mr-3" />
+          <h1 className="text-3xl font-bold text-royal-gold font-playfair mb-2 flex items-center">
+            <CustomIcon name="ri-dashboard-line" className="text-4xl text-royal-gold mr-3" />
             Admin Dashboard
           </h1>
-          <p className="text-gray-600">Monitor system performance and user statistics</p>
+          <p className="text-white/80 font-inter">Monitor system performance and user statistics</p>
         </div>
 
         {/* Storage Usage Widgets */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* B2 Storage Widget */}
-          <div className="dashboard-widget bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <div className="dashboard-widget bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <CustomIcon name="ri-cloud-line" className="text-3xl text-blue-500 mr-3" />
+                <CustomIcon name="ri-cloud-line" className="text-3xl text-royal-gold mr-3" />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">B2 Cloud Storage</h3>
-                  <p className="text-sm text-gray-500">Profile Images</p>
+                  <h3 className="text-lg font-semibold text-royal-gold font-playfair">B2 Cloud Storage</h3>
+                  <p className="text-sm text-royal-gold/60">Profile Images</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-royal-gold">
                   {dashboardData ? dashboardData.storageStats.b2Usage : '0 Bytes'}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-royal-gold/60">
                   of {dashboardData ? dashboardData.storageStats.b2Total : '0 Bytes'}
                 </div>
               </div>
             </div>
             
             {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+            <div className="w-full bg-royal-gold/20 rounded-full h-3 mb-2">
               <div 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-royal-gold to-royal-gold-light h-3 rounded-full transition-all duration-500"
                 style={{ 
                   width: `${dashboardData ? getStoragePercentage(dashboardData.storageStats.b2Usage, dashboardData.storageStats.b2Total) : 0}%` 
                 }}
               ></div>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-royal-gold/60">
               {dashboardData ? getStoragePercentage(dashboardData.storageStats.b2Usage, dashboardData.storageStats.b2Total) : 0}% used
             </div>
             {dashboardData && dashboardData.storageStats?.b2Files !== undefined && (
-              <div className="mt-2 text-xs text-gray-400">
+              <div className="mt-2 text-xs text-royal-gold/40">
                 {dashboardData.storageStats.b2Files} profile pictures stored
                 {dashboardData.storageStats?.b2OrphanedFiles && dashboardData.storageStats.b2OrphanedFiles > 0 && (
                   <span className="text-yellow-600 ml-2">
@@ -196,39 +196,39 @@ export default function AdminDashboard() {
           </div>
 
           {/* MongoDB Storage Widget */}
-          <div className="dashboard-widget bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <div className="dashboard-widget bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <CustomIcon name="ri-database-2-line" className="text-3xl text-green-500 mr-3" />
+                <CustomIcon name="ri-database-2-line" className="text-3xl text-royal-gold-light mr-3" />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">MongoDB Storage</h3>
-                  <p className="text-sm text-gray-500">User Data</p>
+                  <h3 className="text-lg font-semibold text-royal-gold font-playfair">MongoDB Storage</h3>
+                  <p className="text-sm text-royal-gold/60">User Data</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-royal-gold-light">
                   {dashboardData ? dashboardData.storageStats.mongoUsage : '0 Bytes'}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-royal-gold/60">
                   of {dashboardData ? dashboardData.storageStats.mongoTotal : '0 Bytes'}
                 </div>
               </div>
             </div>
             
             {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+            <div className="w-full bg-royal-gold/20 rounded-full h-3 mb-2">
               <div 
-                className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-royal-gold-light to-royal-gold h-3 rounded-full transition-all duration-500"
                 style={{ 
                   width: `${dashboardData ? getStoragePercentage(dashboardData.storageStats.mongoUsage, dashboardData.storageStats.mongoTotal) : 0}%` 
                 }}
               ></div>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-royal-gold/60">
               {dashboardData ? getStoragePercentage(dashboardData.storageStats.mongoUsage, dashboardData.storageStats.mongoTotal) : 0}% used
             </div>
             {dashboardData && (
-              <div className="mt-2 text-xs text-gray-400">
+              <div className="mt-2 text-xs text-royal-gold/40">
                 {dashboardData.storageStats?.mongoProfiles || 0} profiles
               </div>
             )}

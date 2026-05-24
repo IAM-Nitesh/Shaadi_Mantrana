@@ -2,6 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { safeGsap } from '../../components/SafeGsap';
+import { RippleButton } from '../../components/RippleButton';
+import { BottomSheet } from '../../components/BottomSheet';
+import { LiquidGlassBackground } from '../../components/LiquidGlassBackground';
 import { Profile } from '../../services/profile-service';
 import { ImageUploadService } from '../../services/image-upload-service';
 import { SwipeCardImage } from '../../components/LazyImage';
@@ -296,17 +299,18 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
 
   return (
     <div className="relative">
-      <div
+      <LiquidGlassBackground
         ref={cardRef}
         data-testid="profile-card"
-        className={`shadow-2xl rounded-3xl overflow-hidden cursor-grab select-none transition-transform duration-200 border border-royal-glass-border ${
+        className={`cursor-grab select-none transition-transform duration-200 border border-royal-glass-border ${
           isMounted && isDragging ? 'cursor-grabbing scale-105 shadow-royal-gold/20' : 'hover:scale-[1.01] hover:shadow-2xl'
-        } ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}
+        }`}
         style={{
           transform: `translateX(${dragX}px) rotate(${dragX * 0.1}deg)`,
           boxShadow: isDragging
             ? '0 8px 32px 0 rgba(244,63,94,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10)'
             : '0 8px 32px 0 rgba(30,41,59,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.06)',
+          transformStyle: 'preserve-3d'
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
@@ -379,12 +383,13 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
                 <h3 className="text-3xl font-playfair font-bold text-royal-gold">{profile.profile.name || 'Unknown'}</h3>
                 <p className="text-lg opacity-90 font-inter">{profile.profile.age || 'Unknown'} years old</p>
               </div>
-              <button
+              <RippleButton
                 onClick={() => setShowDetails(!showDetails)}
+                hapticFeedback="light"
                 className="w-10 h-10 bg-royal-gold/20 hover:bg-royal-gold/40 backdrop-blur-md border border-royal-gold/30 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
               >
                 <i className={`ri-${showDetails ? 'arrow-up' : 'information'}-line text-2xl text-royal-gold`}></i>
-              </button>
+              </RippleButton>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">
               <i className="ri-briefcase-line"></i>
@@ -397,30 +402,32 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
           </div>
         </div>
 
-        {/* Detailed Info */}
-        {showDetails && (
-          <div className="p-6 space-y-4 animate-fadeIn border-t border-royal-glass-border">
+        {/* Detailed Info (BottomSheet) */}
+        <BottomSheet 
+          isOpen={showDetails} 
+          onClose={() => setShowDetails(false)}
+          title="Sacred Details"
+        >
+          <div className="space-y-6 animate-fadeIn">
             <div>
               <h4 className="font-semibold text-royal-gold mb-2 font-playfair">Education</h4>
-              <p className="text-royal-gold-light/70 font-inter">{profile.profile.education || 'Not specified'}</p>
+              <p className="text-royal-gold-light/70 font-inter text-lg">{profile.profile.education || 'Not specified'}</p>
             </div>
             
             <div>
               <h4 className="font-semibold text-royal-gold mb-2 font-playfair">About</h4>
-              <p className="text-royal-gold-light/70 font-inter leading-relaxed">{profile.profile.about || 'No information available'}</p>
+              <p className="text-royal-gold-light/70 font-inter leading-relaxed text-lg">{profile.profile.about || 'No information available'}</p>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Interests</h4>
+              <h4 className="font-semibold text-gray-400 mb-2 font-playfair">Interests</h4>
               <div className="flex flex-wrap gap-2">
                 {(() => {
-
-                  
                   if (profile.profile.interests && profile.profile.interests.length > 0) {
                     return profile.profile.interests.map((interest, index) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-royal-gold/10 text-royal-gold border border-royal-gold/30 rounded-full text-xs font-medium font-inter shadow-sm hover:bg-royal-gold/20 transition-colors duration-150"
+                        className="px-4 py-2 bg-royal-gold/10 text-royal-gold border border-royal-gold/30 rounded-full text-sm font-medium font-inter shadow-sm"
                       >
                         {interest}
                       </span>
@@ -432,8 +439,8 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </BottomSheet>
+      </LiquidGlassBackground>
 
       {/* Swipe Indicators */}
       {/* Animated Swipe Indicators */}

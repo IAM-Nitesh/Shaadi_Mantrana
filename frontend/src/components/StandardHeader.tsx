@@ -43,7 +43,7 @@ export default function StandardHeader({
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       role="banner"
-  className="fixed top-0 w-full backdrop-blur-lg bg-white/90 border-b border-white/20 shadow-xl z-50 px-4 flex items-center relative"
+  className="fixed top-0 w-full backdrop-blur-lg bg-royal-obsidian/90 border-b border-white/20 shadow-xl z-50 px-4 flex items-center relative"
   style={{ height: 'var(--header-height, 4rem)' }}
     >
   <div className="flex items-center justify-between w-full">
@@ -59,7 +59,7 @@ export default function StandardHeader({
                   router.back();
                 }
               }}
-              className="w-10 h-10 flex items-center justify-center text-neutral-600 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:bg-gray-50 transition-colors duration-200 active:scale-95"
+              className="w-10 h-10 flex items-center justify-center text-royal-gold card-modern border border-royal-glass-border rounded-2xl shadow-sm hover:bg-royal-gold/10 transition-colors duration-200 active:scale-95"
             >
               <CustomIcon name="ri-arrow-left-line" />
             </button>
@@ -91,11 +91,11 @@ export default function StandardHeader({
           {shouldShowFilter && (
             <button
               onClick={onFilterClick}
-              className="w-10 h-10 flex items-center justify-center text-neutral-600 relative bg-white border border-neutral-200 rounded-2xl shadow-sm hover-lift"
+              className="w-10 h-10 flex items-center justify-center text-royal-gold relative card-modern border border-royal-glass-border rounded-2xl shadow-sm hover-lift"
             >
               <CustomIcon name="ri-filter-3-line" />
               {hasActiveFilters && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full pulse-badge"></div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-royal-gold/50 rounded-full pulse-badge"></div>
               )}
             </button>
           )}
@@ -107,9 +107,9 @@ export default function StandardHeader({
             <a
               href="/profile"
               aria-label="Profile"
-              className="w-10 h-10 flex items-center justify-center bg-white border-2 border-rose-500 rounded-2xl shadow-lg hover:bg-rose-50"
+              className="w-10 h-10 flex items-center justify-center card-modern border-2 border-royal-gold rounded-2xl shadow-lg hover:bg-royal-gold/5"
             >
-              <CustomIcon name="ri-user-line" className="text-rose-500" />
+              <CustomIcon name="ri-user-line" className="text-royal-gold" />
             </a>
           )}
         </div>

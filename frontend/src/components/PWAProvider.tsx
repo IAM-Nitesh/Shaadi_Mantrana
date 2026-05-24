@@ -130,7 +130,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
             exit={{ opacity: 0, y: 100 }}
             className="fixed bottom-4 left-4 right-4 z-50"
           >
-            <div className="bg-white rounded-2xl shadow-2xl p-4 border border-gray-200">
+            <div className="card-modern rounded-2xl shadow-2xl p-4 border border-royal-glass-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-500 rounded-xl flex items-center justify-center">
@@ -140,13 +140,13 @@ export function PWAProvider({ children }: PWAProviderProps) {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Install Shaadi Mantra</h3>
-                    <p className="text-sm text-gray-600">Add to home screen for quick access</p>
+                    <p className="text-sm text-royal-gold/60 font-inter">Add to home screen for quick access</p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={dismissInstallPrompt}
-                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+                    className="px-3 py-2 text-sm text-gray-500 hover:text-white/80 font-inter"
                   >
                     Later
                   </button>
@@ -172,7 +172,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
             exit={{ opacity: 0, y: 100 }}
             className="fixed bottom-4 left-4 right-4 z-50"
           >
-            <div className="bg-white rounded-2xl shadow-2xl p-4 border border-gray-200">
+            <div className="card-modern rounded-2xl shadow-2xl p-4 border border-royal-glass-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
@@ -182,13 +182,13 @@ export function PWAProvider({ children }: PWAProviderProps) {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Update Available</h3>
-                    <p className="text-sm text-gray-600">A new version is ready to install</p>
+                    <p className="text-sm text-royal-gold/60 font-inter">A new version is ready to install</p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={dismissUpdatePrompt}
-                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+                    className="px-3 py-2 text-sm text-gray-500 hover:text-white/80 font-inter"
                   >
                     Later
                   </button>
