@@ -17,8 +17,8 @@ class ProfileController {
           error: 'User not found'
         });
       }
-      // Additional validation: must have email, userUuid, and be approved
-      if (!user.email || !user.userUuid) {
+      // Additional validation: must have userUuid, and either email or phone number
+      if (!user.userUuid || (!user.email && !user.phoneNumber)) {
         return res.status(403).json({
           success: false,
           error: 'User record incomplete. Please contact support.'

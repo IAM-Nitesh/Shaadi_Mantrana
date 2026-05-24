@@ -32,6 +32,10 @@ module.exports = defineConfig({
         // Can run headless, but non-headless might be easier if debugging is needed.
         // Keeping headless: true by default for terminal script.
         headless: false,
+        launchOptions: {
+          // Hide Playwright automation from Firebase ReCAPTCHA
+          args: ['--disable-blink-features=AutomationControlled']
+        }
       },
     }
   ],
