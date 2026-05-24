@@ -17,9 +17,7 @@ test.describe('First-Time User Flows on Production', () => {
 
   test('should login, complete onboarding, upload photo, and reach 100% profile', async ({ page }) => {
     page.on('console', msg => {
-      if (msg.type() === 'error' || msg.type() === 'warning') {
-        console.log(`[BROWSER ${msg.type().toUpperCase()}]: ${msg.text()}`);
-      }
+      console.log(`[BROWSER ${msg.type().toUpperCase()}]: ${msg.text()}`);
     });
 
     const phone = process.env.NEW_USER_PHONE;
@@ -135,13 +133,23 @@ test.describe('First-Time User Flows on Production', () => {
     console.log('Filling out remaining required fields...');
     
     // Time of Birth
-    await page.locator('[data-field="timeOfBirth"] input, [data-field="timeOfBirth"] button').first().fill('14:30').catch(async () => {
-      // If it's a custom button/div, we might have to just try locating any input inside it
-      const input = page.locator('[data-field="timeOfBirth"]').locator('input');
-      if (await input.count() > 0) await input.fill('14:30');
-    });
+    // react-time-picker creates multiple inputs. The best way is to focus the first input and type the time.
+    const timeInput = page.locator('.react-time-picker__inputGroup__input').first();
+    if (await timeInput.isVisible().catch(() => false)) {
+      await timeInput.focus();
+      await page.keyboard.type('02'); // Hour
+      await page.keyboard.type('30'); // Minute
+      await page.keyboard.type('pm'); // AM/PM
+    } else {
+      // Fallback
+      await page.locator('[data-field="timeOfBirth"]').click();
+      await page.keyboard.type('0230pm');
+    }
     // Place of Birth
     await page.locator('[data-field="placeOfBirth"]').fill('Delhi');
+    // Height
+    await page.locator('[data-field="height-feet"]').selectOption({ label: '5 ft' });
+    await page.locator('[data-field="height-inches"]').selectOption({ label: '10 in' });
     // Weight
     await page.locator('[data-field="weight"]').fill('70');
     // Complexion
