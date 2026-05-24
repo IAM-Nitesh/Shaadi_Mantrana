@@ -89,7 +89,13 @@ Then('I should see the chat interface for {string}', async ({ page }, sectionTit
 
 When('I navigate to {string}', async ({ page }, path) => {
   // Fact: Next.js trailing slash redirects can interrupt navigation. (Action 232)
-  await page.goto(path, { waitUntil: 'commit' });
+  try {
+    await page.goto(path, { waitUntil: 'commit' });
+  } catch (e) {
+    if (!e.message.includes('interrupted by another navigation')) {
+      throw e;
+    }
+  }
   await page.waitForURL(new RegExp(`${path.replace(/\/$/, '')}/?`), { timeout: 30000 });
 
   // Fact: Fresh users land on the Onboarding Overlay (Action 182)

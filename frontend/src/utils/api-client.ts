@@ -9,10 +9,6 @@ let refreshPromise: Promise<boolean> | null = null;
 // Track ongoing requests to prevent duplicates
 const ongoingRequests = new Map<string, Promise<any>>();
 
-// Global lock to prevent multiple concurrent auth requests
-let authRequestLock = false;
-let authRequestPromise: Promise<any> | null = null;
-
 // Function to deduplicate requests with better error handling and timeout management
 async function deduplicateRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
   // If there's already an ongoing request for this key, return the existing promise
@@ -198,26 +194,9 @@ class ApiClient {
       ? `auth:${method}:${endpoint}` // Include method for auth requests to be more specific
       : `${method}:${endpoint}`;
     
-    // For all auth requests, use global lock to prevent multiple concurrent requests
     if (endpoint.includes('/auth/')) {
       logger.debug(`🔍 ApiClient: Making auth request to ${endpoint} with key ${requestKey}`);
-      
-      // Use global lock for all auth requests
-      if (authRequestLock && authRequestPromise) {
-        logger.debug(`🔒 ApiClient: Auth request already in progress, waiting for completion`);
-        return authRequestPromise;
-      }
-      
-      // Set lock and create new request
-      authRequestLock = true;
-      authRequestPromise = deduplicateRequest(requestKey, () => this.performRequest<T>(endpoint, options))
-        .finally(() => {
-          authRequestLock = false;
-          authRequestPromise = null;
-          logger.debug(`🔓 ApiClient: Auth request lock released`);
-        });
-      
-      return authRequestPromise;
+      return deduplicateRequest(requestKey, () => this.performRequest<T>(endpoint, options));
     }
     
     return this.performRequest<T>(endpoint, options);
