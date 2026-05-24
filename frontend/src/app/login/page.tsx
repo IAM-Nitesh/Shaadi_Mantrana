@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/LoginForm';
 import { safeGsap } from '../../components/SafeGsap';
-import HeartbeatLoader from '../../components/HeartbeatLoader';
+
 import logger from '../../utils/logger';
 
 export default function LoginPage() {

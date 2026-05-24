@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Skeleton } from './SkeletonLoader';
+import RoyalLoader from './RoyalLoader';
 
 interface LazyImageProps {
   src: string | null;
@@ -99,12 +99,7 @@ export function LazyImage({
             transition={{ duration: 0.2 }}
             className="absolute inset-0 z-10"
           >
-            <Skeleton 
-              width="100%" 
-              height="100%" 
-              rounded="lg"
-              animate={true}
-            />
+            <RoyalLoader variant="skeleton" className="w-full h-full rounded-lg" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -202,10 +197,12 @@ export function SwipeCardImage({
   src,
   alt,
   className = '',
+  priority = false,
 }: {
   src: string | null;
   alt: string;
   className?: string;
+  priority?: boolean;
 }) {
   return (
     <div className={`relative w-full h-96 rounded-2xl overflow-hidden ${className}`}>
@@ -215,6 +212,7 @@ export function SwipeCardImage({
         width={400}
         height={400}
         className="w-full h-full"
+        priority={priority}
         fallback="/demo-profiles/default-profile.svg"
       />
     </div>

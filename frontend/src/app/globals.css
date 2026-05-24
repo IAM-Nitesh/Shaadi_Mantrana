@@ -1,5 +1,5 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600;700&display=swap'); */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css');
+/* Remix Icons are now handled exclusively by IconSystem.tsx and local SVGs */
 @import '../styles/design-tokens.css';
 @import '../styles/typography.css';
 @tailwind base;
@@ -598,6 +598,12 @@ body {
   box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.2);
 }
 
+/* Render Optimization for Long Lists */
+.profile-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 150px;
+}
+
 /* Responsive Text */
 .text-responsive {
   font-size: clamp(1rem, 2.5vw, 1.5rem);
@@ -620,235 +626,7 @@ body {
   }
 }
 
-/* Enhanced fallback styles for when Remix Icons fail to load */
-[class*="ri-"]:before {
-  content: attr(data-fallback) !important;
-  font-family: system-ui, -apple-system, sans-serif;
-  font-weight: normal;
-  font-style: normal;
-}
-
-/* Essential Remix icon fallbacks - only for icons actually used in the codebase */
-.ri-heart-line:before,
-.ri-heart-fill:before {
-  content: "♡" !important;
-}
-
-.ri-close-line:before {
-  content: "×" !important;
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
-.ri-camera-line:before {
-  content: "📷" !important;
-}
-
-.ri-briefcase-line:before {
-  content: "💼" !important;
-}
-
-.ri-map-pin-line:before {
-  content: "📍" !important;
-}
-
-.ri-error-warning-line:before {
-  content: "⚠" !important;
-}
-
-.ri-mail-line:before {
-  content: "✉" !important;
-}
-
-.ri-phone-line:before {
-  content: "📞" !important;
-}
-
-.ri-arrow-left-line:before {
-  content: "←" !important;
-}
-
-.ri-arrow-right-s-line:before {
-  content: "→" !important;
-}
-
-.ri-customer-service-line:before {
-  content: "🎧" !important;
-}
-
-.ri-shield-check-line:before {
-  content: "🛡" !important;
-}
-
-.ri-lock-line:before {
-  content: "🔒" !important;
-}
-
-.ri-filter-3-line:before {
-  content: "⚒" !important;
-}
-
-.ri-information-line:before {
-  content: "ℹ" !important;
-}
-
-.ri-check-line:before {
-  content: "✓" !important;
-}
-
-.ri-user-heart-line:before {
-  content: "💕" !important;
-}
-
-.ri-group-line:before {
-  content: "👥" !important;
-}
-
-.ri-user-settings-line:before {
-  content: "⚙️" !important;
-}
-
-.ri-dashboard-line:before {
-  content: "📊" !important;
-}
-
-.ri-user-add-line:before {
-  content: "👤" !important;
-}
-
-.ri-compass-line:before {
-  content: "🔍" !important;
-}
-
-.ri-time-line:before {
-  content: "⏰" !important;
-}
-
-.ri-pause-circle-line:before {
-  content: "⏸️" !important;
-}
-
-.ri-play-circle-line:before {
-  content: "▶️" !important;
-}
-
-.ri-mail-send-line:before {
-  content: "📤" !important;
-}
-
-.ri-user-list-line:before {
-  content: "📋" !important;
-}
-
-.ri-mail-list-line:before {
-  content: "📧" !important;
-}
-
-.ri-login-box-line:before {
-  content: "🔐" !important;
-}
-
-.ri-logout-box-r-line:before {
-  content: "🚪" !important;
-}
-
-.ri-arrow-up-s-line:before {
-  content: "↑" !important;
-}
-
-.ri-arrow-down-s-line:before {
-  content: "↓" !important;
-}
-
-.ri-pause-line:before {
-  content: "⏸️" !important;
-}
-
-.ri-heart-pulse-line:before {
-  content: "💓" !important;
-}
-
-.ri-code-s-slash-line:before {
-  content: "💻" !important;
-}
-
-.ri-book-open-line:before {
-  content: "📖" !important;
-}
-
-.ri-scales-3-line:before {
-  content: "⚖️" !important;
-}
-
-.ri-calculator-line:before {
-  content: "🧮" !important;
-}
-
-.ri-palette-line:before {
-  content: "🎨" !important;
-}
-
-/* Additional fallbacks for icons used in the codebase */
-.ri-article-line:before {
-  content: "📄" !important;
-}
-
-.ri-bank-line:before {
-  content: "🏦" !important;
-}
-
-.ri-bar-chart-line:before {
-  content: "📊" !important;
-}
-
-.ri-computer-line:before {
-  content: "💻" !important;
-}
-
-.ri-graduation-cap-line:before {
-  content: "🎓" !important;
-}
-
-.ri-restaurant-line:before {
-  content: "🍽️" !important;
-}
-
-.ri-steering-line:before {
-  content: "🚗" !important;
-}
-
-.ri-shield-star-line:before {
-  content: "⭐" !important;
-}
-
-.ri-flight-takeoff-line:before {
-  content: "✈️" !important;
-}
-
-.ri-building-2-line:before {
-  content: "🏢" !important;
-}
-
-.ri-microscope-line:before {
-  content: "🔬" !important;
-}
-
-.ri-medicine-bottle-line:before {
-  content: "💊" !important;
-}
-
-.ri-tooth-line:before {
-  content: "🦷" !important;
-}
-
-.ri-music-2-line:before {
-  content: "🎵" !important;
-}
-
-.ri-movie-line:before {
-  content: "🎬" !important;
-}
-
+/* Remix Icons are now handled exclusively by IconSystem.tsx and local SVGs */
 .ri-quill-pen-line:before {
   content: "✒️" !important;
 }

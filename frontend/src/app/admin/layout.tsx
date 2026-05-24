@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import StandardHeader from '../../components/StandardHeader';
 import AdminBottomNavigation from '../../components/AdminBottomNavigation';
-import HeartbeatLoader from '../../components/HeartbeatLoader';
+import RoyalLoader from '../../components/RoyalLoader';
 import logger from '../../utils/logger';
 
 export default function AdminLayout({
@@ -79,10 +79,11 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
         <div className="text-center">
-          <HeartbeatLoader 
+          <RoyalLoader 
             size="xl"
             text="Checking admin access..."
             showText={true}
+            variant="spark"
           />
           {authError && (
             <p className="mt-4 text-red-600 text-sm">{authError}</p>

@@ -2184,8 +2184,8 @@ function ProfileContent() {
       // Update local state
       setShowOnboarding(false);
       
-      // If profile is incomplete, transition to Royal Wizard
-      if (profile && (profile.profileCompleteness || 0) < 100) {
+      // If profile is incomplete AND wizard hasn't been finished, transition to Royal Wizard
+      if (profile && (profile.profileCompleteness || 0) < 100 && !profile.hasCompletedWizard) {
         setShowWizard(true);
       }
       
@@ -2280,7 +2280,6 @@ function ProfileContent() {
             {!isEditing ? (
               <button
                 onClick={() => {
-                  setShowWizard(true);
                   setIsEditing(true);
                 }}
                 className="flex items-center space-x-2 px-5 py-2.5 bg-royal-gold text-royal-obsidian rounded-xl text-sm font-bold shadow-lg shadow-royal-gold/10 active:scale-95 transition-all"

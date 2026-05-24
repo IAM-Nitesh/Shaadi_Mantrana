@@ -13,6 +13,7 @@ import posthog from 'posthog-js';
 import MandalaBackground from '../../components/ui/MandalaBackground';
 import RoyalLoader from '../../components/RoyalLoader';
 import ToastService from '../../services/toastService';
+import { Icon } from '../../components/IconSystem';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -152,7 +153,7 @@ function DashboardContent() {
               disabled={isLoading}
               className="p-2 text-royal-gold-light/60 hover:text-royal-gold transition-colors"
             >
-              <i className="ri-logout-box-line text-xl"></i>
+              <Icon name="ri-logout-box-line" size="xl" />
             </button>
           </div>
         </div>
@@ -173,7 +174,7 @@ function DashboardContent() {
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-center relative z-10">
             <div className="w-24 h-24 bg-royal-gold/10 border border-royal-gold/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
-              <i className="ri-heart-line text-4xl text-royal-gold"></i>
+              <Icon name="ri-heart-line" size="3xl" className="text-royal-gold" />
             </div>
             <h3 className="text-2xl font-playfair font-bold text-royal-gold mb-2">Majestic Journey Pause</h3>
             <p className="text-royal-gold-light/60 mb-8 max-w-xs font-inter">Your royal connections are being curated. Check back soon for new matches!</p>
@@ -196,7 +197,7 @@ function DashboardContent() {
               disabled={isAnimating}
               className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-close-line text-2xl text-royal-gold"></i>
+              <Icon name="ri-close-line" size="xl" className="text-royal-gold" />
             </button>
             
             <button
@@ -204,7 +205,7 @@ function DashboardContent() {
               disabled={isAnimating || likesRemaining <= 0}
               className="w-16 h-16 bg-gradient-to-r from-royal-crimson to-royal-gold rounded-full shadow-[0_0_20px_rgba(128,0,0,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-star-line text-2xl text-white"></i>
+              <Icon name="ri-star-line" size="xl" className="text-white" />
             </button>
             
             <button
@@ -212,7 +213,7 @@ function DashboardContent() {
               disabled={isAnimating || likesRemaining <= 0}
               className="w-14 h-14 bg-gradient-to-r from-royal-gold to-royal-gold-light rounded-full shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
             >
-              <i className="ri-heart-line text-2xl text-royal-obsidian"></i>
+              <Icon name="ri-heart-line" size="xl" className="text-royal-obsidian" />
             </button>
           </div>
         </div>

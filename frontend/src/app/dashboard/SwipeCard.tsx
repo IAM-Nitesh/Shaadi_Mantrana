@@ -356,6 +356,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
                 src={signedImageUrl || profileImage}
                 alt={`${profile.profile.name || 'Profile'}`}
                 className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
+                priority={true}
               />
             </GoldLeafFrame>
           ) : (

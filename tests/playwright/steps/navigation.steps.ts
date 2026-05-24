@@ -539,7 +539,7 @@ Then('the {string} navigation link should be disabled', async ({ page }, linkNam
 When('I click the {string} button on the first profile card', async ({ page }, buttonType: string) => {
   // Fact: Action buttons use specific icons. Wait for enabled to clear GSAP animations. (Action 265)
   const iconClass = buttonType === 'Like' ? 'ri-heart-line' : 'ri-close-line';
-  const button = page.locator(`button:has(i.${iconClass})`).first();
+  const button = page.locator(`button:has([data-icon="${iconClass}"]), button:has(i.${iconClass})`).first();
 
   await expect(button).toBeEnabled({ timeout: 15000 });
   await button.click();
