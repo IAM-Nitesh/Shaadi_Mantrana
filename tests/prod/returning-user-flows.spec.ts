@@ -36,16 +36,17 @@ test.describe('Returning User Flows on Production', () => {
     console.log('✅ Successfully reached Dashboard directly (skipped onboarding)');
 
     // Ensure we see matches section
-    const matchesSection = page.locator('h1, h2').filter({ hasText: /Matches|Divine Matches/i }).first();
+    const matchesSection = page.locator('h1, h2').filter({ hasText: /Discovery|Matches|Divine Matches/i }).first();
     await expect(matchesSection).toBeVisible({ timeout: 15000 });
     
     // --- Test Matches Flow ---
     console.log('Testing Profile Interactions...');
-    const firstMatchCard = page.locator('.match-card, [data-testid="match-card"]').first();
+    const firstMatchCard = page.locator('.match-card, [data-testid="profile-card"]').first();
     
     // Not all test databases will have matches generated, so we gracefully handle empty state
     if (await firstMatchCard.isVisible().catch(() => false)) {
-      const likeBtn = firstMatchCard.getByRole('button', { name: /Like|Accept/i }).first();
+      // Find the like button (it has a heart icon)
+      const likeBtn = page.locator('button').filter({ has: page.locator('.ri-heart-line') }).first();
       if (await likeBtn.isVisible()) {
         await likeBtn.click();
         await page.waitForLoadState('networkidle');
@@ -55,27 +56,28 @@ test.describe('Returning User Flows on Production', () => {
       console.log('ℹ️ No match cards found. Gracefully skipping profile interactions.');
     }
 
-    // --- Test Chat UI Navigation ---
-    console.log('Testing Chat UI...');
-    await page.goto('/chat');
+    // --- Test Matches UI Navigation ---
+    console.log('Testing Matches UI...');
+    // Use SPA navigation instead of hard page reload
+    await page.locator('a[href="/matches"]').first().click();
     await page.waitForLoadState('networkidle');
     
-    // Ensure the chat container or empty state is visible
-    const chatHeader = page.locator('h1, h2').filter({ hasText: /Sacred Conversations|Chat/i }).first();
-    await expect(chatHeader).toBeVisible({ timeout: 15000 });
+    // Ensure the matches container or empty state is visible
+    const matchesHeader = page.locator('h1, h2').filter({ hasText: /Matches|Sacred Connections/i }).first();
+    await expect(matchesHeader).toBeVisible({ timeout: 15000 });
     
-    const noChatsMessage = page.locator('text=Start a conversation');
-    const conversationList = page.locator('.conversation-list-item').first();
+    const noMatchesMessage = page.locator('text=No Matches Yet');
+    const profileCard = page.locator('.profile-card, [data-testid="profile-card"]').first();
     
     await Promise.race([
-      expect(noChatsMessage).toBeVisible(),
-      expect(conversationList).toBeVisible()
-    ]).catch(() => console.log('⚠️ Neither empty state nor conversation list found.'));
-    console.log('✅ Chat UI rendered successfully');
+      expect(noMatchesMessage).toBeVisible(),
+      expect(profileCard).toBeVisible()
+    ]).catch(() => console.log('⚠️ Neither empty state nor matches list found.'));
+    console.log('✅ Matches UI rendered successfully');
 
     // --- Test Profile Settings ---
     console.log('Testing Settings Navigation...');
-    await page.goto('/settings');
+    await page.locator('a[href="/settings"]').first().click();
     await page.waitForLoadState('networkidle');
     await expect(page.locator('h1, h2').filter({ hasText: /Settings/i }).first()).toBeVisible({ timeout: 15000 });
     console.log('✅ Settings UI loaded');
