@@ -293,6 +293,7 @@ export const Icon: React.FC<IconProps> = ({
         aria-label={ariaLabelText}
         aria-hidden={ariaHidden}
         role={ariaHidden ? 'presentation' : 'img'}
+        data-icon={name}
       />
     );
   }
@@ -309,6 +310,7 @@ export const Icon: React.FC<IconProps> = ({
       aria-label={ariaLabelText}
       aria-hidden={ariaHidden}
       role={ariaHidden ? 'presentation' : 'img'}
+      data-icon={name}
     />
   );
 };
