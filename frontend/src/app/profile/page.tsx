@@ -2408,7 +2408,14 @@ function ProfileContent() {
           )}
           
 
-          
+          {/* Hidden File Input for Image Upload */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            className="hidden"
+          />
         </div>
 
         {/* Profile Name and Quick Info */}

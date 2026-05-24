@@ -125,6 +125,13 @@ test.describe('First-Time User Flows on Production', () => {
     const saveBtn = page.getByRole('button', { name: /Save( Changes| Complete Profile)?/i });
     await expect(saveBtn).toBeVisible();
 
+    console.log('Uploading photo...');
+    // Add photo upload step so that the profile completeness validations pass
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('tests/prod/test-photo.jpg');
+    // Wait for validation and preview to render
+    await page.waitForTimeout(2000);
+
     // Just click save to ensure profile endpoints are working without crashing
     await saveBtn.click();
     await expect(page.locator('div, [role="status"]').filter({ hasText: /Profile (saved|updated)/i }).first()).toBeVisible({ timeout: 10000 });
