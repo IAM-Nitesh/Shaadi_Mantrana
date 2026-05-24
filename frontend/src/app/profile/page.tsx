@@ -823,11 +823,12 @@ function ProfileContent() {
 
 
   const requiredFields = [
-    'name', 'gender', 'nativePlace', 'currentResidence', 'maritalStatus', 'manglik',
-    'dateOfBirth', 'timeOfBirth', 'placeOfBirth', 'height', 'weight', 'complexion',
-    'education', 'occupation', 'annualIncome', 'eatingHabit', 'smokingHabit', 'drinkingHabit',
-    'father', 'mother', 'brothers', 'sisters', 'settleAbroad',
-    'fatherGotra', 'motherGotra', 'grandfatherGotra', 'grandmotherGotra'
+    'name', 'gender', 'dateOfBirth', 'timeOfBirth', 'placeOfBirth',
+    'height', 'weight', 'complexion', 'education', 'occupation',
+    'maritalStatus', 'manglik', 'eatingHabit', 'smokingHabit',
+    'drinkingHabit', 'nativePlace', 'currentResidence',
+    'fatherGotra', 'motherGotra', 'father', 'mother',
+    'settleAbroad', 'about'
   ];
 
   const handleSave = async () => {
