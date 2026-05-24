@@ -208,16 +208,30 @@ export const AuthProvider = ({
         return null;
       }
       
-      // Clear any existing recaptcha widgets to prevent 'already rendered' errors
-      const container = document.getElementById('recaptcha-container');
-      if (container) container.innerHTML = '';
-      
-      const appVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible'
-      });
-      
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-      return confirmationResult;
+      // Clear any existing recaptcha widgets properly to prevent MALFORMED errors
+      if (typeof window !== 'undefined') {
+        const win = window as any;
+        if (win.recaptchaVerifier) {
+          try {
+            win.recaptchaVerifier.clear();
+          } catch (e) {
+            logger.warn('AuthContext: Error clearing previous recaptcha verifier', e);
+          }
+          win.recaptchaVerifier = null;
+        }
+        
+        // Also clean up the DOM container just in case
+        const container = document.getElementById('recaptcha-container');
+        if (container) container.innerHTML = '';
+        
+        win.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible'
+        });
+        
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, win.recaptchaVerifier);
+        return confirmationResult;
+      }
+      return null;
     } catch (err: any) {
       // --- Playwright/E2E Test Bypass ---
       if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT_TEST__) {
@@ -232,7 +246,14 @@ export const AuthProvider = ({
       logger.error('Phone Sign-In Error:', err);
       
       // Reset container on failure to allow retry
-      if (!Capacitor.isNativePlatform()) {
+      if (!Capacitor.isNativePlatform() && typeof window !== 'undefined') {
+        const win = window as any;
+        if (win.recaptchaVerifier) {
+          try {
+            win.recaptchaVerifier.clear();
+          } catch (e) {}
+          win.recaptchaVerifier = null;
+        }
         const container = document.getElementById('recaptcha-container');
         if (container) container.innerHTML = '';
       }

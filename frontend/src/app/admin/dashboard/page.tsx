@@ -107,13 +107,15 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <RoyalLoader 
-          size="lg"
-          
-          text="Loading admin dashboard..." 
-          
-        />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 w-full max-w-6xl mx-auto space-y-8">
+        <div className="w-full space-y-2">
+          <RoyalLoader variant="skeleton" className="w-64 h-10 rounded-xl" />
+          <RoyalLoader variant="skeleton" className="w-96 h-6 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          <RoyalLoader variant="skeleton" className="w-full h-48 rounded-2xl" />
+          <RoyalLoader variant="skeleton" className="w-full h-48 rounded-2xl" />
+        </div>
       </div>
     );
   }

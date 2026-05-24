@@ -517,13 +517,14 @@ export default function AdminUsers() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <RoyalLoader 
-          size="lg"
-          
-          text="Loading users..." 
-          
-        />
+      <div className="container mx-auto px-4 py-6 mt-8 space-y-8 max-w-6xl">
+        <RoyalLoader variant="skeleton" className="w-64 h-12 rounded-xl mb-8" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <RoyalLoader key={i} variant="skeleton" className="w-full h-32 rounded-2xl" />
+          ))}
+        </div>
+        <RoyalLoader variant="skeleton" className="w-full h-96 rounded-2xl" />
       </div>
     );
   }

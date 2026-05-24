@@ -2376,3 +2376,23 @@ html {
   );
   animation: royal-shimmer 2.5s infinite var(--transition-elegant, ease-in-out);
 }
+
+@keyframes button-shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.shimmer-button {
+  background: linear-gradient(
+    110deg,
+    var(--royal-gold) 20%,
+    var(--royal-gold) 40%,
+    #FFF4CC 50%,
+    var(--royal-gold) 60%,
+    var(--royal-gold) 80%
+  ) !important;
+  background-size: 200% auto !important;
+  animation: button-shimmer 2s linear infinite !important;
+  color: var(--royal-obsidian) !important;
+  font-weight: bold !important;
+}
