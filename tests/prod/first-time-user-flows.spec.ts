@@ -132,19 +132,20 @@ test.describe('First-Time User Flows on Production', () => {
 
     console.log('Filling out remaining required fields...');
     
-    // Time of Birth
-    // react-time-picker creates multiple inputs. The best way is to focus the first input and type the time.
-    const timeInput = page.locator('.react-time-picker__inputGroup__input').first();
-    if (await timeInput.isVisible().catch(() => false)) {
-      await timeInput.focus();
-      await page.keyboard.type('02'); // Hour
-      await page.keyboard.type('30'); // Minute
-      await page.keyboard.type('pm'); // AM/PM
-    } else {
-      // Fallback
-      await page.locator('[data-field="timeOfBirth"]').click();
-      await page.keyboard.type('0230pm');
-    }
+    // Time of Birth (Custom component with popover)
+    await page.locator('button[data-field="timeOfBirth"]').click();
+    
+    // In the popover, select hour, minute, am/pm
+    // The popover has three select elements in order: hour, minute, ampm
+    const timePopover = page.locator('.bg-white.shadow-lg').filter({ hasText: 'Set Time' });
+    const selects = timePopover.locator('select');
+    
+    await selects.nth(0).selectOption({ value: '2' }); // Hour: 2
+    await selects.nth(1).selectOption({ value: '30' }); // Minute: 30
+    await selects.nth(2).selectOption({ value: 'PM' }); // AM/PM: PM
+    
+    await timePopover.getByRole('button', { name: 'Set Time' }).click();
+
     // Place of Birth
     await page.locator('[data-field="placeOfBirth"]').fill('Delhi');
     // Height
