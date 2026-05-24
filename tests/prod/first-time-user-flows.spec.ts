@@ -62,44 +62,42 @@ test.describe('First-Time User Flows on Production', () => {
 
     await beginButton.click();
     
-    // --- Basic Details ---
-    console.log('Filling Basic Details...');
-    await expect(page.locator('h2').filter({ hasText: /Basic Details/i })).toBeVisible();
-    await fieldContainerForLabel(page, 'Full Name').locator('input').fill('Test User');
+    // --- Step 1: Personal Grace ---
+    console.log('Filling Personal Grace...');
+    await expect(page.locator('h2').filter({ hasText: /Personal Grace/i })).toBeVisible();
+    await fieldContainerForLabel(page, 'Name of the Devout').locator('input').fill('Test User');
     await fieldContainerForLabel(page, 'Gender').locator('select').selectOption({ label: 'Male' });
-    await fieldContainerForLabel(page, 'Date of Birth').locator('input').fill('1990-01-01');
-    await page.getByRole('button', { name: /Next/i }).click();
+    await fieldContainerForLabel(page, 'Date of Appearance').locator('input').fill('1990-01-01');
+    await page.getByRole('button', { name: /Continue Journey/i }).click();
 
-    // --- Religion & Horoscope ---
-    console.log('Filling Religion & Horoscope...');
-    await expect(page.locator('h2').filter({ hasText: /Religion & Horoscope/i })).toBeVisible();
-    await fieldContainerForLabel(page, 'Religion').locator('select').selectOption({ label: 'Hindu' });
-    await fieldContainerForLabel(page, 'Caste').locator('select').selectOption({ label: 'Brahmin' });
-    await page.getByRole('button', { name: /Next/i }).click();
+    // --- Step 2: Physical & Vitality ---
+    console.log('Filling Physical & Vitality...');
+    await expect(page.locator('h2').filter({ hasText: /Physical & Vitality/i })).toBeVisible();
+    await fieldContainerForLabel(page, 'Height').locator('input').fill('5ft 10in');
+    await fieldContainerForLabel(page, 'Complexion').locator('select').selectOption({ label: 'Fair' });
+    await page.getByRole('button', { name: /Continue Journey/i }).click();
 
-    // --- Career & Education ---
-    console.log('Filling Career & Education...');
-    await expect(page.locator('h2').filter({ hasText: /Career & Education/i })).toBeVisible();
-    await fieldContainerForLabel(page, 'Highest Education').locator('select').selectOption({ label: 'Masters' });
-    await fieldContainerForLabel(page, 'Profession').locator('select').selectOption({ label: 'Software Engineer' });
-    await page.getByRole('button', { name: /Next/i }).click();
+    // --- Step 3: Intellectual Path ---
+    console.log('Filling Intellectual Path...');
+    await expect(page.locator('h2').filter({ hasText: /Intellectual Path/i })).toBeVisible();
+    await fieldContainerForLabel(page, 'Highest Education').locator('input').fill('Masters in Architecture');
+    await fieldContainerForLabel(page, 'Professional Occupation').locator('input').fill('Software Engineer');
+    await page.getByRole('button', { name: /Continue Journey/i }).click();
 
-    // --- Family Details ---
-    console.log('Filling Family Details...');
-    await expect(page.locator('h2').filter({ hasText: /Family Details/i })).toBeVisible();
-    await fieldContainerForLabel(page, 'Family Type').locator('select').selectOption({ label: 'Nuclear' });
-    await fieldContainerForLabel(page, 'City').locator('input').fill('Test City');
-    await page.getByRole('button', { name: /Next/i }).click();
+    // --- Step 4: Sacred Roots ---
+    console.log('Filling Sacred Roots...');
+    await expect(page.locator('h2').filter({ hasText: /Sacred Roots/i })).toBeVisible();
+    await fieldContainerForLabel(page, 'Marital Status').locator('select').selectOption({ label: 'Never Married' });
+    await fieldContainerForLabel(page, 'Native Place').locator('input').fill('Varanasi');
+    await page.getByRole('button', { name: /Continue Journey/i }).click();
 
-    // --- Partner Preferences ---
-    console.log('Filling Partner Preferences...');
-    await expect(page.locator('h2').filter({ hasText: /Partner Preferences/i })).toBeVisible();
-    await fieldContainerForLabel(page, 'Preferred Religion').locator('select').selectOption({ label: 'Hindu' });
-    await fieldContainerForLabel(page, 'Min Age').locator('input').fill('25');
-    await fieldContainerForLabel(page, 'Max Age').locator('input').fill('30');
+    // --- Step 5: Sacred Intent ---
+    console.log('Filling Sacred Intent...');
+    await expect(page.locator('h2').filter({ hasText: /Sacred Intent/i })).toBeVisible();
+    await fieldContainerForLabel(page, 'Sacred Bio (About Me)').locator('textarea').fill('A devout soul seeking a meaningful connection.');
     
     console.log('Completing Wizard...');
-    await page.getByRole('button', { name: /Complete Profiling/i }).click();
+    await page.getByRole('button', { name: /Finalize Vows/i }).click();
 
     // Should navigate to dashboard eventually
     await page.waitForURL(/.*\/dashboard/, { timeout: 30000 });
