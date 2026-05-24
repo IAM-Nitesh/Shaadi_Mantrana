@@ -587,6 +587,7 @@ function ProfileContent() {
     const increment = 100 / 24;
     let completion = 0;
 
+    const missingFields: string[] = [];
     requiredFields.forEach(field => {
       const val = profile[field];
       if (typeof val === 'string' && val.trim() !== '') {
@@ -595,6 +596,8 @@ function ProfileContent() {
         completion += increment;
       } else if (val instanceof Date && !isNaN(val.getTime())) {
         completion += increment;
+      } else {
+        missingFields.push(field);
       }
     });
     
@@ -607,7 +610,11 @@ function ProfileContent() {
     
     if (hasExistingImage || hasTempImage) {
       completion += increment;
+    } else {
+      missingFields.push('images');
     }
+
+    console.log('🔍 MISSING FIELDS FOR COMPLETENESS:', missingFields);
 
     return Math.min(100, Math.round(completion));
   };
