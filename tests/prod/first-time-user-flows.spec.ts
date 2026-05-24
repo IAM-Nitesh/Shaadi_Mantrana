@@ -132,6 +132,43 @@ test.describe('First-Time User Flows on Production', () => {
     // Wait for validation and preview to render
     await page.waitForTimeout(2000);
 
+    console.log('Filling out remaining required fields...');
+    
+    // Time of Birth
+    await page.locator('[data-field="timeOfBirth"] input, [data-field="timeOfBirth"] button').first().fill('14:30').catch(async () => {
+      // If it's a custom button/div, we might have to just try locating any input inside it
+      const input = page.locator('[data-field="timeOfBirth"]').locator('input');
+      if (await input.count() > 0) await input.fill('14:30');
+    });
+    // Place of Birth
+    await page.locator('[data-field="placeOfBirth"] input').fill('Delhi');
+    // Weight
+    await page.locator('[data-field="weight"] input').fill('70');
+    
+    // Manglik
+    await page.locator('[data-field="manglik"] select').selectOption({ label: 'No' });
+    
+    // Eating Habit
+    await page.locator('[data-field="eatingHabit"] select').selectOption({ label: 'Vegetarian' });
+    // Smoking
+    await page.locator('[data-field="smokingHabit"] select').selectOption({ label: 'No' });
+    // Drinking
+    await page.locator('[data-field="drinkingHabit"] select').selectOption({ label: 'No' });
+    
+    // Current Residence
+    await page.locator('[data-field="currentResidence"] input').fill('Mumbai');
+    
+    // Gotra Details
+    await page.locator('[data-field="fatherGotra"] input').fill('Kashyap');
+    await page.locator('[data-field="motherGotra"] input').fill('Bharadwaj');
+    
+    // Family Details
+    await page.locator('[data-field="father"] input').fill('Rajesh Sharma');
+    await page.locator('[data-field="mother"] input').fill('Sunita Sharma');
+    
+    // Settle Abroad
+    await page.locator('[data-field="settleAbroad"] select').selectOption({ label: 'No' });
+
     // Just click save to ensure profile endpoints are working without crashing
     await saveBtn.click();
     await expect(page.locator('div, [role="status"]').filter({ hasText: /Profile (saved|updated)/i }).first()).toBeVisible({ timeout: 10000 });

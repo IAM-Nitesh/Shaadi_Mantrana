@@ -401,19 +401,32 @@ userSchema.virtual('profileCompletion').get(function() {
   
   let completion = 0;
   const requiredFields = [
-    'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-    'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-    'maritalStatus', 'father', 'mother', 'about'
+    'name', 'gender', 'dateOfBirth', 'timeOfBirth', 'placeOfBirth',
+    'height', 'weight', 'complexion', 'education', 'occupation',
+    'maritalStatus', 'manglik', 'eatingHabit', 'smokingHabit',
+    'drinkingHabit', 'nativePlace', 'currentResidence',
+    'fatherGotra', 'motherGotra', 'father', 'mother',
+    'settleAbroad', 'about'
   ];
+  
+  // 23 text fields + 1 image field = 24 total fields
+  // 100 / 24 = 4.166... per field
+  const increment = 100 / 24;
   
   requiredFields.forEach(field => {
     if (this.profile[field] && this.profile[field].toString().trim() !== '') {
-      completion += 6.67; // 100/15 fields
+      completion += increment;
     }
   });
   
-  if (this.profile.interests && this.profile.interests.length > 0) completion += 5;
-  if (this.profile.images && this.profile.images.length > 0) completion += 5;
+  // Check image separately
+  if (this.profile.images) {
+    if (Array.isArray(this.profile.images) && this.profile.images.length > 0) {
+      completion += increment;
+    } else if (typeof this.profile.images === 'string' && this.profile.images.trim() !== '') {
+      completion += increment;
+    }
+  }
   
   return Math.round(Math.min(completion, 100));
 });
@@ -547,34 +560,36 @@ userSchema.pre('findOneAndUpdate', async function(next) {
     const computeCompletion = (profile) => {
       if (!profile) return 0;
       const requiredFields = [
-        'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-        'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-        'maritalStatus', 'father', 'mother', 'about', 'images',
-        'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
-        'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
-        'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
-        'interests'
+        'name', 'gender', 'dateOfBirth', 'timeOfBirth', 'placeOfBirth',
+        'height', 'weight', 'complexion', 'education', 'occupation',
+        'maritalStatus', 'manglik', 'eatingHabit', 'smokingHabit',
+        'drinkingHabit', 'nativePlace', 'currentResidence',
+        'fatherGotra', 'motherGotra', 'father', 'mother',
+        'settleAbroad', 'about'
       ];
 
-      let completed = 0;
-      let total = 0;
+      // 23 text fields + 1 image field = 24 total fields
+      const increment = 100 / 24;
+      let completion = 0;
 
       requiredFields.forEach(field => {
-        total += 1;
         const val = profile[field];
-        if (field === 'images') {
-          if (Array.isArray(val) && val.length > 0) completed += 1;
-          else if (typeof val === 'string' && val.trim() !== '') completed += 1;
-        } else if (field === 'interests') {
-          if (Array.isArray(val) && val.length > 0) completed += 1;
-        } else if (typeof val === 'string' && val.trim() !== '') {
-          completed += 1;
+        if (typeof val === 'string' && val.trim() !== '') {
+          completion += increment;
         } else if (typeof val === 'number' && val > 0) {
-          completed += 1;
+          completion += increment;
         }
       });
+      
+      // Check images separately
+      const imagesVal = profile['images'];
+      if (Array.isArray(imagesVal) && imagesVal.length > 0) {
+        completion += increment;
+      } else if (typeof imagesVal === 'string' && imagesVal.trim() !== '') {
+        completion += increment;
+      }
 
-      return Math.min(100, Math.round((completed / total) * 100));
+      return Math.min(100, Math.round(completion));
     };
 
     const completeness = computeCompletion(merged);
