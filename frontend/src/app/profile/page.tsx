@@ -2150,12 +2150,12 @@ function ProfileContent() {
   // Show loading screen only while loading profile, not for authentication
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
-        <div className="text-center">
-          <RoyalLoader 
-            size="xl"
-            text="Gathering your majestic profile details..." 
-          />
+      <div className="min-h-screen bg-royal-obsidian p-4 md:p-8 space-y-8 mt-16 max-w-4xl mx-auto">
+        <RoyalLoader variant="skeleton" className="w-full h-48 rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <RoyalLoader key={i} variant="skeleton" className="w-full h-24 rounded-xl" />
+          ))}
         </div>
       </div>
     );

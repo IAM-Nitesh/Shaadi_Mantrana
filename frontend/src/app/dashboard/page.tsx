@@ -161,11 +161,8 @@ function DashboardContent() {
       {/* Swipe Cards Container */}
       <div ref={cardRef} className="relative flex-1 px-4 pb-20">
         {isFetchingProfiles ? (
-          <div className="flex flex-col items-center justify-center h-96 text-center">
-            <RoyalLoader 
-              size="lg" 
-              text="Curating royal profiles..." 
-            />
+          <div className="flex flex-col items-center justify-center h-96 w-full px-4">
+            <RoyalLoader variant="skeleton" className="w-full max-w-sm h-[60vh] rounded-[2rem]" />
           </div>
         ) : currentProfile ? (
           <SwipeCard 

@@ -12,7 +12,9 @@ interface RoyalLoaderProps {
   showText?: boolean;
   fullScreen?: boolean;
   opacity?: number;
+  className?: string;
 }
+
 
 const MandalaSVG = ({ variant, size }: { variant: 'grand' | 'spark'; size: string }) => {
   const isSpark = variant === 'spark';
@@ -128,7 +130,8 @@ export default function RoyalLoader({
   text = 'Curating your majestic matches...',
   showText = true,
   fullScreen = false,
-  opacity = 0.95
+  opacity = 0.95,
+  className = ''
 }: RoyalLoaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -224,7 +227,7 @@ export default function RoyalLoader({
 
   if (variant === 'skeleton') {
     return (
-      <div className={`${currentSize.logo} royal-skeleton ${fullScreen ? 'fixed inset-0 z-50' : ''}`} />
+      <div className={`${className || currentSize.logo} royal-skeleton ${fullScreen ? 'fixed inset-0 z-50' : ''}`} />
     );
   }
 

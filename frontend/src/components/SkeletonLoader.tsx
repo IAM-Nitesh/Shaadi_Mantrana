@@ -48,9 +48,9 @@ export function Skeleton({
 
   return (
     <Component
-      className={`${isRoyal ? 'bg-royal-gold/10' : 'bg-gray-200'} ${roundedClass} ${className}`}
+      className={`${isRoyal ? 'royal-skeleton border-none' : 'bg-gray-200'} ${roundedClass} ${className}`}
       style={{ width, height }}
-      {...animateProps}
+      {...(!isRoyal && animateProps)}
     />
   );
 }

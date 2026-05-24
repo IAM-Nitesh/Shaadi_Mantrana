@@ -66,8 +66,13 @@ export default function PhotoModerationPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <RoyalLoader size="lg" text="Loading pending photos..."  />
+      <div className="container mx-auto px-4 py-8">
+        <RoyalLoader variant="skeleton" className="w-48 h-10 rounded-lg mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <RoyalLoader key={i} variant="skeleton" className="w-full h-80 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
