@@ -17,7 +17,7 @@ test.describe('First-Time User Flows on Production', () => {
 
   test('should login, complete onboarding, upload photo, and reach 100% profile', async ({ page }) => {
     page.on('console', msg => {
-      console.log(`[BROWSER ${msg.type().toUpperCase()}]: ${msg.text()}`);
+      console.log(`[BROWSER LOG]: ${msg.text()}`);
     });
 
     const phone = process.env.NEW_USER_PHONE;
