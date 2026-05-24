@@ -15,7 +15,6 @@ import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 
 // Type assertion for EllipsisVerticalIcon
 const EllipsisVerticalIconTyped = EllipsisVerticalIcon as React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
-import HeartbeatLoader from '../../components/HeartbeatLoader';
 import RoyalLoader from '../../components/RoyalLoader';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
@@ -316,10 +315,11 @@ function AdminPageContent() {
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <HeartbeatLoader 
+        <RoyalLoader 
           size="xl"
           text="Loading Admin Panel..."
           showText={true}
+          variant="spark"
         />
       </div>
     );
@@ -418,10 +418,11 @@ function AdminPageContent() {
         <div ref={tableRef} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-rose-100 animate-slide-in-top" style={{ animationDelay: '0.4s' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
-              <HeartbeatLoader 
+              <RoyalLoader 
                 size="xl"
                 text="Loading Users..."
                 showText={true}
+                variant="spark"
               />
             </div>
           ) : users.length === 0 ? (

@@ -98,10 +98,10 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
     }
     
     if (isActive) {
-      return `${baseClasses} text-rose-500`;
+      return `${baseClasses} text-royal-gold`;
     }
     
-    return `${baseClasses} text-gray-400 hover:text-rose-500`;
+    return `${baseClasses} text-royal-gold-light/60 hover:text-royal-gold`;
   };
 
   const getIconClasses = (href: string) => {
@@ -133,14 +133,13 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   };
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t border-white/40 shadow-2xl z-50 ${className}`} style={{boxShadow:'0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)'}}>
+    <div className={`fixed bottom-0 left-0 right-0 bg-royal-glass backdrop-blur-md border-t border-royal-glass-border shadow-2xl z-50 ${className}`} style={{boxShadow:'0 -4px 20px rgba(0,0,0,0.5)'}}>
       {/* Active indicator background */}
       <div 
-        className="absolute top-0 h-1 bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500 ease-out rounded-full shadow-md"
+        className="absolute top-0 h-1 bg-gradient-to-r from-royal-gold to-royal-gold-light transition-all duration-500 ease-out rounded-full shadow-[0_2px_8px_rgba(212,175,55,0.3)]"
         style={{
           width: `${100 / items.length}%`,
           left: `${(items.findIndex(item => item.href === pathname) * 100) / items.length}%`,
-          boxShadow: '0 2px 8px 0 rgba(244,63,94,0.10)'
         }}
       />
       
@@ -163,7 +162,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
             >
               {/* Background highlight for active item */}
               {isActive && !isDisabled && (
-                <div className="absolute inset-0 bg-rose-50/50 animate-fadeInScale" />
+                <div className="absolute inset-0 bg-royal-gold/10 animate-fadeInScale" />
               )}
               
               {/* Ripple effect container */}
@@ -194,7 +193,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
               )}
               
               {/* Hover effect */}
-              <div className="absolute inset-0 bg-gray-100/60 opacity-0 group-hover:opacity-40 transition-opacity duration-200 rounded-xl" />
+              <div className="absolute inset-0 bg-royal-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl" />
             </button>
           );
         })}
@@ -202,7 +201,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
       
       {/* Loading indicator */}
       {isPending && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-500 to-pink-500 animate-pulse" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-royal-gold to-royal-gold-light animate-pulse" />
       )}
     </div>
   );

@@ -7,6 +7,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    viewTransition: true
+  }
 }
 
 module.exports = nextConfig
