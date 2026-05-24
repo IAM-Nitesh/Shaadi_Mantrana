@@ -26,6 +26,7 @@ import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
 import posthog from 'posthog-js';
+import { calculateProfileCompletion as calcCompleteness } from '../../constants/profileCompleteness';
 
 // Type definition for field configuration
 interface FieldConfig {
@@ -570,53 +571,11 @@ function ProfileContent() {
   // REMOVED: This useEffect was causing race conditions
   // All onboarding and redirection logic is now handled in the main authentication useEffect above
 
-  // Calculate profile completeness at the top level so it's available everywhere
+  // Calculate profile completeness — delegates to the canonical shared function.
+  // The shared function counts exactly 12 mandatory text fields + 1 photo = 13 total.
   const calculateProfileCompletion = (profile: any): number => {
-    if (!profile) return 0;
-    // Calculate completion dynamically based on the 24 mandatory fields
-    const requiredFields = [
-      'name', 'gender', 'dateOfBirth', 'timeOfBirth', 'placeOfBirth',
-      'height', 'weight', 'complexion', 'education', 'occupation',
-      'maritalStatus', 'manglik', 'eatingHabit', 'smokingHabit',
-      'drinkingHabit', 'nativePlace', 'currentResidence',
-      'fatherGotra', 'motherGotra', 'father', 'mother',
-      'settleAbroad', 'about'
-    ];
-    
-    // 23 text fields + 1 image field = 24 total fields
-    const increment = 100 / 24;
-    let completion = 0;
-
-    const missingFields: string[] = [];
-    requiredFields.forEach(field => {
-      const val = profile[field];
-      if (typeof val === 'string' && val.trim() !== '') {
-        completion += increment;
-      } else if (typeof val === 'number' && val > 0) {
-        completion += increment;
-      } else if (val instanceof Date && !isNaN(val.getTime())) {
-        completion += increment;
-      } else {
-        missingFields.push(field);
-      }
-    });
-    
-    // Check images separately (including temp images selected but not yet saved)
-    const hasExistingImage = profile.images && (
-      (Array.isArray(profile.images) && profile.images.length > 0) || 
-      (typeof profile.images === 'string' && profile.images.trim() !== '')
-    );
-    const hasTempImage = tempImageFile || tempImageUrl || signedImageUrl;
-    
-    if (hasExistingImage || hasTempImage) {
-      completion += increment;
-    } else {
-      missingFields.push('images');
-    }
-
-    console.log('🔍 MISSING FIELDS FOR COMPLETENESS:', missingFields);
-
-    return Math.min(100, Math.round(completion));
+    const hasTempImage = !!(tempImageFile || tempImageUrl || signedImageUrl);
+    return calcCompleteness(profile, hasTempImage);
   };
 
   // Real-time calculated completeness

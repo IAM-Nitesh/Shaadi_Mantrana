@@ -276,91 +276,50 @@ class ProfileController {
       console.log('🔍 Checking profile completion for user:', req.user.email);
       console.log('📋 Current profile data:', profile);
       
-      // Calculate profile completion percentage using UPDATED profile data
+      // Calculate profile completion percentage using CANONICAL 12 mandatory fields + 1 photo.
+      // This matches frontend/src/constants/profileCompleteness.ts exactly.
       const calculateProfileCompletion = (profile) => {
         if (!profile) return 0;
 
-        const requiredFields = [
-          'name', 'gender', 'dateOfBirth', 'height', 'weight', 'complexion',
-          'education', 'occupation', 'annualIncome', 'nativePlace', 'currentResidence',
-          'maritalStatus', 'father', 'mother', 'about', 'images',
-          'timeOfBirth', 'placeOfBirth', 'manglik', 'eatingHabit', 'smokingHabit', 
-          'drinkingHabit', 'brothers', 'sisters', 'fatherGotra', 'motherGotra',
-          'grandfatherGotra', 'grandmotherGotra', 'specificRequirements', 'settleAbroad',
-          'interests'
+        const mandatoryFields = [
+          'name', 'gender', 'dateOfBirth', 'maritalStatus',
+          'education', 'occupation', 'nativePlace', 'height',
+          'complexion', 'manglik', 'eatingHabit', 'about'
         ];
 
-        const optionalFields = [];
-
+        // 12 text fields + 1 image = 13 total fields
+        const total = mandatoryFields.length + 1;
+        const increment = 100 / total;
         let completedFields = 0;
-        let totalWeight = 0;
+        const missingFields = [];
 
-        // Check all required fields (equal weight: 1x each)
-        const missingRequiredFields = [];
-        requiredFields.forEach(field => {
-          totalWeight += 1;
-          if (profile[field]) {
-            if (field === 'images') {
-              // Images field should have at least one image
-              if (Array.isArray(profile[field]) && profile[field].length > 0) {
-                completedFields += 1;
-              } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
-                completedFields += 1;
-              } else {
-                missingRequiredFields.push(field);
-              }
-            } else if (field === 'interests') {
-              // Interests field should be an array with at least one item
-              if (Array.isArray(profile[field]) && profile[field].length > 0) {
-                completedFields += 1;
-              } else {
-                missingRequiredFields.push(field);
-              }
-            } else if (typeof profile[field] === 'string' && profile[field].trim() !== '') {
-              completedFields += 1;
-            } else if (typeof profile[field] === 'number' && profile[field] > 0) {
-              completedFields += 1;
-            } else {
-              missingRequiredFields.push(field);
-            }
+        mandatoryFields.forEach(field => {
+          const val = profile[field];
+          if (val && typeof val === 'string' && val.trim() !== '') {
+            completedFields++;
+          } else if (typeof val === 'number' && val > 0) {
+            completedFields++;
           } else {
-            missingRequiredFields.push(field);
+            missingFields.push(field);
           }
         });
-        
-        console.log(`🔍 Missing required fields:`, missingRequiredFields);
 
-        // Calculate percentage (max 100%)
-        // Each field contributes equally to 100% completion
-        const percentage = Math.min(100, Math.round((completedFields / totalWeight) * 100));
-        
-        // Debug logging for profile completion calculation
-        console.log(`📊 Profile completion calculation debug:`, {
-          completedFields,
-          totalWeight,
-          percentage,
-          totalRequiredFields: requiredFields.length,
-          requiredFields: requiredFields.length,
-          optionalFields: optionalFields.length,
-          requiredFieldsList: requiredFields,
-          completedRequiredFieldsList: requiredFields.filter(field => {
-            if (!profile[field]) return false;
-            if (field === 'images') {
-              return (Array.isArray(profile[field]) && profile[field].length > 0) || 
-                     (typeof profile[field] === 'string' && profile[field].trim() !== '');
-            }
-            if (field === 'interests') {
-              return Array.isArray(profile[field]) && profile[field].length > 0;
-            }
-            return typeof profile[field] === 'string' && profile[field].trim() !== '' || 
-                   (typeof profile[field] === 'number' && profile[field] > 0);
-          }),
-          profileValues: requiredFields.reduce((acc, field) => {
-            acc[field] = profile[field];
-            return acc;
-          }, {})
-        });
-        
+        // Images field
+        const imagesVal = profile['images'];
+        if (
+          (Array.isArray(imagesVal) && imagesVal.length > 0) ||
+          (typeof imagesVal === 'string' && imagesVal.trim() !== '')
+        ) {
+          completedFields++;
+        } else {
+          missingFields.push('images');
+        }
+
+        console.log('🔍 Missing required fields:', missingFields);
+
+        const percentage = Math.min(100, Math.round((completedFields / total) * 100));
+        console.log(`📊 Profile completion: ${completedFields}/${total} = ${percentage}%`);
+
         return percentage;
       };
 
