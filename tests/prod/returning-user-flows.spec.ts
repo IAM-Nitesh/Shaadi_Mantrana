@@ -59,8 +59,7 @@ test.describe('Returning User Flows on Production', () => {
     // --- Test Matches UI Navigation ---
     console.log('Testing Matches UI...');
     // Use SPA navigation instead of hard page reload
-    await page.locator('a[href="/matches"]').first().click();
-    await page.waitForLoadState('networkidle');
+    await page.locator('a[href="/matches"], button:has-text("Matches")').first().click();
     
     // Ensure the matches container or empty state is visible
     const matchesHeader = page.locator('h1, h2').filter({ hasText: /Matches|Sacred Connections/i }).first();
