@@ -165,15 +165,13 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
         (user as any).profile?.profileCompleteness ??
         ((user as any).profileCompleted ? 100 : undefined)
       )) || 0;
-      const hasCompletedWizard = (user as any)?.hasCompletedWizard || (user as any)?.profile?.hasCompletedWizard;
-      const canAccess = completeness >= 100 || hasCompletedWizard;
+      
+      const canAccess = completeness >= 100;
       const isFirstLogin = (user as any)?.isFirstLogin;
 
       if (!canAccess) {
         // Show toast notification
-        const message = isFirstLogin
-          ? 'Please complete the onboarding process first'
-          : 'Please complete your profile to access this feature';
+        const message = 'Please complete 100% of your profile (including photo) to access this feature';
 
         toast.error(message, {
           icon: '🔒',
