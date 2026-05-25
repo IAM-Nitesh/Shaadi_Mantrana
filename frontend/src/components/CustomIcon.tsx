@@ -49,6 +49,7 @@ const iconMap: Record<string, string> = {
   'ri-group-line': '/icons/group.svg',
   
   // Admin dashboard icons
+  'ri-bar-chart-box-line': '/icons/settings.svg',
   'ri-user-settings-line': '/icons/user.svg',
   'ri-dashboard-line': '/icons/settings.svg',
   'ri-shield-user-line': '/icons/shield-check.svg',
@@ -97,7 +98,7 @@ const iconMap: Record<string, string> = {
   'ri-t-shirt-line': '/icons/arrow-right.svg',
   'ri-run-line': '/icons/arrow-right.svg',
   'ri-user-voice-line': '/icons/arrow-right.svg',
-  'ri-team-line': '/icons/arrow-right.svg',
+  'ri-team-line': '/icons/group.svg',
   'ri-home-line': '/icons/arrow-right.svg',
   'ri-store-line': '/icons/arrow-right.svg',
   'ri-hotel-line': '/icons/arrow-right.svg',

@@ -189,14 +189,9 @@ test.describe('First-Time User Flows on Production', () => {
     console.log('Finalizing wizard (all 12 mandatory text fields complete)...');
     await page.getByRole('button', { name: /Finalize Vows/i }).click();
 
-    // ── 9. DASHBOARD ──────────────────────────────────────────────────────────
-    await page.waitForURL(/.*\/dashboard/, { timeout: 30000 });
-    console.log('✅ Wizard complete — landed on Dashboard.');
-    await page.waitForLoadState('networkidle');
-
-    // ── 10. PROFILE PAGE ──────────────────────────────────────────────────────
-    console.log('\nNavigating to /profile...');
-    await page.goto('/profile');
+    // ── 9. PROFILE PAGE (Wizard closed) ───────────────────────────────────────
+    // Because the profile is only 92% complete (missing photo), we stay on /profile
+    console.log('Wizard complete — waiting for Profile page to appear...');
     await page.waitForLoadState('networkidle');
     await expect(
       page.locator('h1').filter({ hasText: /(My Profile|Sacred Profile)/i }).first()
