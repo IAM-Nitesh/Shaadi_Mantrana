@@ -386,9 +386,10 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
               <RippleButton
                 onClick={() => setShowDetails(!showDetails)}
                 hapticFeedback="light"
-                className="w-10 h-10 bg-royal-gold/20 hover:bg-royal-gold/40 backdrop-blur-md border border-royal-gold/30 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
+                className="flex items-center space-x-2 px-3 py-1.5 bg-royal-obsidian/60 hover:bg-royal-obsidian/80 backdrop-blur-md border border-royal-gold/30 rounded-full shadow-lg transition-all duration-200"
               >
-                <i className={`ri-${showDetails ? 'arrow-up' : 'information'}-line text-2xl text-royal-gold`}></i>
+                <i className={`ri-${showDetails ? 'arrow-down' : 'information'}-line text-lg text-royal-gold`}></i>
+                <span className="text-xs font-medium text-royal-gold uppercase tracking-wider">{showDetails ? 'Close' : 'Info'}</span>
               </RippleButton>
             </div>
             <div className="flex items-center space-x-2 text-sm opacity-90">

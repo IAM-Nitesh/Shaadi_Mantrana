@@ -98,6 +98,7 @@ export default function LoginPage() {
         <div ref={logoRef} className="pt-12 pb-8 text-center space-y-3">
           <h1 className="text-4xl font-playfair font-bold tracking-tight">
             <span className="text-white">Shaadi</span>
+            {' '}
             <span className="text-royal-gold">Mantrana</span>
           </h1>
           <p className="text-royal-gold/60 font-medium tracking-[0.3em] uppercase text-[10px]">

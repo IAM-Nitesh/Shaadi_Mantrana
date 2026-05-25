@@ -86,7 +86,7 @@ export default function AdminBottomNavigation() {
                 ? 'bg-royal-gold/10 text-royal-gold shadow-md' 
                 : 'hover:bg-royal-gold/5'
             }`}>
-              <CustomIcon name="ri-bar-chart-box-line" className="text-xl" />
+              <CustomIcon name="ri-dashboard-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Dashboard</span>
           </a>
@@ -104,7 +104,7 @@ export default function AdminBottomNavigation() {
                 ? 'bg-royal-gold/10 text-royal-gold shadow-md' 
                 : 'hover:bg-royal-gold/5'
             }`}>
-              <CustomIcon name="ri-team-line" className="text-xl" />
+              <CustomIcon name="ri-group-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Users</span>
           </a>

@@ -38,6 +38,8 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
     }
   };
 
+  const imageUrl = Array.isArray(data.images) ? (data.images.length > 0 ? data.images[0] : null) : data.images;
+
   return (
     <div className="space-y-8">
       {/* Photo Upload Section */}
@@ -46,9 +48,9 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
           onClick={handleImageClick}
           className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-royal-gold/30 bg-royal-gold/5 flex items-center justify-center cursor-pointer group"
         >
-          {data.images ? (
+          {imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '' ? (
             <Image 
-              src={data.images} 
+              src={imageUrl} 
               alt="Profile" 
               fill 
               className="object-cover group-hover:scale-110 transition-transform duration-500"

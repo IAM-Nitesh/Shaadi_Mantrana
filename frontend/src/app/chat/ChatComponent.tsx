@@ -352,13 +352,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               toast.dismiss(t.id);
               await performUnmatch();
             }}
-            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+            className="px-4 py-1.5 bg-rose-900/80 border border-rose-500/50 text-rose-200 rounded-full text-sm font-medium hover:bg-rose-900"
           >
-            Yes
+            Yes, Unmatch
           </button>
           <button
             onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1 bg-gray-100 rounded text-sm"
+            className="px-4 py-1.5 bg-royal-glass border border-royal-gold/30 text-royal-gold rounded-full text-sm font-medium hover:bg-royal-glass/60"
           >
             No
           </button>
@@ -648,7 +648,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               disabled={isUnmatching}
               title="Unmatch"
               aria-label="Unmatch"
-              className={`px-3 py-1 bg-red-600 text-white rounded-full text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${isUnmatching ? 'shimmer-button' : ''}`}
+              className={`px-4 py-1.5 bg-rose-900/40 border border-rose-500/30 text-rose-300 hover:bg-rose-900/60 hover:text-rose-200 rounded-full text-sm font-medium transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isUnmatching ? 'shimmer-button' : ''}`}
               aria-busy={isUnmatching}
             >
               {isUnmatching ? 'Unmatching...' : 'Unmatch'}
@@ -820,11 +820,12 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           <motion.button
             onClick={sendMessage}
             disabled={!message.trim() || isSending}
-            className="w-14 h-14 bg-royal-gold/10 border-2 border-royal-gold/20 rounded-2xl flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.1)] hover:shadow-[0_0_25px_rgba(212,175,55,0.3)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-royal-gold/50 hover:bg-royal-gold/20 android-touch-target"
+            aria-label="Send"
+            className="w-14 h-14 bg-gradient-to-br from-royal-gold to-royal-gold-light border-2 border-royal-gold-light/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed android-touch-target"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-royal-gold" />
+            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-royal-obsidian" />
           </motion.button>
         </div>
         
