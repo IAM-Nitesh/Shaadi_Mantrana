@@ -41,7 +41,6 @@ function MatchesContent() {
   const [likedProfiles, setLikedProfiles] = useState<LikedProfile[]>([]);
   const [mutualMatches, setMutualMatches] = useState<MutualMatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showProfileIncomplete, setShowProfileIncomplete] = useState(false);
   const [showMatchCelebration, setShowMatchCelebration] = useState(false);
   const [hasShownMatchToast, setHasShownMatchToast] = useState(false);
   
@@ -183,50 +182,7 @@ function MatchesContent() {
     }
   };
 
-  // Check onboarding completion
-  useEffect(() => {
-    async function checkAccess() {
-      try {
-        logger.debug('🔍 Matches: Checking access control...');
-        
-        // Use server-side authentication data
-        if (!user) {
-          logger.debug('🚫 No user data available - waiting for user data');
-          return; // Don't show popup yet, wait for user data
-        }
 
-        // Access Control Logic: Only allow access if profileCompleteness is 100%
-        const profileCompleteness = user.profileCompleteness || 0;
-        
-        logger.debug('🔍 Matches: Access control check:', {
-          profileCompleteness,
-          userEmail: user.email,
-          userRole: user.role,
-          isApproved: user.isApprovedByAdmin,
-          isFirstLogin: user.isFirstLogin
-        });
-        
-        // Check if profile is complete (should be 100 for complete profiles)
-        if (profileCompleteness < 100) {
-          logger.debug('🚫 Access denied: Profile incomplete - redirecting to profile');
-          router.replace('/profile');
-          return;
-        } else {
-          logger.debug('✅ Access granted: Profile complete - proceeding to matches');
-          setShowProfileIncomplete(false);
-          setLoading(false);
-        }
-      } catch (error) {
-        logger.error('Error checking matches access:', error);
-        router.replace('/profile');
-      }
-    }
-
-    // Only run check if user is available
-    if (user) {
-      checkAccess();
-    }
-  }, [user, router]);
 
   // GSAP animations - simplified to remove bounce effects
   useEffect(() => {
@@ -300,29 +256,7 @@ function MatchesContent() {
 
   // GSAP animation for filter modal
 
-  if (showProfileIncomplete) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="mb-6">
-            <CustomIcon name="ri-user-heart-line" className="text-6xl text-pink-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Complete Your Profile</h2>
-            <p className="text-gray-600 mb-6">
-              Please complete 100% of your profile before accessing other features. This helps us provide you with better matches.
-            </p>
-          </div>
-          
-          <a 
-            href="/profile"
-            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <CustomIcon name="ri-user-settings-line" className="mr-2" />
-            Complete Profile
-          </a>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-royal-obsidian">

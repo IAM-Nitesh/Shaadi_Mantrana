@@ -6,6 +6,10 @@ yarn-error.log*
 .pnpm-debug.log*
 .yarn/
 
+
+
+
+
 # Build outputs (Next.js, backend, frontend)
 .next/
 out/
@@ -28,6 +32,7 @@ android/**/*.keystore
 android/**/*.jks
 keystore.properties
 android/keystore.properties
+android/app/google-services.json
 
 
 # Environment variables (track only .env.example or .env.template)

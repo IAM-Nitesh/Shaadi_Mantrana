@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import RoyalIcon from '../../components/RoyalIcon';
 import CustomIcon from '../../components/CustomIcon';
 import AdminRouteGuard from '../../components/AdminRouteGuard';
 import { safeGsap } from '../../components/SafeGsap';
@@ -812,7 +812,7 @@ function AdminPageContent() {
           <div className="relative z-10 text-center">
             {/* Brand Logo */}
             <div className="w-32 h-32 mx-auto mb-8 animate-pulse">
-              <Image src="/icon.png" alt="Shaadi Mantrana" width={128} height={128} className="w-full h-full object-contain" />
+              <RoyalIcon size="4xl" />
             </div>
 
             {/* Loading Spinner */}

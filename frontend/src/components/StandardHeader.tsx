@@ -66,22 +66,22 @@ export default function StandardHeader({
           )}
           
           {title ? (
-            <h1 className="text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold text-royal-gold font-playfair">
               {title}
             </h1>
           ) : (
             <div>
-              <h1 className="text-xl font-bold tracking-wide leading-tight" style={{ fontFamily: "'Inter', 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', sans-serif" }}>
-                <span className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent font-extrabold letter-spacing-tight">
+              <h1 className="text-xl font-bold tracking-wide leading-tight font-playfair">
+                <span className="text-white">
                   Shaadi
                 </span>
-                <span className="bg-gradient-to-br from-rose-600 via-pink-600 to-rose-700 bg-clip-text text-transparent font-light ml-1 letter-spacing-wide">
+                <span className="text-royal-gold ml-1">
                   Mantrana
                 </span>
               </h1>
               <div className="flex items-center justify-start space-x-1 mt-1">
-                <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-rose-400 rounded-full"></div>
-                <div className="w-3 h-0.5 bg-gradient-to-r from-rose-400 to-gray-300 rounded-full"></div>
+                <div className="w-6 h-0.5 bg-gradient-to-r from-transparent to-royal-gold/40 rounded-full"></div>
+                <div className="w-3 h-0.5 bg-gradient-to-r from-royal-gold/40 to-transparent rounded-full"></div>
               </div>
             </div>
           )}

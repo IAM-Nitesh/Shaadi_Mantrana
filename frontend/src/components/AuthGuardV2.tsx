@@ -64,15 +64,15 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
     const currentPath = pathname || '';
     const requiresFullProfile = currentPath.includes('/dashboard') || currentPath.includes('/matches');
     
-    if (requiresFullProfile && user && (user?.profileCompleteness ?? 0) < 100 && !user.hasCompletedWizard) {
-      console.warn(`🚫 AuthGuardV2: Access to ${currentPath} requires 100% profile completion (current: ${user?.profileCompleteness ?? 0}%) and wizard not completed`);
+    if (requiresFullProfile && user && (user?.profileCompleteness ?? 0) < 100) {
+      console.warn(`🚫 AuthGuardV2: Access to ${currentPath} requires 100% profile completion (current: ${user?.profileCompleteness ?? 0}%)`);
       router.replace('/profile');
       return;
     }
 
     // Check profile completeness requirement passed via prop
-    if (requiresCompleteProfile && user && (user?.profileCompleteness ?? 0) < 100 && !user.hasCompletedWizard) {
-      console.warn('📝 AuthGuardV2: Profile incomplete and wizard not finished, redirecting to profile page');
+    if (requiresCompleteProfile && user && (user?.profileCompleteness ?? 0) < 100) {
+      console.warn('📝 AuthGuardV2: Profile incomplete, redirecting to profile page');
       router.replace('/profile');
       return;
     }

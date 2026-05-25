@@ -229,8 +229,7 @@ function SmoothNavigation({ items, className = '' }: SmoothNavigationProps) {
         (user as any).profile?.profileCompleteness ??
         ((user as any).profileCompleted ? 100 : undefined)
       )) || 0;
-      const hasCompletedWizard = (user as any)?.hasCompletedWizard || (user as any)?.profile?.hasCompletedWizard;
-      const canAccess = user ? (completeness >= 100 || hasCompletedWizard) : false;
+      const canAccess = user ? (completeness >= 100) : false;
       const isFirstLogin = user ? user.isFirstLogin : false;
       const isDisabled = isRestrictedRoute && !canAccess;
 

@@ -113,7 +113,7 @@ export class OnboardingService {
     
     // Access Control Logic: Only allow access if profileCompleteness is 100%
   const completeness = getUserCompleteness(user);
-  return completeness >= 100 || user.hasCompletedWizard;
+  return completeness >= 100;
   }
 
   /**
@@ -139,9 +139,9 @@ export class OnboardingService {
       return '/profile';
     }
  
-    // Case 2: Returning user with incomplete profile - only if wizard not completed
+    // Case 2: Returning user with incomplete profile
     const completeness = getUserCompleteness(user);
-    if (completeness < 100 && !user.hasCompletedWizard) {
+    if (completeness < 100) {
       return '/profile';
     }
 

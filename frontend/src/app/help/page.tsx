@@ -2,6 +2,7 @@
 
 ;
 import CustomIcon from '../../components/CustomIcon';
+import RoyalIcon from '../../components/RoyalIcon';
 import { ContactService } from '../../services/contact-service';
 
 export default function Help() {
@@ -142,7 +143,7 @@ export default function Help() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3">
               <div className="w-8 h-8 bg-royal-glass border border-royal-glass-border border-2 border-rose-400 rounded-lg flex items-center justify-center shadow-sm">
-                <img src="/icon.png" alt="Shaadi Mantrana" className="w-5 h-5 object-contain" />
+                <RoyalIcon size="sm" />
               </div>
               <div>
                 <h3 className="text-lg font-black tracking-tight">

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import logger from '../utils/logger';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import RoyalIcon from './RoyalIcon';
 import { ProfileService } from '../services/profile-service';
 
 interface OnboardingOverlayProps {
@@ -139,13 +139,7 @@ export default function OnboardingOverlay({ isVisible, onComplete }: OnboardingO
                   transition={{ duration: 2, repeat: Infinity }}
                   className="w-24 h-24 mx-auto bg-gradient-to-br from-royal-gold/20 to-transparent rounded-full flex items-center justify-center border border-royal-gold/30 p-5"
                 >
-                  <Image
-                    src="/icon.png"
-                    alt="Shaadi Mantrana Logo"
-                    width={60}
-                    height={60}
-                    className="filter brightness-125 contrast-125"
-                  />
+                  <RoyalIcon size="3xl" />
                 </motion.div>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border border-royal-gold/10 rounded-full animate-spin-slow" />
               </div>
