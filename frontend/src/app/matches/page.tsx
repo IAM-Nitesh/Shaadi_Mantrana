@@ -300,14 +300,16 @@ function MatchesContent() {
         {/* Content with Pull-to-Refresh */}
         <div className="android-scroll">
           {loading ? (
-            <div className="space-y-4 p-4">
+            <div className="grid gap-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 p-4 bg-royal-gold/5 border border-royal-gold/10 rounded-xl">
-                  <RoyalLoader variant="skeleton" className="w-12 h-12 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <RoyalLoader variant="skeleton" className="w-3/5 h-4 rounded-md" />
-                    <RoyalLoader variant="skeleton" className="w-2/5 h-3.5 rounded-md" />
+                <div key={i} className="flex items-center space-x-4 p-6 bg-royal-gold/5 border border-royal-gold/10 rounded-2xl shadow-lg">
+                  <RoyalLoader variant="skeleton" className="w-20 h-20 rounded-full" />
+                  <div className="flex-1 space-y-3">
+                    <RoyalLoader variant="skeleton" className="w-3/5 h-5 rounded-md" />
+                    <RoyalLoader variant="skeleton" className="w-2/5 h-4 rounded-md" />
+                    <RoyalLoader variant="skeleton" className="w-4/5 h-3.5 rounded-md" />
                   </div>
+                  <RoyalLoader variant="skeleton" className="w-14 h-14 rounded-full" />
                 </div>
               ))}
             </div>
@@ -317,14 +319,14 @@ function MatchesContent() {
                 <div className="space-y-4">
                   {mutualMatches.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center">
-                        <CustomIcon name="ri-heart-line" className="text-4xl text-pink-400" />
+                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-royal-gold/20 to-royal-gold/5 border border-royal-gold/20 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+                        <CustomIcon name="ri-heart-line" className="text-4xl text-royal-gold" />
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-800 mb-2">No Matches Yet</h3>
-                      <p className="text-gray-600 mb-6">Start swiping to find your perfect match!</p>
+                      <h3 className="text-xl font-semibold text-royal-gold mb-2">No Matches Yet</h3>
+                      <p className="text-royal-gold-light/60 mb-8">Start swiping to find your perfect match!</p>
                       <a
                         href="/dashboard"
-                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                        className="button-royal shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] px-8"
                       >
                         Start Discovering
                       </a>
@@ -362,11 +364,11 @@ function MatchesContent() {
                             </div>
                             
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-800 mb-1">
+                              <h3 className="font-semibold text-royal-gold mb-1">
                                 {match.profile.profile.name}
                               </h3>
                               {match.profile.profile.profession && (
-                                <p className="text-sm text-gray-500 mb-3">
+                                <p className="text-sm text-royal-gold-light/60 mb-3">
                                   {match.profile.profile.profession}
                                 </p>
                               )}
@@ -379,8 +381,8 @@ function MatchesContent() {
                               </div>
                             </div>
                             
-                            <div className="flex items-center justify-center w-14 h-14 text-pink-500">
-                              <CustomIcon name="ri-chat-3-line" className="text-xl" />
+                            <div className="flex items-center justify-center w-14 h-14 text-royal-gold/80 hover:text-royal-gold transition-colors">
+                              <CustomIcon name="ri-chat-3-line" className="text-2xl" />
                             </div>
                           </div>
                         </a>
@@ -394,37 +396,40 @@ function MatchesContent() {
                 <div className="space-y-4">
                   {likedProfiles.length === 0 ? (
                     <div className="text-center py-12">
-                      <CustomIcon name="ri-user-add-line" className="text-6xl text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Likes Yet</h3>
-                      <p className="text-gray-500 mb-6">Profiles you like will appear here</p>
+                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-royal-gold/20 to-royal-gold/5 border border-royal-gold/20 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+                        <CustomIcon name="ri-user-add-line" className="text-4xl text-royal-gold" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-royal-gold mb-2">No Likes Yet</h3>
+                      <p className="text-royal-gold-light/60 mb-8">Profiles you like will appear here</p>
                       <a
                         href="/dashboard"
-                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
+                        className="button-royal shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] px-8"
                       >
                         Start Discovering
                       </a>
                     </div>
                   ) : (
-                    likedProfiles.map((likedProfile) => (
+                    <div className="grid gap-4">
+                    {likedProfiles.map((likedProfile) => (
                       likedProfile.isMutualMatch ? (
                         <a
                           key={likedProfile.likeId}
                           href={`/chat?id=${likedProfile.connectionId}`}
                           data-testid="profile-card"
-                          className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer hover:border-pink-200"
+                          className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold/30"
                         >
                           <div className="flex items-center space-x-4">
                             <div className="relative">
-                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-royal-gold/20 to-royal-gold/10 flex items-center justify-center overflow-hidden shadow-lg border border-royal-gold/20">
                                 {profileImages.get(likedProfile.profile._id) ? (
                                   <ProfileImage
                                     src={profileImages.get(likedProfile.profile._id)!}
                                     alt={likedProfile.profile.profile.name}
-                                    size="md"
+                                    size="lg"
                                     className="w-full h-full"
                                   />
                                 ) : (
-                                  <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
+                                  <CustomIcon name="ri-user-line" className="text-3xl text-gray-400" />
                                 )}
                               </div>
                               <div className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center">
@@ -433,10 +438,10 @@ function MatchesContent() {
                             </div>
                             
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-800 mb-1">
+                              <h3 className="font-semibold text-royal-gold mb-1">
                                 {likedProfile.profile.profile.name}
                               </h3>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-royal-gold-light/60">
                                 Liked on {likedProfile.likeDate ? new Date(likedProfile.likeDate).toLocaleDateString('en-US', {
                                   year: 'numeric',
                                   month: 'short',
@@ -445,34 +450,34 @@ function MatchesContent() {
                               </p>
                             </div>
                             
-                            <div className="flex items-center justify-center w-12 h-12 text-pink-500">
-                              <CustomIcon name="ri-chat-3-line" className="text-xl" />
+                            <div className="flex items-center justify-center w-14 h-14 text-royal-gold/80 hover:text-royal-gold transition-colors">
+                              <CustomIcon name="ri-chat-3-line" className="text-2xl" />
                             </div>
                           </div>
                         </a>
                       ) : (
-                        <div key={likedProfile.likeId} data-testid="profile-card" className="profile-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200 hover:shadow-md">
+                        <div key={likedProfile.likeId} data-testid="profile-card" className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl">
                           <div className="flex items-center space-x-4">
                             <div className="relative">
-                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-royal-gold/20 to-royal-gold/10 flex items-center justify-center overflow-hidden shadow-lg border border-royal-gold/20">
                                 {profileImages.get(likedProfile.profile._id) ? (
                                   <ProfileImage
                                     src={profileImages.get(likedProfile.profile._id)!}
                                     alt={likedProfile.profile.profile.name}
-                                    size="md"
+                                    size="lg"
                                     className="w-full h-full"
                                   />
                                 ) : (
-                                  <CustomIcon name="ri-user-line" className="text-2xl text-gray-400" />
+                                  <CustomIcon name="ri-user-line" className="text-3xl text-gray-400" />
                                 )}
                               </div>
                             </div>
                             
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-800 mb-1">
+                              <h3 className="font-semibold text-royal-gold mb-1">
                                 {likedProfile.profile.profile.name}
                               </h3>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-royal-gold-light/60">
                                 Liked on {likedProfile.likeDate ? new Date(likedProfile.likeDate).toLocaleDateString('en-US', {
                                   year: 'numeric',
                                   month: 'short',
@@ -481,13 +486,14 @@ function MatchesContent() {
                               </p>
                             </div>
                             
-                            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                              <CustomIcon name="ri-heart-line" className="text-gray-400 text-xl" />
+                            <div className="flex items-center justify-center w-14 h-14 bg-royal-obsidian/40 border border-royal-gold/20 rounded-full">
+                              <CustomIcon name="ri-heart-line" className="text-royal-gold/50 text-2xl" />
                             </div>
                           </div>
                         </div>
                       )
-                    ))
+                    ))}
+                    </div>
                   )}
                 </div>
               )}
