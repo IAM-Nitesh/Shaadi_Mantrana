@@ -168,15 +168,10 @@ export default function RoyalLoader({
           safeGsap.to?.(sparkRing, { rotation: 360, duration: 8, repeat: -1, ease: 'none', svgOrigin: '100 100' });
         }
         
-        // Celestial Aura: Breathing Background
-        safeGsap.to?.(aura, { 
-          opacity: variant === 'spark' ? 0.6 : 0.3, 
-          scale: variant === 'spark' ? 1.1 : 1.15,
-          duration: variant === 'spark' ? 1.5 : 3, 
-          repeat: -1, 
-          yoyo: true, 
-          ease: 'sine.inOut',
-          svgOrigin: '100 100'
+        // Celestial Aura: Static Background (Removed breathing effect)
+        safeGsap.set?.(aura, { 
+          opacity: variant === 'spark' ? 0.8 : 0.4,
+          scale: 1
         });
 
         // Diamond Glimmer Engine: Randomized light catches
@@ -192,15 +187,10 @@ export default function RoyalLoader({
           });
         });
         
-        // Heartbeat pulse - Static at center
-        safeGsap.to?.(inner, { 
-          scale: 1.1, 
-          filter: `brightness(1.3) drop-shadow(0 0 ${variant === 'spark' ? '10px' : '15px'} rgba(249, 224, 118, 0.5))`,
-          duration: variant === 'spark' ? 1.5 : 3, 
-          repeat: -1, 
-          yoyo: true, 
-          ease: 'sine.inOut',
-          svgOrigin: '100 100'
+        // Static center (Removed heartbeat pulse)
+        safeGsap.set?.(inner, { 
+          scale: 1, 
+          filter: `drop-shadow(0 0 ${variant === 'spark' ? '5px' : '10px'} rgba(212, 175, 55, 0.3))`
         });
       }
 
