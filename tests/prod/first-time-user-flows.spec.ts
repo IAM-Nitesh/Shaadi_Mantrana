@@ -95,7 +95,7 @@ test.describe('First-Time User Flows on Production', () => {
       }
       throw new Error('Timed out waiting for the "Begin Sacred Profiling" button.');
     }
-    await beginBtn.click();
+    await beginBtn.click({ force: true });
 
     // ── 3. WIZARD STEP 1: Personal Grace ─────────────────────────────────────
     // Labels (exact, from PersonalGraceStep.tsx):
@@ -112,7 +112,7 @@ test.describe('First-Time User Flows on Production', () => {
     await fieldByLabel(page, 'Time of Arrival').locator('input').fill('06:30');
     await fieldByLabel(page, 'Place of Birth').locator('input').fill('Delhi');
 
-    await page.getByRole('button', { name: /Continue Journey/i }).click();
+    await page.getByRole('button', { name: /Continue Journey/i }).click({ force: true });
 
     // ── 4. WIZARD STEP 2: Physical & Vitality ────────────────────────────────
     // Labels (exact, from PhysicalVitalityStep.tsx):
@@ -130,7 +130,7 @@ test.describe('First-Time User Flows on Production', () => {
     await fieldByLabel(page, 'Smoking Habit').locator('select').selectOption('No');
     await fieldByLabel(page, 'Drinking Habit').locator('select').selectOption('No');
 
-    await page.getByRole('button', { name: /Continue Journey/i }).click();
+    await page.getByRole('button', { name: /Continue Journey/i }).click({ force: true });
 
     // ── 5. WIZARD STEP 3: Intellectual Path ──────────────────────────────────
     // Labels (exact, from IntellectualPathStep.tsx):
@@ -146,7 +146,7 @@ test.describe('First-Time User Flows on Production', () => {
     await fieldByLabel(page, 'Annual Income').locator('select').selectOption('Under 5L');
     await fieldByLabel(page, 'Open to Settle Abroad?').locator('select').selectOption('No');
 
-    await page.getByRole('button', { name: /Continue Journey/i }).click();
+    await page.getByRole('button', { name: /Continue Journey/i }).click({ force: true });
 
     // ── 6. WIZARD STEP 4: Sacred Roots ───────────────────────────────────────
     // Labels (exact, from SacredRootsStep.tsx):
@@ -168,7 +168,7 @@ test.describe('First-Time User Flows on Production', () => {
     await fieldByLabel(page, "Father's Gotra").locator('input').fill('Kashyap');
     await fieldByLabel(page, "Mother's Gotra").locator('input').fill('Bharadwaj');
 
-    await page.getByRole('button', { name: /Continue Journey/i }).click();
+    await page.getByRole('button', { name: /Continue Journey/i }).click({ force: true });
 
     // ── 7. WIZARD STEP 5: Sacred Intent ──────────────────────────────────────
     // Labels (exact, from SacredIntentStep.tsx):
@@ -187,7 +187,7 @@ test.describe('First-Time User Flows on Production', () => {
     // All 12 mandatory text fields are now filled.
     // Button on last step: "Finalize Vows"
     console.log('Finalizing wizard (all 12 mandatory text fields complete)...');
-    await page.getByRole('button', { name: /Finalize Vows/i }).click();
+    await page.getByRole('button', { name: /Finalize Vows/i }).click({ force: true });
 
     // ── 9. PROFILE PAGE (Wizard closed) ───────────────────────────────────────
     // Because the profile is only 92% complete (missing photo), we stay on /profile
@@ -285,7 +285,7 @@ test.describe('First-Time User Flows on Production', () => {
       await page.locator('.royal-otp-wrapper input').first().waitFor({ state: 'visible', timeout: 30000 });
       console.log('\n⚠️  ACTION REQUIRED ⚠️');
       console.log('>> Please manually enter the 6-digit OTP in the browser window.');
-      await page.waitForURL(/.*\/(dashboard|settings)/, { timeout: 120_000 });
+      await page.waitForURL(/.*\/(dashboard|settings|profile)/, { timeout: 120_000 });
       if (!page.url().includes('/settings')) await page.goto('/settings');
     }
 

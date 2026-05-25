@@ -144,7 +144,7 @@ export default function Terms() {
             <div>
               <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">13. Changes to Terms</h2>
               <p className="text-white/80 font-inter leading-relaxed">
-                We may modify these Terms at any time, with notice provided via the platform or email, as required under the Information Technology Rules, 2021. Continued use after changes constitutes acceptance of the updated Terms.
+                We may modify these Terms at any time, with notice provided via the platform or SMS, as required under the Information Technology Rules, 2021. Continued use after changes constitutes acceptance of the updated Terms.
               </p>
             </div>
 

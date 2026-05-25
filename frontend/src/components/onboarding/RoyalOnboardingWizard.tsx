@@ -114,7 +114,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold-dark via-royal-gold to-royal-gold-light shadow-[0_0_15px_rgba(212,175,55,0.8)]"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.8)]"
           />
           {/* Glowing head of the progress bar */}
           <motion.div 
@@ -167,7 +167,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
           <button
             onClick={handleNext}
             disabled={isSaving}
-            className={`flex-1 group relative overflow-hidden bg-gradient-to-r from-royal-gold-dark via-royal-gold to-royal-gold-light text-royal-obsidian py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all active:scale-95 disabled:opacity-50 ${isSaving ? 'shimmer-button' : ''}`}
+            className={`flex-1 group relative overflow-hidden bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold text-gray-900 py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all active:scale-95 disabled:opacity-50 ${isSaving ? 'shimmer-button' : ''}`}
           >
             <span className="relative z-10 flex items-center justify-center">
               {isSaving ? (
