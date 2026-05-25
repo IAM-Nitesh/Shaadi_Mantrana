@@ -24,31 +24,33 @@ const notificationStyles = {
   },
   notification: {
     padding: '12px 16px',
-    borderRadius: '6px',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), 0 0 10px rgba(212, 175, 55, 0.1)',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     animation: 'slideIn 0.3s ease-out',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(18, 18, 18, 0.95)',
     marginBottom: '10px',
-    borderLeft: '4px solid #ccc',
+    border: '1px solid rgba(212, 175, 55, 0.2)',
+    borderLeft: '4px solid rgba(212, 175, 55, 0.4)',
+    backdropFilter: 'blur(12px)',
   },
   info: {
-    borderLeftColor: '#3b82f6', // blue
-    backgroundColor: '#eff6ff',
+    borderLeftColor: '#D4AF37', // royal-gold
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
   },
   warning: {
-    borderLeftColor: '#f59e0b', // amber
-    backgroundColor: '#fffbeb',
+    borderLeftColor: '#F9E29C', // royal-gold-light
+    backgroundColor: 'rgba(249, 226, 156, 0.1)',
   },
   error: {
-    borderLeftColor: '#ef4444', // red
-    backgroundColor: '#fef2f2',
+    borderLeftColor: '#800000', // royal-crimson
+    backgroundColor: 'rgba(128, 0, 0, 0.15)',
   },
   success: {
-    borderLeftColor: '#10b981', // green
-    backgroundColor: '#ecfdf5',
+    borderLeftColor: '#D4AF37', // royal-gold
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
   },
   content: {
     flex: 1,
@@ -59,7 +61,8 @@ const notificationStyles = {
     fontSize: '14px',
     fontWeight: 500,
     lineHeight: '1.4',
-    color: '#111827',
+    color: '#F9E29C', // royal-gold-light
+    fontFamily: 'Inter, system-ui, sans-serif',
   },
   action: {
     marginTop: '8px',
@@ -73,7 +76,7 @@ const notificationStyles = {
     fontSize: '12px',
     fontWeight: 600,
     textDecoration: 'underline',
-    color: '#2563eb',
+    color: '#D4AF37', // royal-gold
   },
   closeButton: {
     backgroundColor: 'transparent',
@@ -86,8 +89,9 @@ const notificationStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
-    color: '#6b7280',
-    fontSize: '16px',
+    color: '#D4AF37', // royal-gold
+    fontSize: '20px',
+    opacity: 0.8,
   }
 };
 

@@ -73,36 +73,36 @@ class DatabaseErrorBoundary extends Component<Props, State> {
           case 'network':
             return {
               icon: Wifi,
-              color: 'text-blue-500',
-              bgColor: 'bg-blue-50',
-              borderColor: 'border-blue-200',
+              color: 'text-royal-gold',
+              bgColor: 'bg-royal-gold/10',
+              borderColor: 'border-royal-gold/30',
               title: 'Network Connection Issue',
               description: 'Unable to connect to the server. Please check your internet connection.'
             };
           case 'database':
             return {
               icon: Database,
-              color: 'text-purple-500',
-              bgColor: 'bg-purple-50',
-              borderColor: 'border-purple-200',
+              color: 'text-royal-gold',
+              bgColor: 'bg-royal-gold/10',
+              borderColor: 'border-royal-gold/30',
               title: 'Database Connection Issue',
               description: 'The database is temporarily unavailable. Our team is working to resolve this.'
             };
           case 'auth':
             return {
               icon: AlertTriangle,
-              color: 'text-orange-500',
-              bgColor: 'bg-orange-50',
-              borderColor: 'border-orange-200',
+              color: 'text-royal-gold',
+              bgColor: 'bg-royal-gold/10',
+              borderColor: 'border-royal-gold/30',
               title: 'Authentication Issue',
               description: 'There was a problem with authentication. Please try logging in again.'
             };
           default:
             return {
               icon: AlertTriangle,
-              color: 'text-red-500',
-              bgColor: 'bg-red-50',
-              borderColor: 'border-red-200',
+              color: 'text-royal-crimson',
+              bgColor: 'bg-royal-crimson/10',
+              borderColor: 'border-royal-crimson/30',
               title: 'Unexpected Error',
               description: 'Something went wrong. Please try again or contact support if the issue persists.'
             };
@@ -113,8 +113,8 @@ class DatabaseErrorBoundary extends Component<Props, State> {
       const Icon = config.icon;
       
       return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-4">
-          <div className={`max-w-md w-full ${config.bgColor} border ${config.borderColor} rounded-2xl p-8 shadow-lg`}>
+        <div className="min-h-screen bg-royal-obsidian flex items-center justify-center p-4">
+          <div className={`max-w-md w-full ${config.bgColor} border ${config.borderColor} rounded-2xl p-8 shadow-2xl backdrop-blur-sm`}>
             <div className="text-center">
               {/* Icon */}
               <div className={`inline-flex items-center justify-center w-16 h-16 ${config.bgColor} border ${config.borderColor} rounded-full mb-6`}>
@@ -122,19 +122,19 @@ class DatabaseErrorBoundary extends Component<Props, State> {
               </div>
               
               {/* Title */}
-              <h2 className="text-xl font-semibold text-gray-800 mb-3">
+              <h2 className="text-xl font-semibold text-royal-gold font-playfair mb-3">
                 {config.title}
               </h2>
               
               {/* Description */}
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-royal-gold/80 font-inter mb-6 leading-relaxed">
                 {config.description}
               </p>
               
               {/* Error details (only in development) */}
               {process.env.NODE_ENV === 'development' && error && (
-                <div className="mb-6 p-3 bg-gray-100 border border-gray-200 rounded-lg text-left">
-                  <p className="text-xs font-mono text-gray-700 break-all">
+                <div className="mb-6 p-3 bg-black/40 border border-royal-glass-border rounded-lg text-left">
+                  <p className="text-xs font-mono text-royal-gold-light break-all">
                     {error.message}
                   </p>
                 </div>
@@ -144,7 +144,7 @@ class DatabaseErrorBoundary extends Component<Props, State> {
               <div className="space-y-3">
                 <button
                   onClick={this.handleRetry}
-                  className="w-full bg-blue-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-royal-gold text-royal-obsidian px-6 py-3 rounded-xl font-medium hover:bg-royal-gold-light transition-colors duration-200 flex items-center justify-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Try Again
@@ -152,16 +152,16 @@ class DatabaseErrorBoundary extends Component<Props, State> {
                 
                 <button
                   onClick={this.handleReload}
-                  className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors duration-200"
+                  className="w-full bg-royal-glass border border-royal-glass-border text-royal-gold px-6 py-3 rounded-xl font-medium hover:bg-royal-gold/10 transition-colors duration-200"
                 >
                   Reload Page
                 </button>
               </div>
               
               {/* Status indicator */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-xs text-gray-500">
-                  Status: <span className="font-medium">{errorType.charAt(0).toUpperCase() + errorType.slice(1)} Error</span>
+              <div className="mt-6 pt-6 border-t border-royal-glass-border">
+                <p className="text-xs text-royal-gold/60">
+                  Status: <span className="font-medium text-royal-gold">{errorType.charAt(0).toUpperCase() + errorType.slice(1)} Error</span>
                 </p>
               </div>
             </div>

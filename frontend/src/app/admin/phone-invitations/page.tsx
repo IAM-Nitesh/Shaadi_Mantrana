@@ -157,9 +157,9 @@ export default function PhoneInvitations() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'sent':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
+      case 'used':
+        return 'bg-emerald-900/40 text-emerald-400';
+      case 'expired':
         return 'bg-yellow-100 text-yellow-800';
       case 'accepted':
         return 'bg-blue-100 text-blue-800';
@@ -262,8 +262,10 @@ export default function PhoneInvitations() {
                   <tr key={invitation._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-                          <CustomIcon name="ri-phone-line" className="text-lg" />
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 bg-gradient-to-r from-royal-obsidian to-royal-glass-border border border-royal-gold/30 rounded-full flex items-center justify-center text-royal-gold font-semibold shadow-md">
+                            <CustomIcon name="ri-phone-line" className="text-lg" />
+                          </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{invitation.phoneNumber || invitation.email || 'No contact'}</div>

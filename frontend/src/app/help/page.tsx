@@ -44,8 +44,8 @@ export default function Help() {
         {/* Contact Support */}
         <div className="card-modern p-6 mb-6 transform hover:scale-105 transition-all duration-200">
           <div className="text-center">
-            <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CustomIcon name="ri-customer-service-line" className="text-2xl text-rose-500" />
+            <div className="w-16 h-16 bg-royal-gold/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CustomIcon name="ri-customer-service-line" className="text-2xl text-royal-gold" />
             </div>
             <h2 className="text-xl font-semibold text-royal-gold font-playfair mb-2">Need Help?</h2>
             <p className="text-white/80 font-inter mb-6">Our admin team is here to help you with any questions or issues.</p>
@@ -53,14 +53,14 @@ export default function Help() {
             <div className="space-y-3">
               <button
                 onClick={() => ContactService.handleEmailContact()}
-                className="flex items-center justify-center space-x-3 w-full bg-royal-glass border border-royal-glass-border border-2 border-rose-500 text-rose-500 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className="flex items-center justify-center space-x-3 w-full bg-royal-glass border border-royal-glass-border border-2 border-royal-gold text-royal-gold py-3 rounded-xl font-medium hover:bg-royal-gold/10 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 <CustomIcon name="ri-mail-line" />
                 <span>Email Support</span>
               </button>
               <button
                 onClick={() => ContactService.handlePhoneContact()}
-                className="flex items-center justify-center space-x-3 w-full border border-rose-500 text-rose-500 py-3 rounded-xl font-medium !rounded-button hover:bg-rose-50 transition-all duration-200 transform hover:scale-105"
+                className="flex items-center justify-center space-x-3 w-full border border-royal-gold text-royal-gold py-3 rounded-xl font-medium !rounded-button hover:bg-royal-gold/10 transition-all duration-200 transform hover:scale-105"
               >
                 <CustomIcon name="ri-phone-line" />
                 <span>Call Admin</span>
@@ -131,7 +131,7 @@ export default function Help() {
                 'Data Export Request',
                 'I would like to request an export of all my personal data from Shaadi Mantrana app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nEmail associated with account: [Please specify]\nPhone number: [Please specify]'
               )}
-              className="inline-block bg-royal-glass border border-royal-glass-border border-2 border-rose-500 text-rose-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-50 transition-all duration-200 shadow-lg"
+              className="inline-block bg-royal-glass border border-royal-glass-border border-2 border-royal-gold text-royal-gold px-4 py-2 rounded-lg text-sm font-medium hover:bg-royal-gold/10 transition-all duration-200 shadow-lg"
             >
               Request Data Export
             </button>
@@ -139,30 +139,30 @@ export default function Help() {
         </div>
 
         {/* App Info */}
-        <div className="card-modern p-6 mt-4 border border-rose-100">
+        <div className="card-modern p-6 mt-4 border border-royal-glass-border">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3">
-              <div className="w-8 h-8 bg-royal-glass border border-royal-glass-border border-2 border-rose-400 rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-royal-glass border border-royal-glass-border border-2 border-royal-gold/50 rounded-lg flex items-center justify-center shadow-sm">
                 <RoyalIcon size="sm" />
               </div>
               <div>
                 <h3 className="text-lg font-black tracking-tight">
-                  <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold bg-clip-text text-transparent">
                     Shaadi
                   </span>
-                  <span className="bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 bg-clip-text text-transparent ml-1">
+                  <span className="bg-gradient-to-r from-royal-gold-light via-royal-gold to-royal-gold-light bg-clip-text text-transparent ml-1">
                     Mantrana
                   </span>
                 </h3>
                 <div className="flex items-center justify-center space-x-1 mt-0.5">
-                  <div className="w-5 h-0.5 bg-gradient-to-r from-rose-400 to-pink-400"></div>
-                  <div className="w-1 h-1 bg-rose-400 rounded-full"></div>
-                  <div className="w-5 h-0.5 bg-gradient-to-r from-pink-400 to-rose-400"></div>
+                  <div className="w-5 h-0.5 bg-gradient-to-r from-royal-gold to-royal-gold-light"></div>
+                  <div className="w-1 h-1 bg-royal-gold rounded-full"></div>
+                  <div className="w-5 h-0.5 bg-gradient-to-r from-royal-gold-light to-royal-gold"></div>
                 </div>
               </div>
             </div>
             <div className="text-sm text-white/80 font-inter space-y-1">
-              <p className="font-medium text-rose-600">v1.0 • 100% Free Platform</p>
+              <p className="font-medium text-royal-gold">v1.0 • 100% Free Platform</p>
               <p className="text-xs flex items-center justify-center space-x-3">
                 <span className="flex items-center space-x-1">
                   <span>🔒</span>

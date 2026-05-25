@@ -432,7 +432,7 @@ function ProfileContent() {
           // Remove any previous animation class to re-trigger
           el.classList.remove('animate-shake');
           // Add error styles
-          el.classList.add('border-red-500', 'bg-red-50');
+          el.classList.add('border-royal-crimson', 'bg-royal-crimson/10');
           // Force reflow then add animation so it replays
           // eslint-disable-next-line @typescript-eslint/no-unused-expressions
           void el.offsetWidth;
@@ -447,10 +447,10 @@ function ProfileContent() {
         // Valid field: briefly show success style then clear
         if (el) {
           el.classList.remove('animate-shake');
-          el.classList.remove('border-red-500', 'bg-red-50');
-          el.classList.add('border-green-500', 'bg-green-50');
+          el.classList.remove('border-royal-crimson', 'bg-royal-crimson/10');
+          el.classList.add('border-emerald-600', 'bg-emerald-900/30');
           setTimeout(() => {
-            el.classList.remove('border-green-500', 'bg-green-50');
+            el.classList.remove('border-emerald-600', 'bg-emerald-900/30');
           }, 900);
         }
       }
@@ -595,7 +595,7 @@ function ProfileContent() {
         <label className="block text-sm font-medium text-royal-gold-light/80">
           {label}
           {isEditing && isRequired && (
-            <span className="text-red-500 ml-1">*</span>
+            <span className="text-royal-crimson ml-1">*</span>
           )}
         </label>
       </div>
@@ -609,10 +609,10 @@ function ProfileContent() {
     if (!showError) return null;
     
     return (
-      <div className="mt-1 p-2 bg-red-50 border border-red-200 rounded-lg">
+      <div className="mt-1 p-2 bg-royal-crimson/10 border border-royal-crimson/30 rounded-lg">
         <div className="flex items-start space-x-2">
-          <CustomIcon name="ri-error-warning-line" className="text-red-600 text-sm mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-red-800">{getErrorMessage(fieldName)}</p>
+          <CustomIcon name="ri-error-warning-line" className="text-royal-crimson text-sm mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-royal-crimson">{getErrorMessage(fieldName)}</p>
         </div>
       </div>
     );
@@ -962,7 +962,7 @@ function ProfileContent() {
           el = document.querySelector(`[data-field="height-feet"]`) as HTMLElement;
           logger.debug(`🎯 Height field - feet element:`, el);
           if (el) {
-            el.classList.add('border-red-500', 'bg-red-50', 'animate-shake');
+            el.classList.add('border-royal-crimson', 'bg-royal-crimson/10', 'animate-shake');
             logger.debug(`✅ Applied red border to height-feet element`);
           }
         } else {
@@ -972,7 +972,7 @@ function ProfileContent() {
         
         if (el) {
           // Add red border and background to highlight missing fields
-          el.classList.add('border-red-500', 'bg-red-50', 'animate-shake');
+          el.classList.add('border-royal-crimson', 'bg-royal-crimson/10', 'animate-shake');
           logger.debug(`✅ Applied red border to "${fieldName}" element`);
         } else {
           logger.debug(`⚠️ Could not find element with data-field="${fieldName}"`);
@@ -982,7 +982,7 @@ function ProfileContent() {
             const interestsContainer = document.querySelector('[data-field="interests"]');
             logger.debug(`🎯 Interests container:`, interestsContainer);
             if (interestsContainer) {
-              interestsContainer.classList.add('border-red-500', 'bg-red-50', 'animate-shake');
+              interestsContainer.classList.add('border-royal-crimson', 'bg-royal-crimson/10', 'animate-shake');
               logger.debug(`✅ Applied red border to interests container`);
             }
           }
@@ -1241,7 +1241,7 @@ function ProfileContent() {
         // Clear all border styling from fields after successful save
         document.querySelectorAll('[data-field]').forEach(el => {
           const element = el as HTMLElement;
-          element.classList.remove('border-red-500', 'border-green-500', 'bg-red-50', 'bg-green-50', 'animate-shake');
+          element.classList.remove('border-royal-crimson', 'border-emerald-600', 'bg-royal-crimson/10', 'bg-emerald-900/30', 'animate-shake');
           element.style.boxShadow = '';
           element.style.borderRadius = '';
           element.style.padding = '';
@@ -1795,7 +1795,7 @@ function ProfileContent() {
 
   // Helper function to generate input className with dynamic border colors
   const getInputClassName = (fieldName: string) => {
-    const baseClasses = "w-full p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all duration-300";
+    const baseClasses = "w-full p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold transition-all duration-300";
     
     // Get current field value and validation status
     const value = profile[fieldName];
@@ -1821,11 +1821,11 @@ function ProfileContent() {
     
     // Determine border color based on validation status - only after user interaction
     if (tiltAnimationFields[fieldName]) {
-      return `${baseClasses} border-red-500 bg-red-50 animate-tilt-error-glow`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-tilt-error-glow`;
     } else if (hasUserInteracted && !isValid && hasValue) {
-      return `${baseClasses} border-red-500 bg-red-50 animate-shake`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-shake`;
     } else if (hasUserInteracted && isValid && hasValue) {
-      return `${baseClasses} border-green-500 bg-green-50`;
+      return `${baseClasses} border-emerald-600 bg-emerald-900/30`;
     } else {
       return `${baseClasses} border-gray-200`;
     }
@@ -1833,7 +1833,7 @@ function ProfileContent() {
 
   // Helper function to get select element className with dynamic borders
   const getSelectClassName = (fieldName: string) => {
-    const baseClasses = "w-full p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all duration-300";
+    const baseClasses = "w-full p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold transition-all duration-300";
     
     // Get current field value and validation status
     const value = profile[fieldName];
@@ -1846,11 +1846,11 @@ function ProfileContent() {
     
     // Determine border color based on validation status - only after user interaction
     if (tiltAnimationFields[fieldName]) {
-      return `${baseClasses} border-red-500 bg-red-50 animate-tilt-error-glow`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-tilt-error-glow`;
     } else if (hasUserInteracted && !isValid && hasValue) {
-      return `${baseClasses} border-red-500 bg-red-50 animate-shake`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-shake`;
     } else if (hasUserInteracted && isValid && hasValue) {
-      return `${baseClasses} border-green-500 bg-green-50`;
+      return `${baseClasses} border-emerald-600 bg-emerald-900/30`;
     } else {
       return `${baseClasses} border-gray-200`;
     }
@@ -1871,11 +1871,11 @@ function ProfileContent() {
     
     // Determine border color based on validation status - only after user interaction
     if (tiltAnimationFields[fieldName]) {
-      return `${baseClasses} border-red-500 bg-red-50 animate-tilt-error-glow`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-tilt-error-glow`;
     } else if (hasUserInteracted && !isValid && hasValue) {
-      return `${baseClasses} border-red-500 bg-red-50 animate-shake`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-shake`;
     } else if (hasUserInteracted && isValid && hasValue) {
-      return `${baseClasses} border-green-500 bg-green-50`;
+      return `${baseClasses} border-emerald-600 bg-emerald-900/30`;
     } else {
       return `${baseClasses} border-gray-200`;
     }
@@ -2330,7 +2330,7 @@ function ProfileContent() {
                   {/* Delete icon */}
                   <button
                     onClick={handleDeleteProfilePicture}
-                    className="absolute -top-2 -right-2 text-royal-crimson hover:text-red-600 transition-colors duration-200 cursor-pointer"
+                    className="absolute -top-2 -right-2 text-royal-crimson hover:text-royal-crimson transition-colors duration-200 cursor-pointer"
                     title={tempImageUrl ? "Remove temporary image" : "Delete profile picture"}
                   >
                     <CustomIcon name="ri-delete-bin-line" size={18} />
@@ -2346,7 +2346,7 @@ function ProfileContent() {
                   // Clear all error styling when entering edit mode
                   document.querySelectorAll('[data-field]').forEach(el => {
                     const element = el as HTMLElement;
-                    element.classList.remove('border-red-500', 'bg-red-50', 'animate-shake');
+                    element.classList.remove('border-royal-crimson', 'bg-royal-crimson/10', 'animate-shake');
                     element.style.boxShadow = '';
                     element.style.borderRadius = '';
                     element.style.padding = '';
@@ -2365,9 +2365,9 @@ function ProfileContent() {
           {/* Upload Message */}
           {uploadMessage && (
             <div className={`mt-2 p-2 rounded-lg text-sm ${
-              uploadMessage.includes('❌') ? 'bg-red-100 text-red-700' :
-              uploadMessage.includes('Image selected!') ? 'bg-green-100 text-green-700' :
-              uploadMessage.includes('✅') ? 'bg-green-100 text-green-700' :
+              uploadMessage.includes('❌') ? 'bg-royal-crimson/20 text-royal-crimson' :
+              uploadMessage.includes('Image selected!') ? 'bg-emerald-900/40 text-emerald-400' :
+              uploadMessage.includes('✅') ? 'bg-emerald-900/40 text-emerald-400' :
               'bg-blue-100 text-blue-700'
             }`}>
               {uploadMessage}
@@ -2688,9 +2688,9 @@ function ProfileContent() {
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
                           data-field="height-feet"
-                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
-                            fieldErrors.height ? 'border-red-500 bg-red-50 animate-shake' : 
-                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
+                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10 animate-shake' : 
+                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-600 bg-emerald-900/30' : 'border-gray-200'
                           }`}
                         >
                           <option value="">Select Feet</option>
@@ -2708,9 +2708,9 @@ function ProfileContent() {
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
                           data-field="height-inches"
-                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
-                            fieldErrors.height ? 'border-red-500 bg-red-50 animate-shake' : 
-                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
+                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10 animate-shake' : 
+                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-600 bg-emerald-900/30' : 'border-gray-200'
                           }`}
                         >
                           <option value="">Select Inches</option>
@@ -3092,7 +3092,7 @@ function ProfileContent() {
                     maxLength={50}
                     placeholder="e.g. Looking for a well-educated, family-oriented person."
                     data-field="specificRequirements"
-                    className={`w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none ${getInputClassName('specificRequirements')}`}
+                    className={`w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold resize-none ${getInputClassName('specificRequirements')}`}
                   />
                 ) : (
                   <p className="text-white/90 text-sm">{profile.specificRequirements || 'Not specified'}</p>
@@ -3130,7 +3130,7 @@ function ProfileContent() {
               <CustomIcon name="ri-file-text-line" size={20} className="text-royal-gold mr-3" />
               About Me
               {isEditing && isRequiredField('about') && (
-                <span className="text-red-500 ml-1">*</span>
+                <span className="text-royal-crimson ml-1">*</span>
               )}
             </h2>
             {isEditing ? (
@@ -3143,7 +3143,7 @@ function ProfileContent() {
                 maxLength={500}
                 placeholder={getFieldPlaceholder('about')}
                 data-field="about"
-                className={`w-full p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none ${getInputClassName('about')}`}
+                className={`w-full p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold resize-none ${getInputClassName('about')}`}
               />
             ) : (
               <p className="text-white/90">{profile.about || 'Not specified'}</p>
@@ -3154,8 +3154,8 @@ function ProfileContent() {
           {/* Interests */}
           <div 
             className={`card-modern p-6 hover-lift transition-all duration-300 ${
-              fieldErrors.interests ? 'border-2 border-red-500 bg-red-50 animate-shake' : 
-              (profile.interests && Array.isArray(profile.interests) && profile.interests.length > 0) ? 'border-2 border-green-500 bg-green-50' : 
+              fieldErrors.interests ? 'border-2 border-royal-crimson bg-royal-crimson/10 animate-shake' : 
+              (profile.interests && Array.isArray(profile.interests) && profile.interests.length > 0) ? 'border-2 border-emerald-600 bg-emerald-900/30' : 
               'border-2 border-gray-200'
             }`} 
             data-field="interests"
@@ -3166,20 +3166,20 @@ function ProfileContent() {
               <CustomIcon name="ri-heart-line" size={20} className="text-royal-gold mr-3" />
               Interests
               {isEditing && isRequiredField('interests') && (
-                <span className="text-red-500 ml-1">*</span>
+                <span className="text-royal-crimson ml-1">*</span>
               )}
             </h2>
             <div className="flex flex-wrap gap-2">
               {Array.isArray(profile.interests) && profile.interests.map((interest, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-rose-100/80 text-royal-gold rounded-full text-sm shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                  className="px-3 py-1 bg-royal-gold/20 text-royal-gold rounded-full text-sm shadow-sm hover:bg-royal-gold/30 transition-colors duration-150"
                 >
                   {interest}
                   {isEditing && (
                     <button
                       onClick={() => removeInterest(index)}
-                      className="ml-2 text-rose-400 hover:text-royal-gold"
+                      className="ml-2 text-royal-gold hover:text-white"
                     >
                       ×
                     </button>
