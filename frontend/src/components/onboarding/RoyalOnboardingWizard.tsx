@@ -139,7 +139,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
           >
             <div className="backdrop-blur-xl bg-white/[0.03] border border-royal-gold/20 rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
               <div className="space-y-2 mb-8 text-center">
-                <h2 className="text-3xl font-playfair font-bold text-transparent bg-clip-text bg-gradient-to-br from-white to-royal-gold-light tracking-tight drop-shadow-md">{currentStep.title}</h2>
+                <h2 className="text-3xl font-playfair font-bold text-royal-gold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentStep.title}</h2>
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-8 h-[1px] bg-gradient-to-r from-transparent to-royal-gold/50" />
                   <p className="text-royal-gold/80 text-xs tracking-widest uppercase">{currentStep.subtitle}</p>

@@ -85,8 +85,9 @@ export const AuthGuardV2: React.FC<AuthGuardV2Props> = ({
   // Show nothing until mounted to prevent hydration mismatch
   if (!mounted) return null;
 
-  // Show loading state ONLY during the active check
-  if (isLoading) {
+  // Show loading state ONLY during the active check for unauthenticated users.
+  // If we're already authenticated, background refreshes shouldn't unmount the page.
+  if (isLoading && !isAuthenticated) {
     return (
       <RoyalLoader
         variant="grand"
