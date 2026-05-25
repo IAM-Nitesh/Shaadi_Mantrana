@@ -129,24 +129,36 @@ export default function LoginPage() {
 
         {/* Bottom Section: Trust Bar & Legal */}
         <div className="mt-auto pb-8 space-y-6">
-          {/* Compact Trust Bar */}
+          {/* Premium Trust Bar */}
           <div 
             ref={featuresRef}
-            className="flex items-center justify-around py-3 px-4 bg-royal-glass backdrop-blur-md rounded-2xl border border-royal-glass-border shadow-xl"
+            className="flex items-center justify-around py-4 px-2 bg-royal-glass backdrop-blur-xl rounded-2xl border border-royal-glass-border shadow-[0_8px_32px_rgba(0,0,0,0.3)] relative overflow-hidden"
           >
-            <div className="flex flex-col items-center space-y-1">
-              <CustomIcon name="ri-heart-3-line" className="text-2xl text-royal-gold" />
-              <span className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">Matches</span>
+            <div className="absolute inset-0 bg-gradient-to-b from-royal-gold/5 to-transparent pointer-events-none"></div>
+            
+            <div className="flex flex-col items-center space-y-2 z-10">
+              <div className="w-10 h-10 rounded-full bg-royal-obsidian border border-royal-gold/30 flex items-center justify-center shadow-inner">
+                <CustomIcon name="ri-heart-3-line" className="text-xl text-royal-gold" />
+              </div>
+              <span className="text-[9px] text-royal-gold-light uppercase tracking-widest font-medium">Sacred</span>
             </div>
-            <div className="h-8 w-[1px] bg-royal-gold/10"></div>
-            <div className="flex flex-col items-center space-y-1">
-              <CustomIcon name="ri-verified-badge-line" className="text-2xl text-royal-gold" />
-              <span className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">Verified</span>
+            
+            <div className="h-10 w-[1px] bg-gradient-to-b from-transparent via-royal-gold/20 to-transparent"></div>
+            
+            <div className="flex flex-col items-center space-y-2 z-10">
+              <div className="w-10 h-10 rounded-full bg-royal-obsidian border border-royal-gold/30 flex items-center justify-center shadow-inner">
+                <CustomIcon name="ri-verified-badge-line" className="text-xl text-royal-gold" />
+              </div>
+              <span className="text-[9px] text-royal-gold-light uppercase tracking-widest font-medium">Verified</span>
             </div>
-            <div className="h-8 w-[1px] bg-royal-gold/10"></div>
-            <div className="flex flex-col items-center space-y-1">
-              <CustomIcon name="ri-lock-line" className="text-2xl text-royal-gold" />
-              <span className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">Secure</span>
+            
+            <div className="h-10 w-[1px] bg-gradient-to-b from-transparent via-royal-gold/20 to-transparent"></div>
+            
+            <div className="flex flex-col items-center space-y-2 z-10">
+              <div className="w-10 h-10 rounded-full bg-royal-obsidian border border-royal-gold/30 flex items-center justify-center shadow-inner">
+                <CustomIcon name="ri-lock-line" className="text-xl text-royal-gold" />
+              </div>
+              <span className="text-[9px] text-royal-gold-light uppercase tracking-widest font-medium">Secure</span>
             </div>
           </div>
 
