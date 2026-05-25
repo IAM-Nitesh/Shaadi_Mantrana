@@ -57,8 +57,9 @@ class MatchingController {
       
       // Filter by opposite gender
       if (currentUser.profile?.gender) {
-        const oppositeGender = currentUser.profile.gender === 'Male' ? 'Female' : 'Male';
-        queryFilters['profile.gender'] = oppositeGender;
+        const userGender = currentUser.profile.gender.toLowerCase();
+        const oppositeGender = userGender === 'male' ? 'Female' : 'Male';
+        queryFilters['profile.gender'] = { $regex: new RegExp(`^${oppositeGender}$`, 'i') };
         console.log(`🎯 Filtering by opposite gender: ${oppositeGender}`);
       }
       

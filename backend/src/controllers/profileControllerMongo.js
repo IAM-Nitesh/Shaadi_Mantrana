@@ -520,6 +520,13 @@ class ProfileController {
         photoStatus: 'approved' // Play Store Compliance: Only show moderated photos
       };
 
+      // Filter by opposite gender
+      if (currentUser.profile?.gender) {
+        const userGender = currentUser.profile.gender.toLowerCase();
+        const oppositeGender = userGender === 'male' ? 'Female' : 'Male';
+        queryFilters['profile.gender'] = { $regex: new RegExp(`^${oppositeGender}$`, 'i') };
+      }
+
       // Apply user preferences if no specific filters provided
       if (Object.keys(filters).length === 0 && currentUser.preferences) {
         const prefs = currentUser.preferences;
