@@ -40,6 +40,8 @@ const corsOptions = {
       config.FRONTEND_FALLBACK_URL, // Fallback frontend URL
       'http://localhost:3000', // Local development
       'http://localhost:3001', // Alternative local port
+      'http://localhost', // Capacitor Android
+      'capacitor://localhost', // Capacitor iOS
       'http://127.0.0.1:3000', // IPv4 localhost
       'http://127.0.0.1:3001', // IPv4 localhost alt port
       'http://[::1]:3000', // IPv6 localhost
@@ -102,6 +104,8 @@ app.use(helmet({
         config.FRONTEND_FALLBACK_URL,
         "http://localhost:3000",
         "http://localhost:3001",
+        "http://localhost",
+        "capacitor://localhost",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "https://shaadi-mantrana.vercel.app",
