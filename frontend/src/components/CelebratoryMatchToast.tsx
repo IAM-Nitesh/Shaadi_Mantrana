@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomIcon from './CustomIcon';
+import RoyalIcon from './RoyalIcon';
 
 interface CelebratoryMatchToastProps {
   isVisible: boolean;
@@ -94,11 +95,7 @@ export default function CelebratoryMatchToast({
                   repeat: 1,
                 }}
               >
-                <img 
-                  src="/icon.png" 
-                  alt="Shaadi Mantra" 
-                  className="w-3 h-3 text-pink-500"
-                />
+                <CustomIcon name="ri-heart-3-fill" className="text-pink-500 text-xl drop-shadow-md" />
               </motion.div>
             ))}
           </div>
@@ -144,11 +141,7 @@ export default function CelebratoryMatchToast({
                 }}
                 className="relative z-10"
               >
-                <img 
-                  src="/icon.svg" 
-                  alt="Shaadi Mantra" 
-                  className="w-24 h-24 text-royal-gold"
-                />
+                <RoyalIcon size="4xl" />
               </motion.div>
               
               {/* Love-themed Glow Effect */}

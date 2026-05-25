@@ -824,11 +824,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <img 
-              src="/icon.png" 
-              alt="Send" 
-              className="w-6 h-6 text-pink-500"
-            />
+            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-pink-500" />
           </motion.button>
         </div>
         

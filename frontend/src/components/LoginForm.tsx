@@ -165,13 +165,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         <MandalaBackground opacity={0.1} rotationSpeed={120} />
         
         <div className="w-full max-w-md mx-auto relative z-10">
-          <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-playfair font-bold text-royal-gold mb-2">Shaadi Mantrana</h2>
-              <p className="text-royal-gold-light/80 font-inter">The Sacred Counsel</p>
-            </div>
-
-          <div className="space-y-6">
+          <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>          <div className="space-y-6">
             <div>
               <label className="block text-xs font-medium text-royal-gold/60 mb-2 uppercase tracking-widest font-inter">
                 Mobile Number
