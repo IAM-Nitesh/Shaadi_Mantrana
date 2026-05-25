@@ -28,22 +28,54 @@ export default function RoyalIcon({ size = 'md', className = '', onClick }: Roya
       className={`relative inline-flex items-center justify-center flex-shrink-0 ${containerSize} ${className}`}
       onClick={onClick}
     >
-      {/* Outer Golden Ring */}
-      <div className="absolute inset-0 rounded-full border border-royal-gold/30 shadow-[0_0_15px_rgba(212,175,55,0.15)] animate-[spin_20s_linear_infinite]" />
-      
-      {/* Inner Ring */}
-      <div className="absolute inset-1 rounded-full border border-royal-gold/10 border-t-royal-gold/60 animate-[spin_15s_linear_infinite_reverse]" />
-
-      {/* Monogram Text */}
-      <span 
-        className="font-playfair font-bold tracking-tighter leading-none select-none text-transparent bg-clip-text bg-gradient-to-br from-royal-gold-light via-royal-gold to-royal-gold-dark z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-        style={{ textShadow: '0 0 10px rgba(212,175,55,0.4)' }}
+      <svg 
+        viewBox="0 0 100 100" 
+        className="w-full h-full drop-shadow-[0_2px_8px_rgba(212,175,55,0.4)]"
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
       >
-        SM
-      </span>
-      
-      {/* Subtle Glow */}
-      <div className="absolute inset-0 rounded-full bg-royal-gold/5 blur-md pointer-events-none" />
+        <defs>
+          <linearGradient id="goldGradientLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F9E076" />
+            <stop offset="40%" stopColor="#D4AF37" />
+            <stop offset="100%" stopColor="#8A6623" />
+          </linearGradient>
+          <linearGradient id="goldGradientRight" x1="100%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor="#F9E076" />
+            <stop offset="50%" stopColor="#D4AF37" />
+            <stop offset="100%" stopColor="#8A6623" />
+          </linearGradient>
+          {/* Subtle drop shadow filter for the intertwining effect */}
+          <filter id="intertwineShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="1" dy="2" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.5" />
+          </filter>
+        </defs>
+
+        {/* Left Ring - Base */}
+        <circle 
+          cx="38" cy="50" r="26" 
+          stroke="url(#goldGradientLeft)" 
+          strokeWidth="6" 
+        />
+        
+        {/* Right Ring - Base (Overlaps Left Ring completely at first) */}
+        <circle 
+          cx="62" cy="50" r="26" 
+          stroke="url(#goldGradientRight)" 
+          strokeWidth="6" 
+        />
+
+        {/* The Magic Intertwine: We re-draw the top-right quadrant of the LEFT ring 
+            so it goes *over* the right ring, creating the 3D interlocking illusion. */}
+        <path 
+          d="M 38 24 A 26 26 0 0 1 60.5 37" 
+          stroke="url(#goldGradientLeft)" 
+          strokeWidth="6.5" 
+          strokeLinecap="round"
+          fill="none"
+          filter="url(#intertwineShadow)"
+        />
+      </svg>
     </div>
   );
 }
