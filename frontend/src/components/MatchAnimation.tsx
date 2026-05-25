@@ -41,7 +41,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
             {[...Array(50)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-2 h-2 bg-gradient-to-r from-rose-400 to-pink-500 rounded-full"
+                className="absolute w-2 h-2 bg-gradient-to-r from-royal-gold to-royal-gold-light rounded-full"
                 initial={{
                   x: Math.random() * window.innerWidth,
                   y: -20,
@@ -80,7 +80,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="absolute inset-0 bg-gradient-to-br from-rose-100 to-pink-100 rounded-3xl"
+            className="absolute inset-0 bg-royal-gold/10 rounded-3xl"
           />
 
           {/* Main Content */}
@@ -95,7 +95,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
                 damping: 20,
                 delay: 0.2,
               }}
-              className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg"
+              className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-royal-gold to-royal-gold-light rounded-full flex items-center justify-center shadow-lg"
             >
               <CustomIcon 
                 name="ri-heart-fill" 
@@ -138,7 +138,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
                     // fallback: no-op
                   }
                 }}
-                className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="w-full bg-royal-gold text-royal-obsidian py-3 px-6 rounded-xl font-semibold hover:bg-royal-gold-light transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
                 <CustomIcon name="ri-chat-3-line" className="inline mr-2" />
                 Start Chatting
@@ -158,7 +158,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
             {[...Array(8)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute text-rose-400"
+                className="absolute text-royal-gold"
                 initial={{
                   x: Math.random() * 300 + 50,
                   y: Math.random() * 200 + 50,

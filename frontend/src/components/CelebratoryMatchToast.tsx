@@ -95,7 +95,7 @@ export default function CelebratoryMatchToast({
                   repeat: 1,
                 }}
               >
-                <CustomIcon name="ri-heart-3-fill" className="text-pink-500 text-xl drop-shadow-md" />
+                <CustomIcon name="ri-heart-3-fill" className="text-royal-gold text-xl drop-shadow-md" />
               </motion.div>
             ))}
           </div>
@@ -155,7 +155,7 @@ export default function CelebratoryMatchToast({
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="absolute inset-0 bg-gradient-to-r from-rose-400/20 to-pink-400/20 rounded-full blur-xl"
+                className="absolute inset-0 bg-gradient-to-r from-royal-gold/20 to-royal-gold-light/20 rounded-full blur-xl"
               />
             </motion.div>
 
@@ -182,7 +182,7 @@ export default function CelebratoryMatchToast({
             >
               <button
                 onClick={handleStartChat}
-                className="w-full py-4 px-6 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-2xl hover:from-rose-600 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 text-lg"
+                className="w-full py-4 px-6 bg-royal-gold text-royal-obsidian font-semibold rounded-2xl hover:bg-royal-gold-light transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 text-lg"
               >
                 <CustomIcon name="ri-chat-3-line" className="text-xl" />
                 <span>Start Chatting</span>

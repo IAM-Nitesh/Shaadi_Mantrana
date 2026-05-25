@@ -44,20 +44,20 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   // Show error state
   if (error && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
+      <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6 card-modern rounded-2xl border border-royal-glass-border shadow-2xl">
           <div className="animate-bounce mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto">
-              <span className="text-white text-2xl">🚫</span>
+            <div className="w-16 h-16 bg-royal-crimson/20 border border-royal-crimson rounded-full flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(255,51,102,0.3)]">
+              <span className="text-royal-crimson text-2xl">🚫</span>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-royal-gold font-playfair mb-4">Access Denied</h2>
+          <p className="text-royal-gold/60 font-inter mb-6">
             {error}. You need administrator privileges to access this page.
           </p>
           <button
             onClick={() => router.push('/')}
-            className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+            className="bg-royal-crimson text-white px-6 py-3 rounded-full font-semibold hover:bg-royal-crimson/80 shadow-lg shadow-royal-crimson/20 transform hover:scale-105 transition-all duration-200"
           >
             Go Back
           </button>

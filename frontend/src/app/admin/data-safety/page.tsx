@@ -76,7 +76,7 @@ export default function DataSafety() {
                 <span className="text-royal-gold-light">Send phone invitations</span>
               </div>
               <div className="flex items-center">
-                <div className="text-purple-500 mr-4 text-xl">🖼️</div>
+                <div className="text-royal-gold mr-4 text-xl">🖼️</div>
                 <span className="text-royal-gold-light">Access profile images</span>
               </div>
               <div className="flex items-center">
@@ -91,7 +91,7 @@ export default function DataSafety() {
         <div className="safety-card bg-royal-glass rounded-2xl shadow-lg p-8 border border-royal-glass-border mb-10">
           <div className="flex items-center mb-8">
             <div className="bg-royal-gold/10 rounded-full w-14 h-14 flex items-center justify-center mr-5">
-              <CustomIcon name="ri-file-text-line" className="text-3xl text-purple-600" />
+              <CustomIcon name="ri-file-text-line" className="text-3xl text-royal-gold" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-royal-gold font-playfair mb-2">Data Access & Management</h2>
