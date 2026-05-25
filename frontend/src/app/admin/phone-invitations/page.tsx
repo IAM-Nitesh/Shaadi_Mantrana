@@ -207,7 +207,7 @@ export default function PhoneInvitations() {
       </div>
 
       {/* Add New Invitation */}
-      <div className="invitation-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+      <div className="invitation-card bg-royal-gold/5 rounded-2xl shadow-[0_0_20px_rgba(212,175,55,0.1)] p-6 border border-royal-gold/20 mb-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Send New Invitation
         </h3>
@@ -234,7 +234,7 @@ export default function PhoneInvitations() {
       </div>
 
       {/* Invitations List */}
-      <div className="invitation-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="invitation-card bg-royal-gold/5 rounded-2xl shadow-[0_0_20px_rgba(212,175,55,0.1)] border border-royal-gold/20 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center">
               <CustomIcon name="ri-mail-list-line" className="text-xl text-blue-500 mr-2" />

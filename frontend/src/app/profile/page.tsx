@@ -2174,10 +2174,6 @@ function ProfileContent() {
           setShowWizard(false);
           setIsEditing(false);
           
-          // Force a refresh to recalculate completeness
-          const updatedProfile = await ProfileService.getUserProfile();
-          setProfile(updatedProfile);
-          
           // Mark wizard as completed regardless of completeness percentage
           try {
             await ProfileService.updateProfile({ hasCompletedWizard: true });
@@ -2189,6 +2185,10 @@ function ProfileContent() {
           } catch (error) {
             logger.error('Error marking wizard as completed:', error);
           }
+
+          // Force a refresh to recalculate completeness
+          const updatedProfile = await ProfileService.getUserProfile();
+          setProfile(updatedProfile);
 
           // Redirect to dashboard if profile is now 100% complete
           if (updatedProfile && (updatedProfile.profileCompleteness || 0) >= 100) {

@@ -276,7 +276,7 @@ function MatchesContent() {
               }`}
             >
               <div className="flex items-center justify-center">
-                <CustomIcon name="ri-heart-fill" className="mr-2" />
+                <CustomIcon name="ri-vip-crown-fill" className="mr-2" />
                 Matches ({mutualMatches.length})
               </div>
             </button>
@@ -301,7 +301,7 @@ function MatchesContent() {
         <div className="android-scroll">
           {loading ? (
             <div className="grid gap-4">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(1)].map((_, i) => (
                 <div key={i} className="flex items-center space-x-4 p-6 bg-royal-gold/5 border border-royal-gold/10 rounded-2xl shadow-lg">
                   <RoyalLoader variant="skeleton" className="w-20 h-20 rounded-full" />
                   <div className="flex-1 space-y-3">
@@ -357,9 +357,6 @@ function MatchesContent() {
                                 ) : (
                                   <CustomIcon name="ri-user-line" className="text-3xl text-gray-400" />
                                 )}
-                              </div>
-                              <div className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center">
-                                <CustomIcon name="ri-heart-fill" className="text-red-500 text-xs" />
                               </div>
                             </div>
                             
@@ -431,9 +428,6 @@ function MatchesContent() {
                                 ) : (
                                   <CustomIcon name="ri-user-line" className="text-3xl text-gray-400" />
                                 )}
-                              </div>
-                              <div className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center">
-                                <CustomIcon name="ri-heart-fill" className="text-red-500 text-xs" />
                               </div>
                             </div>
                             

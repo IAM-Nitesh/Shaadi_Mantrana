@@ -146,7 +146,6 @@ function DashboardContent() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-playfair font-bold text-royal-gold">Discovery</h1>
-            <p className="text-sm text-royal-gold-light/60 font-inter">{likesRemaining} royal matches today</p>
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -193,6 +192,27 @@ function DashboardContent() {
       {currentProfile && (
         <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-20">
           <div className="flex items-center space-x-4">
+            {/* Heart Button (moved to left) */}
+            <RippleButton
+              onClick={() => handleSwipe('right')}
+              disabled={isAnimating || likesRemaining <= 0}
+              hapticFeedback="medium"
+              className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
+            >
+              <Icon name="ri-heart-line" size="xl" className="text-royal-gold" />
+            </RippleButton>
+            
+            {/* Star Button (middle, removed weird background) */}
+            <RippleButton
+              onClick={() => handleSwipe('up')}
+              disabled={isAnimating || likesRemaining <= 0}
+              hapticFeedback="heavy"
+              className="w-16 h-16 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
+            >
+              <Icon name="ri-star-line" size="xl" className="text-royal-gold" />
+            </RippleButton>
+            
+            {/* Close Button (moved to right) */}
             <RippleButton
               onClick={() => handleSwipe('left')}
               disabled={isAnimating}
@@ -200,24 +220,6 @@ function DashboardContent() {
               className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
             >
               <Icon name="ri-close-line" size="xl" className="text-royal-gold" />
-            </RippleButton>
-            
-            <RippleButton
-              onClick={() => handleSwipe('up')}
-              disabled={isAnimating || likesRemaining <= 0}
-              hapticFeedback="heavy"
-              className="w-16 h-16 bg-gradient-to-r from-royal-crimson to-royal-gold rounded-full shadow-[0_0_20px_rgba(128,0,0,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
-            >
-              <Icon name="ri-star-line" size="xl" className="text-white" />
-            </RippleButton>
-            
-            <RippleButton
-              onClick={() => handleSwipe('right')}
-              disabled={isAnimating || likesRemaining <= 0}
-              hapticFeedback="medium"
-              className="w-14 h-14 bg-gradient-to-r from-royal-gold to-royal-gold-light rounded-full shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center hover:scale-110 transition-all duration-300 disabled:opacity-50"
-            >
-              <Icon name="ri-heart-line" size="xl" className="text-royal-obsidian" />
             </RippleButton>
           </div>
         </div>
