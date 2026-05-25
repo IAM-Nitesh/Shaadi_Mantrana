@@ -2203,11 +2203,9 @@ function ProfileContent() {
               router.push('/dashboard'); // Redirect anyway
             }
           } else {
-            // For partial completeness, also redirect to dashboard after a short delay
-            ToastService.info('Profile saved! You can complete optional fields later.');
-            setTimeout(() => {
-              router.push('/dashboard');
-            }, 1500);
+            // For partial completeness, do NOT redirect to dashboard.
+            // Strict AuthGuardV2 requires 100% completeness.
+            ToastService.info('Almost there! Please complete the remaining mandatory fields (like your Sacred Portrait).');
           }
 
         }}
