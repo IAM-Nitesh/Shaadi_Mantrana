@@ -574,8 +574,8 @@ export default function AdminUsers() {
 
             <div className="user-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center">
-                <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mr-4">
-                  <CustomIcon name="ri-user-heart-line" className="text-2xl text-green-600" />
+                <div className="bg-emerald-900/40 rounded-full w-12 h-12 flex items-center justify-center mr-4">
+                  <CustomIcon name="ri-user-heart-line" className="text-2xl text-emerald-400" />
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-gray-800">{stats.activeUsers}</div>
@@ -598,8 +598,8 @@ export default function AdminUsers() {
 
             <div className="user-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center">
-                <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mr-4">
-                  <CustomIcon name="ri-mail-line" className="text-2xl text-purple-600" />
+                <div className="bg-royal-gold/20 rounded-full w-12 h-12 flex items-center justify-center mr-4">
+                  <CustomIcon name="ri-mail-line" className="text-2xl text-royal-gold" />
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-gray-800">{stats.invitedUsers}</div>
@@ -621,7 +621,7 @@ export default function AdminUsers() {
               <button
                 onClick={() => fetchUsers(true)}
                 disabled={loading}
-                className="flex items-center px-3 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl hover:from-rose-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                className="flex items-center px-3 py-2 bg-royal-gold text-royal-obsidian rounded-xl hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
               >
                 <CustomIcon name={loading ? "ri-loader-4-line" : "ri-refresh-line"} className={`mr-2 text-sm ${loading ? 'animate-spin' : ''}`} />
                 <span className="text-sm font-medium">
@@ -660,7 +660,7 @@ export default function AdminUsers() {
                   <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-royal-obsidian to-royal-glass-border border border-royal-gold/30 flex items-center justify-center">
                           {(() => {
                             const hasImage = profileImages.get(user._id);
                             logger.debug(`🔍 User ${user._id} (${user.email}): hasImage = ${!!hasImage}`);
@@ -719,7 +719,7 @@ export default function AdminUsers() {
                         
                         if (userStatus === 'active' && isApproved === true) {
                           status = 'active';
-                          statusClass = 'bg-green-100 text-green-800';
+                          statusClass = 'bg-emerald-900/40 text-emerald-400';
                           statusIcon = 'ri-check-line';
                         } else if (userStatus === 'paused' || isApproved === false) {
                           status = 'paused';
@@ -809,7 +809,7 @@ export default function AdminUsers() {
                                         <button
                                           onClick={() => handleResumeUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
-                                          className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="w-full text-left px-4 py-2 text-sm text-emerald-400 hover:bg-emerald-900/30 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
                                             <span className="mr-2 animate-pulse">💝</span>
@@ -825,7 +825,7 @@ export default function AdminUsers() {
                                         <button
                                           onClick={() => handleResumeUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
-                                          className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="w-full text-left px-4 py-2 text-sm text-emerald-400 hover:bg-emerald-900/30 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
                                             <span className="mr-2 animate-pulse">💝</span>
@@ -893,11 +893,11 @@ export default function AdminUsers() {
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center mb-4">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
-                confirmAction.action === 'pause' ? 'bg-yellow-100' : 'bg-green-100'
+                confirmAction.action === 'pause' ? 'bg-yellow-100' : 'bg-emerald-900/40'
               }`}>
                 <CustomIcon 
                   name={confirmAction.action === 'pause' ? 'ri-pause-circle-line' : 'ri-play-circle-line'} 
-                  className={`text-2xl ${confirmAction.action === 'pause' ? 'text-yellow-600' : 'text-green-600'}`} 
+                  className={`text-2xl ${confirmAction.action === 'pause' ? 'text-yellow-600' : 'text-emerald-400'}`} 
                 />
               </div>
               <div>
@@ -929,7 +929,7 @@ export default function AdminUsers() {
                 className={`flex-1 px-4 py-2 text-white rounded-xl transition-colors ${
                   confirmAction.action === 'pause' 
                     ? 'bg-yellow-500 hover:bg-yellow-600' 
-                    : 'bg-green-500 hover:bg-green-600'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
                 }`}
               >
                 {confirmAction.action === 'pause' ? 'Pause User' : 'Resume User'}

@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-royal-obsidian flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -63,9 +63,9 @@ export class ErrorBoundary extends Component<Props, State> {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}
-              className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-20 h-20 bg-royal-crimson/20 border border-royal-crimson rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(255,51,102,0.3)]"
             >
-              <CustomIcon name="ri-error-warning-line" className="text-3xl text-red-500" />
+              <CustomIcon name="ri-error-warning-line" className="text-3xl text-royal-crimson" />
             </motion.div>
 
             {/* Error Message */}
@@ -123,7 +123,7 @@ export class ErrorBoundary extends Component<Props, State> {
             >
               <button
                 onClick={this.handleRetry}
-                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="w-full bg-royal-gold text-royal-obsidian py-3 px-6 rounded-xl font-semibold hover:bg-royal-gold-light transition-all duration-200 shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)]"
               >
                 <CustomIcon name="ri-refresh-line" className="inline mr-2" />
                 Try Again
@@ -131,7 +131,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleGoHome}
-                className="w-full bg-gray-100 text-white/80 font-inter py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                className="w-full bg-royal-glass border border-royal-glass-border text-royal-gold py-3 px-6 rounded-xl font-semibold hover:bg-royal-gold/10 transition-all duration-200"
               >
                 <CustomIcon name="ri-home-line" className="inline mr-2" />
                 Go to Home
@@ -193,16 +193,16 @@ export function ErrorAlert({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`bg-red-50 border border-red-200 rounded-xl p-4 ${className}`}
+      className={`bg-royal-crimson/10 border border-royal-crimson/30 rounded-xl p-4 ${className}`}
     >
       <div className="flex items-start">
-        <CustomIcon name="ri-error-warning-line" className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+        <CustomIcon name="ri-error-warning-line" className="text-royal-crimson mt-0.5 mr-3 flex-shrink-0" />
         
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-red-800 mb-1">
+          <h3 className="text-sm font-semibold text-royal-crimson mb-1">
             Error
           </h3>
-          <p className="text-sm text-red-700 mb-3">
+          <p className="text-sm text-royal-crimson/80 mb-3">
             {error}
           </p>
           
@@ -210,7 +210,7 @@ export function ErrorAlert({
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors"
+                className="text-xs bg-royal-crimson/20 text-royal-crimson px-3 py-1 rounded-lg hover:bg-royal-crimson/30 transition-colors"
               >
                 Try Again
               </button>
@@ -218,7 +218,7 @@ export function ErrorAlert({
             {onDismiss && (
               <button
                 onClick={onDismiss}
-                className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                className="text-xs text-royal-crimson hover:text-white transition-colors"
               >
                 Dismiss
               </button>

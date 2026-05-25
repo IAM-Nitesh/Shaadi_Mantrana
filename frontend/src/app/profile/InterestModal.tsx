@@ -74,15 +74,15 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   <div ref={backdropRef} className="fixed inset-0 z-[99999] flex items-end bg-black/70 backdrop-blur-md">
       <div
         ref={modalRef}
-        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[100000]"
-        style={{ boxShadow: '0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
+        className="bg-royal-obsidian/95 backdrop-blur-2xl border border-royal-gold/20 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[100000]"
+        style={{ boxShadow: '0 8px 32px 0 rgba(212,175,55,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Add Interests</h2>
+          <h2 className="text-xl font-semibold text-royal-gold-light">Add Interests</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-100/70 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
+            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-royal-gold hover:bg-royal-gold/10 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
             style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.08)' }}
             aria-label="Close interest modal"
           >
@@ -98,13 +98,13 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
               placeholder="Add custom interest..."
               value={customInterest}
               onChange={(e) => setCustomInterest(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+              className="flex-1 px-3 py-2 bg-royal-obsidian border border-royal-gold/30 text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold"
               maxLength={20}
             />
             <button
               onClick={addCustomInterest}
               disabled={!customInterest.trim()}
-              className="px-4 py-2 bg-white border-2 border-rose-500 text-rose-500 rounded-lg font-medium disabled:opacity-50 hover:bg-rose-50"
+              className="px-4 py-2 bg-royal-obsidian border-2 border-royal-gold text-royal-gold rounded-lg font-medium disabled:opacity-50 hover:bg-royal-gold/10"
             >
               Add
             </button>
@@ -113,16 +113,16 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
 
         {/* Popular Interests */}
         <div className="mb-6">
-          <h3 className="font-semibold text-gray-800 mb-3">Popular Interests</h3>
+          <h3 className="font-semibold text-royal-gold-light mb-3">Popular Interests</h3>
           <div className="flex flex-wrap gap-2">
             {availableInterests.map((interest) => (
               <button
                 key={interest}
                 onClick={() => toggleInterest(interest)}
-                className={`px-3 py-2 rounded-full text-sm border transition-all duration-200 transform hover:scale-105 focus:ring-2 focus:ring-rose-400 shadow-sm ${
+                className={`px-3 py-2 rounded-full text-sm border transition-all duration-200 transform hover:scale-105 focus:ring-2 focus:ring-royal-gold shadow-sm ${
                   selectedInterests.includes(interest)
-                    ? 'bg-white/90 text-rose-500 border-rose-500 border-2 shadow-md'
-                    : 'bg-white/80 text-gray-600 border-gray-200 hover:border-rose-300'
+                    ? 'bg-royal-gold/20 text-royal-gold border-royal-gold border-2 shadow-md'
+                    : 'bg-royal-obsidian/50 text-gray-300 border-royal-gold/20 hover:border-royal-gold/50'
                 }`}
               >
                 {interest}
@@ -134,17 +134,17 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
         {/* Selected Interests */}
         {selectedInterests.length > 0 && (
           <div className="mb-6">
-            <h3 className="font-semibold text-gray-800 mb-3">Selected ({selectedInterests.length})</h3>
+            <h3 className="font-semibold text-royal-gold-light mb-3">Selected ({selectedInterests.length})</h3>
             <div className="flex flex-wrap gap-2">
               {selectedInterests.map((interest) => (
                 <span
                   key={interest}
-                  className="px-3 py-1 bg-rose-100/80 text-rose-600 rounded-full text-sm flex items-center shadow-sm hover:bg-rose-200/80 transition-colors duration-150"
+                  className="px-3 py-1 bg-royal-gold/20 text-royal-gold border border-royal-gold/30 rounded-full text-sm flex items-center shadow-sm hover:bg-royal-gold/30 transition-colors duration-150"
                 >
                   {interest}
                   <button
                     onClick={() => toggleInterest(interest)}
-                    className="ml-2 text-rose-400 hover:text-rose-600"
+                    className="ml-2 text-royal-gold hover:text-white"
                   >
                     ×
                   </button>
@@ -158,14 +158,14 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
         <div className="flex space-x-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium !rounded-button hover:bg-gray-50 transition-all duration-200 shadow-sm hover:scale-105"
+            className="flex-1 py-3 border border-royal-gold/30 rounded-xl text-gray-300 font-medium !rounded-button hover:bg-royal-gold/10 transition-all duration-200 shadow-sm hover:scale-105"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={selectedInterests.length === 0}
-            className="flex-1 py-3 bg-white/90 border-2 border-rose-500 text-rose-500 rounded-xl font-medium disabled:opacity-50 hover:bg-rose-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="flex-1 py-3 bg-royal-obsidian border-2 border-royal-gold text-royal-gold rounded-xl font-medium disabled:opacity-50 hover:bg-royal-gold/10 transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Add Selected
           </button>

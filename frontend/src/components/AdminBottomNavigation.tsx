@@ -224,7 +224,7 @@ export default function AdminBottomNavigation() {
             {/* Success Circle */}
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               <div className="logout-checkmark">
-                <RoyalIcon size="6xl" className="heartbeat-animation" />
+                <RoyalIcon size="6xl" className="animate-pulse drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]" />
               </div>
             </div>
             

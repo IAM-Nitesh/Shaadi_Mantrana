@@ -114,7 +114,7 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
     
     return `
       text-xl mb-1 transition-all duration-300 ease-out
-      ${isActive && !isDisabled ? 'animate-heartbeat' : 'group-hover:scale-110'}
+      ${isActive && !isDisabled ? 'scale-110 drop-shadow-md' : 'group-hover:scale-110'}
     `;
   };
 

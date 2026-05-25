@@ -136,7 +136,7 @@ export default function PhotoModerationPage() {
                 <button
                   onClick={() => handleModerate(user.userId, 'approved')}
                   disabled={processingId === user.userId}
-                  className="flex items-center justify-center px-4 py-2 bg-royal-gold text-white rounded-xl hover:bg-rose-600 transition-colors font-medium shadow-md shadow-rose-200 disabled:opacity-50"
+                  className="flex items-center justify-center px-4 py-2 bg-royal-gold text-white rounded-xl hover:bg-royal-gold-light transition-colors font-medium shadow-md shadow-royal-gold/20 disabled:opacity-50"
                 >
                   <CustomIcon name="ri-checkbox-circle-line" className="mr-2" />
                   Approve

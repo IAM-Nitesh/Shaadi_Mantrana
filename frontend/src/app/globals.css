@@ -780,20 +780,7 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   }
 }
 
-@keyframes heartbeat {
-  0%, 100% {
-    transform: scale(1);
-  }
-  25% {
-    transform: scale(1.15);
-  }
-  50% {
-    transform: scale(1.25);
-  }
-  75% {
-    transform: scale(1.1);
-  }
-}
+
 
 @keyframes heart-pounding {
   0%, 100% { transform: scale(1); }
@@ -1022,13 +1009,7 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   animation: ripple 1s ease-out;
 }
 
-.animate-heartbeat {
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
 
-.heartbeat-animation {
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
 
 /* Canvas-confetti will handle all confetti animations */
 
@@ -1196,14 +1177,7 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   }
 }
 
-@keyframes heartbeat {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
+
 
 @keyframes floatingHearts {
   0% {
@@ -1232,9 +1206,7 @@ html[data-icons-fallback="true"] [class*="ri-"]:before {
   animation: scaleIn 0.3s ease-out;
 }
 
-.animate-heartbeat {
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
+
 
 .floating-heart {
   animation: floatingHearts 6s ease-in-out infinite;
@@ -1824,13 +1796,13 @@ html {
 
 /* Simplified Navigation Icons */
 .nav-icon {
-  color: #ef4444; /* rose-500 */
+  color: var(--royal-gold); /* royal-gold */
   transition: all 0.15s ease-out; /* Faster, simpler transition */
   will-change: color, transform;
 }
 
 .nav-icon.active {
-  color: #ef4444; /* rose-500 */
+  color: var(--royal-gold); /* royal-gold */
 }
 
 /* Ensure Remix Icons have proper styling for navigation */
@@ -1841,15 +1813,15 @@ html {
 
 /* Specific styling for navigation icons */
 .nav-icon [class*="ri-"] {
-  color: #ef4444 !important; /* rose-500 */
-  stroke: #ef4444; /* rose-500 */
+  color: var(--royal-gold) !important; /* royal-gold */
+  stroke: var(--royal-gold); /* royal-gold */
   fill: transparent;
   transition: all 0.15s ease-out; /* Faster, simpler transition */
 }
 
 .nav-icon.active [class*="ri-"] {
-  fill: #ef4444 !important; /* rose-500 */
-  stroke: #ef4444; /* rose-500 */
+  fill: var(--royal-gold) !important; /* royal-gold */
+  stroke: var(--royal-gold); /* royal-gold */
 }
 
 /* Ensure outline icons have transparent fill by default */
@@ -1859,7 +1831,7 @@ html {
 
 /* Ensure filled icons have solid fill when active */
 .nav-icon.active [class*="-fill"] {
-  fill: #ef4444 !important; /* rose-500 */
+  fill: var(--royal-gold) !important; /* royal-gold */
 }
 
 /* Simplified Hover Effects */
