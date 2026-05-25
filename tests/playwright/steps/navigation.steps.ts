@@ -44,7 +44,7 @@ When('I click the {string} link in the navigation', async ({ page }, linkName) =
     try {
       await expect(page).toHaveURL(targetUrl, { timeout: 5000 });
     } catch (e) {
-      await page.goto(targetPath, { waitUntil: 'commit' });
+      await page.goto(targetPath);
       await expect(page).toHaveURL(targetUrl, { timeout: 15000 });
     }
   }
@@ -76,7 +76,7 @@ When('I click on the match {string}', async ({ page }, name) => {
   try {
     await expect(page).toHaveURL(/\/chat\/?(\?|$)/, { timeout: 5000 });
   } catch (e) {
-    await page.goto(href!, { waitUntil: 'commit' });
+    await page.goto(href!);
     await expect(page).toHaveURL(/\/chat\/?(\?|$)/, { timeout: 15000 });
   }
 });
@@ -91,11 +91,11 @@ When('I navigate to {string}', async ({ page }, path) => {
   // Fact: Next.js trailing slash redirects can interrupt navigation. (Action 232)
   const targetUrl = new RegExp(`${path.replace(/\/$/, '')}/?`);
   try {
-    await page.goto(path, { waitUntil: 'commit' });
+    await page.goto(path);
     await expect(page).toHaveURL(targetUrl, { timeout: 10000 });
   } catch (e: any) {
     // If interrupted or timed out, retry navigation
-    await page.goto(path, { waitUntil: 'commit' });
+    await page.goto(path);
     await expect(page).toHaveURL(targetUrl, { timeout: 15000 });
   }
 
