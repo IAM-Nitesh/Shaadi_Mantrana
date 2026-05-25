@@ -74,9 +74,52 @@ test.describe('Returning User Flows on Production', () => {
     ]).catch(() => console.log('⚠️ Neither empty state nor matches list found.'));
     console.log('✅ Matches UI rendered successfully');
 
+    // --- Test Chat and Unmatch Flow ---
+    const chatBtn = page.locator('a[href^="/chat"]').first();
+    if (await chatBtn.isVisible().catch(() => false)) {
+      console.log('Testing Chat UI...');
+      await chatBtn.click();
+      await page.waitForURL(/.*\/chat\?id=.*/);
+      console.log('✅ Reached Chat UI');
+
+      // Test sending a message
+      const messageInput = page.locator('input[placeholder*="message"], textarea').first();
+      if (await messageInput.isVisible()) {
+        await messageInput.fill('Hello from E2E test!');
+        const sendBtn = page.locator('button').filter({ has: page.locator('.ri-send-plane-fill, .ri-send-plane-line') }).first();
+        if (await sendBtn.isVisible()) {
+          await sendBtn.click();
+          console.log('✅ Sent a message in Chat');
+        }
+      }
+
+      // Test Unmatch
+      console.log('Testing Unmatch...');
+      const unmatchMenuBtn = page.locator('.unmatch-menu button').first();
+      if (await unmatchMenuBtn.isVisible()) {
+        await unmatchMenuBtn.click();
+        const unmatchActionBtn = page.locator('button', { hasText: 'Unmatch' }).first();
+        if (await unmatchActionBtn.isVisible()) {
+          await unmatchActionBtn.click();
+          
+          // Handle confirmation toast
+          const confirmBtn = page.locator('button', { hasText: 'Yes' }).first();
+          if (await confirmBtn.isVisible()) {
+             await confirmBtn.click();
+             await page.waitForLoadState('networkidle');
+             console.log('✅ Unmatched the profile successfully');
+          }
+        }
+      }
+    } else {
+      console.log('ℹ️ No chat buttons found (likely no mutual matches). Gracefully skipping chat/unmatch test.');
+    }
+
     // --- Test Profile Settings ---
     console.log('Testing Settings Navigation...');
-    await page.locator('a[href="/settings"]').first().click();
+    // We might be in chat or matches, so let's go home first or use the global nav
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: 'Settings' }).first().click();
     await page.waitForLoadState('networkidle');
     await expect(page.locator('h1, h2').filter({ hasText: /Settings/i }).first()).toBeVisible({ timeout: 15000 });
     console.log('✅ Settings UI loaded');
