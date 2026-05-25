@@ -142,7 +142,7 @@ export default function Privacy() {
             <div>
               <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">12. Changes to This Privacy Policy</h2>
               <p className="text-white/80 font-inter leading-relaxed">
-                We may update this policy to reflect changes in our practices or Indian laws. Significant updates will be notified via in-app messages, SMS, or platform announcements, as required by the DPDP Act. Continued use of the platform after such updates implies consent to the revised policy.
+                We may update this policy to reflect changes in our practices or Indian laws. Significant updates will be notified via in-app messages, email, or platform announcements, as required by the DPDP Act. Continued use of the platform after such updates implies consent to the revised policy.
               </p>
             </div>
 

@@ -106,7 +106,7 @@ export default function Help() {
               <button
                 onClick={() => ContactService.handleEmailContact(
                   'Data Deletion Request',
-                  'I would like to request deletion of all my personal data from Shaadi Mantrana app.\n\nPlease confirm that you will:\n1. Delete my profile and all personal information\n2. Remove all my photos and documents\n3. Delete all my messages and conversations\n4. Remove my account from the matching system\n5. Delete all activity logs and preferences\n\nPhone number: [Please specify]\nReason for deletion: [Optional]'
+                  'I would like to request deletion of all my personal data from Shaadi Mantrana app.\n\nPlease confirm that you will:\n1. Delete my profile and all personal information\n2. Remove all my photos and documents\n3. Delete all my messages and conversations\n4. Remove my account from the matching system\n5. Delete all activity logs and preferences\n\nContact Email: [Please specify]\nPhone number: [Please specify]\nReason for deletion: [Optional]'
                 )}
                 className="inline-block bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200"
               >
@@ -129,7 +129,7 @@ export default function Help() {
             <button
               onClick={() => ContactService.handleEmailContact(
                 'Data Export Request',
-                'I would like to request an export of all my personal data from Shaadi Mantrana app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nPhone number: [Please specify]'
+                'I would like to request an export of all my personal data from Shaadi Mantrana app.\n\nPlease provide:\n1. My complete profile information\n2. All my photos and documents\n3. Message history and conversations\n4. Matching preferences and activity\n5. Account settings and privacy preferences\n\nContact Email: [Please specify]\nPhone number: [Please specify]'
               )}
               className="inline-block bg-royal-glass border border-royal-glass-border border-2 border-royal-gold text-royal-gold px-4 py-2 rounded-lg text-sm font-medium hover:bg-royal-gold/10 transition-all duration-200 shadow-lg"
             >
