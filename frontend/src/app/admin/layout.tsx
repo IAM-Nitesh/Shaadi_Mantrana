@@ -99,7 +99,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen bg-royal-obsidian flex flex-col">
         {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}
-        <StandardHeader showProfileLink={false} title="Admin Dashboard" />
+        <StandardHeader showProfileLink={false} />
 
         {/* Scrollable Content Area (padding matches header/footer heights) */}
         <main className="flex-1 overflow-y-auto" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>

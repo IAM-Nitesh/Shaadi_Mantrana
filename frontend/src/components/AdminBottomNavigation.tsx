@@ -1,8 +1,8 @@
 'use client';
 
-;
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import CustomIcon from './CustomIcon';
+import RoyalIcon from './RoyalIcon';
 import { useAuth } from '../contexts/AuthContext';
 // Avoid importing server-only auth service in client components
 import { safeGsap } from './SafeGsap';
@@ -86,7 +86,7 @@ export default function AdminBottomNavigation() {
                 ? 'bg-royal-gold/10 text-royal-gold shadow-md' 
                 : 'hover:bg-royal-gold/5'
             }`}>
-              <CustomIcon name="ri-dashboard-line" className="text-xl" />
+              <CustomIcon name="ri-bar-chart-box-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Dashboard</span>
           </a>
@@ -104,7 +104,7 @@ export default function AdminBottomNavigation() {
                 ? 'bg-royal-gold/10 text-royal-gold shadow-md' 
                 : 'hover:bg-royal-gold/5'
             }`}>
-              <CustomIcon name="ri-user-settings-line" className="text-xl" />
+              <CustomIcon name="ri-team-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Users</span>
           </a>
@@ -224,7 +224,7 @@ export default function AdminBottomNavigation() {
             {/* Success Circle */}
             <div className="logout-circle flex items-center justify-center mx-auto mb-6 relative">
               <div className="logout-checkmark">
-                <img src="/icon.png" alt="Shaadi Mantrana" className="w-64 h-64 heartbeat-animation object-contain" />
+                <RoyalIcon size="6xl" className="heartbeat-animation" />
               </div>
             </div>
             

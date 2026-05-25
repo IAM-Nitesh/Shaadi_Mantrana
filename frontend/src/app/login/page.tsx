@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/LoginForm';
 import { safeGsap } from '../../components/SafeGsap';
+import CustomIcon from '../../components/CustomIcon';
 
 import logger from '../../utils/logger';
 
@@ -134,18 +135,18 @@ export default function LoginPage() {
             className="flex items-center justify-around py-3 px-4 bg-royal-glass backdrop-blur-md rounded-2xl border border-royal-glass-border shadow-xl"
           >
             <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">💝</span>
-              <span className="text-[9px] text-gray-400 uppercase tracking-tighter">Matches</span>
+              <CustomIcon name="ri-heart-3-line" className="text-2xl text-royal-gold" />
+              <span className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">Matches</span>
             </div>
             <div className="h-8 w-[1px] bg-royal-gold/10"></div>
             <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">✨</span>
-              <span className="text-[9px] text-gray-400 uppercase tracking-tighter">Verified</span>
+              <CustomIcon name="ri-verified-badge-line" className="text-2xl text-royal-gold" />
+              <span className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">Verified</span>
             </div>
             <div className="h-8 w-[1px] bg-royal-gold/10"></div>
             <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">🔒</span>
-              <span className="text-[9px] text-gray-400 uppercase tracking-tighter">Secure</span>
+              <CustomIcon name="ri-lock-line" className="text-2xl text-royal-gold" />
+              <span className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">Secure</span>
             </div>
           </div>
 

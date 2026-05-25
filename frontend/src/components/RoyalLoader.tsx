@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { safeGsap } from './SafeGsap';
-import Image from 'next/image';
+import RoyalIcon from './RoyalIcon';
 
 interface RoyalLoaderProps {
   variant?: 'grand' | 'skeleton' | 'spark' | 'logo';
@@ -235,8 +235,8 @@ export default function RoyalLoader({
     <div className="flex flex-col items-center justify-center space-y-8">
       <div ref={mandalaRef} className="relative">
         {variant === 'logo' ? (
-          <div className={`${currentSize.logo} relative`}>
-            <Image src="/icon.png" alt="Shaadi Mantrana Logo" fill className="object-contain" priority />
+          <div className={`${currentSize.logo} relative flex items-center justify-center`}>
+            <RoyalIcon size={size === 'sm' ? '2xl' : size === 'md' ? '3xl' : size === 'lg' ? '4xl' : '5xl'} />
           </div>
         ) : (
           <MandalaSVG variant={variant === 'spark' ? 'spark' : 'grand'} size={currentSize.logo} />
