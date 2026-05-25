@@ -567,13 +567,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-royal-obsidian flex flex-col relative overflow-hidden">
       {/* Header */}
       <motion.div 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed w-full bg-white/90 backdrop-blur-md border-b border-white/20 shadow-lg z-40 px-4 py-3"
+        className="fixed w-full bg-royal-obsidian/90 backdrop-blur-xl border-b border-royal-gold/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-40 px-4 py-3"
           style={{ top: headerOffset > 0 ? `${headerOffset}px` : 'var(--header-height)' }}
       >
         <div className="flex items-center space-x-3">
@@ -586,7 +586,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 router.push('/matches');
               }
             }}
-            className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+            className="w-10 h-10 flex items-center justify-center text-royal-gold/70 hover:bg-royal-gold/10 hover:text-royal-gold rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
           >
             <CustomIcon name="ri-arrow-left-line" className="text-xl" />
           </button>
@@ -608,7 +608,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 />
               </div>
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white font-semibold text-lg shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-royal-gold/30 to-royal-gold/10 border border-royal-gold/20 flex items-center justify-center text-royal-gold font-semibold text-lg shadow-lg">
                 {match.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -717,7 +717,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             className="flex flex-col items-center justify-center h-full text-center"
           >
             <motion.div 
-              className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full flex items-center justify-center mb-6"
+              className="w-24 h-24 bg-gradient-to-br from-royal-gold/20 to-royal-gold/5 border border-royal-gold/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(212,175,55,0.15)]"
               animate={{ 
                 scale: [1, 1.1, 1],
                 rotate: [0, 5, -5, 0]
@@ -728,10 +728,10 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 ease: "easeInOut"
               }}
             >
-              <CustomIcon name="ri-chat-3-line" className="text-3xl text-rose-500" />
+              <CustomIcon name="ri-chat-3-line" className="text-4xl text-royal-gold" />
             </motion.div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-3">Start a conversation!</h3>
-            <p className="text-gray-600 max-w-sm leading-relaxed">
+            <h3 className="text-xl font-semibold text-royal-gold mb-3">Start a conversation!</h3>
+            <p className="text-royal-gold-light/60 max-w-sm leading-relaxed">
               Send your first message to {match.name} and begin your journey together. 
               Every great relationship starts with a simple "Hello"! 💕
             </p>
@@ -759,8 +759,8 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                     <motion.div
                       className={`relative px-4 py-3 rounded-2xl shadow-sm ${
                         msg.isOwn 
-                          ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-br-md' 
-                          : 'bg-white text-gray-800 rounded-bl-md border border-gray-100'
+                          ? 'bg-royal-gold text-royal-obsidian rounded-br-md font-medium' 
+                          : 'bg-white/5 text-royal-gold rounded-bl-md border border-royal-gold/20'
                       }`}
                       whileHover={{ scale: 1.01 }}
                       transition={{ type: 'spring', stiffness: 500, duration: 0.1 }}
@@ -768,7 +768,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                       <p className="text-sm leading-relaxed break-words">{msg.text}</p>
                       
                       <div className={`flex items-center justify-end space-x-1 mt-2 ${
-                        msg.isOwn ? 'text-white/70' : 'text-gray-400'
+                        msg.isOwn ? 'text-royal-obsidian/70' : 'text-royal-gold/50'
                       }`}>
                         <span className="text-xs">{formatTime(msg.timestamp)}</span>
                         {msg.isOwn && getStatusIcon(msg.status)}
@@ -788,7 +788,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35, duration: 0.15 }}
-        className="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 z-20 shadow-2xl"
+        className="fixed bottom-0 w-full bg-royal-obsidian/95 backdrop-blur-xl border-t border-royal-gold/20 p-4 z-20 shadow-[0_-4px_30px_rgba(0,0,0,0.5)]"
         style={{ paddingBottom: 'calc(16px + var(--safe-area-inset-bottom))' }}
       >
         <div className="flex items-end space-x-3">
@@ -801,7 +801,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               onChange={handleTyping}
               onKeyPress={handleKeyPress}
               disabled={isSending}
-              className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+              className="w-full px-4 py-3 pr-12 bg-royal-gold/5 text-royal-gold placeholder:text-royal-gold/30 border border-royal-gold/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-royal-gold/50 focus:border-royal-gold/50 transition-all duration-200 disabled:opacity-50"
             />
             
             {/* Typing indicator */}
@@ -810,7 +810,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute -top-8 left-0 text-xs text-gray-500"
+                className="absolute -top-8 left-0 text-xs text-royal-gold/60"
               >
                 {match.name} is typing...
               </motion.div>
@@ -820,16 +820,16 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           <motion.button
             onClick={sendMessage}
             disabled={!message.trim() || isSending}
-            className="w-14 h-14 bg-white border-2 border-gray-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-pink-300 hover:bg-pink-50 android-touch-target"
+            className="w-14 h-14 bg-royal-gold/10 border-2 border-royal-gold/20 rounded-2xl flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.1)] hover:shadow-[0_0_25px_rgba(212,175,55,0.3)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-royal-gold/50 hover:bg-royal-gold/20 android-touch-target"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-pink-500" />
+            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-royal-gold" />
           </motion.button>
         </div>
         
         <div className="text-center mt-3">
-          <span className="text-xs text-gray-400 flex items-center justify-center">
+          <span className="text-xs text-royal-gold/40 flex items-center justify-center">
             <CustomIcon name="ri-shield-check-line" className="mr-1" />
             Messages are end-to-end encrypted
           </span>

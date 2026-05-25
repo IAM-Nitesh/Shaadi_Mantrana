@@ -175,8 +175,7 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
     >
       <div
         ref={modalRef}
-        className="bg-white/80 backdrop-blur-2xl border border-white/40 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none pb-8"
-        style={{ boxShadow: '0 8px 32px 0 rgba(244,63,94,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
+        className="bg-royal-obsidian/95 backdrop-blur-3xl border-t border-royal-gold/20 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-none pb-8"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -184,10 +183,10 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
             <button
               onClick={applyFilters}
               disabled={!hasChanges}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-md ${
+              className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-md ${
                 hasChanges
-                  ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600 cursor-pointer'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                  ? 'button-royal border-none cursor-pointer'
+                  : 'bg-royal-obsidian border border-royal-gold/20 text-royal-gold/50 cursor-not-allowed'
               }`}
             >
               <div className="flex items-center">
@@ -195,12 +194,11 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
                 Apply
               </div>
             </button>
-            <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
+            <h2 className="text-xl font-semibold text-royal-gold">Filters</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-100/70 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
-            style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.08)' }}
+            className="w-8 h-8 flex items-center justify-center text-royal-gold/50 hover:bg-royal-gold/10 hover:text-royal-gold rounded-full transition-all duration-200 hover:scale-110"
             aria-label="Close filter modal"
           >
             <i className="ri-close-line text-2xl"></i>
@@ -209,43 +207,43 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
 
         {/* Age Range */}
         <div className="mb-6">
-          <h3 className="font-semibold text-gray-800 mb-4">Age Range</h3>
+          <h3 className="font-semibold text-royal-gold mb-4">Age Range</h3>
           
           <div className="space-y-4">
             {/* Min Age Slider */}
             <div>
-              <label className="text-sm text-gray-600 mb-2 block">Minimum Age: {ageRange[0]}</label>
+              <label className="text-sm text-royal-gold-light/60 mb-2 block">Minimum Age: {ageRange[0]}</label>
               <input
                 type="range"
                 min="18"
                 max="70"
                 value={ageRange[0]}
                 onChange={(e) => handleMinAgeChange(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-rose-400"
+                className="w-full h-2 bg-[#1F1F1F] rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-royal-gold/50"
                 style={{
-                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[0] - 18) / 52) * 100}%, #e5e7eb ${((ageRange[0] - 18) / 52) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${((ageRange[0] - 18) / 52) * 100}%, #1F1F1F ${((ageRange[0] - 18) / 52) * 100}%, #1F1F1F 100%)`
                 }}
               />
             </div>
             
             {/* Max Age Slider */}
             <div>
-              <label className="text-sm text-gray-600 mb-2 block">Maximum Age: {ageRange[1]}</label>
+              <label className="text-sm text-royal-gold-light/60 mb-2 block">Maximum Age: {ageRange[1]}</label>
               <input
                 type="range"
                 min="18"
                 max="70"
                 value={ageRange[1]}
                 onChange={(e) => handleMaxAgeChange(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-rose-400"
+                className="w-full h-2 bg-[#1F1F1F] rounded-lg appearance-none cursor-pointer slider transition-all duration-200 focus:ring-2 focus:ring-royal-gold/50"
                 style={{
-                  background: `linear-gradient(to right, #f43f5e 0%, #f43f5e ${((ageRange[1] - 18) / 52) * 100}%, #e5e7eb ${((ageRange[1] - 18) / 52) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${((ageRange[1] - 18) / 52) * 100}%, #1F1F1F ${((ageRange[1] - 18) / 52) * 100}%, #1F1F1F 100%)`
                 }}
               />
             </div>
           </div>
           
-          <div className="flex justify-between text-sm text-gray-600 mt-2">
+          <div className="flex justify-between text-sm text-royal-gold/50 mt-2">
             <span>{ageRange[0]} years</span>
             <span>{ageRange[1]} years</span>
           </div>
@@ -253,15 +251,15 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
 
         {/* Location Filters */}
         <div className="mb-6">
-          <h3 className="font-semibold text-gray-800 mb-4">Location</h3>
+          <h3 className="font-semibold text-royal-gold mb-4">Location</h3>
           
           {/* Country Dropdown */}
           <div className="mb-4">
-            <label className="text-sm text-gray-600 mb-2 block">Country</label>
+            <label className="text-sm text-royal-gold-light/60 mb-2 block">Country</label>
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all duration-200 bg-white/70 backdrop-blur-md"
+              className="w-full p-3 border border-royal-gold/20 rounded-lg text-sm text-royal-gold focus:outline-none focus:ring-2 focus:ring-royal-gold/50 transition-all duration-200 bg-royal-obsidian/40 backdrop-blur-md"
             >
               <option value="">Select Country</option>
               {countries.map((country) => (
@@ -274,12 +272,12 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
           
           {/* State Dropdown */}
           <div>
-            <label className="text-sm text-gray-600 mb-2 block">State/Province</label>
+            <label className="text-sm text-royal-gold-light/60 mb-2 block">State/Province</label>
             <select
               value={selectedState}
               onChange={(e) => setSelectedState(e.target.value)}
               disabled={!selectedCountry}
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 bg-white/70 backdrop-blur-md"
+              className="w-full p-3 border border-royal-gold/20 rounded-lg text-sm text-royal-gold focus:outline-none focus:ring-2 focus:ring-royal-gold/50 disabled:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 bg-royal-obsidian/40 backdrop-blur-md"
             >
               <option value="">Select State/Province</option>
               {availableStates.map((state) => (
@@ -293,16 +291,16 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
 
         {/* Profession */}
         <div className="mb-8">
-          <h3 className="font-semibold text-gray-800 mb-3">Profession</h3>
+          <h3 className="font-semibold text-royal-gold mb-3">Profession</h3>
           <div className="grid grid-cols-2 gap-2">
             {professions.map((profession) => (
               <button
                 key={profession}
                 onClick={() => toggleProfession(profession)}
-                className={`px-3 py-2 rounded-lg text-sm border transition-all duration-200 transform hover:scale-105 focus:ring-2 focus:ring-rose-400 shadow-sm ${
+                className={`px-3 py-2 rounded-lg text-sm border transition-all duration-200 transform hover:scale-105 focus:ring-2 focus:ring-royal-gold/50 shadow-sm ${
                   selectedProfessions.includes(profession)
-                    ? 'bg-white/90 text-rose-500 border-rose-500 border-2 shadow-md'
-                    : 'bg-white/80 text-gray-600 border-gray-200 hover:border-rose-300'
+                    ? 'bg-royal-gold/10 text-royal-gold border-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]'
+                    : 'bg-royal-obsidian/40 text-royal-gold/60 border-royal-gold/20 hover:border-royal-gold/50'
                 }`}
               >
                 {profession}
@@ -316,10 +314,10 @@ export default function FilterModal({ onClose, onApply, currentFilters }: Filter
           <button
             onClick={clearAll}
             disabled={!hasActiveFilters}
-            className={`px-8 py-3 border rounded-xl font-medium transition-all duration-200 shadow-sm hover:scale-105 ${
+            className={`px-8 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 ${
               hasActiveFilters
-                ? 'border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400'
-                : 'border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                ? 'button-royal-outline'
+                : 'border border-royal-gold/20 text-royal-gold/40 cursor-not-allowed opacity-50'
             }`}
           >
             Clear All Filters

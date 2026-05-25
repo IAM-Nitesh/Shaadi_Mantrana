@@ -592,7 +592,7 @@ function ProfileContent() {
     
     return (
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-800">
+        <label className="block text-sm font-medium text-royal-gold-light/80">
           {label}
           {isEditing && isRequired && (
             <span className="text-red-500 ml-1">*</span>
@@ -1884,15 +1884,15 @@ function ProfileContent() {
   // Helper function to get progress bar color based on completion percentage
   const getProgressBarColor = (completion: number) => {
     if (completion >= 100) {
-      return 'bg-gradient-to-r from-green-500 to-emerald-500';
+      return 'bg-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]';
     } else if (completion >= 80) {
-      return 'bg-gradient-to-r from-blue-500 to-indigo-500';
+      return 'bg-royal-gold/80';
     } else if (completion >= 60) {
-      return 'bg-gradient-to-r from-yellow-500 to-orange-500';
+      return 'bg-royal-gold/60';
     } else if (completion >= 40) {
-      return 'bg-gradient-to-r from-orange-500 to-red-500';
+      return 'bg-royal-gold/40';
     } else {
-      return 'bg-gradient-to-r from-red-500 to-pink-500';
+      return 'bg-royal-gold/20';
     }
   };
 
@@ -2132,11 +2132,11 @@ function ProfileContent() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50 px-4">
-        <div className="flex flex-col items-center space-y-6 p-10 bg-white/80 rounded-2xl shadow-lg border border-rose-100">
-          <Image src="/icons/user.svg" alt="No Profile" width={80} height={80} className="mb-2 opacity-60" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-royal-obsidian px-4">
+        <div className="flex flex-col items-center space-y-6 p-10 bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/20">
+          <Image src="/icons/user.svg" alt="No Profile" width={80} height={80} className="mb-2 opacity-60 filter grayscale contrast-200" />
           <h2 className="text-2xl font-bold text-royal-gold">No Profile Data</h2>
-          <p className="text-gray-500 text-center max-w-md">We couldn't find your profile information. Please try refreshing the page or contact support if the issue persists.</p>
+          <p className="text-royal-gold-light/60 text-center max-w-md">We couldn't find your profile information. Please try refreshing the page or contact support if the issue persists.</p>
         </div>
       </div>
     );
@@ -2227,13 +2227,13 @@ function ProfileContent() {
 
         {/* Profile Complete Success Banner */}
         {isProfileComplete && (
-          <div className="mx-4 mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm">
+          <div className="mx-4 mb-6 bg-royal-gold/10 border border-royal-gold/30 rounded-xl p-4 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
             <div className="flex items-center space-x-3">
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-green-800 mb-1">
+                <h3 className="text-sm font-semibold text-royal-gold mb-1">
                   Profile Complete! 🎉
                 </h3>
-                <p className="text-xs text-green-700">
+                <p className="text-xs text-royal-gold-light/80">
                   You can now access Discover and Matches features
                 </p>
               </div>
@@ -2355,7 +2355,7 @@ function ProfileContent() {
                   setFieldErrors({});
                   setIsEditing(true);
                 }}
-                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                className="button-royal px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Edit
               </button>
@@ -2688,7 +2688,7 @@ function ProfileContent() {
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
                           data-field="height-feet"
-                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white text-gray-800 transition-all duration-300 ${
+                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
                             fieldErrors.height ? 'border-red-500 bg-red-50 animate-shake' : 
                             (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-green-500 bg-green-50' : 'border-gray-200'
                           }`}
@@ -2708,7 +2708,7 @@ function ProfileContent() {
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
                           data-field="height-inches"
-                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white text-gray-800 transition-all duration-300 ${
+                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
                             fieldErrors.height ? 'border-red-500 bg-red-50 animate-shake' : 
                             (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-green-500 bg-green-50' : 'border-gray-200'
                           }`}
@@ -3202,7 +3202,7 @@ function ProfileContent() {
           {isEditing && (
             <div className="space-y-3 relative z-[100001]">
               {/* Progress indicator */}
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center justify-between text-sm text-royal-gold-light/60">
                 <span>Profile Completion</span>
                 <span className="font-semibold">{calculatedCompleteness}%</span>
               </div>
@@ -3216,10 +3216,10 @@ function ProfileContent() {
               <button
                 onClick={handleSave}
                 data-save-button
-                className={`w-full py-4 text-lg font-semibold hover-lift transition-all duration-300 ${
+                className={`w-full py-4 text-lg font-semibold hover-lift transition-all duration-300 rounded-xl ${
                   calculatedCompleteness >= 100 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600' 
-                    : 'bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600'
+                    ? 'button-royal shadow-[0_0_20px_rgba(212,175,55,0.4)]' 
+                    : 'bg-royal-obsidian border border-royal-gold/30 text-royal-gold/70 hover:border-royal-gold hover:text-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.1)]'
                 }`}
                 style={{ position: 'relative', zIndex: 100002 }}
               >
@@ -3227,7 +3227,7 @@ function ProfileContent() {
               </button>
               
               {calculatedCompleteness < 100 && (
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-royal-gold-light/60 text-center mt-2">
                   {30 - Math.round((calculatedCompleteness / 100) * 30)} fields remaining
                 </p>
               )}

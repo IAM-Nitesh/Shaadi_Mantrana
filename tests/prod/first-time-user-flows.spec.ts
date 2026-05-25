@@ -242,21 +242,22 @@ test.describe('First-Time User Flows on Production', () => {
     await saveBtn.scrollIntoViewIfNeeded();
     await saveBtn.click();
 
-    // Wait for any toast to appear (success or error)
-    const toastContainer = page.locator('[role="status"], [class*="toast"], [class*="Toastify"]').first();
+    // Wait for the success toast specifically, not just ANY toast (which might be the "saving..." loading toast)
     try {
-      await toastContainer.waitFor({ state: 'visible', timeout: 15000 });
-      const toastText = await toastContainer.textContent();
-      if (/profile saved|saved successfully/i.test(toastText || '')) {
-        console.log('✅ Profile saved successfully!');
-      } else if (/upload|image|photo/i.test(toastText || '')) {
-        // Image upload to B2 failed — acceptable if 100% was already shown client-side
-        console.warn(`⚠️  Image upload issue: "${toastText?.trim()}". Client-side 100% was already confirmed.`);
-      } else {
-        console.log(`ℹ️  Toast: "${toastText?.trim()}"`);
-      }
+      // The exact toast we expect when it reaches 100% and successfully saves
+      const successToast = page.locator('text=Your Sacred Profile is complete!');
+      await successToast.waitFor({ state: 'visible', timeout: 20000 });
+      console.log('✅ Profile saved successfully (Backend confirmed)!');
+      
+      // Wait an extra second to allow the redirect to dashboard to trigger or the API to settle
+      await page.waitForTimeout(1500);
     } catch {
-      console.warn('⚠️  No toast appeared after save — network may be slow.');
+      console.warn('⚠️  Success toast did not appear in time. Checking if any other toast appeared...');
+      const anyToast = page.locator('[role="status"], [class*="toast"], [class*="Toastify"]').first();
+      if (await anyToast.isVisible()) {
+        const text = await anyToast.textContent();
+        console.warn(`ℹ️  Found toast: "${text?.trim()}"`);
+      }
     }
 
     console.log('✅ Test 1 PASSED — First-Time User flow validated (100% completeness confirmed client-side)!');

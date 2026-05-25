@@ -137,27 +137,21 @@ export default function LoginPage() {
             <div className="absolute inset-0 bg-gradient-to-b from-royal-gold/5 to-transparent pointer-events-none"></div>
             
             <div className="flex flex-col items-center space-y-2 z-10">
-              <div className="w-10 h-10 rounded-full bg-royal-obsidian border border-royal-gold/30 flex items-center justify-center shadow-inner">
-                <CustomIcon name="ri-heart-3-line" className="text-xl text-royal-gold" />
-              </div>
+              <CustomIcon name="ri-heart-3-line" className="text-3xl text-royal-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
               <span className="text-[9px] text-royal-gold-light uppercase tracking-widest font-medium">Sacred</span>
             </div>
             
             <div className="h-10 w-[1px] bg-gradient-to-b from-transparent via-royal-gold/20 to-transparent"></div>
             
             <div className="flex flex-col items-center space-y-2 z-10">
-              <div className="w-10 h-10 rounded-full bg-royal-obsidian border border-royal-gold/30 flex items-center justify-center shadow-inner">
-                <CustomIcon name="ri-verified-badge-line" className="text-xl text-royal-gold" />
-              </div>
+              <CustomIcon name="ri-verified-badge-line" className="text-3xl text-royal-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
               <span className="text-[9px] text-royal-gold-light uppercase tracking-widest font-medium">Verified</span>
             </div>
             
             <div className="h-10 w-[1px] bg-gradient-to-b from-transparent via-royal-gold/20 to-transparent"></div>
             
             <div className="flex flex-col items-center space-y-2 z-10">
-              <div className="w-10 h-10 rounded-full bg-royal-obsidian border border-royal-gold/30 flex items-center justify-center shadow-inner">
-                <CustomIcon name="ri-lock-line" className="text-xl text-royal-gold" />
-              </div>
+              <CustomIcon name="ri-lock-line" className="text-3xl text-royal-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
               <span className="text-[9px] text-royal-gold-light uppercase tracking-widest font-medium">Secure</span>
             </div>
           </div>
