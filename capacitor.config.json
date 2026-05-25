@@ -3,9 +3,6 @@
   "appName": "Shaadi Mantrana",
   "webDir": "frontend/out",
   "bundledWebRuntime": false,
-  "server": {
-    "cleartext": true
-  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
