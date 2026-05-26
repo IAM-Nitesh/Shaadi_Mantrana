@@ -108,24 +108,83 @@ We have set up GitHub Actions to handle the release workflow automatically.
 * **Push to `main`**: Automatically builds and deploys to **Internal Testing** (testers can download immediately).
 * **Push tag `v*`**: Automatically builds and deploys to **Production** (goes to all users after Google review).
 
-### One-Time Setup Required
-Before the workflow will function, you need to add the following **secrets** to GitHub:
-*(Go to GitHub → Your Repo → Settings → Secrets and Variables → Actions → New repository secret)*
+### 🔐 One-Time Setup: GitHub Secrets & Google Cloud Service Account
+
+Setting up automated deployment to the Google Play Store is a huge time-saver, but requires a specific setup to authenticate GitHub Actions with Google's servers.
+
+#### Step 1 — Enable the API & Create Service Account in Google Cloud
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com).
+2. Make sure your project (e.g., `shaadi-mantrana`) is selected in the top dropdown menu.
+3. **The Missing Link — Enable the API:** 
+   * In the top search bar, type **"Google Play Developer API"**.
+   * Click on it from the results and click **Enable**. *(If it says "API Enabled" already, you're good to go).*
+4. **Go to the Dedicated "Service Accounts" Page:**
+   * Look at your left-hand menu. Make sure you click specifically on **Service Accounts** (under IAM & Admin), not "IAM".
+5. **Start the correct wizard:**
+   * Click **+ CREATE SERVICE ACCOUNT** at the top of the page.
+   * **Step 1 (Service account details):** Enter `github-play-deploy` into the Service account name box. Look right below that box—you will see a button that says **CREATE AND CONTINUE**. Click that.
+   * **Step 2 (Grant this service account access to project):** This is where it asks for Roles. Do not type anything into a "Principals" box. Simply scroll down and click **CONTINUE** (leaving roles blank).
+   * **Step 3 (Grant users access to this service account):** Leave it completely blank and click **DONE**.
+6. **How to get your JSON Key:**
+   * Now you will be back on the list view. Look for the `github-play-deploy` row.
+   * Click the three vertical dots under the "Actions" column on the far right.
+   * Select **Manage keys**.
+   * Click **Add Key** ➔ **Create new key**.
+   * Pick **JSON** and click **Create**.
+   * Your `.json` file will instantly download, and you are ready to move on to Step 2 in the Play Console!
+7. **Before leaving:** Copy the long **Email** address of this service account from the list (it ends in `.iam.gserviceaccount.com`). You will need it for the next step.
+
+#### Step 2 — Grant Access in Google Play Console
+
+This tells Google Play that your new service account has permission to upload app updates on your behalf.
+
+##### 1. Invite the Service Account to Google Play
+
+1. Open a new tab and go to the [Google Play Console](https://play.google.com/console).
+2. Look at the left-hand menu, scroll down toward the bottom setup sections, and click on **Users and permissions**.
+3. Click the blue **Invite new users** button on the right side of the screen.
+4. In the **Email address** field, paste the email address of your service account.
+   > **Tip:** If you didn't copy it earlier, look inside your downloaded `.json` file using a text editor—it's the value next to `"client_email"` (it looks like `github-play-deploy@...gserviceaccount.com`).
+
+##### 2. Set the App Permissions
+
+1. Click on the **App permissions** tab right next to the User details tab.
+2. Click **Add app**, check the box next to **Shaadi Mantrana**, and click **Apply**.
+3. A list of permissions will appear. Make sure you check the boxes for:
+   * ✅ **Release apps to testing tracks**
+   * ✅ **Manage testing tracks and edit tester lists**
+   * ✅ **Edit store presence, apps, and games** *(Keep this checked so your GitHub workflow can automatically upload release notes or update store listings if needed).*
+
+##### 3. Send the Invitation
+
+1. Click **Invite user** at the bottom right.
+2. Click **Send invite** to confirm.
+
+Because it is a service account and not a real person, the invitation is **automatically accepted instantly** by Google.
+#### Step 3 — Add to GitHub Secrets
+
+1. Locate the downloaded `.json` file on your Mac.
+2. Open it using any basic text editor (like TextEdit or VS Code).
+3. Select everything (`Cmd + A`) and copy the entire block of code (`Cmd + C`).
+4. Open your project repository on GitHub.
+5. Go to **Settings** → **Secrets and variables** (left sidebar) → **Actions**.
+6. Click **New repository secret**.
+7. Fill in the fields:
+   * **Name:** `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
+   * **Secret:** Paste the exact contents of the JSON file.
+8. Click **Add secret**.
+
+#### Add the remaining Secrets
+
+In the exact same GitHub Secrets page, add the following as well:
 
 | Secret Name | How to get it |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | Run `base64 -i android/shaadi-mantrana-release.jks | pbcopy` |
+| `ANDROID_KEYSTORE_BASE64` | Run `base64 -i android/shaadi-mantrana-release.jks \| pbcopy` |
 | `ANDROID_KEYSTORE_PASSWORD` | The password you set when creating the keystore |
 | `ANDROID_KEY_ALIAS` | `shaadi-mantrana` |
 | `ANDROID_KEY_PASSWORD` | Same as keystore password |
 | `GOOGLE_SERVICES_JSON` | Paste the full contents of `android/app/google-services.json` |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | See below ↓ |
 | `NEXT_PUBLIC_API_URL` | Your Render backend URL |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Your Firebase env vars (add all required UI vars) |
-
-### Getting the `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
-1. Go to [Google Play Console](https://play.google.com/console) → **Setup → API access**.
-2. Link to a Google Cloud project → **Create new service account**.
-3. Give it the **"Release manager"** role.
-4. Download the JSON key file.
-5. Paste the entire JSON content as the secret value for `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Your Firebase env vars |
