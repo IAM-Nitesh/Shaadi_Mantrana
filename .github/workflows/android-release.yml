@@ -15,6 +15,12 @@ env:
   VERSION_CODE: 0
   VERSION_NAME: unknown
 
+# Explicit least-privilege permissions (security best practice)
+# See: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+permissions:
+  contents: read     # Needed to checkout the repository
+  actions: write     # Needed to upload build artifacts
+
 on:
   push:
     branches:
@@ -66,16 +72,14 @@ jobs:
           key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      # ─── 5. Install root dependencies ──────────────────────────────────────
-      - name: Install root dependencies
+      # ─── 5. Install all dependencies (root + all workspaces) ────────────────
+      # Running npm ci once at the root is correct for npm workspaces.
+      # A second npm ci inside frontend/ would create an isolated node_modules
+      # that breaks workspace module hoisting (causes "firebase/auth not found").
+      - name: Install all dependencies
         run: npm ci
 
-      # ─── 6. Install frontend dependencies ──────────────────────────────────
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-
-      # ─── 7. Build Next.js frontend (static export) ─────────────────────────
+      # ─── 6. Build Next.js frontend (static export) ─────────────────────────
       - name: Build frontend
         run: npm run build
         working-directory: frontend
