@@ -2239,7 +2239,7 @@ function ProfileContent() {
               ></div>
             </div>
             <p className="text-xs text-royal-gold-light/60 mt-2 text-center">
-              {30 - Math.round((calculatedCompleteness / 100) * 30)} fields remaining to unlock all features
+              {Math.round((100 - calculatedCompleteness) / 100 * requiredFields.length)} fields remaining to unlock all features
             </p>
           </div>
         )}

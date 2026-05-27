@@ -256,13 +256,11 @@ function SettingsContent() {
             href="/terms"
             icon="ri-file-list-3-line"
             label="Terms of Condition"
-            danger
           />
           <SettingsRow
             href="/privacy"
             icon="ri-shield-keyhole-line"
             label="Privacy Policy"
-            danger
           />
         </SettingsSection>
 
