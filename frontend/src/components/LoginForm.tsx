@@ -7,7 +7,6 @@ import OTPInput from './OTPInput';
 import logger from '../utils/logger';
 import { ConfirmationResult } from 'firebase/auth';
 import posthog from 'posthog-js';
-import MandalaBackground from './ui/MandalaBackground';
 import RoyalLoader from './RoyalLoader';
 
 interface LoginFormProps {
@@ -161,11 +160,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   };
   if (step === 'phone') {
     return (
-      <div className="relative w-full flex items-center justify-center py-4 overflow-hidden">
-        <MandalaBackground opacity={0.1} rotationSpeed={120} />
-        
+      <div className="relative w-full flex items-center justify-center py-4">
         <div className="w-full max-w-md mx-auto relative z-10">
-          <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>          <div className="space-y-6">
+          <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>
+          <div className="space-y-6">
             <div>
               <label className="block text-xs font-medium text-royal-gold/60 mb-2 uppercase tracking-widest font-inter">
                 Mobile Number
@@ -184,7 +182,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   disabled={isSendingOTP}
                 />
               </div>
-              <p className="text-xs text-royal-gold-light/50 mt-2 italic">We'll send a code for verification</p>
+              <p className="text-xs text-royal-gold-light/50 mt-2 italic">We&apos;ll send an OTP for verification</p>
             </div>
 
             <button
@@ -195,9 +193,9 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             >
               <div className="flex items-center justify-center">
                 {isSendingOTP ? (
-                  <span className="font-bold">Sending...</span>
+                  <span className="font-bold">Sending OTP...</span>
                 ) : (
-                  <span>Get Verification Code</span>
+                  <span>Get OTP</span>
                 )}
               </div>
             </button>
@@ -222,21 +220,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   }
 
   return (
-    <div className="relative w-full flex items-center justify-center py-4 overflow-hidden">
-      <MandalaBackground opacity={0.1} rotationSpeed={120} />
-      
+    <div className="relative w-full flex items-center justify-center py-4">
       <div className="w-full max-w-md mx-auto relative z-10">
         <div className={`rounded-2xl shadow-2xl p-8 border border-royal-glass-border ${isMounted ? 'bg-royal-glass backdrop-blur-xl' : 'bg-royal-obsidian'}`}>
           <div className="text-center mb-8">
             <h2 className="text-3xl font-playfair font-bold text-royal-gold mb-2">Verify Mobile</h2>
-            <p className="text-royal-gold-light/80 font-inter">Enter the 6-digit code sent to your phone</p>
           </div>
 
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-royal-gold-light/70 mb-4 text-center font-inter">
-                Verification Code
-              </label>
               <div className="royal-otp-wrapper">
                 <OTPInput
                   value={otp}
@@ -245,7 +237,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                 />
               </div>
               <p className="text-sm text-royal-gold-light/60 mt-4 text-center font-inter">
-                Code sent to <span className="font-bold text-royal-gold">+91 {phoneNumber}</span>
+                OTP sent to <span className="font-bold text-royal-gold">+91 {phoneNumber}</span>
               </p>
             </div>
 
@@ -254,14 +246,14 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               disabled={otp.length !== 6 || isVerifyingOTP}
               className={`w-full bg-royal-gold text-royal-obsidian py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(212,175,55,0.3)] ${isVerifyingOTP ? 'shimmer-button' : ''}`}
             >
-              Verify Code
+              Verify OTP
             </button>
 
             {isVerifyingOTP && (
               <RoyalLoader 
                 variant="grand" 
                 fullScreen 
-                text="Confirming Sacred Code..." 
+                text="Verifying OTP..." 
                 opacity={0.98}
               />
             )}
@@ -272,7 +264,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                 disabled={resendCooldown > 0 || isSendingOTP}
                 className="text-royal-gold hover:text-royal-gold-light font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-inter"
               >
-                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
               </button>
             </div>
 

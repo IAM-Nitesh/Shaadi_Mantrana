@@ -169,11 +169,41 @@ export const ICON_REGISTRY = {
     description: 'Security/lock',
     aliases: ['lock', 'secure', 'private'],
   },
+  'ri-shield-keyhole-line': {
+    path: '/icons/lock.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'Privacy shield/lock',
+    aliases: ['privacy', 'secure', 'lock'],
+  },
   'ri-logout-box-line': {
     path: '/icons/logout.svg',
     category: ICON_CATEGORIES.SYSTEM,
     description: 'Logout/sign out',
     aliases: ['logout', 'signout', 'exit'],
+  },
+  'ri-logout-box-r-line': {
+    path: '/icons/logout.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'Logout/sign out right',
+    aliases: ['logout', 'signout', 'exit'],
+  },
+  'ri-door-open-line': {
+    path: '/icons/logout.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'Session/door open',
+    aliases: ['session', 'door', 'logout'],
+  },
+  'ri-file-list-3-line': {
+    path: '/icons/document.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'File list/terms',
+    aliases: ['terms', 'document', 'file'],
+  },
+  'ri-account-circle-line': {
+    path: '/icons/user.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'Account circle',
+    aliases: ['account', 'user', 'profile'],
   },
 
   // Profile Icons

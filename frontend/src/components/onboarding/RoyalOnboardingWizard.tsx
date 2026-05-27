@@ -92,103 +92,100 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
       {/* Dramatic Vignette */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(18,18,18,0.8)_100%)]" />
 
-      {/* Header with Progress */}
-      <header className="relative z-10 pt-[env(safe-area-inset-top,1rem)] px-6 pb-4 bg-royal-obsidian/40 backdrop-blur-xl border-b border-royal-gold/10 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <RoyalIcon size="md" />
-            <div>
-              <h1 className="text-royal-gold font-playfair text-lg font-bold drop-shadow-md">Sacred Profiling</h1>
-              <p className="text-royal-gold-light/60 text-[10px] tracking-[0.2em] uppercase">Step {currentStepIndex + 1} of {STEPS.length}</p>
-            </div>
-          </div>
+      {/* Ultra-minimal Fixed Progress Bar at Absolute Top */}
+      <div className="absolute top-0 left-0 w-full h-[3px] bg-royal-gold/10 z-[210]">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.8)]"
+        />
+        <motion.div 
+          initial={{ left: 0 }}
+          animate={{ left: `${progress}%` }}
+          transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1),0_0_20px_rgba(212,175,55,1)]"
+        />
+      </div>
+
+      {/* Single Scrollable Canvas */}
+      <main className="relative z-10 flex-1 overflow-y-auto custom-scrollbar w-full">
+        <div className="min-h-full flex flex-col pt-12 pb-24 px-4 max-w-2xl mx-auto">
           
-          <div className="text-right">
-             <div className="text-royal-gold font-medium text-xs">{Math.round(progress)}%</div>
+          {/* Scrollable Header */}
+          <div className="flex items-center justify-between mb-8 px-2">
+            <div className="flex items-center space-x-3">
+              <RoyalIcon size="md" />
+              <div>
+                <h1 className="text-royal-gold font-playfair text-xl font-bold drop-shadow-md">Sacred Profiling</h1>
+                <p className="text-royal-gold-light/60 text-[10px] tracking-[0.2em] uppercase mt-0.5">Step {currentStepIndex + 1} of {STEPS.length}</p>
+              </div>
+            </div>
+            <div className="text-royal-gold font-medium text-sm drop-shadow-md">{Math.round(progress)}%</div>
           </div>
-        </div>
 
-        {/* Premium Progress Bar */}
-        <div className="h-[3px] w-full bg-royal-gold/10 rounded-full overflow-hidden relative">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.8)]"
-          />
-          {/* Glowing head of the progress bar */}
-          <motion.div 
-            initial={{ left: 0 }}
-            animate={{ left: `${progress}%` }}
-            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1),0_0_20px_rgba(212,175,55,1)]"
-          />
-        </div>
-      </header>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep.id}
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -30, scale: 0.98 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1 flex flex-col"
+            >
+              <div className="backdrop-blur-xl bg-white/[0.03] border border-royal-gold/20 rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] flex-1 flex flex-col">
+                <div className="space-y-2 mb-10 text-center">
+                  <h2 className="text-3xl font-playfair font-bold text-royal-gold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentStep.title}</h2>
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-8 h-[1px] bg-gradient-to-r from-transparent to-royal-gold/50" />
+                    <p className="text-royal-gold/80 text-xs tracking-widest uppercase">{currentStep.subtitle}</p>
+                    <div className="w-8 h-[1px] bg-gradient-to-l from-transparent to-royal-gold/50" />
+                  </div>
+                </div>
 
-      {/* Step Content */}
-      <main className="relative z-10 flex-1 overflow-y-auto px-4 py-6 custom-scrollbar">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep.id}
-            initial={{ opacity: 0, y: 30, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -30, scale: 0.98 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="pb-32"
-          >
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-royal-gold/20 rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-              <div className="space-y-2 mb-8 text-center">
-                <h2 className="text-3xl font-playfair font-bold text-royal-gold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentStep.title}</h2>
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-8 h-[1px] bg-gradient-to-r from-transparent to-royal-gold/50" />
-                  <p className="text-royal-gold/80 text-xs tracking-widest uppercase">{currentStep.subtitle}</p>
-                  <div className="w-8 h-[1px] bg-gradient-to-l from-transparent to-royal-gold/50" />
+                <div className="flex-1 mb-12">
+                  {renderStep()}
+                </div>
+
+                {/* Integrated Action Buttons at bottom of card */}
+                <div className="flex items-center space-x-4 mt-auto pt-6 border-t border-royal-gold/10">
+                  {currentStepIndex > 0 && (
+                    <button
+                      onClick={handleBack}
+                      className="px-6 py-4 text-royal-gold/60 font-medium hover:text-royal-gold transition-colors active:scale-95 border border-royal-gold/20 rounded-xl bg-royal-gold/5 hover:bg-royal-gold/10"
+                    >
+                      Back
+                    </button>
+                  )}
+                  <button
+                    onClick={handleNext}
+                    disabled={isSaving}
+                    className={`flex-1 group relative overflow-hidden bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold text-gray-900 py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all active:scale-95 disabled:opacity-50 ${isSaving ? 'shimmer-button' : ''}`}
+                  >
+                    <span className="relative z-10 flex items-center justify-center">
+                      {isSaving ? (
+                        <span className="tracking-widest uppercase text-sm font-black">Preserving...</span>
+                      ) : (
+                        <>
+                          <span className="tracking-widest uppercase text-sm font-black mr-2">
+                            {currentStepIndex === STEPS.length - 1 ? 'Finalize Vows' : 'Continue Journey'}
+                          </span>
+                          {currentStepIndex < STEPS.length - 1 && (
+                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                          )}
+                        </>
+                      )}
+                    </span>
+                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                  </button>
                 </div>
               </div>
-
-              {renderStep()}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </main>
-
-      {/* Footer Navigation */}
-      <footer className="relative z-20 p-6 bg-royal-obsidian/80 backdrop-blur-xl border-t border-royal-gold/10 pb-[calc(env(safe-area-inset-bottom,1rem)+1.5rem)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center space-x-4 max-w-lg mx-auto">
-          {currentStepIndex > 0 && (
-            <button
-              onClick={handleBack}
-              className="px-6 py-4 text-royal-gold/60 font-medium hover:text-royal-gold transition-colors active:scale-95 border border-royal-gold/20 rounded-xl bg-royal-gold/5 backdrop-blur-md"
-            >
-              Back
-            </button>
-          )}
-          <button
-            onClick={handleNext}
-            disabled={isSaving}
-            className={`flex-1 group relative overflow-hidden bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold text-gray-900 py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all active:scale-95 disabled:opacity-50 ${isSaving ? 'shimmer-button' : ''}`}
-          >
-            <span className="relative z-10 flex items-center justify-center">
-              {isSaving ? (
-                <span className="tracking-widest uppercase text-sm font-black">Preserving...</span>
-              ) : (
-                <>
-                  <span className="tracking-widest uppercase text-sm font-black mr-2">
-                    {currentStepIndex === STEPS.length - 1 ? 'Finalize Vows' : 'Continue Journey'}
-                  </span>
-                  {currentStepIndex < STEPS.length - 1 && (
-                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  )}
-                </>
-              )}
-            </span>
-            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-          </button>
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
