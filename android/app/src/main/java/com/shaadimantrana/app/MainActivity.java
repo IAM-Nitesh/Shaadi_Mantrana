@@ -2,17 +2,32 @@ package com.shaadimantrana.app;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
-import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Disable app verification for testing if in debug mode
-        // This allows test phone numbers to work without sending real SMS
+
+        // Initialize Firebase App Check.
+        // DEBUG builds: Use DebugAppCheckProviderFactory so local/emulator runs
+        //   are not blocked by Play Integrity checks. Check Logcat for the
+        //   debug token and add it to Firebase Console > App Check > Debug tokens.
+        // RELEASE builds: Use PlayIntegrityAppCheckProviderFactory so only genuine
+        //   app binaries distributed via the Play Store can make backend requests.
+        FirebaseApp.initializeApp(this);
+        FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
         if (BuildConfig.DEBUG) {
-            FirebaseAuth.getInstance().getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
+            firebaseAppCheck.installAppCheckProviderFactory(
+                DebugAppCheckProviderFactory.getInstance()
+            );
+        } else {
+            firebaseAppCheck.installAppCheckProviderFactory(
+                PlayIntegrityAppCheckProviderFactory.getInstance()
+            );
         }
     }
 }
