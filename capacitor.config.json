@@ -9,7 +9,7 @@
       "launchFadeOutDuration": 0,
       "backgroundColor": "#0a0a0a",
       "androidSplashResourceName": "splash",
-      "androidScaleType": "FIT_XY",
+      "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
       "splashFullScreen": true,
       "splashImmersive": true

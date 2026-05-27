@@ -4,10 +4,10 @@ Feature: Sacred Onboarding
     Given the test user is in the "fresh" state
     And I navigate to "/profile"
     Then I should see the "Personal Grace" section
-    When I fill in "Name of the Devout" with "Aaryan Sharma"
+    When I fill in "Name" with "Aaryan Sharma"
     And I select "Male" for "Gender"
-    And I fill in "Date of Appearance" with "1995-05-15"
-    And I fill in "Time of Arrival" with "10:30"
+    And I fill in "Date of Birth" with "1995-05-15"
+    And I fill in "Time of Birth" with "10:30"
     And I fill in "Place of Birth" with "New Delhi"
     And I click the "Continue Journey" button
 
@@ -37,7 +37,7 @@ Feature: Sacred Onboarding
 
     # Step 5: Sacred Intent
     Then I should see the "Sacred Intent" section
-    When I fill in "Sacred Bio (About Me)" with "I am seeking a partner who values tradition and growth."
+    When I fill in "About Me" with "I am seeking a partner who values tradition and growth."
     And I fill in "Interests & Passions" with "Classical Music, Yoga"
     And I click the "Finalize Vows" button
 

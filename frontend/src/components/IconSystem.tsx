@@ -170,10 +170,10 @@ export const ICON_REGISTRY = {
     aliases: ['lock', 'secure', 'private'],
   },
   'ri-shield-keyhole-line': {
-    path: '/icons/lock.svg',
+    path: '/icons/shield-check.svg',
     category: ICON_CATEGORIES.SYSTEM,
-    description: 'Privacy shield/lock',
-    aliases: ['privacy', 'secure', 'lock'],
+    description: 'Privacy shield/policy',
+    aliases: ['privacy', 'policy'],
   },
   'ri-logout-box-line': {
     path: '/icons/logout.svg',
