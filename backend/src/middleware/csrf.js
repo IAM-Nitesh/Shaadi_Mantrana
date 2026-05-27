@@ -8,7 +8,10 @@ const allowedOrigins = new Set([
   process.env.APP_URL,
   'https://shaadimantrana.onrender.com',
   'https://shaadimantrana.app',
-  'https://www.shaadimantrana.app'
+  'https://www.shaadimantrana.app',
+  'https://localhost',
+  'http://localhost',
+  'capacitor://localhost'
 ].filter(Boolean));
 
 function createCsrfToken() {
