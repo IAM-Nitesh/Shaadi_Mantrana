@@ -14,7 +14,15 @@ import posthog from 'posthog-js';
 import { Capacitor } from '@capacitor/core';
 import { NativeAuthService } from '../services/NativeAuthService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:4000' : '');
+// IMPORTANT: On Capacitor (Android/iOS), window.location.hostname is 'localhost'
+// because the webview is served from capacitor://localhost or http://localhost.
+// We must NOT use hostname-based detection — it gives false positives on native.
+// Instead, rely entirely on the build-time env var NEXT_PUBLIC_API_BASE_URL.
+// For local web dev only (not native), we fall back to localhost:4000.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  (!Capacitor.isNativePlatform() && typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://localhost:4000' 
+    : '');
 
 export interface User {
   userId: string;
