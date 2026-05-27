@@ -12,7 +12,7 @@ export default function SacredIntentStep({ data, updateField }: SacredIntentStep
     <div className="space-y-8">
       <div className="space-y-6">
         <RoyalTextArea 
-          label="Sacred Bio (About Me)" 
+          label="About Me" 
           value={data.about || ''} 
           onChange={(e) => updateField('about', e.target.value)}
           placeholder="Share your story, values, and what you seek in a life partner..."

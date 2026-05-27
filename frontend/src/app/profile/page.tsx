@@ -2225,6 +2225,25 @@ function ProfileContent() {
   {/* Content */}
   <div className="relative z-10 page-transition" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
 
+        {/* Pinned Progress Bar */}
+        {calculatedCompleteness < 100 && (
+          <div className="sticky top-0 z-40 bg-royal-obsidian/95 backdrop-blur-md px-6 py-4 border-b border-royal-gold/20 shadow-lg">
+            <div className="flex items-center justify-between text-sm text-royal-gold-light/80 mb-2">
+              <span className="font-playfair font-semibold">Profile Completion</span>
+              <span className="font-bold text-royal-gold">{calculatedCompleteness}%</span>
+            </div>
+            <div className="w-full bg-royal-gold/10 rounded-full h-2.5 overflow-hidden border border-royal-gold/10">
+              <div 
+                className={`${getProgressBarColor(calculatedCompleteness)} h-full rounded-full transition-all duration-700 ease-out`}
+                style={{ width: `${calculatedCompleteness}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-royal-gold-light/60 mt-2 text-center">
+              {30 - Math.round((calculatedCompleteness / 100) * 30)} fields remaining to unlock all features
+            </p>
+          </div>
+        )}
+
         {/* Profile Complete Success Banner */}
         {isProfileComplete && (
           <div className="mx-4 mb-6 bg-royal-gold/10 border border-royal-gold/30 rounded-xl p-4 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
@@ -2252,7 +2271,7 @@ function ProfileContent() {
                 className="flex items-center space-x-2 px-5 py-2.5 bg-royal-gold text-royal-obsidian rounded-xl text-sm font-bold shadow-lg shadow-royal-gold/10 active:scale-95 transition-all"
               >
                 <CustomIcon name="ri-edit-line" size={16} />
-                <span>Refine</span>
+                <span>Edit</span>
               </button>
             ) : (
               <div className="flex items-center space-x-2">
@@ -2272,12 +2291,12 @@ function ProfileContent() {
 
         {/* Profile Image */}
         <div className="px-4 py-6">
-          <div className={`flex items-center gap-4 ${!isEditing ? 'justify-end pr-8' : 'justify-center'}`}>
+          <div className="flex flex-col items-center justify-center gap-4">
             {/* Profile Image Container - Centrally Aligned */}
             <div className="relative w-32 h-32">
               {/* Show temporary image if available, otherwise show existing profile image */}
               {(tempImageUrl || signedImageUrl) ? (
-                <div className="relative">
+                <div className="relative w-full h-full">
                   <Image
                     src={tempImageUrl || signedImageUrl || '/icons/user.svg'}
                     alt="Profile"
@@ -2338,28 +2357,6 @@ function ProfileContent() {
                 </>
               )}
             </div>
-            
-            {/* Edit Button - Only show when not editing */}
-            {!isEditing && (
-              <button
-                onClick={() => {
-                  // Clear all error styling when entering edit mode
-                  document.querySelectorAll('[data-field]').forEach(el => {
-                    const element = el as HTMLElement;
-                    element.classList.remove('border-royal-crimson', 'bg-royal-crimson/10', 'animate-shake');
-                    element.style.boxShadow = '';
-                    element.style.borderRadius = '';
-                    element.style.padding = '';
-                    element.style.margin = '';
-                  });
-                  setFieldErrors({});
-                  setIsEditing(true);
-                }}
-                className="button-royal px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
-              >
-                Edit
-              </button>
-            )}
           </div>
           
           {/* Upload Message */}
@@ -2409,9 +2406,9 @@ function ProfileContent() {
         </div>
 
         {/* Profile Details */}
-        <div ref={profileDetailsRef} className="px-4 space-y-6">
+        <div ref={profileDetailsRef} className="px-4 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch pb-6">
           {/* Basic Information */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-user-line" size={20} className="text-royal-gold mr-3" />
               Basic Information
@@ -2560,7 +2557,7 @@ function ProfileContent() {
         </div>
 
         {/* Birth Details */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-calendar-line" size={20} className="text-royal-gold mr-3" />
               Birth Details
@@ -2568,7 +2565,7 @@ function ProfileContent() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  {renderFieldLabel('dateOfBirth', 'Date')}
+                  {renderFieldLabel('dateOfBirth', 'Date of Birth')}
                   {isEditing ? (
                     <div
                       onFocus={() => handleFieldFocus('dateOfBirth')}
@@ -2609,7 +2606,7 @@ function ProfileContent() {
                   {renderInlineError('dateOfBirth')}
                 </div>
                 <div>
-                  {renderFieldLabel('timeOfBirth', 'Time')}
+                  {renderFieldLabel('timeOfBirth', 'Time of Birth')}
                   {isEditing ? (
                     <div
                       onFocus={() => handleFieldFocus('timeOfBirth')}
@@ -2664,7 +2661,7 @@ function ProfileContent() {
           </div>
 
           {/* Physical Details */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-user-heart-line" size={20} className="text-royal-gold mr-3" />
               Physical Details
@@ -2770,7 +2767,7 @@ function ProfileContent() {
           </div>
 
           {/* Gotra Details */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-building-line" size={20} className="text-royal-gold mr-3" />
               Gotra Details
@@ -2850,7 +2847,7 @@ function ProfileContent() {
           </div>
 
           {/* Professional Details */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-briefcase-line" size={20} className="text-royal-gold mr-3" />
               Professional Details
@@ -2917,7 +2914,7 @@ function ProfileContent() {
           </div>
 
           {/* Lifestyle */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-heart-3-line" size={20} className="text-royal-gold mr-3" />
               Lifestyle
@@ -2998,7 +2995,7 @@ function ProfileContent() {
           </div>
 
           {/* Family Details */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-group-line" size={20} className="text-royal-gold mr-3" />
               Family Details
@@ -3076,7 +3073,7 @@ function ProfileContent() {
           </div>
 
           {/* Preferences */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-settings-line" size={20} className="text-royal-gold mr-3" />
               Preferences
@@ -3125,7 +3122,7 @@ function ProfileContent() {
           </div>
 
           {/* About */}
-          <div className="card-modern p-6 hover-lift">
+          <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
               <CustomIcon name="ri-file-text-line" size={20} className="text-royal-gold mr-3" />
               About Me
@@ -3200,19 +3197,7 @@ function ProfileContent() {
 
           {/* Save Button */}
           {isEditing && (
-            <div className="space-y-3 relative z-[100001]">
-              {/* Progress indicator */}
-              <div className="flex items-center justify-between text-sm text-royal-gold-light/60">
-                <span>Profile Completion</span>
-                <span className="font-semibold">{calculatedCompleteness}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className={`${getProgressBarColor(calculatedCompleteness)} h-2 rounded-full transition-all duration-300`}
-                  style={{ width: `${calculatedCompleteness}%` }}
-                ></div>
-              </div>
-              
+            <div className="md:col-span-2 space-y-3 relative z-[100001]">
               <button
                 onClick={handleSave}
                 data-save-button
@@ -3225,12 +3210,6 @@ function ProfileContent() {
               >
                 {calculatedCompleteness >= 100 ? '🎉 Save Complete Profile' : 'Save Changes'}
               </button>
-              
-              {calculatedCompleteness < 100 && (
-                <p className="text-xs text-royal-gold-light/60 text-center mt-2">
-                  {30 - Math.round((calculatedCompleteness / 100) * 30)} fields remaining
-                </p>
-              )}
             </div>
           )}
       {/* Filter Modal */}
