@@ -146,31 +146,34 @@ function SettingsContent() {
 
       {/* ── Logout Confirmation Modal ──────────────────── */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
           <div
-            className="bg-royal-obsidian/95 border border-royal-gold/15 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_60px_rgba(212,175,55,0.08)]"
-            style={{ animation: 'fadeInScale 0.2s ease-out' }}
+            className="bg-royal-obsidian/95 border border-royal-gold/20 rounded-3xl p-8 w-full max-w-sm shadow-[0_0_60px_rgba(212,175,55,0.12)] flex flex-col items-center justify-center relative overflow-hidden"
+            style={{ animation: 'fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
+            {/* Ambient Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-royal-crimson/10 rounded-full blur-3xl pointer-events-none"></div>
+            
             {/* Icon */}
-            <div className="w-14 h-14 rounded-2xl bg-royal-crimson/10 flex items-center justify-center mx-auto mb-4">
-              <CustomIcon name="ri-logout-box-r-line" size={26} className="text-royal-crimson" />
+            <div className="w-16 h-16 rounded-2xl bg-royal-crimson/10 border border-royal-crimson/20 flex items-center justify-center mb-5 relative z-10 shadow-[0_0_20px_rgba(220,38,38,0.15)]">
+              <CustomIcon name="ri-logout-box-r-line" size={30} className="text-royal-crimson" />
             </div>
-            <h3 className="text-lg font-playfair font-bold text-white text-center mb-1">
+            <h3 className="text-xl font-playfair font-bold text-white text-center mb-2 relative z-10">
               Ready to leave?
             </h3>
-            <p className="text-sm text-royal-gold/50 text-center mb-6">
+            <p className="text-sm text-royal-gold/60 text-center mb-8 relative z-10">
               Your sacred journey awaits your return.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4 w-full relative z-10">
               <button
                 onClick={cancelLogout}
-                className="flex-1 py-3 rounded-xl border border-royal-gold/20 text-royal-gold/70 text-sm font-medium hover:border-royal-gold/40 hover:text-royal-gold transition-all duration-200"
+                className="flex-1 py-3.5 rounded-xl border border-royal-gold/30 bg-royal-gold/5 text-royal-gold/90 text-sm font-semibold hover:bg-royal-gold/15 hover:border-royal-gold/60 hover:text-royal-gold shadow-[0_0_10px_rgba(212,175,55,0.05)] hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300"
               >
                 Stay
               </button>
               <button
                 onClick={confirmLogout}
-                className="flex-1 py-3 rounded-xl bg-royal-crimson/90 hover:bg-royal-crimson text-white text-sm font-semibold shadow-[0_0_20px_rgba(220,38,38,0.2)] hover:shadow-[0_0_30px_rgba(220,38,38,0.35)] transition-all duration-200"
+                className="flex-1 py-3.5 rounded-xl border border-royal-crimson/30 bg-royal-crimson/10 text-royal-crimson text-sm font-semibold hover:bg-royal-crimson hover:text-white shadow-[0_0_15px_rgba(220,38,38,0.1)] hover:shadow-[0_0_30px_rgba(220,38,38,0.35)] transition-all duration-300"
               >
                 Log Out
               </button>
@@ -253,11 +256,13 @@ function SettingsContent() {
             href="/terms"
             icon="ri-file-list-3-line"
             label="Terms of Condition"
+            danger
           />
           <SettingsRow
             href="/privacy"
             icon="ri-shield-keyhole-line"
             label="Privacy Policy"
+            danger
           />
         </SettingsSection>
 
