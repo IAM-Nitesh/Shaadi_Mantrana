@@ -10,7 +10,7 @@ export default function HeaderWrapper() {
   if (p === '/chat' || p.startsWith('/chat/')) return null;
 
   // Paths that should show the global back button
-  const backPaths = ['/profile', '/settings', '/help', '/terms', '/privacy'];
+  const backPaths = ['/settings', '/help', '/terms', '/privacy'];
   // For informational pages we want the back button to go back to settings
   const computedBackHref = ['/help', '/terms', '/privacy'].includes(p) ? '/settings' : '/dashboard';
 
