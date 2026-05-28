@@ -146,6 +146,14 @@ export const ICON_REGISTRY = {
     aliases: ['filter', 'search', 'sort'],
   },
 
+  // Custom Icons
+  'ri-yantra-line': {
+    path: '/icons/chakra.svg',
+    category: ICON_CATEGORIES.SOCIAL,
+    description: 'Yantra / Chakra icon',
+    aliases: ['yantra', 'chakra', 'mandala'],
+  },
+
   // Status Icons
   'ri-check-circle-line': {
     path: '/icons/check-circle.svg',

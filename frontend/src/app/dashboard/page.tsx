@@ -146,15 +146,6 @@ function DashboardContent() {
           <div>
             <h1 className="text-3xl font-playfair font-bold text-royal-gold">Discovery</h1>
           </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handleLogout}
-              disabled={isLoading}
-              className="p-2 text-royal-gold-light/60 hover:text-royal-gold transition-colors"
-            >
-              <Icon name="ri-logout-box-line" size="xl" />
-            </button>
-          </div>
         </div>
       </div>
 

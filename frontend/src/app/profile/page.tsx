@@ -1733,30 +1733,11 @@ function ProfileContent() {
   };
 
   // For height picker
-  const feetOptions = [4, 5, 6, 7, 8];
-  const inchOptions = Array.from({ length: 12 }, (_, i) => i);
-  // Parse height for dropdowns
-  let feet = '';
-  let inches = '';
-  logger.debug('🔍 Height parsing debug:', {
-    hasProfile: !!profile,
-    hasHeightField: !!profile?.height,
-    heightValue: profile?.height,
-    heightType: typeof profile?.height
+  const HEIGHT_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+    const f = Math.floor(i / 12) + 4;
+    const inc = i % 12;
+    return { value: `${f}'${inc}"`, label: `${f} ft ${inc} in` };
   });
-  
-  if (profile && profile.height && typeof profile.height === 'string') {
-    const match = profile.height.match(/(\d+)'(\d+)?/);
-    if (match) {
-      feet = match[1];
-      inches = match[2] || '';
-      logger.debug('✅ Height parsed successfully:', { feet, inches });
-    } else {
-      logger.debug('❌ Height format not recognized:', profile.height);
-    }
-  } else {
-    logger.debug('❌ Height field missing or invalid');
-  }
 
 
 
@@ -2438,44 +2419,18 @@ function ProfileContent() {
                     <>
                       <div className="flex flex-col md:flex-row gap-2 w-full">
                         <select
-                          value={feet}
-                          onChange={e => {
-                            const newFeet = e.target.value;
-                            setProfile({
-                              ...profile,
-                              height: `${newFeet}'${inches || 0}"`
-                            });
-                          }}
+                          value={profile.height || ""}
+                          onChange={e => handleFieldChange('height', e.target.value)}
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
-                          data-field="height-feet"
-                          className={`w-full md:w-1/2 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian text-white transition-all duration-300 appearance-none ${
+                          data-field="height"
+                          className={`w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian text-white transition-all duration-300 appearance-none ${
                             fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10' : 
                             (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-500 bg-emerald-900/10 text-emerald-400' : 'border-royal-gold/20 hover:border-royal-gold/40'
                           }`}
                         >
-                          <option value="">Select Feet</option>
-                          {feetOptions.map(f => <option key={f} value={f}>{f} ft</option>)}
-                        </select>
-                        <select
-                          value={inches}
-                          onChange={e => {
-                            const newInches = e.target.value;
-                            setProfile({
-                              ...profile,
-                              height: `${feet || 0}'${newInches}"`
-                            });
-                          }}
-                          onFocus={() => handleFieldFocus('height')}
-                          onBlur={() => handleFieldBlur('height')}
-                          data-field="height-inches"
-                          className={`w-full md:w-1/2 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian text-white transition-all duration-300 appearance-none ${
-                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10' : 
-                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-500 bg-emerald-900/10 text-emerald-400' : 'border-royal-gold/20 hover:border-royal-gold/40'
-                          }`}
-                        >
-                          <option value="">Select Inches</option>
-                          {inchOptions.map(i => <option key={i} value={i}>{i} in</option>)}
+                          <option value="">Select Height</option>
+                          {HEIGHT_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
                       </div>
                       {renderInlineError('height')}
@@ -2533,7 +2488,7 @@ function ProfileContent() {
           {/* Gotra Details */}
           <div className="card-modern p-6 hover-lift flex flex-col h-full">
             <h2 className="font-playfair font-bold text-royal-gold mb-4 flex items-center">
-              <CustomIcon name="ri-building-line" size={20} className="text-royal-gold mr-3" />
+              <CustomIcon name="ri-yantra-line" size={20} className="text-royal-gold mr-3" />
               Gotra Details
             </h2>
             <div className="space-y-4">
