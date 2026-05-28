@@ -41,7 +41,8 @@ export default function PhysicalVitalityStep({ data, updateField }: PhysicalVita
           fieldName="weight"
           value={data.weight || ''} 
           onChange={(e) => updateField('weight', e.target.value)}
-          placeholder="e.g. 70kg"
+          placeholder="e.g. 70"
+          inputMode="numeric"
         />
       </div>
 

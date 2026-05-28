@@ -5,6 +5,33 @@ import { useState } from 'react';
 import { cn } from '../../lib/utils';
 import { FIELD_HINTS } from '../../config/profileValidation';
 
+const TEXT_ONLY_FIELDS = new Set([
+  'name',
+  'nativePlace',
+  'currentResidence',
+  'placeOfBirth',
+  'father',
+  'mother',
+  'fatherGotra',
+  'motherGotra',
+  'grandfatherGotra',
+  'grandmotherGotra'
+]);
+
+const NUMBER_ONLY_FIELDS = new Set(['weight']);
+
+function sanitizeFieldValue(fieldName: string | undefined, type: string | undefined, value: string) {
+  if (fieldName && TEXT_ONLY_FIELDS.has(fieldName)) {
+    return value.replace(/[^a-zA-Z\s]/g, '');
+  }
+
+  if ((fieldName && NUMBER_ONLY_FIELDS.has(fieldName)) || type === 'number') {
+    return value.replace(/\D/g, '');
+  }
+
+  return value;
+}
+
 interface RoyalInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
@@ -14,7 +41,7 @@ interface RoyalInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   fieldName?: string;
 }
 
-export function RoyalInput({ label, error, isValid: propIsValid, isInvalid: propIsInvalid, hint: propHint, fieldName, className, onFocus, onBlur, value, ...props }: RoyalInputProps) {
+export function RoyalInput({ label, error, isValid: propIsValid, isInvalid: propIsInvalid, hint: propHint, fieldName, className, onFocus, onBlur, onChange, value, type, ...props }: RoyalInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -36,6 +63,14 @@ export function RoyalInput({ label, error, isValid: propIsValid, isInvalid: prop
           value={value}
           onFocus={(e) => { setIsFocused(true); onFocus?.(e); }}
           onBlur={(e) => { setIsFocused(false); setHasInteracted(true); onBlur?.(e); }}
+          onChange={(e) => {
+            const sanitized = sanitizeFieldValue(fieldName, type, e.currentTarget.value);
+            if (sanitized !== e.currentTarget.value) {
+              e.currentTarget.value = sanitized;
+            }
+            onChange?.(e);
+          }}
+          type={type}
           className={cn(
             "w-full bg-royal-obsidian border-b border-x-0 border-t-0 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 placeholder:text-royal-gold/20",
             isValid && !isInvalid ? "border-emerald-500 focus:border-emerald-400" :
