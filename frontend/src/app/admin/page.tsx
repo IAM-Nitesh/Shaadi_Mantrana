@@ -338,7 +338,7 @@ function AdminPageContent() {
               </div>
               <div>
                 <p className="text-sm font-medium text-white/80 font-inter">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers || users.length}</p>
+                <p className="text-2xl font-bold text-white">{stats?.totalUsers || users.length}</p>
               </div>
             </div>
           </div>
@@ -350,7 +350,7 @@ function AdminPageContent() {
               </div>
               <div>
                 <p className="text-sm font-medium text-white/80 font-inter">Preapproved Emails</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalPreapproved || 0}</p>
+                <p className="text-2xl font-bold text-white">{stats?.totalPreapproved || 0}</p>
               </div>
             </div>
           </div>
@@ -362,7 +362,7 @@ function AdminPageContent() {
               </div>
               <div>
                 <p className="text-sm font-medium text-white/80 font-inter">Paused Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.pausedUsers || users.filter(u => !u.approvedByAdmin).length}</p>
+                <p className="text-2xl font-bold text-white">{stats?.pausedUsers || users.filter(u => !u.approvedByAdmin).length}</p>
               </div>
             </div>
           </div>
@@ -372,7 +372,7 @@ function AdminPageContent() {
         <div className="bg-royal-glass rounded-2xl shadow-lg p-6 mb-8 border border-royal-glass-border animate-slide-in-top" style={{ animationDelay: '0.3s' }}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">User Management</h2>
+              <h2 className="text-xl font-semibold text-white mb-2">User Management</h2>
               <p className="text-sm text-white/80 font-inter">Add new users and manage existing accounts</p>
             </div>
             <div className="flex space-x-3">
@@ -507,7 +507,7 @@ function AdminPageContent() {
                               />
                             </div>
                             <div>
-                              <div className="text-sm font-semibold text-gray-900">
+                              <div className="text-sm font-semibold text-white">
                                 {user.isPending 
                                   ? 'Pending Registration' 
                                   : (user.fullName || `${user.firstName} ${user.lastName}`.trim() || 'No Name')
@@ -524,7 +524,7 @@ function AdminPageContent() {
                                   {user.isPending ? 'Pending' : user.role}
                                 </span>
                                 {user.isFirstLogin && !user.isPending && (
-                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-royal-gold/10 text-blue-800">
+                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-royal-gold/10 text-royal-gold">
                                     New
                                   </span>
                                 )}
@@ -538,7 +538,7 @@ function AdminPageContent() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 font-medium">{user.email}</div>
+                          <div className="text-sm text-white font-medium">{user.email}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col space-y-1">
@@ -557,14 +557,14 @@ function AdminPageContent() {
                                   user.status === 'active' 
                                     ? 'bg-royal-gold/10 text-emerald-400' 
                                     : user.status === 'invited'
-                                    ? 'bg-royal-gold/10 text-blue-800'
+                                    ? 'bg-royal-gold/10 text-royal-gold'
                                     : 'bg-red-100 text-red-800'
                                 }`}>
                                   {user.status}
                                 </span>
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   user.approvedByAdmin 
-                                    ? 'bg-royal-gold/10 text-blue-800' 
+                                    ? 'bg-royal-gold/10 text-royal-gold' 
                                     : 'bg-royal-gold/10 text-yellow-800'
                                 }`}>
                                   {user.approvedByAdmin ? 'Approved' : 'Paused'}
@@ -674,7 +674,7 @@ function AdminPageContent() {
                       <button
                         onClick={() => setCurrentPage(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm font-medium text-royal-gold/60 bg-royal-glass border border-gray-300 rounded-lg hover:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-royal-gold/60 bg-royal-glass border border-royal-gold/30 rounded-lg hover:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Previous
                       </button>
@@ -686,7 +686,7 @@ function AdminPageContent() {
                           className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                             currentPage === page
                               ? 'bg-royal-gold text-royal-obsidian'
-                              : 'text-royal-gold/60 bg-royal-glass border border-gray-300 hover:bg-royal-obsidian'
+                              : 'text-royal-gold/60 bg-royal-glass border border-royal-gold/30 hover:bg-royal-obsidian'
                           }`}
                         >
                           {page}
@@ -696,7 +696,7 @@ function AdminPageContent() {
                       <button
                         onClick={() => setCurrentPage(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-2 text-sm font-medium text-royal-gold/60 bg-royal-glass border border-gray-300 rounded-lg hover:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-royal-gold/60 bg-royal-glass border border-royal-gold/30 rounded-lg hover:bg-royal-obsidian disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Next
                       </button>
@@ -714,7 +714,7 @@ function AdminPageContent() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div ref={modalRef} className="bg-royal-glass rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Add New User</h3>
+              <h3 className="text-xl font-semibold text-white">Add New User</h3>
               <button
                 onClick={() => setShowAddUserModal(false)}
                 className="text-royal-gold/40 hover:text-white/80 font-inter p-2 hover:bg-royal-gold/10 rounded-lg transition-colors"
@@ -732,7 +732,7 @@ function AdminPageContent() {
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
                 placeholder="Enter email address"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-royal-gold focus:border-transparent transition-colors"
+                className="w-full p-3 border border-royal-gold/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-royal-gold focus:border-transparent transition-colors"
                 disabled={addingUser}
               />
             </div>
@@ -819,7 +819,7 @@ function AdminPageContent() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-royal-gold mx-auto mb-4"></div>
 
             {/* Loading Text */}
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Logging out...</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">Logging out...</h2>
             <p className="text-white/80 font-inter mb-8">Thank you for using Shaadi Mantrana</p>
 
             {/* Progress dots */}

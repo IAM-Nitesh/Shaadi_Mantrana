@@ -71,10 +71,10 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
   };
 
   return (
-  <div ref={backdropRef} className="fixed inset-0 z-[99999] flex items-end bg-black/70 backdrop-blur-md">
+  <div ref={backdropRef} className="fixed inset-0 z-[200000] flex items-end bg-black/70 backdrop-blur-md">
       <div
         ref={modalRef}
-        className="bg-royal-obsidian/95 backdrop-blur-2xl border border-royal-gold/20 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[100000]"
+        className="bg-royal-obsidian/95 backdrop-blur-2xl border border-royal-gold/20 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[200001]"
         style={{ boxShadow: '0 8px 32px 0 rgba(212,175,55,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
       >
         {/* Header */}

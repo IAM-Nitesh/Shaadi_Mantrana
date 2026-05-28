@@ -534,11 +534,11 @@ export default function AdminUsers() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Users</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h2 className="text-xl font-semibold text-white/90 mb-2">Error Loading Users</h2>
+          <p className="text-royal-gold/80 mb-4">{error}</p>
           <button
             onClick={() => fetchUsers()}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-royal-gold text-royal-obsidian rounded-xl hover:bg-royal-gold-light transition-colors"
           >
             Retry
           </button>
@@ -550,60 +550,60 @@ export default function AdminUsers() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8 pt-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-          <CustomIcon name="ri-user-settings-line" className="text-4xl text-blue-600 mr-3" />
+        <h1 className="text-3xl font-bold text-white/90 mb-2 flex items-center">
+          <CustomIcon name="ri-user-settings-line" className="text-4xl text-royal-gold mr-3" />
           User Management
         </h1>
-        <p className="text-gray-600">Manage user accounts and monitor activity</p>
+        <p className="text-royal-gold/80">Manage user accounts and monitor activity</p>
       </div>
 
         {/* Statistics Cards */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            <div className="user-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <div className="user-card bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border">
               <div className="flex items-center">
-                <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mr-4">
-                  <CustomIcon name="ri-group-line" className="text-2xl text-blue-600" />
+                <div className="bg-royal-gold/20 rounded-full w-12 h-12 flex items-center justify-center mr-4">
+                  <CustomIcon name="ri-group-line" className="text-2xl text-royal-gold" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{stats.totalUsers}</div>
-                  <div className="text-sm text-gray-500">Total Users</div>
+                  <div className="text-2xl font-bold text-white/90">{stats.totalUsers}</div>
+                  <div className="text-sm text-royal-gold/60">Total Users</div>
                 </div>
               </div>
             </div>
 
-            <div className="user-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <div className="user-card bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border">
               <div className="flex items-center">
                 <div className="bg-emerald-900/40 rounded-full w-12 h-12 flex items-center justify-center mr-4">
                   <CustomIcon name="ri-user-heart-line" className="text-2xl text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{stats.activeUsers}</div>
-                  <div className="text-sm text-gray-500">Active Users</div>
+                  <div className="text-2xl font-bold text-white/90">{stats.activeUsers}</div>
+                  <div className="text-sm text-royal-gold/60">Active Users</div>
                 </div>
               </div>
             </div>
 
-            <div className="user-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <div className="user-card bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border">
               <div className="flex items-center">
                 <div className="bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center mr-4">
                   <CustomIcon name="ri-user-settings-line" className="text-2xl text-yellow-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{stats.pausedUsers}</div>
-                  <div className="text-sm text-gray-500">Paused Users</div>
+                  <div className="text-2xl font-bold text-white/90">{stats.pausedUsers}</div>
+                  <div className="text-sm text-royal-gold/60">Paused Users</div>
                 </div>
               </div>
             </div>
 
-            <div className="user-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <div className="user-card bg-royal-glass rounded-2xl shadow-lg p-6 border border-royal-glass-border">
               <div className="flex items-center">
                 <div className="bg-royal-gold/20 rounded-full w-12 h-12 flex items-center justify-center mr-4">
                   <CustomIcon name="ri-mail-line" className="text-2xl text-royal-gold" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{stats.invitedUsers}</div>
-                  <div className="text-sm text-gray-500">Invited Users</div>
+                  <div className="text-2xl font-bold text-white/90">{stats.invitedUsers}</div>
+                  <div className="text-sm text-royal-gold/60">Invited Users</div>
                 </div>
               </div>
             </div>
@@ -611,11 +611,11 @@ export default function AdminUsers() {
         )}
 
         {/* Users Table */}
-        <div className="user-card bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="user-card bg-royal-glass rounded-2xl shadow-lg border border-royal-glass-border overflow-hidden">
+          <div className="px-6 py-4 border-b border-royal-gold/20">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                <CustomIcon name="ri-user-list-line" className="text-xl text-blue-500 mr-2" />
+              <h3 className="text-lg font-semibold text-white/90 flex items-center">
+                <CustomIcon name="ri-user-list-line" className="text-xl text-royal-gold-light mr-2" />
                 User Accounts ({users.length})
               </h3>
               <button
@@ -633,31 +633,31 @@ export default function AdminUsers() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-royal-obsidian">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Profile Complete
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Joined
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Last Active
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-royal-glass divide-y divide-gray-200">
                 {users.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={user._id} className="hover:bg-royal-obsidian transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-royal-obsidian to-royal-glass-border border border-royal-gold/30 flex items-center justify-center">
@@ -698,10 +698,10 @@ export default function AdminUsers() {
                           })()}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-white">
                             {user.profile?.name || user.fullName || 'No Name'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-royal-gold/60">
                             {user.phoneNumber || user.email || 'No contact info'}
                           </div>
                         </div>
@@ -714,7 +714,7 @@ export default function AdminUsers() {
                         const userStatus = user.status;
                         
                         let status = 'invited';
-                        let statusClass = 'bg-gray-100 text-gray-800';
+                        let statusClass = 'bg-royal-gold/10 text-white/90';
                         let statusIcon = 'ri-time-line';
                         
                         if (userStatus === 'active' && isApproved === true) {
@@ -727,7 +727,7 @@ export default function AdminUsers() {
                           statusIcon = 'ri-pause-line';
                         } else if (profileCompleteness < 100) {
                           status = 'invited';
-                          statusClass = 'bg-blue-100 text-blue-800';
+                          statusClass = 'bg-royal-gold/20 text-royal-gold';
                           statusIcon = 'ri-mail-line';
                         }
                         
@@ -746,21 +746,21 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="w-16 bg-royal-gold/20 rounded-full h-2 mr-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-royal-gold text-royal-obsidian h-2 rounded-full transition-all duration-300"
                             style={{ width: `${user.profileCompleteness || 0}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-royal-gold/60">
                           {user.profileCompleteness || 0}%
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-royal-gold/60">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-royal-gold/60">
                       {formatDate(user.lastActive)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
@@ -768,7 +768,7 @@ export default function AdminUsers() {
                         <>
                           <button
                             onClick={() => setOpenDropdown(openDropdown === user._id ? null : user._id)}
-                            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                            className="text-royal-gold/40 hover:text-royal-gold/80 transition-colors p-1 rounded-full hover:bg-royal-gold/10"
                             disabled={user.isUpdating}
                           >
                             {user.isUpdating ? (
@@ -779,7 +779,7 @@ export default function AdminUsers() {
                           </button>
                           
                           {openDropdown === user._id && (
-                            <div className="dropdown-container absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                            <div className="dropdown-container absolute right-0 mt-2 w-40 bg-royal-glass rounded-lg shadow-lg border border-royal-gold/20 z-10">
                               <div className="py-1">
                                 {(() => {
                                   const profileCompleteness = user.profileCompleteness || 0;
@@ -859,7 +859,7 @@ export default function AdminUsers() {
                                           setOpenDropdown(null);
                                         }}
                                         disabled={user.isUpdating}
-                                        className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full text-left px-4 py-2 text-sm text-royal-gold hover:bg-blue-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                       >
                                         <CustomIcon name="ri-mail-send-line" className="mr-2" />
                                         Resend Invite
@@ -882,15 +882,15 @@ export default function AdminUsers() {
           {users.length === 0 && (
             <div className="text-center py-12">
               <CustomIcon name="ri-user-line" className="text-6xl text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-              <p className="text-gray-500">No user accounts are currently available.</p>
+              <h3 className="text-lg font-medium text-white mb-2">No users found</h3>
+              <p className="text-royal-gold/60">No user accounts are currently available.</p>
             </div>
           )}
         </div>
       {/* Confirmation Dialog */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div className="bg-royal-glass rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center mb-4">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
                 confirmAction.action === 'pause' ? 'bg-yellow-100' : 'bg-emerald-900/40'
@@ -901,16 +901,16 @@ export default function AdminUsers() {
                 />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-white">
                   {confirmAction.action === 'pause' ? 'Pause User' : 'Resume User'}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-royal-gold/60">
                   {confirmAction.userPhone || confirmAction.userEmail || 'User'}
                 </p>
               </div>
             </div>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-royal-gold/80 mb-6">
               {confirmAction.action === 'pause' 
                 ? 'Are you sure you want to pause this user? They will no longer be able to log in or update their profile.'
                 : 'Are you sure you want to resume this user? They will regain access to log in and update their profile.'
@@ -920,7 +920,7 @@ export default function AdminUsers() {
             <div className="flex space-x-3">
               <button
                 onClick={cancelPauseResume}
-                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2 text-royal-gold/80 bg-royal-gold/10 rounded-xl hover:bg-royal-gold/20 transition-colors"
               >
                 Cancel
               </button>
