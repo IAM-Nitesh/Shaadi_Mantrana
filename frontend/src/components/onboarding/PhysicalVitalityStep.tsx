@@ -25,12 +25,14 @@ export default function PhysicalVitalityStep({ data, updateField }: PhysicalVita
       <div className="grid grid-cols-2 gap-4">
         <RoyalInput 
           label="Height" 
+          fieldName="height"
           value={data.height || ''} 
           onChange={(e) => updateField('height', e.target.value)}
           placeholder="e.g. 5ft 8in"
         />
         <RoyalInput 
           label="Weight" 
+          fieldName="weight"
           value={data.weight || ''} 
           onChange={(e) => updateField('weight', e.target.value)}
           placeholder="e.g. 70kg"
@@ -39,6 +41,7 @@ export default function PhysicalVitalityStep({ data, updateField }: PhysicalVita
 
       <RoyalSelect 
         label="Complexion" 
+        fieldName="complexion"
         value={data.complexion || ''}
         onChange={(e) => updateField('complexion', e.target.value)}
         options={COMPLEXION_OPTIONS}
@@ -49,6 +52,7 @@ export default function PhysicalVitalityStep({ data, updateField }: PhysicalVita
         
         <RoyalSelect 
           label="Eating Habit" 
+          fieldName="eatingHabit"
           value={data.eatingHabit || ''}
           onChange={(e) => updateField('eatingHabit', e.target.value)}
           options={[
@@ -60,6 +64,7 @@ export default function PhysicalVitalityStep({ data, updateField }: PhysicalVita
 
         <RoyalSelect 
           label="Smoking Habit" 
+          fieldName="smokingHabit"
           value={data.smokingHabit || ''}
           onChange={(e) => updateField('smokingHabit', e.target.value)}
           options={HABIT_OPTIONS}
@@ -67,6 +72,7 @@ export default function PhysicalVitalityStep({ data, updateField }: PhysicalVita
 
         <RoyalSelect 
           label="Drinking Habit" 
+          fieldName="drinkingHabit"
           value={data.drinkingHabit || ''}
           onChange={(e) => updateField('drinkingHabit', e.target.value)}
           options={HABIT_OPTIONS}

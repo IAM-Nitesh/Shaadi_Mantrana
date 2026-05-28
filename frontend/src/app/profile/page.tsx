@@ -28,239 +28,7 @@ import { apiClient } from '../../utils/api-client';
 import posthog from 'posthog-js';
 import { calculateProfileCompletion as calcCompleteness } from '../../constants/profileCompleteness';
 
-// Type definition for field configuration
-interface FieldConfig {
-  hint: string;
-  placeholder: string;
-  validation: (value: any) => boolean;
-  errorMessage: string;
-}
-
-// Field hints configuration with backend-aligned validation
-const FIELD_HINTS: { [key: string]: FieldConfig } = {
-  name: {
-    hint: "Enter your full name (minimum 2 characters)",
-    placeholder: "e.g. Priya Sharma",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 2,
-    errorMessage: "Full name must be at least 2 characters"
-  },
-  gender: {
-    hint: "Select your gender",
-    placeholder: "Choose gender",
-    validation: (value: any) => !!value && ['Male', 'Female'].includes(value),
-    errorMessage: "Please select your gender"
-  },
-  dateOfBirth: {
-    hint: "Select your date of birth (Age: 18-80 years)",
-    placeholder: "Choose date",
-    validation: (value: string) => {
-      if (!value) return false;
-      const birthDate = new Date(value);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      return age >= 18 && age <= 80;
-    },
-    errorMessage: "Age must be between 18-80 years"
-  },
-  height: {
-    hint: "Select your height in feet and inches",
-    placeholder: "e.g. 5'6\"",
-    validation: (value: string) => {
-      if (!value) return false;
-      const match = value.match(/^(\d+)'(\d+)"*$/);
-      if (!match) return false;
-      const feet = parseInt(match[1]);
-      const inches = parseInt(match[2]);
-      const totalInches = (feet * 12) + inches;
-      return totalInches >= 48 && totalInches <= 96;
-    },
-    errorMessage: "Please select your height"
-  },
-  weight: {
-    hint: "Enter your weight in kg (30-200 kg)",
-    placeholder: "e.g. 65",
-    validation: (value: string) => {
-      if (!value) return false;
-      const weight = parseInt(value);
-      return weight >= 30 && weight <= 200;
-    },
-    errorMessage: "Weight must be between 30-200 kg"
-  },
-  complexion: {
-    hint: "Select your skin complexion",
-    placeholder: "Choose complexion",
-    validation: (value: string) => !!value && ['Fair', 'Medium', 'Dark'].includes(value),
-    errorMessage: "Please select your skin complexion"
-  },
-  education: {
-    hint: "Enter your highest education qualification (minimum 3 characters)",
-    placeholder: "e.g. Bachelor's Degree, MBA, PhD",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 3,
-    errorMessage: "Education qualification must be at least 3 characters"
-  },
-  occupation: {
-    hint: "Enter your profession or occupation (minimum 3 characters)",
-    placeholder: "e.g. Software Engineer, Doctor, Teacher",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 3,
-    errorMessage: "Profession must be at least 3 characters"
-  },
-  annualIncome: {
-    hint: "Enter your annual income in lakhs",
-    placeholder: "e.g. 8",
-    validation: (value: string) => {
-      if (!value) return false;
-      const income = parseInt(value);
-      return income > 0;
-    },
-    errorMessage: "Please enter your annual income"
-  },
-  nativePlace: {
-    hint: "Enter your native place/city (minimum 2 characters)",
-    placeholder: "e.g. Mumbai, Delhi, Bangalore",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 2,
-    errorMessage: "Native place must be at least 2 characters"
-  },
-  currentResidence: {
-    hint: "Enter your current residence city (minimum 2 characters)",
-    placeholder: "e.g. Mumbai, Delhi, Bangalore",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 2,
-    errorMessage: "Current residence must be at least 2 characters"
-  },
-  maritalStatus: {
-    hint: "Select your current marital status",
-    placeholder: "Choose status",
-    validation: (value: string) => !!value && ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce'].includes(value),
-    errorMessage: "Please select your marital status"
-  },
-  father: {
-    hint: "Enter your father's name (minimum 2 characters)",
-    placeholder: "e.g. Rajesh Kumar",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 2,
-    errorMessage: "Father's name must be at least 2 characters"
-  },
-  mother: {
-    hint: "Enter your mother's name (minimum 2 characters)",
-    placeholder: "e.g. Sunita Devi",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 2,
-    errorMessage: "Mother's name must be at least 2 characters"
-  },
-  about: {
-    hint: "Tell us about yourself (minimum 10 characters)",
-    placeholder: "Share your interests, values, and what you're looking for...",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 10,
-    errorMessage: "About section must be at least 10 characters"
-  },
-  images: {
-    hint: "Upload a clear profile picture",
-    placeholder: "Click to upload photo",
-    validation: (value: any) => value && typeof value === 'string' && value.trim() !== '',
-    errorMessage: "Please upload a profile picture"
-  },
-  timeOfBirth: {
-    hint: "Select your time of birth (required for accurate matching)",
-    placeholder: "Choose time",
-    validation: (value: any) => value && typeof value === 'string' && value.trim() !== '',
-    errorMessage: "Please select your time of birth"
-  },
-  placeOfBirth: {
-    hint: "Enter your place of birth (minimum 2 characters)",
-    placeholder: "e.g. Mumbai, Delhi",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 2,
-    errorMessage: "Place of birth must be at least 2 characters"
-  },
-  manglik: {
-    hint: "Select your Manglik status",
-    placeholder: "Choose status",
-    validation: (value: string) => !!value && ['Yes', 'No', 'Dont Know'].includes(value),
-    errorMessage: "Please select your Manglik status"
-  },
-  fatherGotra: {
-    hint: "Enter your father's gotra (minimum 3 characters)",
-    placeholder: "e.g. Kashyap, Vashisht, Bharadwaj",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 3,
-    errorMessage: "Father's gotra must be at least 3 characters"
-  },
-  motherGotra: {
-    hint: "Enter your mother's gotra (minimum 3 characters)",
-    placeholder: "e.g. Kashyap, Vashisht, Bharadwaj",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 3,
-    errorMessage: "Mother's gotra must be at least 3 characters"
-  },
-  grandfatherGotra: {
-    hint: "Enter your grandfather's gotra (minimum 3 characters)",
-    placeholder: "e.g. Kashyap, Vashisht, Bharadwaj",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 3,
-    errorMessage: "Grandfather's gotra must be at least 3 characters"
-  },
-  grandmotherGotra: {
-    hint: "Enter your grandmother's gotra (minimum 3 characters)",
-    placeholder: "e.g. Kashyap, Vashisht, Bharadwaj",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 3,
-    errorMessage: "Grandmother's gotra must be at least 3 characters"
-  },
-  brothers: {
-    hint: "Enter number of brothers",
-    placeholder: "e.g. 2",
-    validation: (value: string) => {
-      if (!value) return false;
-      const count = parseInt(value);
-      return count >= 0 && count <= 10;
-    },
-    errorMessage: "Please enter number of brothers"
-  },
-  sisters: {
-    hint: "Enter number of sisters",
-    placeholder: "e.g. 1",
-    validation: (value: string) => {
-      if (!value) return false;
-      const count = parseInt(value);
-      return count >= 0 && count <= 10;
-    },
-    errorMessage: "Please enter number of sisters"
-  },
-  eatingHabit: {
-    hint: "Select your eating preference",
-    placeholder: "Choose preference",
-    validation: (value: string) => !!value && ['Vegetarian', 'Non-Vegetarian', 'Eggetarian'].includes(value),
-    errorMessage: "Please select your eating preference"
-  },
-  smokingHabit: {
-    hint: "Select your smoking preference",
-    placeholder: "Choose preference",
-    validation: (value: string) => !!value && ['Yes', 'No', 'Occasionally'].includes(value),
-    errorMessage: "Please select your smoking preference"
-  },
-  drinkingHabit: {
-    hint: "Select your drinking preference",
-    placeholder: "Choose preference",
-    validation: (value: string) => !!value && ['Yes', 'No', 'Occasionally'].includes(value),
-    errorMessage: "Please select your drinking preference"
-  },
-  settleAbroad: {
-    hint: "Select your preference for settling abroad",
-    placeholder: "Choose preference",
-    validation: (value: string) => !!value && ['Yes', 'No', 'Maybe'].includes(value),
-    errorMessage: "Please select your preference for settling abroad"
-  },
-  interests: {
-    hint: "Add your interests and hobbies (minimum 1 interest)",
-    placeholder: "e.g. Reading, Travel, Music",
-    validation: (value: any) => {
-      if (!value) return false;
-      if (Array.isArray(value)) {
-        return value.length > 0 && value.every(interest => interest && typeof interest === 'string' && interest.trim().length > 0);
-      }
-      return false;
-    },
-    errorMessage: "Please add at least 1 interest"
-  },
-  specificRequirements: {
-    hint: "Enter any specific requirements or preferences (minimum 10 characters)",
-    placeholder: "e.g. Looking for someone from same city, specific education background",
-    validation: (value: any) => value && typeof value === 'string' && value.trim().length >= 10,
-    errorMessage: "Specific requirements must be at least 10 characters"
-  }
-};
+import { FIELD_HINTS } from '../../config/profileValidation';
 
 // Helper to format time as hh:mm AM/PM
 function formatTime(date: Date) {
@@ -326,6 +94,7 @@ function ProfileContent() {
   const [fieldHints, setFieldHints] = useState<{[key: string]: boolean}>({});
   const [completedFields, setCompletedFields] = useState<{[key: string]: boolean}>({});
   const [interactedFields, setInteractedFields] = useState<{[key: string]: boolean}>({});
+  const [activeField, setActiveField] = useState<string | null>(null);
 
   // Helper functions for field hints
   const getFieldHint = (fieldName: string) => {
@@ -374,20 +143,15 @@ function ProfileContent() {
   };
 
   const handleFieldFocus = (fieldName: string) => {
-    // Mark field as interacted when user focuses on it
+    setActiveField(fieldName);
     setInteractedFields(prev => ({ ...prev, [fieldName]: true }));
-    // Show hint when user focuses on field
     setFieldHints(prev => ({ ...prev, [fieldName]: true }));
   };
 
   const handleFieldBlur = (fieldName: string) => {
-    // Validate the specific field when the user finishes interacting with it (on blur).
-    // This triggers per-field visual feedback (red border + shake) if invalid,
-    // or clears the error styling if valid. It mirrors the bulk validation used on save
-    // but scoped to the single field to avoid surprising users.
+    setActiveField(null);
     try {
       const value = profile[fieldName];
-      // Special-case: height is represented by two selects (height-feet / height-inches)
       let isValid = isFieldValid(fieldName, value);
 
       if (fieldName === 'height') {
@@ -400,7 +164,6 @@ function ProfileContent() {
         }
       }
 
-      // For dropdown fields, also check the actual DOM element when profile may not reflect the selection immediately
       const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
       if (dropdownFields.includes(fieldName) && !isValid) {
         const el = document.querySelector(`[data-field="${fieldName}"]`) as HTMLSelectElement | null;
@@ -409,60 +172,12 @@ function ProfileContent() {
         }
       }
 
-      // Update interacted state so hints/errors are only shown for interacted fields
       setInteractedFields(prev => ({ ...prev, [fieldName]: true }));
-
-      // Update fieldHints: keep showing hint for invalid fields, hide after delay for valid
-      if (isValid) {
-        // hide hint after a short delay so user sees success briefly
-        setTimeout(() => setFieldHints(prev => ({ ...prev, [fieldName]: false })), 1200);
-      } else {
-        setFieldHints(prev => ({ ...prev, [fieldName]: true }));
-      }
-
-      // Update fieldErrors state for this field
       setFieldErrors(prev => ({ ...prev, [fieldName]: !isValid }));
-
-      // Visual DOM feedback: add red border and shake animation on invalid
-      const elementSelector = fieldName === 'height' ? `[data-field="height-feet"]` : `[data-field="${fieldName}"]`;
-      const el = document.querySelector(elementSelector) as HTMLElement | null;
-
-      if (!isValid) {
-        if (el) {
-          // Remove any previous animation class to re-trigger
-          el.classList.remove('animate-shake');
-          // Add error styles
-          el.classList.add('border-royal-crimson', 'bg-royal-crimson/10');
-          // Force reflow then add animation so it replays
-          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-          void el.offsetWidth;
-          el.classList.add('animate-shake');
-
-          // Remove animation class after animation duration (matches .animate-shake in globals.css)
-          setTimeout(() => {
-            el.classList.remove('animate-shake');
-          }, 420);
-        }
-      } else {
-        // Valid field: briefly show success style then clear
-        if (el) {
-          el.classList.remove('animate-shake');
-          el.classList.remove('border-royal-crimson', 'bg-royal-crimson/10');
-          el.classList.add('border-emerald-600', 'bg-emerald-900/30');
-          setTimeout(() => {
-            el.classList.remove('border-emerald-600', 'bg-emerald-900/30');
-          }, 900);
-        }
-      }
     } catch (err) {
-      // If any DOM lookup fails, fall back to existing behaviour of hint management
       const value = profile[fieldName];
       const valid = isFieldValid(fieldName, value);
-      if (valid) {
-        setTimeout(() => {
-          setFieldHints(prev => ({ ...prev, [fieldName]: false }));
-        }, 2000);
-      }
+      setFieldErrors(prev => ({ ...prev, [fieldName]: !valid }));
     }
   };
 
@@ -602,20 +317,34 @@ function ProfileContent() {
     );
   };
 
-  // Helper function to render inline error messages below input fields
+  // Helper function to render inline error messages or hints below input fields
   const renderInlineError = (fieldName: string) => {
     const showError = shouldShowError(fieldName);
+    const hint = getFieldHint(fieldName);
     
-    if (!showError) return null;
-    
-    return (
-      <div className="mt-1 p-2 bg-royal-crimson/10 border border-royal-crimson/30 rounded-lg">
-        <div className="flex items-start space-x-2">
-          <CustomIcon name="ri-error-warning-line" className="text-royal-crimson text-sm mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-royal-crimson">{getErrorMessage(fieldName)}</p>
+    if (showError) {
+      return (
+        <div className="mt-1 p-2 bg-royal-crimson/10 border border-royal-crimson/30 rounded-lg transition-all duration-300">
+          <div className="flex items-start space-x-2">
+            <CustomIcon name="ri-error-warning-line" className="text-royal-crimson text-sm mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-royal-crimson">{getErrorMessage(fieldName)}</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    
+    if (activeField === fieldName && hint) {
+      return (
+        <div className="mt-1 p-2 bg-royal-gold/5 border border-royal-gold/20 rounded-lg transition-all duration-300">
+          <div className="flex items-start space-x-2">
+            <CustomIcon name="ri-information-line" className="text-royal-gold/80 text-sm mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-royal-gold/80 italic">{hint}</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   // Debug logging for image completion
@@ -1795,64 +1524,47 @@ function ProfileContent() {
 
   // Helper function to generate input className with dynamic border colors
   const getInputClassName = (fieldName: string) => {
-    const baseClasses = "w-full p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold transition-all duration-300";
+    const baseClasses = "w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold transition-all duration-300";
     
-    // Get current field value and validation status
     const value = profile[fieldName];
     const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
     const isValid = fieldConfig ? fieldConfig.validation(value) : true;
-    const hasValue = value && (typeof value === 'string' ? value.trim() !== '' : true);
     
-    // Only show validation indicators after user has interacted with THIS specific field
     const hasUserInteracted = interactedFields[fieldName];
     
-    // Debug logging for problematic fields
-    if (fieldName === 'about' || fieldName === 'education' || fieldName === 'occupation' || fieldName === 'interests') {
-      logger.debug(`🎨 Border color debug for ${fieldName}:`, {
-        value,
-        hasValue,
-        isValid,
-        hasUserInteracted,
-        willShowRed: hasUserInteracted && !isValid && hasValue,
-        willShowGreen: hasUserInteracted && isValid && hasValue,
-        interactedFields: interactedFields[fieldName]
-      });
-    }
-    
-    // Determine border color based on validation status - only after user interaction
     if (tiltAnimationFields[fieldName]) {
-      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-tilt-error-glow`;
-    } else if (hasUserInteracted && !isValid && hasValue) {
-      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-shake`;
-    } else if (hasUserInteracted && isValid && hasValue) {
-      return `${baseClasses} border-emerald-600 bg-emerald-900/30`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
+    } else if (hasUserInteracted && !isValid) {
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 text-royal-crimson shadow-[0_0_10px_rgba(239,68,68,0.2)]`;
+    } else if (hasUserInteracted && isValid) {
+      return `${baseClasses} border-emerald-500 bg-emerald-900/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]`;
+    } else if (activeField === fieldName) {
+      return `${baseClasses} border-royal-gold bg-white/5 text-white`;
     } else {
-      return `${baseClasses} border-gray-200`;
+      return `${baseClasses} border-royal-gold/20 bg-royal-obsidian text-white hover:border-royal-gold/40`;
     }
   };
 
   // Helper function to get select element className with dynamic borders
   const getSelectClassName = (fieldName: string) => {
-    const baseClasses = "w-full p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold transition-all duration-300";
+    const baseClasses = "w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold transition-all duration-300";
     
-    // Get current field value and validation status
     const value = profile[fieldName];
     const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
     const isValid = fieldConfig ? fieldConfig.validation(value) : true;
-    const hasValue = value && (typeof value === 'string' ? value.trim() !== '' : true);
     
-    // Only show validation indicators after user has interacted with THIS specific field
     const hasUserInteracted = interactedFields[fieldName];
     
-    // Determine border color based on validation status - only after user interaction
     if (tiltAnimationFields[fieldName]) {
-      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-tilt-error-glow`;
-    } else if (hasUserInteracted && !isValid && hasValue) {
-      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-shake`;
-    } else if (hasUserInteracted && isValid && hasValue) {
-      return `${baseClasses} border-emerald-600 bg-emerald-900/30`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
+    } else if (hasUserInteracted && !isValid) {
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 text-royal-crimson shadow-[0_0_10px_rgba(239,68,68,0.2)]`;
+    } else if (hasUserInteracted && isValid) {
+      return `${baseClasses} border-emerald-500 bg-emerald-900/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]`;
+    } else if (activeField === fieldName) {
+      return `${baseClasses} border-royal-gold bg-white/5 text-white`;
     } else {
-      return `${baseClasses} border-gray-200`;
+      return `${baseClasses} border-royal-gold/20 bg-royal-obsidian text-white hover:border-royal-gold/40`;
     }
   };
 
@@ -2215,9 +1927,8 @@ function ProfileContent() {
               router.push('/dashboard'); // Redirect anyway
             }
           } else {
-            // For partial completeness, do NOT redirect to dashboard.
-            // Strict AuthGuardV2 requires 100% completeness.
-            ToastService.info('Almost there! Please complete the remaining mandatory fields (like your Sacred Portrait).');
+            setIsEditing(true); // Automatically put them in edit mode
+            ToastService.info('Please complete the remaining fields highlighted in red to unlock all features.');
           }
 
         }}
@@ -2239,7 +1950,7 @@ function ProfileContent() {
 
         {/* Pinned Progress Bar */}
         {calculatedCompleteness < 100 && (
-          <div className="sticky top-0 z-40 bg-royal-obsidian/95 backdrop-blur-md px-6 py-4 border-b border-royal-gold/20 shadow-lg">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-royal-obsidian/95 backdrop-blur-md px-6 py-4 border-b border-royal-gold/20 shadow-lg pt-[calc(1rem+env(safe-area-inset-top,0px))]">
             <div className="flex items-center justify-between text-sm text-royal-gold-light/80 mb-2">
               <span className="font-playfair font-semibold">Profile Completion</span>
               <span className="font-bold text-royal-gold">{calculatedCompleteness}%</span>
