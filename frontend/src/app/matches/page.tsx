@@ -326,7 +326,7 @@ function MatchesContent() {
                       <p className="text-royal-gold-light/60 mb-8">Start swiping to find your perfect match!</p>
                       <a
                         href="/dashboard"
-                        className="button-royal shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] px-8"
+                        className="inline-block px-8 py-3 bg-royal-gold text-royal-obsidian font-bold rounded-full shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:bg-royal-gold-light transition-all duration-300"
                       >
                         Start Discovering
                       </a>
@@ -400,7 +400,7 @@ function MatchesContent() {
                       <p className="text-royal-gold-light/60 mb-8">Profiles you like will appear here</p>
                       <a
                         href="/dashboard"
-                        className="button-royal shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] px-8"
+                        className="inline-block px-8 py-3 bg-royal-gold text-royal-obsidian font-bold rounded-full shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:bg-royal-gold-light transition-all duration-300"
                       >
                         Start Discovering
                       </a>
