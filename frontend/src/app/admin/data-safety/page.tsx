@@ -165,7 +165,7 @@ export default function DataSafety() {
           </div>
           
           <div className="text-center p-8 bg-blue-950 border border-blue-900/50 rounded-2xl max-w-md mx-auto shadow-md">
-            <CustomIcon name="ri-mail-line" className="text-4xl text-blue-400 mx-auto mb-4" />
+            <CustomIcon name="ri-mail-line" className="text-4xl text-royal-gold-light mx-auto mb-4" />
             <h3 className="font-semibold text-white mb-3 text-lg">Admin Support</h3>
             <p className="text-sm text-blue-200 mb-4">For admin access and technical support</p>
             <a href="mailto:shaadimantrana.help@gmail.com" className="text-royal-gold hover:text-royal-gold-light font-medium block transition-colors">

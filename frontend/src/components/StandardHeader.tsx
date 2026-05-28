@@ -43,10 +43,14 @@ export default function StandardHeader({
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       role="banner"
-  className="fixed top-0 w-full backdrop-blur-lg bg-royal-obsidian/90 border-b border-white/20 shadow-xl z-50 px-4 flex items-center relative"
-  style={{ height: 'var(--header-height, 4rem)' }}
+  className="fixed top-0 left-0 right-0 backdrop-blur-lg bg-royal-obsidian/90 border-b border-white/20 shadow-xl z-50 px-4"
+  style={{ 
+    paddingTop: 'env(safe-area-inset-top)',
+    paddingLeft: 'env(safe-area-inset-left)',
+    paddingRight: 'env(safe-area-inset-right)'
+  }}
     >
-  <div className="flex items-center justify-between w-full">
+  <div className="flex items-center justify-between w-full" style={{ height: 'var(--header-height, 4rem)' }}>
       <div className="flex items-center space-x-3 flex-none">
           {showBackButton && (
             <button

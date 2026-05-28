@@ -28,7 +28,7 @@ export default function AdminLogin() {
         </div>
         
         <div className="mb-6">
-          <CustomIcon name="ri-information-line" className="text-4xl text-blue-400 mb-4" />
+          <CustomIcon name="ri-information-line" className="text-4xl text-royal-gold-light mb-4" />
           <h2 className="text-xl font-semibold text-royal-gold font-playfair mb-2">Login Required</h2>
           <p className="text-white/80 font-inter mb-4">
             Please login to your Shaadi Mantrana account to access admin features.
