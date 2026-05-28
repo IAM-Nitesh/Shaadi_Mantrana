@@ -41,6 +41,12 @@ export const ICON_REGISTRY = {
     description: 'Home navigation',
     aliases: ['home', 'house'],
   },
+  'ri-dashboard-line': {
+    path: '/icons/dashboard.svg',
+    category: ICON_CATEGORIES.NAVIGATION,
+    description: 'Dashboard grid',
+    aliases: ['dashboard', 'grid', 'panel'],
+  },
   'ri-heart-line': {
     path: '/icons/heart-outline.svg',
     category: ICON_CATEGORIES.SOCIAL,

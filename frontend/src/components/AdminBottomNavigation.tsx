@@ -72,11 +72,20 @@ export default function AdminBottomNavigation() {
 
   return (
     <>
-      <div role="navigation" aria-label="Admin bottom navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-royal-glass backdrop-blur-sm border-t border-royal-glass-border shadow-lg" style={{ height: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="flex justify-around items-center h-full px-4">
+      <div 
+        role="navigation" 
+        aria-label="Admin bottom navigation" 
+        className="fixed bottom-0 left-0 right-0 z-50 bg-royal-glass backdrop-blur-sm border-t border-royal-glass-border shadow-lg"
+        style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)',
+        }}
+      >
+        <div className="flex justify-around items-center px-4" style={{ height: 'var(--bottom-nav-height, 5rem)' }}>
           <Link
             href="/admin/dashboard"
-            className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
+            className={`flex flex-col items-center space-y-1 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
               pathname === '/admin/dashboard' 
                 ? 'text-royal-gold font-semibold' 
                 : 'text-white/80 font-inter hover:text-royal-gold'
