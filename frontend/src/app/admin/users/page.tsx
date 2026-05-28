@@ -785,27 +785,29 @@ export default function AdminUsers() {
                                   const profileCompleteness = user.profileCompleteness || 0;
                                   const isApproved = user.approvedByAdmin;
                                   const userStatus = user.status;
+                                  const isActive = userStatus === 'active' && isApproved === true;
+                                  const isPaused = userStatus === 'paused' || isApproved === false;
                                   
                                   return (
                                     <>
-                                      {/* Show Pause button for active users */}
-                                      {userStatus === 'active' && isApproved === true && (
+                                      {/* Show exactly ONE Pause button for active users only */}
+                                      {isActive && (
                                         <button
                                           onClick={() => handlePauseUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
-                                          className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="w-full text-left px-4 py-2 text-sm text-royal-gold hover:bg-royal-gold/10 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {user.isUpdating ? (
                                             <span className="mr-2 animate-pulse">💝</span>
                                           ) : (
                                             <CustomIcon name="ri-pause-circle-line" className="mr-2" />
                                           )}
-                                          Pause
+                                          Pause Account
                                         </button>
                                       )}
                                       
-                                      {/* Show Resume button for paused users */}
-                                      {userStatus === 'paused' && isApproved === false && (
+                                      {/* Show exactly ONE Resume button for paused users only */}
+                                      {isPaused && (
                                         <button
                                           onClick={() => handleResumeUser(user._id, user.email, user.phoneNumber)}
                                           disabled={user.isUpdating}
@@ -816,54 +818,24 @@ export default function AdminUsers() {
                                           ) : (
                                             <CustomIcon name="ri-play-circle-line" className="mr-2" />
                                           )}
-                                          Resume
+                                          Resume Account
                                         </button>
                                       )}
                                       
-                                      {/* Show Resume button for users with 100% profile but not approved */}
-                                      {profileCompleteness === 100 && userStatus !== 'active' && isApproved === false && (
+                                      {/* Show Resend Invite only for non-paused, non-active (i.e. invited/pending) users */}
+                                      {!isActive && !isPaused && (
                                         <button
-                                          onClick={() => handleResumeUser(user._id, user.email, user.phoneNumber)}
+                                          onClick={() => {
+                                            resendInvite(user._id, user.email, user.phoneNumber);
+                                            setOpenDropdown(null);
+                                          }}
                                           disabled={user.isUpdating}
-                                          className="w-full text-left px-4 py-2 text-sm text-emerald-400 hover:bg-emerald-900/30 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="w-full text-left px-4 py-2 text-sm text-royal-gold hover:bg-royal-gold/10 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                          {user.isUpdating ? (
-                                            <span className="mr-2 animate-pulse">💝</span>
-                                          ) : (
-                                            <CustomIcon name="ri-play-circle-line" className="mr-2" />
-                                          )}
-                                          Resume
+                                          <CustomIcon name="ri-mail-send-line" className="mr-2" />
+                                          Resend Invite
                                         </button>
                                       )}
-                                      
-                                      {/* Show Pause button for users with 100% profile and approved */}
-                                      {profileCompleteness === 100 && userStatus !== 'paused' && isApproved === true && (
-                                        <button
-                                          onClick={() => handlePauseUser(user._id, user.email, user.phoneNumber)}
-                                          disabled={user.isUpdating}
-                                          className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                          {user.isUpdating ? (
-                                            <span className="mr-2 animate-pulse">💝</span>
-                                          ) : (
-                                            <CustomIcon name="ri-pause-circle-line" className="mr-2" />
-                                          )}
-                                          Pause
-                                        </button>
-                                      )}
-                                      
-                                      {/* Always show Resend Invite for all users */}
-                                      <button
-                                        onClick={() => {
-                                          resendInvite(user._id, user.email, user.phoneNumber);
-                                          setOpenDropdown(null);
-                                        }}
-                                        disabled={user.isUpdating}
-                                        className="w-full text-left px-4 py-2 text-sm text-royal-gold hover:bg-blue-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                      >
-                                        <CustomIcon name="ri-mail-send-line" className="mr-2" />
-                                        Resend Invite
-                                      </button>
                                     </>
                                   );
                                 })()}
@@ -889,7 +861,7 @@ export default function AdminUsers() {
         </div>
       {/* Confirmation Dialog */}
       {confirmAction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-royal-glass rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center mb-4">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
