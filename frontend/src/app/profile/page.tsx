@@ -84,6 +84,7 @@ function ProfileContent() {
   const [tempImageFile, setTempImageFile] = useState<File | null>(null);
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
   const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState<boolean>(false);
 
   // GSAP refs for animations
   const headerRef = useRef<HTMLDivElement>(null);
@@ -203,6 +204,7 @@ function ProfileContent() {
   useEffect(() => {
     const fetchMySignedUrl = async () => {
       if (profile?.images && !tempImageUrl) {
+        setImageLoadFailed(false);
         try {
           const url = await ImageUploadService.getMyProfilePictureSignedUrl();
           if (url) {
@@ -210,13 +212,16 @@ function ProfileContent() {
             logger.debug('✅ Profile: Fetched signed URL for own profile picture');
           } else {
             logger.debug('ℹ️ Profile: No signed URL available (image may be pending review)');
+            setImageLoadFailed(true);
           }
         } catch (err) {
           logger.warn('⚠️ Profile: Could not fetch signed URL', err);
+          setImageLoadFailed(true);
         }
       } else if (!profile?.images) {
         // No image stored — clear any stale signed URL
         setSignedImageUrl(null);
+        setImageLoadFailed(false);
       }
     };
     fetchMySignedUrl();
@@ -2018,7 +2023,10 @@ function ProfileContent() {
         <div className="px-4 py-6">
           <div className="flex flex-col items-center justify-center gap-4">
             {/* Profile Image Container - Centrally Aligned */}
-            <div className="relative w-32 h-32">
+            <div 
+              className={`relative w-32 h-32 ${isEditing ? 'cursor-pointer group' : ''}`}
+              onClick={isEditing ? handleCameraClick : undefined}
+            >
               {/* 1. Temp preview image (just selected, not yet uploaded) */}
               {tempImageUrl ? (
                 <div className="relative w-full h-full">
@@ -2027,7 +2035,7 @@ function ProfileContent() {
                     alt="Profile Preview"
                     width={128}
                     height={128}
-                    className="w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-shadow duration-300 bg-royal-obsidian/40"
+                    className={`w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all duration-300 bg-royal-obsidian/40 ${isEditing ? 'group-hover:opacity-80 group-hover:shadow-[0_0_30px_rgba(212,175,55,0.5)]' : ''}`}
                   />
                 </div>
               ) : signedImageUrl ? (
@@ -2038,14 +2046,15 @@ function ProfileContent() {
                     alt="Profile"
                     width={128}
                     height={128}
-                    className="w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-shadow duration-300 bg-royal-obsidian/40"
+                    className={`w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all duration-300 bg-royal-obsidian/40 ${isEditing ? 'group-hover:opacity-80 group-hover:shadow-[0_0_30px_rgba(212,175,55,0.5)]' : ''}`}
                     onError={(e) => {
                       logger.error('❌ Signed image failed to load:', e);
                       setSignedImageUrl(null); // Clear broken URL
+                      setImageLoadFailed(true);
                     }}
                   />
                 </div>
-              ) : profile?.images ? (
+              ) : profile?.images && !imageLoadFailed ? (
                 /* 3. Image stored in backend but signed URL still loading */
                 <div className="w-full h-full rounded-full border-4 border-royal-gold/60 bg-royal-obsidian/60 flex items-center justify-center"
                   style={{ minHeight: 128, minWidth: 128 }}

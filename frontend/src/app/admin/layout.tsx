@@ -97,12 +97,12 @@ export default function AdminLayout({
   const cleanPath = pathname.replace(/\/$/, '');
   if ((isAuthenticated && user?.role === 'admin') || cleanPath === '/admin/login') {
     return (
-      <div className="min-h-screen bg-royal-obsidian flex flex-col">
+      <div className="min-h-[100dvh] bg-royal-obsidian flex flex-col">
         {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}
         <StandardHeader showProfileLink={false} />
 
         {/* Scrollable Content Area (padding matches header/footer heights) */}
-        <main className="flex-1 overflow-y-auto" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'var(--bottom-nav-height)' }}>
+        <main className="flex-1 overflow-y-auto" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
           <div className="admin-content relative">
             {children}
           </div>

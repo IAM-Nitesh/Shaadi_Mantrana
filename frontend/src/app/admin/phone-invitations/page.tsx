@@ -162,9 +162,9 @@ export default function PhoneInvitations() {
       case 'expired':
         return 'bg-yellow-100 text-yellow-800';
       case 'accepted':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-royal-gold/20 text-royal-gold';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-royal-gold/10 text-white/90';
     }
   };
 
@@ -183,11 +183,11 @@ export default function PhoneInvitations() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <CustomIcon name="ri-error-warning-line" className="text-6xl text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Invitations</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h2 className="text-xl font-semibold text-white/90 mb-2">Error Loading Invitations</h2>
+          <p className="text-royal-gold/80 mb-4">{error}</p>
           <button
             onClick={fetchInvitations}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-royal-gold text-royal-obsidian rounded-xl hover:bg-royal-gold-light transition-colors"
           >
             Retry
           </button>
@@ -199,16 +199,16 @@ export default function PhoneInvitations() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8 pt-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-          <CustomIcon name="ri-phone-line" className="text-4xl text-blue-600 mr-3" />
+        <h1 className="text-3xl font-bold text-white/90 mb-2 flex items-center">
+          <CustomIcon name="ri-phone-line" className="text-4xl text-royal-gold mr-3" />
           Phone Invitations
         </h1>
-        <p className="text-gray-600">Send and manage phone invitations to new users</p>
+        <p className="text-royal-gold/80">Send and manage phone invitations to new users</p>
       </div>
 
       {/* Add New Invitation */}
       <div className="invitation-card bg-royal-gold/5 rounded-2xl shadow-[0_0_20px_rgba(212,175,55,0.1)] p-6 border border-royal-gold/20 mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        <h3 className="text-lg font-semibold text-white/90 mb-4">
           Send New Invitation
         </h3>
         
@@ -219,9 +219,9 @@ export default function PhoneInvitations() {
               value={newPhoneNumber}
               onChange={(e) => setNewPhoneNumber(e.target.value)}
               placeholder="Enter phone number"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-royal-gold/30 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
-            <p className="text-xs text-gray-500 mt-2">Format: +91 followed by 10 digits</p>
+            <p className="text-xs text-royal-gold/60 mt-2">Format: +91 followed by 10 digits</p>
           </div>
           <button
             onClick={sendNewInvitation}
@@ -235,31 +235,31 @@ export default function PhoneInvitations() {
 
       {/* Invitations List */}
       <div className="invitation-card bg-royal-gold/5 rounded-2xl shadow-[0_0_20px_rgba(212,175,55,0.1)] border border-royal-gold/20 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-              <CustomIcon name="ri-mail-list-line" className="text-xl text-blue-500 mr-2" />
+          <div className="px-6 py-4 border-b border-royal-gold/20">
+            <h3 className="text-lg font-semibold text-white/90 flex items-center">
+              <CustomIcon name="ri-mail-list-line" className="text-xl text-royal-gold-light mr-2" />
               Invitation History ({invitations.length})
             </h3>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-royal-obsidian">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Phone Number
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-royal-gold/60 uppercase tracking-wider">
                     Sent
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-royal-glass divide-y divide-gray-200">
                 {invitations.map((invitation) => (
-                  <tr key={invitation._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={invitation._id} className="hover:bg-royal-obsidian transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
@@ -268,9 +268,9 @@ export default function PhoneInvitations() {
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{invitation.phoneNumber || invitation.email || 'No contact'}</div>
+                          <div className="text-sm font-medium text-white">{invitation.phoneNumber || invitation.email || 'No contact'}</div>
                           {invitation.uuid && (
-                            <div className="text-xs text-gray-500">UUID: {invitation.uuid}</div>
+                            <div className="text-xs text-royal-gold/60">UUID: {invitation.uuid}</div>
                           )}
                         </div>
                       </div>
@@ -280,7 +280,7 @@ export default function PhoneInvitations() {
                         {invitation.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-royal-gold/60">
                       {invitation.sentAt ? formatDate(invitation.sentAt) : 'Not sent'}
                     </td>
                   </tr>
@@ -292,8 +292,8 @@ export default function PhoneInvitations() {
           {invitations.length === 0 && (
             <div className="text-center py-12">
               <CustomIcon name="ri-phone-line" className="text-6xl text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No invitations found</h3>
-              <p className="text-gray-500">No phone invitations have been sent yet.</p>
+              <h3 className="text-lg font-medium text-white mb-2">No invitations found</h3>
+              <p className="text-royal-gold/60">No phone invitations have been sent yet.</p>
             </div>
           )}
         </div>
