@@ -133,7 +133,15 @@ export default function ModernNavigation({ items, className = '' }: ModernNaviga
   };
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-royal-glass backdrop-blur-md border-t border-royal-glass-border shadow-2xl z-50 ${className}`} style={{boxShadow:'0 -4px 20px rgba(0,0,0,0.5)'}}>
+    <div 
+      className={`fixed bottom-0 left-0 right-0 bg-royal-glass backdrop-blur-md border-t border-royal-glass-border shadow-2xl z-50 ${className}`} 
+      style={{
+        boxShadow:'0 -4px 20px rgba(0,0,0,0.5)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
+      }}
+    >
       {/* Active indicator background */}
       <div 
         className="absolute top-0 h-1 bg-gradient-to-r from-royal-gold to-royal-gold-light transition-all duration-500 ease-out rounded-full shadow-[0_2px_8px_rgba(212,175,55,0.3)]"

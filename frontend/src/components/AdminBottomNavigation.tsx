@@ -72,7 +72,7 @@ export default function AdminBottomNavigation() {
 
   return (
     <>
-      <div role="navigation" aria-label="Admin bottom navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-royal-glass backdrop-blur-sm border-t border-royal-glass-border shadow-lg" style={{ height: 'var(--bottom-nav-height, 5rem)' }}>
+      <div role="navigation" aria-label="Admin bottom navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-royal-glass backdrop-blur-sm border-t border-royal-glass-border shadow-lg" style={{ height: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex justify-around items-center h-full px-4">
           <Link
             href="/admin/dashboard"
@@ -87,7 +87,7 @@ export default function AdminBottomNavigation() {
                 ? 'bg-royal-gold/10 text-royal-gold shadow-md' 
                 : 'hover:bg-royal-gold/5'
             }`}>
-              <CustomIcon name="ri-dashboard-line" className="text-xl" />
+              <CustomIcon name="ri-home-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Dashboard</span>
           </Link>
@@ -148,12 +148,10 @@ export default function AdminBottomNavigation() {
 
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 text-royal-crimson hover:text-royal-crimson"
+            className="flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 text-white/80 hover:text-royal-gold"
           >
-            <div className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:bg-royal-crimson/10">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+            <div className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:bg-royal-gold/10">
+              <CustomIcon name="ri-logout-box-r-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Logout</span>
           </button>
