@@ -4,6 +4,7 @@
 import CustomIcon from '../../components/CustomIcon';
 import RoyalIcon from '../../components/RoyalIcon';
 import { ContactService } from '../../services/contact-service';
+import StandardHeader from '../../components/StandardHeader';
 
 export default function Help() {
   const faqs = [
@@ -39,8 +40,9 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-royal-obsidian">
-  {/* Content (global header provides the banner/back button) */}
-  <div className="pb-8 px-4" style={{ paddingTop: 'var(--header-height)' }}>
+      <StandardHeader showBackButton={true} showProfileLink={false} title="Help & Support" />
+  {/* Content */}
+  <div className="pb-8 px-4" style={{ paddingTop: 'calc(var(--header-height) + 1rem)' }}>
         {/* Contact Support */}
         <div className="card-modern p-6 mb-6 transform hover:scale-105 transition-all duration-200">
           <div className="text-center">
