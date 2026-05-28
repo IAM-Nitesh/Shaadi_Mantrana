@@ -132,7 +132,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="flex-1 flex flex-col"
             >
-              <div className="backdrop-blur-xl bg-white/[0.03] border border-royal-gold/20 rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex-1 flex flex-col">
+              <div className="backdrop-blur-xl bg-royal-obsidian/80 border border-royal-gold/15 rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.7)] flex-1 flex flex-col">
                 <div className="space-y-2 mb-10 text-center">
                   <h2 className="text-3xl font-playfair font-bold text-royal-gold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentStep.title}</h2>
                   <div className="flex items-center justify-center space-x-2">
@@ -166,14 +166,9 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
                         <span className="tracking-widest uppercase text-sm font-black">Preserving...</span>
                       ) : (
                         <>
-                          <span className="tracking-widest uppercase text-sm font-black mr-2">
+                          <span className="tracking-widest uppercase text-sm font-black">
                             {currentStepIndex === STEPS.length - 1 ? 'Finalize Vows' : 'Continue Journey'}
                           </span>
-                          {currentStepIndex < STEPS.length - 1 && (
-                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                          )}
                         </>
                       )}
                     </span>

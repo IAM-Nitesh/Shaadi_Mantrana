@@ -358,20 +358,20 @@ body {
 
 /* Modern Card Styles */
 .card-modern {
-  background: var(--gradient-card);
+  background: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(12px);
   border-radius: 1.5rem;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--royal-glass-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,175,55,0.12);
+  border: 1px solid rgba(212, 175, 55, 0.15);
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
 }
 
-
-
 .card-modern:hover {
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.25);
+  border-color: rgba(212,175,55,0.25);
+  transform: translateY(-2px);
 }
 
 .card-interactive {
@@ -560,24 +560,24 @@ body {
   opacity: 0.3;
 }
 
-/* Modern Scrollbar */
+/* Themed Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-neutral-100);
+  background: rgba(18, 18, 18, 0.95);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gradient-primary);
+  background: rgba(212, 175, 55, 0.4);
   border-radius: 10px;
-  border: 2px solid var(--color-neutral-100);
+  border: 1px solid rgba(18, 18, 18, 0.9);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gradient-primary-hover);
+  background: rgba(212, 175, 55, 0.7);
 }
 
 /* Modern Focus States */

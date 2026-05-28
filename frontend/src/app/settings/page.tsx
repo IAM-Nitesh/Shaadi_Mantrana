@@ -11,6 +11,7 @@ import { safeGsap } from '../../components/SafeGsap';
 import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
 import posthog from 'posthog-js';
+import { App } from '@capacitor/app';
 
 // ─────────────────────────────────────────────────────────
 // Sub-components
@@ -99,6 +100,19 @@ function SettingsContent() {
   const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
+  const [appVersion, setAppVersion] = useState(packageJson.version);
+
+  useEffect(() => {
+    const getVersion = async () => {
+      try {
+        const info = await App.getInfo();
+        if (info.version) setAppVersion(info.version);
+      } catch (e) {
+        // Ignored for web
+      }
+    };
+    getVersion();
+  }, []);
   const [matchesCount, setMatchesCount] = useState(0);
 
   useEffect(() => {
@@ -155,10 +169,6 @@ function SettingsContent() {
             {/* Ambient Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-royal-crimson/10 rounded-full blur-3xl pointer-events-none"></div>
             
-            {/* Icon */}
-            <div className="w-16 h-16 rounded-2xl bg-royal-crimson/10 border border-royal-crimson/20 flex items-center justify-center mb-5 relative z-10 shadow-[0_0_20px_rgba(220,38,38,0.15)]">
-              <CustomIcon name="ri-logout-box-r-line" size={30} className="text-royal-crimson" />
-            </div>
             <h3 className="text-xl font-playfair font-bold text-white text-center mb-2 relative z-10">
               Ready to leave?
             </h3>
@@ -257,13 +267,13 @@ function SettingsContent() {
             href="/terms"
             icon="ri-file-list-3-line"
             label="Terms of Condition"
-            danger
+            sublabel="Review our terms"
           />
           <SettingsRow
             href="/privacy"
             icon="ri-shield-keyhole-line"
             label="Privacy Policy"
-            danger
+            sublabel="How we protect you"
           />
         </SettingsSection>
 
@@ -279,7 +289,7 @@ function SettingsContent() {
 
         {/* ── App Version ── */}
         <p className="text-center text-[10px] text-royal-gold/20 tracking-widest uppercase pb-2">
-          <span className="text-white">Shaadi</span> Mantrana · v{packageJson.version}
+          <span className="text-white">Shaadi</span> Mantrana · v{appVersion}
         </p>
       </div>
 

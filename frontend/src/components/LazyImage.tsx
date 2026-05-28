@@ -131,9 +131,9 @@ export function LazyImage({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center bg-gray-100"
+            className="absolute inset-0 flex items-center justify-center bg-royal-obsidian/60 rounded-lg"
           >
-            <div className="text-center text-gray-500">
+            <div className="text-center text-royal-gold/60">
               <svg
                 className="w-12 h-12 mx-auto mb-2 text-gray-400"
                 fill="none"

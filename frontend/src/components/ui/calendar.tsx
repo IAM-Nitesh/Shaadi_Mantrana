@@ -13,38 +13,38 @@ export function Calendar({ className, classNames, showOutsideDays = true, ...pro
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 bg-royal-obsidian text-white", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
+        caption_label: "text-sm font-medium text-royal-gold",
         nav: "space-x-1 flex items-center",
-        nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+        nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-royal-gold hover:text-royal-gold-light transition-opacity",
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
-        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+        head_cell: "text-royal-gold/50 rounded-md w-9 font-normal text-[0.8rem]",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent [&:has([aria-selected])]:text-accent-foreground first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-royal-gold/20 [&:has([aria-selected])]:rounded-md focus-within:relative focus-within:z-20",
         day: cn(
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-white hover:bg-royal-gold/20 hover:text-royal-gold rounded-md transition-colors",
           classNames?.day
         ),
         day_range_end: "day-range-end",
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside: "text-muted-foreground opacity-50",
-        day_disabled: "text-muted-foreground opacity-50",
+          "bg-royal-gold text-royal-obsidian hover:bg-royal-gold-light hover:text-royal-obsidian focus:bg-royal-gold focus:text-royal-obsidian font-bold rounded-md",
+        day_today: "bg-royal-gold/15 text-royal-gold font-semibold rounded-md",
+        day_outside: "text-white/20 opacity-40",
+        day_disabled: "text-white/20 opacity-30 cursor-not-allowed",
         day_range_middle:
-          "aria-selected:bg-accent aria-selected:text-accent-foreground",
+          "aria-selected:bg-royal-gold/20 aria-selected:text-white",
         day_hidden: "invisible",
       }}
       components={({
-        IconLeft: (props: any) => <ChevronLeft className="h-4 w-4" {...props} />,
-        IconRight: (props: any) => <ChevronRight className="h-4 w-4" {...props} />,
+        IconLeft: (props: any) => <ChevronLeft className="h-4 w-4 text-royal-gold" {...props} />,
+        IconRight: (props: any) => <ChevronRight className="h-4 w-4 text-royal-gold" {...props} />,
       } as any)}
       {...props}
     />
