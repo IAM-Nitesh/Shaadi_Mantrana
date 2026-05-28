@@ -2165,6 +2165,18 @@ function ProfileContent() {
       setShowOnboarding(false);
     }
   };
+
+  if (showOnboarding) {
+    return (
+      <div className="min-h-screen bg-royal-obsidian">
+        <OnboardingOverlay
+          isVisible={showOnboarding}
+          onComplete={handleOnboardingDismiss}
+        />
+      </div>
+    );
+  }
+
   if (showWizard) {
     return (
       <RoyalOnboardingWizard 
@@ -2232,14 +2244,18 @@ function ProfileContent() {
               <span className="font-playfair font-semibold">Profile Completion</span>
               <span className="font-bold text-royal-gold">{calculatedCompleteness}%</span>
             </div>
-            <div className="w-full bg-royal-gold/10 rounded-full h-2.5 overflow-hidden border border-royal-gold/10">
-              <div 
-                className={`${getProgressBarColor(calculatedCompleteness)} h-full rounded-full transition-all duration-700 ease-out`}
+            <div className="h-[3px] w-full bg-royal-gold/10 rounded-full overflow-visible relative mb-3">
+              <div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.8)] transition-all duration-700 ease-out rounded-full"
                 style={{ width: `${calculatedCompleteness}%` }}
-              ></div>
+              />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1),0_0_20px_rgba(212,175,55,1)] transition-all duration-700 ease-out"
+                style={{ left: `${calculatedCompleteness}%` }}
+              />
             </div>
             <p className="text-xs text-royal-gold-light/60 mt-2 text-center">
-              {30 - Math.round((calculatedCompleteness / 100) * 30)} fields remaining to unlock all features
+              {Math.round((100 - calculatedCompleteness) / 100 * requiredFields.length)} fields remaining to unlock all features
             </p>
           </div>
         )}
@@ -3230,11 +3246,6 @@ function ProfileContent() {
         />
       )}
 
-      {/* Onboarding Overlay */}
-      <OnboardingOverlay
-        isVisible={showOnboarding}
-        onComplete={handleOnboardingDismiss}
-      />
 
       {/* Bottom Navigation is handled globally in layout.tsx */}
         </div>

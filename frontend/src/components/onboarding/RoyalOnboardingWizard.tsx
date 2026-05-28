@@ -115,7 +115,6 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
           {/* Scrollable Header */}
           <div className="flex items-center justify-between mb-8 px-2">
             <div className="flex items-center space-x-3">
-              <RoyalIcon size="md" />
               <div>
                 <h1 className="text-royal-gold font-playfair text-xl font-bold drop-shadow-md">Sacred Profiling</h1>
                 <p className="text-royal-gold-light/60 text-[10px] tracking-[0.2em] uppercase mt-0.5">Step {currentStepIndex + 1} of {STEPS.length}</p>
@@ -133,7 +132,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="flex-1 flex flex-col"
             >
-              <div className="backdrop-blur-xl bg-white/[0.03] border border-royal-gold/20 rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] flex-1 flex flex-col">
+              <div className="backdrop-blur-xl bg-white/[0.03] border border-royal-gold/20 rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex-1 flex flex-col">
                 <div className="space-y-2 mb-10 text-center">
                   <h2 className="text-3xl font-playfair font-bold text-royal-gold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{currentStep.title}</h2>
                   <div className="flex items-center justify-center space-x-2">

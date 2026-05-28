@@ -41,10 +41,13 @@ export default function RootLayout({
         <PostHogProvider>
           <CapacitorInit />
           <AuthProvider initialUser={initialUser}>
-            <PageTransitionProvider>
+            <PageTransitionProvider globalUI={
+              <>
+                <ToasterClient />
+                <GlobalBottomNavigation />
+              </>
+            }>
               <main>{children}</main>
-              <ToasterClient />
-              <GlobalBottomNavigation />
             </PageTransitionProvider>
           </AuthProvider>
         </PostHogProvider>

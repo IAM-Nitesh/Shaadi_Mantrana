@@ -17,7 +17,7 @@ export function RoyalInput({ label, error, className, ...props }: RoyalInputProp
       <div className="relative group">
         <input
           className={cn(
-            "w-full bg-royal-obsidian border-b border-royal-gold/20 py-4 px-1 text-white outline-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/40 placeholder:text-royal-gold/20",
+            "w-full bg-royal-obsidian border-b border-x-0 border-t-0 border-royal-gold/20 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/40 placeholder:text-royal-gold/20",
             error && "border-royal-crimson/50 focus:border-royal-crimson",
             className
           )}
@@ -47,7 +47,7 @@ export function RoyalSelect({ label, options, error, className, ...props }: Roya
       <div className="relative group">
         <select
           className={cn(
-            "w-full bg-royal-obsidian border-b border-royal-gold/20 py-4 px-1 text-white outline-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/40 appearance-none",
+            "w-full bg-royal-obsidian border-b border-x-0 border-t-0 border-royal-gold/20 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/40 appearance-none",
             error && "border-royal-crimson/50 focus:border-royal-crimson",
             className
           )}
@@ -81,7 +81,7 @@ export function RoyalTextArea({ label, error, className, ...props }: React.Texta
       <div className="relative group">
         <textarea
           className={cn(
-            "w-full bg-royal-obsidian border border-royal-gold/10 rounded-xl py-4 px-4 text-white outline-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/20 placeholder:text-royal-gold/20 min-h-[120px] resize-none",
+            "w-full bg-royal-obsidian border border-royal-gold/10 rounded-xl py-4 px-4 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/20 placeholder:text-royal-gold/20 min-h-[120px] resize-none",
             error && "border-royal-crimson/50 focus:border-royal-crimson",
             className
           )}
