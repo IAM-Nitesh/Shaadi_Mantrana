@@ -7,6 +7,11 @@ interface SacredRootsStepProps {
   updateField: (field: string, value: any) => void;
 }
 
+const SIBLING_OPTIONS = Array.from({ length: 6 }, (_, value) => ({
+  value: String(value),
+  label: String(value)
+}));
+
 export default function SacredRootsStep({ data, updateField }: SacredRootsStepProps) {
   return (
     <div className="space-y-8">
@@ -60,8 +65,8 @@ export default function SacredRootsStep({ data, updateField }: SacredRootsStepPr
           <RoyalInput label="Mother's Name" fieldName="mother" value={data.mother || ''} onChange={(e) => updateField('mother', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <RoyalInput label="Brothers" fieldName="brothers" type="number" value={data.brothers || ''} onChange={(e) => updateField('brothers', e.target.value)} />
-          <RoyalInput label="Sisters" fieldName="sisters" type="number" value={data.sisters || ''} onChange={(e) => updateField('sisters', e.target.value)} />
+          <RoyalSelect label="Brothers" fieldName="brothers" value={data.brothers ?? ''} onChange={(e) => updateField('brothers', e.target.value)} options={SIBLING_OPTIONS} />
+          <RoyalSelect label="Sisters" fieldName="sisters" value={data.sisters ?? ''} onChange={(e) => updateField('sisters', e.target.value)} options={SIBLING_OPTIONS} />
         </div>
       </div>
 

@@ -75,14 +75,13 @@ export const FIELD_HINTS: { [key: string]: FieldConfig } = {
     errorMessage: "Profession must be at least 3 characters"
   },
   annualIncome: {
-    hint: "Enter your annual income in lakhs",
-    placeholder: "e.g. 8",
+    hint: "Select your annual income range",
+    placeholder: "Choose annual income",
     validation: (value: string) => {
       if (!value) return false;
-      const income = parseInt(value);
-      return income > 0;
+      return ['Under 5L', '5L - 10L', '10L - 20L', '20L - 50L', '50L - 1Cr', 'Above 1Cr'].includes(value);
     },
-    errorMessage: "Please enter your annual income"
+    errorMessage: "Please select your annual income"
   },
   nativePlace: {
     hint: "Enter your native place/city (minimum 2 characters)",
@@ -129,7 +128,11 @@ export const FIELD_HINTS: { [key: string]: FieldConfig } = {
   timeOfBirth: {
     hint: "Select your time of birth (required for accurate matching)",
     placeholder: "Choose time",
-    validation: (value: any) => value && typeof value === 'string' && value.trim() !== '',
+    validation: (value: any) => {
+      if (!value) return false;
+      if (value instanceof Date) return !isNaN(value.getTime());
+      return typeof value === 'string' && value.trim() !== '';
+    },
     errorMessage: "Please select your time of birth"
   },
   placeOfBirth: {
@@ -141,7 +144,7 @@ export const FIELD_HINTS: { [key: string]: FieldConfig } = {
   manglik: {
     hint: "Select your Manglik status",
     placeholder: "Choose status",
-    validation: (value: string) => !!value && ['Yes', 'No', 'Dont Know'].includes(value),
+    validation: (value: string) => !!value && ['Yes', 'No', 'Dont Know', "Don't Know"].includes(value),
     errorMessage: "Please select your Manglik status"
   },
   fatherGotra: {
@@ -169,24 +172,24 @@ export const FIELD_HINTS: { [key: string]: FieldConfig } = {
     errorMessage: "Grandmother's gotra must be at least 3 characters"
   },
   brothers: {
-    hint: "Enter number of brothers",
-    placeholder: "e.g. 2",
+    hint: "Select number of brothers",
+    placeholder: "Choose count",
     validation: (value: string) => {
-      if (!value) return false;
+      if (value === undefined || value === null || value === '') return false;
       const count = parseInt(value);
-      return count >= 0 && count <= 10;
+      return count >= 0 && count <= 5;
     },
-    errorMessage: "Please enter number of brothers"
+    errorMessage: "Please select number of brothers"
   },
   sisters: {
-    hint: "Enter number of sisters",
-    placeholder: "e.g. 1",
+    hint: "Select number of sisters",
+    placeholder: "Choose count",
     validation: (value: string) => {
-      if (!value) return false;
+      if (value === undefined || value === null || value === '') return false;
       const count = parseInt(value);
-      return count >= 0 && count <= 10;
+      return count >= 0 && count <= 5;
     },
-    errorMessage: "Please enter number of sisters"
+    errorMessage: "Please select number of sisters"
   },
   eatingHabit: {
     hint: "Select your eating preference",

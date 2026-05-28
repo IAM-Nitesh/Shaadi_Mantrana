@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { safeGsap } from '../../components/SafeGsap';
 
-import CustomIcon from '../../components/CustomIcon';
 
 interface InterestModalProps {
   onClose: () => void;
@@ -56,58 +55,48 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
     );
   };
 
-  const addCustomInterest = () => {
-    if (customInterest.trim() && !safeExistingInterests.includes(customInterest.trim())) {
-      setSelectedInterests(prev => [...prev, customInterest.trim()]);
-      setCustomInterest('');
-    }
-  };
-
   const handleSave = () => {
-    selectedInterests.forEach(interest => {
+    const trimmedCustomInterest = customInterest.trim();
+    const interestsToAdd = trimmedCustomInterest && !safeExistingInterests.includes(trimmedCustomInterest)
+      ? [...selectedInterests, trimmedCustomInterest]
+      : selectedInterests;
+
+    Array.from(new Set(interestsToAdd)).forEach(interest => {
       onAdd(interest);
     });
     onClose();
   };
 
   return (
-  <div ref={backdropRef} className="fixed inset-0 z-[200000] flex items-end bg-black/70 backdrop-blur-md">
+  <div ref={backdropRef} className="fixed inset-0 z-[200000] flex items-end bg-black/70 backdrop-blur-md px-3 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom)+12px)]">
       <div
         ref={modalRef}
-        className="bg-royal-obsidian/95 backdrop-blur-2xl border border-royal-gold/20 w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl animate-none relative z-[200001]"
+        className="bg-royal-obsidian/95 backdrop-blur-2xl border border-royal-gold/20 w-full rounded-3xl max-h-[calc(100vh-var(--bottom-nav-height)-env(safe-area-inset-bottom)-48px)] overflow-hidden shadow-2xl animate-none relative z-[200001]"
         style={{ boxShadow: '0 8px 32px 0 rgba(212,175,55,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.08)' }}
       >
+        <div className="max-h-[inherit] overflow-y-auto p-6 pb-28">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h2 className="text-xl font-semibold text-royal-gold-light">Add Interests</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-royal-gold hover:bg-royal-gold/10 rounded-full transition-all duration-200 shadow-sm hover:scale-110"
-            style={{ boxShadow: '0 2px 8px 0 rgba(244,63,94,0.08)' }}
-            aria-label="Close interest modal"
-          >
-            <CustomIcon name="ri-close-line" />
-          </button>
         </div>
 
         {/* Custom Interest */}
         <div className="mb-6">
-          <div className="flex space-x-2">
+          <div>
             <input
               type="text"
               placeholder="Add custom interest..."
               value={customInterest}
               onChange={(e) => setCustomInterest(e.target.value)}
-              className="flex-1 px-3 py-2 bg-royal-obsidian border border-royal-gold/30 text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (customInterest.trim() || selectedInterests.length > 0)) {
+                  e.preventDefault();
+                  handleSave();
+                }
+              }}
+              className="w-full px-3 py-2 bg-royal-obsidian border border-royal-gold/30 text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold"
               maxLength={20}
             />
-            <button
-              onClick={addCustomInterest}
-              disabled={!customInterest.trim()}
-              className="px-4 py-2 bg-royal-obsidian border-2 border-royal-gold text-royal-gold rounded-lg font-medium disabled:opacity-50 hover:bg-royal-gold/10"
-            >
-              Add
-            </button>
           </div>
         </div>
 
@@ -154,20 +143,21 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
           </div>
         )}
 
+        </div>
         {/* Actions */}
-        <div className="flex space-x-3">
+        <div className="absolute inset-x-0 bottom-0 flex space-x-3 border-t border-royal-gold/10 bg-royal-obsidian/95 p-4 shadow-[0_-12px_24px_rgba(0,0,0,0.35)]">
           <button
             onClick={onClose}
             className="flex-1 py-3 border border-royal-gold/30 rounded-xl text-gray-300 font-medium !rounded-button hover:bg-royal-gold/10 transition-all duration-200 shadow-sm hover:scale-105"
           >
-            Cancel
+            Close
           </button>
           <button
             onClick={handleSave}
-            disabled={selectedInterests.length === 0}
+            disabled={selectedInterests.length === 0 && !customInterest.trim()}
             className="flex-1 py-3 bg-royal-obsidian border-2 border-royal-gold text-royal-gold rounded-xl font-medium disabled:opacity-50 hover:bg-royal-gold/10 transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
-            Add Selected
+            Add Interest
           </button>
         </div>
       </div>
