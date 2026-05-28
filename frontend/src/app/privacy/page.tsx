@@ -2,12 +2,14 @@
 
 ;
 import CustomIcon from '../../components/CustomIcon';
+import StandardHeader from '../../components/StandardHeader';
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-royal-obsidian">
-    {/* Content (global header provides the banner/back button) */}
-  <div className="pb-6 px-4" style={{ paddingTop: 'var(--header-height)' }}>
+      <StandardHeader showBackButton={true} showProfileLink={false} title="Privacy Policy" />
+    {/* Content */}
+  <div className="pb-6 px-4" style={{ paddingTop: 'calc(var(--header-height) + 1rem)' }}>
         <div className="card-modern p-6">
           <div className="space-y-6">
             <div>
@@ -152,8 +154,7 @@ export default function Privacy() {
                 For privacy-related queries, concerns, or to exercise your rights under the DPDP Act, contact our Data Protection Officer:
               </p>
               <ul className="list-disc list-inside text-white/80 font-inter space-y-1">
-                <li>Support Email: <a href="mailto:shaadimantrana.help@gmail.com" className="text-blue-600">shaadimantrana.help@gmail.com</a></li>
-                <li>Admin Contact: +91 7086875013</li>
+                <li>Support Email: <a href="mailto:shaadimantrana.help@gmail.com" className="text-royal-gold">shaadimantrana.help@gmail.com</a></li>
                 <li>In-app support section</li>
                 <li>Customer service channels within the platform</li>
               </ul>

@@ -4,6 +4,7 @@
 import CustomIcon from '../../components/CustomIcon';
 import RoyalIcon from '../../components/RoyalIcon';
 import { ContactService } from '../../services/contact-service';
+import StandardHeader from '../../components/StandardHeader';
 
 export default function Help() {
   const faqs = [
@@ -39,8 +40,9 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-royal-obsidian">
-  {/* Content (global header provides the banner/back button) */}
-  <div className="pb-8 px-4" style={{ paddingTop: 'var(--header-height)' }}>
+      <StandardHeader showBackButton={true} showProfileLink={false} title="Help & Support" />
+  {/* Content */}
+  <div className="pb-8 px-4" style={{ paddingTop: 'calc(var(--header-height) + 1rem)' }}>
         {/* Contact Support */}
         <div className="card-modern p-6 mb-6 transform hover:scale-105 transition-all duration-200">
           <div className="text-center">
@@ -142,9 +144,6 @@ export default function Help() {
         <div className="card-modern p-6 mt-4 border border-royal-glass-border">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3">
-              <div className="w-8 h-8 bg-royal-glass border border-royal-glass-border border-2 border-royal-gold/50 rounded-lg flex items-center justify-center shadow-sm">
-                <RoyalIcon size="sm" />
-              </div>
               <div>
                 <h3 className="text-lg font-black tracking-tight">
                   <span className="bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold bg-clip-text text-transparent">
@@ -162,18 +161,18 @@ export default function Help() {
               </div>
             </div>
             <div className="text-sm text-white/80 font-inter space-y-1">
-              <p className="font-medium text-royal-gold">v1.0 • 100% Free Platform</p>
-              <p className="text-xs flex items-center justify-center space-x-3">
-                <span className="flex items-center space-x-1">
-                  <span>🔒</span>
+              <p className="font-medium text-royal-gold">100% Free Platform</p>
+              <p className="text-xs flex items-center justify-center space-x-4 mt-2">
+                <span className="flex items-center space-x-1.5">
+                  <CustomIcon name="ri-lock-line" className="text-royal-gold text-base" />
                   <span>End-to-end encrypted</span>
                 </span>
-                <span className="flex items-center space-x-1">
-                  <span>🛡️</span>
+                <span className="flex items-center space-x-1.5">
+                  <CustomIcon name="ri-shield-check-line" className="text-royal-gold text-base" />
                   <span>HTTPS secured</span>
                 </span>
-                <span className="flex items-center space-x-1">
-                  <span>📱</span>
+                <span className="flex items-center space-x-1.5">
+                  <CustomIcon name="ri-phone-line" className="text-royal-gold text-base" />
                   <span>Play Store compliant</span>
                 </span>
               </p>

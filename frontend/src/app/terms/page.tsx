@@ -2,12 +2,14 @@
 
 ;
 import CustomIcon from '../../components/CustomIcon';
+import StandardHeader from '../../components/StandardHeader';
 
 export default function Terms() {
   return (
     <div className="min-h-screen bg-royal-obsidian">
-    {/* Content (global header provides the banner/back button) */}
-  <div className="pb-6 px-4" style={{ paddingTop: 'var(--header-height)' }}>
+      <StandardHeader showBackButton={true} showProfileLink={false} title="Terms of Condition" />
+    {/* Content */}
+  <div className="pb-6 px-4" style={{ paddingTop: 'calc(var(--header-height) + 1rem)' }}>
         <div className="card-modern p-6">
           <div className="space-y-6">
             <div>
@@ -161,8 +163,7 @@ export default function Terms() {
                 For queries or grievances, contact our Grievance Officer as per the Information Technology Rules, 2021, through:
               </p>
               <ul className="list-disc list-inside text-white/80 font-inter space-y-1">
-                <li>Support Email: <a href="mailto:shaadimantrana.help@gmail.com" className="text-blue-600">shaadimantrana.help@gmail.com</a></li>
-                <li>Admin Contact: +91 7086875013</li>
+                <li>Support Email: <a href="mailto:shaadimantrana.help@gmail.com" className="text-royal-gold">shaadimantrana.help@gmail.com</a></li>
                 <li>In-app support section</li>
                 <li>Customer service channels within the platform</li>
               </ul>

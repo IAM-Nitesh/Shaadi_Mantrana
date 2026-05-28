@@ -162,7 +162,7 @@ function DashboardContent() {
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-center relative z-10">
-            <div className="w-24 h-24 bg-royal-gold/10 border border-royal-gold/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
+            <div className="w-24 h-24 bg-royal-gold/10 border-2 border-royal-gold rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
               <Icon name="ri-heart-line" size="3xl" className="text-royal-gold" />
             </div>
             <h3 className="text-2xl font-playfair font-bold text-royal-gold mb-2">Majestic Journey Pause</h3>
