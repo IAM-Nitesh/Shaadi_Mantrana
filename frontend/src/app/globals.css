@@ -361,21 +361,13 @@ body {
   background: var(--gradient-card);
   border-radius: 1.5rem;
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--royal-glass-border);
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
 }
 
-.card-modern::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-}
+
 
 .card-modern:hover {
   box-shadow: var(--shadow-xl);

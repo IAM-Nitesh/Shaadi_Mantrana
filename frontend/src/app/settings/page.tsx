@@ -271,7 +271,6 @@ function SettingsContent() {
             icon="ri-logout-box-r-line"
             label="Log Out"
             sublabel="End your current session"
-            danger
           />
         </SettingsSection>
 
