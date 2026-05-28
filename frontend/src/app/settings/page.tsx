@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import packageJson from '../../../../package.json';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
@@ -55,16 +56,11 @@ function SettingsRow({ href, onClick, icon, label, sublabel, danger }: SettingsR
           {sublabel && <p className="text-xs text-royal-gold/40 mt-0.5">{sublabel}</p>}
         </div>
       </div>
-      <CustomIcon
-        name="ri-arrow-right-s-line"
-        size={20}
-        className={danger ? 'text-royal-crimson/50' : 'text-royal-gold/30 group-hover:text-royal-gold/60'}
-      />
     </div>
   );
 
   if (href) {
-    return <a href={href} className="block">{inner}</a>;
+    return <Link href={href} className="block">{inner}</Link>;
   }
   return <button onClick={onClick} className="w-full text-left">{inner}</button>;
 }
