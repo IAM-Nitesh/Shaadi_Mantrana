@@ -188,7 +188,7 @@ export const ICON_REGISTRY = {
     aliases: ['logout', 'signout', 'exit'],
   },
   'ri-door-open-line': {
-    path: '/icons/logout.svg',
+    path: '/icons/lock.svg',
     category: ICON_CATEGORIES.SYSTEM,
     description: 'Session/door open',
     aliases: ['session', 'door', 'logout'],
