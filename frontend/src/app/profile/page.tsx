@@ -199,7 +199,28 @@ function ProfileContent() {
     }
   }, [profile]);
 
-
+  // Fetch signed URL for the current user's profile picture when profile loads
+  useEffect(() => {
+    const fetchMySignedUrl = async () => {
+      if (profile?.images && !tempImageUrl) {
+        try {
+          const url = await ImageUploadService.getMyProfilePictureSignedUrl();
+          if (url) {
+            setSignedImageUrl(url);
+            logger.debug('✅ Profile: Fetched signed URL for own profile picture');
+          } else {
+            logger.debug('ℹ️ Profile: No signed URL available (image may be pending review)');
+          }
+        } catch (err) {
+          logger.warn('⚠️ Profile: Could not fetch signed URL', err);
+        }
+      } else if (!profile?.images) {
+        // No image stored — clear any stale signed URL
+        setSignedImageUrl(null);
+      }
+    };
+    fetchMySignedUrl();
+  }, [profile?.images]);
 
   // Real-time profile completeness tracking
   useEffect(() => {
@@ -1570,26 +1591,22 @@ function ProfileContent() {
 
   // Helper function to get date/time picker className with dynamic borders
   const getDatePickerClassName = (fieldName: string) => {
-    const baseClasses = "w-full border-2 rounded-lg transition-all duration-300";
+    const baseClasses = "w-full border rounded-lg transition-all duration-300";
     
-    // Get current field value and validation status
     const value = profile[fieldName];
     const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
     const isValid = fieldConfig ? fieldConfig.validation(value) : true;
-    const hasValue = value && (typeof value === 'string' ? value.trim() !== '' : true);
     
-    // Only show validation indicators after user has interacted with THIS specific field
     const hasUserInteracted = interactedFields[fieldName];
     
-    // Determine border color based on validation status - only after user interaction
     if (tiltAnimationFields[fieldName]) {
-      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-tilt-error-glow`;
-    } else if (hasUserInteracted && !isValid && hasValue) {
-      return `${baseClasses} border-royal-crimson bg-royal-crimson/10 animate-shake`;
-    } else if (hasUserInteracted && isValid && hasValue) {
-      return `${baseClasses} border-emerald-600 bg-emerald-900/30`;
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
+    } else if (hasUserInteracted && !isValid) {
+      return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
+    } else if (hasUserInteracted && isValid) {
+      return `${baseClasses} border-emerald-500 bg-emerald-900/10`;
     } else {
-      return `${baseClasses} border-gray-200`;
+      return `${baseClasses} border-royal-gold/20 bg-royal-obsidian hover:border-royal-gold/40`;
     }
   };
 
@@ -1950,24 +1967,24 @@ function ProfileContent() {
 
         {/* Pinned Progress Bar */}
         {calculatedCompleteness < 100 && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-royal-obsidian/95 backdrop-blur-md px-6 py-4 border-b border-royal-gold/20 shadow-lg pt-[calc(1rem+env(safe-area-inset-top,0px))]">
-            <div className="flex items-center justify-between text-sm text-royal-gold-light/80 mb-2">
-              <span className="font-playfair font-semibold">Profile Completion</span>
-              <span className="font-bold text-royal-gold">{calculatedCompleteness}%</span>
-            </div>
-            <div className="h-[3px] w-full bg-royal-gold/10 rounded-full overflow-visible relative mb-3">
+          <div className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top,0px)]">
+            <div className="relative h-[3px] w-full bg-royal-gold/10">
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.8)] transition-all duration-700 ease-out rounded-full"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.8)] transition-all duration-700 ease-out"
                 style={{ width: `${calculatedCompleteness}%` }}
               />
               <div
                 className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1),0_0_20px_rgba(212,175,55,1)] transition-all duration-700 ease-out"
                 style={{ left: `${calculatedCompleteness}%` }}
               />
+              {/* Floating % badge */}
+              <div
+                className="absolute -top-5 -translate-x-1/2 text-[10px] font-bold text-royal-gold transition-all duration-700 ease-out"
+                style={{ left: `${calculatedCompleteness}%` }}
+              >
+                {calculatedCompleteness}%
+              </div>
             </div>
-            <p className="text-xs text-royal-gold-light/60 mt-2 text-center">
-              {Math.round((100 - calculatedCompleteness) / 100 * requiredFields.length)} fields remaining to unlock all features
-            </p>
           </div>
         )}
 
@@ -2021,22 +2038,41 @@ function ProfileContent() {
           <div className="flex flex-col items-center justify-center gap-4">
             {/* Profile Image Container - Centrally Aligned */}
             <div className="relative w-32 h-32">
-              {/* Show temporary image if available, otherwise show existing profile image */}
-              {(tempImageUrl || signedImageUrl) ? (
+              {/* 1. Temp preview image (just selected, not yet uploaded) */}
+              {tempImageUrl ? (
                 <div className="relative w-full h-full">
                   <Image
-                    src={tempImageUrl || signedImageUrl || '/icons/user.svg'}
+                    src={tempImageUrl}
+                    alt="Profile Preview"
+                    width={128}
+                    height={128}
+                    className="w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-shadow duration-300 bg-royal-obsidian/40"
+                  />
+                </div>
+              ) : signedImageUrl ? (
+                /* 2. Signed URL ready — show actual image */
+                <div className="relative w-full h-full">
+                  <Image
+                    src={signedImageUrl}
                     alt="Profile"
                     width={128}
                     height={128}
-                    className="w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-shadow duration-300 bg-royal-obsidian/40 backdrop-blur-md"
+                    className="w-full h-full rounded-full object-cover object-top border-4 border-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-shadow duration-300 bg-royal-obsidian/40"
                     onError={(e) => {
-                      logger.error('❌ Image failed to load:', e);
+                      logger.error('❌ Signed image failed to load:', e);
+                      setSignedImageUrl(null); // Clear broken URL
                     }}
                   />
-
+                </div>
+              ) : profile?.images ? (
+                /* 3. Image stored in backend but signed URL still loading */
+                <div className="w-full h-full rounded-full border-4 border-royal-gold/60 bg-royal-obsidian/60 flex items-center justify-center"
+                  style={{ minHeight: 128, minWidth: 128 }}
+                >
+                  <div className="w-8 h-8 border-2 border-royal-gold border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
+                /* 4. No image at all */
                 <div className="w-full h-full flex flex-col items-center justify-center rounded-full border-4 border-dashed border-royal-gold/30 bg-royal-obsidian/40 transition-all duration-200 relative"
                   style={{ minHeight: 128, minWidth: 128 }}
                 >
@@ -2061,6 +2097,7 @@ function ProfileContent() {
                   )}
                 </div>
               )}
+
               
               {/* Camera and Delete icons for editing - show when there's an image (temporary or existing) */}
               {isEditing && (tempImageUrl || signedImageUrl || profile.profile?.images) && (
@@ -2412,9 +2449,9 @@ function ProfileContent() {
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
                           data-field="height-feet"
-                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
-                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10 animate-shake' : 
-                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-600 bg-emerald-900/30' : 'border-gray-200'
+                          className={`w-full md:w-1/2 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian text-white transition-all duration-300 appearance-none ${
+                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10' : 
+                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-500 bg-emerald-900/10 text-emerald-400' : 'border-royal-gold/20 hover:border-royal-gold/40'
                           }`}
                         >
                           <option value="">Select Feet</option>
@@ -2432,9 +2469,9 @@ function ProfileContent() {
                           onFocus={() => handleFieldFocus('height')}
                           onBlur={() => handleFieldBlur('height')}
                           data-field="height-inches"
-                          className={`w-full md:w-1/2 p-2 border-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian/40 text-royal-gold-light/80 transition-all duration-300 ${
-                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10 animate-shake' : 
-                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-600 bg-emerald-900/30' : 'border-gray-200'
+                          className={`w-full md:w-1/2 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-royal-gold bg-royal-obsidian text-white transition-all duration-300 appearance-none ${
+                            fieldErrors.height ? 'border-royal-crimson bg-royal-crimson/10' : 
+                            (profile.height && profile.height.match(/^(\d+)'(\d+)"*$/)) ? 'border-emerald-500 bg-emerald-900/10 text-emerald-400' : 'border-royal-gold/20 hover:border-royal-gold/40'
                           }`}
                         >
                           <option value="">Select Inches</option>
@@ -2878,9 +2915,9 @@ function ProfileContent() {
           {/* Interests */}
           <div 
             className={`card-modern p-6 hover-lift transition-all duration-300 ${
-              fieldErrors.interests ? 'border-2 border-royal-crimson bg-royal-crimson/10 animate-shake' : 
-              (profile.interests && Array.isArray(profile.interests) && profile.interests.length > 0) ? 'border-2 border-emerald-600 bg-emerald-900/30' : 
-              'border-2 border-gray-200'
+              fieldErrors.interests ? 'border-2 border-royal-crimson bg-royal-crimson/10' : 
+              (profile.interests && Array.isArray(profile.interests) && profile.interests.length > 0) ? 'border-2 border-emerald-500 bg-emerald-900/10' : 
+              'border border-royal-gold/20'
             }`} 
             data-field="interests"
             onFocus={() => handleFieldFocus('interests')}
@@ -2913,7 +2950,7 @@ function ProfileContent() {
               {isEditing && (
                 <button 
                   onClick={() => setShowInterestModal(true)}
-                  className="px-3 py-1 border-2 border-dashed border-gray-300 rounded-full text-sm text-gray-500 !rounded-button"
+                  className="px-3 py-1 border border-dashed border-royal-gold/40 text-royal-gold/60 hover:text-royal-gold hover:border-royal-gold/60 hover:bg-royal-gold/10 rounded-full text-sm transition-colors duration-200"
                 >
                   + Add Interest
                 </button>

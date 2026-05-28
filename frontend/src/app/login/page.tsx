@@ -106,7 +106,7 @@ export default function LoginPage() {
           </p>
           <div className="flex items-center justify-center space-x-3 pt-1">
             <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-royal-gold/40"></div>
-            <p className="text-gray-400 text-[11px] font-light italic whitespace-nowrap">
+            <p className="text-royal-gold/40 text-[11px] font-light italic whitespace-nowrap">
               {["Your", "journey", "to", "forever"].map((word, i) => (
                 <span 
                   key={i} 
@@ -159,7 +159,7 @@ export default function LoginPage() {
 
           {/* Legal Links */}
           <div className="text-center">
-            <p className="text-gray-500 text-[10px] leading-relaxed">
+            <p className="text-royal-gold/40 text-[10px] leading-relaxed">
               By continuing, you agree to our{' '}
               <a href="/terms" className="text-royal-gold/80 transition-colors underline underline-offset-2 decoration-royal-gold/20">
                 Terms
