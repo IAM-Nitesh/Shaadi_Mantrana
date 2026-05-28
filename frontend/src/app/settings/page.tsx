@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import packageJson from '../../../../package.json';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import ToastService from '../../services/toastService';
@@ -278,7 +279,7 @@ function SettingsContent() {
 
         {/* ── App Version ── */}
         <p className="text-center text-[10px] text-royal-gold/20 tracking-widest uppercase pb-2">
-          Shaadi Mantrana · v2.0
+          <span className="text-white">Shaadi</span> Mantrana · v{packageJson.version}
         </p>
       </div>
 

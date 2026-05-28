@@ -87,6 +87,7 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
       <div className="space-y-6">
         <RoyalInput 
           label="Name" 
+          fieldName="name"
           value={data.name || ''} 
           onChange={(e) => updateField('name', e.target.value)}
           placeholder="Enter your full name"
@@ -94,6 +95,7 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
 
         <RoyalSelect 
           label="Gender" 
+          fieldName="gender"
           value={data.gender || ''}
           onChange={(e) => updateField('gender', e.target.value)}
           options={[
@@ -105,12 +107,14 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
         <div className="grid grid-cols-2 gap-4">
           <RoyalInput 
             label="Date of Birth" 
+            fieldName="dateOfBirth"
             type="date"
             value={data.dateOfBirth || ''} 
             onChange={(e) => updateField('dateOfBirth', e.target.value)}
           />
           <RoyalInput 
             label="Time of Birth" 
+            fieldName="timeOfBirth"
             type="time"
             value={data.timeOfBirth || ''} 
             onChange={(e) => updateField('timeOfBirth', e.target.value)}
@@ -119,6 +123,7 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
 
         <RoyalInput 
           label="Place of Birth" 
+          fieldName="placeOfBirth"
           value={data.placeOfBirth || ''} 
           onChange={(e) => updateField('placeOfBirth', e.target.value)}
           placeholder="City, State"

@@ -1,14 +1,31 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { cn } from '../../lib/utils';
+import { FIELD_HINTS } from '../../config/profileValidation';
 
 interface RoyalInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
+  isValid?: boolean;
+  isInvalid?: boolean;
+  hint?: string;
+  fieldName?: string;
 }
 
-export function RoyalInput({ label, error, className, ...props }: RoyalInputProps) {
+export function RoyalInput({ label, error, isValid: propIsValid, isInvalid: propIsInvalid, hint: propHint, fieldName, className, onFocus, onBlur, value, ...props }: RoyalInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const fieldConfig = fieldName ? FIELD_HINTS[fieldName] : null;
+  const isValueValid = fieldConfig ? fieldConfig.validation(value) : true;
+  const hasValue = value !== undefined && value !== '' && value !== null;
+  
+  const isValid = propIsValid ?? (fieldName ? (hasValue && isValueValid) : false);
+  const isInvalid = propIsInvalid ?? (fieldName ? (hasInteracted && !isValueValid) : false);
+  const hint = propHint ?? fieldConfig?.hint;
+
   return (
     <div className="space-y-2 w-full">
       <label className="block text-royal-gold/60 text-xs uppercase tracking-widest ml-1">
@@ -16,18 +33,33 @@ export function RoyalInput({ label, error, className, ...props }: RoyalInputProp
       </label>
       <div className="relative group">
         <input
+          value={value}
+          onFocus={(e) => { setIsFocused(true); onFocus?.(e); }}
+          onBlur={(e) => { setIsFocused(false); setHasInteracted(true); onBlur?.(e); }}
           className={cn(
-            "w-full bg-royal-obsidian border-b border-x-0 border-t-0 border-royal-gold/20 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/40 placeholder:text-royal-gold/20",
-            error && "border-royal-crimson/50 focus:border-royal-crimson",
+            "w-full bg-royal-obsidian border-b border-x-0 border-t-0 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 placeholder:text-royal-gold/20",
+            isValid && !isInvalid ? "border-emerald-500 focus:border-emerald-400" :
+            isInvalid || error ? "border-royal-crimson focus:border-royal-crimson text-royal-crimson" :
+            "border-royal-gold/20 focus:border-royal-gold group-hover:border-royal-gold/40",
             className
           )}
           {...props}
         />
         <motion.div 
-          className="absolute bottom-0 left-0 h-[2px] bg-royal-gold w-0 group-focus-within:w-full transition-all duration-500"
+          className={cn(
+            "absolute bottom-0 left-0 h-[2px] w-0 group-focus-within:w-full transition-all duration-500",
+            isValid && !isInvalid ? "bg-emerald-500" :
+            isInvalid || error ? "bg-royal-crimson" : "bg-royal-gold"
+          )}
         />
       </div>
-      {error && <p className="text-royal-crimson text-[10px] mt-1">{error}</p>}
+      {error && <p className="text-royal-crimson text-[10px] mt-1 px-1">{error}</p>}
+      {isFocused && hint && !error && (
+        <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="mt-1 flex items-start space-x-1 px-1">
+          <i className="ri-information-line text-royal-gold/80 text-[10px]"></i>
+          <p className="text-[10px] text-royal-gold/80 italic">{hint}</p>
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -36,9 +68,24 @@ interface RoyalSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement>
   label: string;
   options: { value: string; label: string }[];
   error?: string;
+  isValid?: boolean;
+  isInvalid?: boolean;
+  hint?: string;
+  fieldName?: string;
 }
 
-export function RoyalSelect({ label, options, error, className, ...props }: RoyalSelectProps) {
+export function RoyalSelect({ label, options, error, isValid: propIsValid, isInvalid: propIsInvalid, hint: propHint, fieldName, className, onFocus, onBlur, value, ...props }: RoyalSelectProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const fieldConfig = fieldName ? FIELD_HINTS[fieldName] : null;
+  const isValueValid = fieldConfig ? fieldConfig.validation(value) : true;
+  const hasValue = value !== undefined && value !== '' && value !== null;
+  
+  const isValid = propIsValid ?? (fieldName ? (hasValue && isValueValid) : false);
+  const isInvalid = propIsInvalid ?? (fieldName ? (hasInteracted && !isValueValid) : false);
+  const hint = propHint ?? fieldConfig?.hint;
+
   return (
     <div className="space-y-2 w-full">
       <label className="block text-royal-gold/60 text-xs uppercase tracking-widest ml-1">
@@ -46,9 +93,14 @@ export function RoyalSelect({ label, options, error, className, ...props }: Roya
       </label>
       <div className="relative group">
         <select
+          value={value}
+          onFocus={(e) => { setIsFocused(true); onFocus?.(e); }}
+          onBlur={(e) => { setIsFocused(false); setHasInteracted(true); onBlur?.(e); }}
           className={cn(
-            "w-full bg-royal-obsidian border-b border-x-0 border-t-0 border-royal-gold/20 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/40 appearance-none",
-            error && "border-royal-crimson/50 focus:border-royal-crimson",
+            "w-full bg-royal-obsidian border-b border-x-0 border-t-0 py-4 px-1 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none rounded-none transition-all duration-300 appearance-none",
+            isValid && !isInvalid ? "border-emerald-500 focus:border-emerald-400" :
+            isInvalid || error ? "border-royal-crimson focus:border-royal-crimson text-royal-crimson" :
+            "border-royal-gold/20 focus:border-royal-gold group-hover:border-royal-gold/40",
             className
           )}
           {...props}
@@ -64,15 +116,45 @@ export function RoyalSelect({ label, options, error, className, ...props }: Roya
           <i className="ri-arrow-down-s-line"></i>
         </div>
         <motion.div 
-          className="absolute bottom-0 left-0 h-[2px] bg-royal-gold w-0 group-focus-within:w-full transition-all duration-500"
+          className={cn(
+            "absolute bottom-0 left-0 h-[2px] w-0 group-focus-within:w-full transition-all duration-500",
+            isValid && !isInvalid ? "bg-emerald-500" :
+            isInvalid || error ? "bg-royal-crimson" : "bg-royal-gold"
+          )}
         />
       </div>
-      {error && <p className="text-royal-crimson text-[10px] mt-1">{error}</p>}
+      {error && <p className="text-royal-crimson text-[10px] mt-1 px-1">{error}</p>}
+      {isFocused && hint && !error && (
+        <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="mt-1 flex items-start space-x-1 px-1">
+          <i className="ri-information-line text-royal-gold/80 text-[10px]"></i>
+          <p className="text-[10px] text-royal-gold/80 italic">{hint}</p>
+        </motion.div>
+      )}
     </div>
   );
 }
 
-export function RoyalTextArea({ label, error, className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; error?: string }) {
+interface RoyalTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+  error?: string;
+  isValid?: boolean;
+  isInvalid?: boolean;
+  hint?: string;
+  fieldName?: string;
+}
+
+export function RoyalTextArea({ label, error, isValid: propIsValid, isInvalid: propIsInvalid, hint: propHint, fieldName, className, onFocus, onBlur, value, ...props }: RoyalTextAreaProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const fieldConfig = fieldName ? FIELD_HINTS[fieldName] : null;
+  const isValueValid = fieldConfig ? fieldConfig.validation(value) : true;
+  const hasValue = value !== undefined && value !== '' && value !== null;
+  
+  const isValid = propIsValid ?? (fieldName ? (hasValue && isValueValid) : false);
+  const isInvalid = propIsInvalid ?? (fieldName ? (hasInteracted && !isValueValid) : false);
+  const hint = propHint ?? fieldConfig?.hint;
+
   return (
     <div className="space-y-2 w-full">
       <label className="block text-royal-gold/60 text-xs uppercase tracking-widest ml-1">
@@ -80,15 +162,26 @@ export function RoyalTextArea({ label, error, className, ...props }: React.Texta
       </label>
       <div className="relative group">
         <textarea
+          value={value}
+          onFocus={(e) => { setIsFocused(true); onFocus?.(e); }}
+          onBlur={(e) => { setIsFocused(false); setHasInteracted(true); onBlur?.(e); }}
           className={cn(
-            "w-full bg-royal-obsidian border border-royal-gold/10 rounded-xl py-4 px-4 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none transition-all duration-300 focus:border-royal-gold group-hover:border-royal-gold/20 placeholder:text-royal-gold/20 min-h-[120px] resize-none",
-            error && "border-royal-crimson/50 focus:border-royal-crimson",
+            "w-full bg-royal-obsidian border rounded-xl py-4 px-4 text-white outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none transition-all duration-300 placeholder:text-royal-gold/20 min-h-[120px] resize-none",
+            isValid && !isInvalid ? "border-emerald-500 focus:border-emerald-400" :
+            isInvalid || error ? "border-royal-crimson focus:border-royal-crimson text-royal-crimson" :
+            "border-royal-gold/20 focus:border-royal-gold group-hover:border-royal-gold/40",
             className
           )}
           {...props}
         />
       </div>
-      {error && <p className="text-royal-crimson text-[10px] mt-1">{error}</p>}
+      {error && <p className="text-royal-crimson text-[10px] mt-1 px-1">{error}</p>}
+      {isFocused && hint && !error && (
+        <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="mt-1 flex items-start space-x-1 px-1">
+          <i className="ri-information-line text-royal-gold/80 text-[10px]"></i>
+          <p className="text-[10px] text-royal-gold/80 italic">{hint}</p>
+        </motion.div>
+      )}
     </div>
   );
 }

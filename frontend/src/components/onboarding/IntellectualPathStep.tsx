@@ -13,6 +13,7 @@ export default function IntellectualPathStep({ data, updateField }: Intellectual
       <div className="space-y-6">
         <RoyalInput 
           label="Highest Education" 
+          fieldName="education"
           value={data.education || ''} 
           onChange={(e) => updateField('education', e.target.value)}
           placeholder="e.g. Masters in Architecture"
@@ -20,6 +21,7 @@ export default function IntellectualPathStep({ data, updateField }: Intellectual
 
         <RoyalInput 
           label="Professional Occupation" 
+          fieldName="occupation"
           value={data.occupation || ''} 
           onChange={(e) => updateField('occupation', e.target.value)}
           placeholder="e.g. Senior Software Architect"
@@ -27,6 +29,7 @@ export default function IntellectualPathStep({ data, updateField }: Intellectual
 
         <RoyalSelect 
           label="Annual Income" 
+          fieldName="annualIncome"
           value={data.annualIncome || ''}
           onChange={(e) => updateField('annualIncome', e.target.value)}
           options={[
@@ -41,6 +44,7 @@ export default function IntellectualPathStep({ data, updateField }: Intellectual
 
         <RoyalSelect 
           label="Open to Settle Abroad?" 
+          fieldName="settleAbroad"
           value={data.settleAbroad || ''}
           onChange={(e) => updateField('settleAbroad', e.target.value)}
           options={[
