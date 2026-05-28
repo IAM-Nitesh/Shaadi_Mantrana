@@ -59,35 +59,35 @@ export function DatePicker({ date, onChange, className }: {
         <Button
           variant={"outline"}
           className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground",
+            "w-full justify-start text-left font-normal bg-royal-obsidian border-royal-gold/20 text-white hover:bg-royal-gold/10 hover:border-royal-gold/40 hover:text-white focus:ring-royal-gold",
+            !date && "text-royal-gold/40",
             className
           )}
           onClick={() => setOpen(true)}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
+          <CalendarIcon className="mr-2 h-4 w-4 text-royal-gold" />
+          {date ? format(date, "PPP") : <span className="text-royal-gold/40">Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 card-modern shadow-lg rounded-lg" align="start" sideOffset={4}>
-        <div className="p-3 border-b">
+      <PopoverContent className="w-auto p-0 bg-royal-obsidian border border-royal-gold/20 shadow-[0_8px_32px_rgba(0,0,0,0.7)] rounded-xl" align="start" sideOffset={4}>
+        <div className="p-3 border-b border-royal-gold/10">
           <div className="flex gap-2 mb-2">
             <select
               value={selectedYear}
               onChange={(e) => handleYearChange(Number(e.target.value))}
-              className="p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+              className="p-2 border border-royal-gold/20 rounded text-sm bg-royal-obsidian text-white focus:outline-none focus:ring-1 focus:ring-royal-gold"
             >
               {yearOptions.map(year => (
-                <option key={year} value={year}>{year}</option>
+                <option key={year} value={year} className="bg-royal-obsidian">{year}</option>
               ))}
             </select>
             <select
               value={selectedMonth}
               onChange={(e) => handleMonthChange(Number(e.target.value))}
-              className="p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+              className="p-2 border border-royal-gold/20 rounded text-sm bg-royal-obsidian text-white focus:outline-none focus:ring-1 focus:ring-royal-gold"
             >
               {monthOptions.map((month, index) => (
-                <option key={index} value={index}>{month}</option>
+                <option key={index} value={index} className="bg-royal-obsidian">{month}</option>
               ))}
             </select>
           </div>

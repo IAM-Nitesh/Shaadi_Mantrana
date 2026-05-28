@@ -146,7 +146,7 @@ export default function MatchAnimation({ isVisible, onClose, matchName }: MatchA
               
               <button
                 onClick={onClose}
-                className="w-full bg-gray-100 text-white/80 font-inter py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                className="w-full bg-royal-obsidian/60 text-royal-gold/80 font-inter py-3 px-6 rounded-xl font-semibold hover:bg-royal-obsidian transition-all duration-200 border border-royal-gold/20"
               >
                 Keep Swiping
               </button>

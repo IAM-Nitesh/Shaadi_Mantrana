@@ -146,7 +146,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
                 <div className="flex space-x-2">
                   <button
                     onClick={dismissInstallPrompt}
-                    className="px-3 py-2 text-sm text-gray-500 hover:text-white/80 font-inter"
+                    className="px-3 py-2 text-sm text-royal-gold/50 hover:text-white/80 font-inter"
                   >
                     Later
                   </button>
@@ -188,7 +188,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
                 <div className="flex space-x-2">
                   <button
                     onClick={dismissUpdatePrompt}
-                    className="px-3 py-2 text-sm text-gray-500 hover:text-white/80 font-inter"
+                    className="px-3 py-2 text-sm text-royal-gold/50 hover:text-white/80 font-inter"
                   >
                     Later
                   </button>
