@@ -161,11 +161,11 @@ export default function LoginPage() {
           <div className="text-center">
             <p className="text-royal-gold/40 text-[10px] leading-relaxed">
               By continuing, you agree to our{' '}
-              <a href="/terms" className="text-royal-gold/80 transition-colors underline underline-offset-2 decoration-royal-gold/20">
+              <a href="https://shaadi-mantrana.vercel.app/terms" target="_blank" rel="noopener noreferrer" className="text-royal-gold/80 transition-colors underline underline-offset-2 decoration-royal-gold/20">
                 Terms
               </a>{' '}
               and{' '}
-              <a href="/privacy" className="text-royal-gold/80 transition-colors underline underline-offset-2 decoration-royal-gold/20">
+              <a href="https://shaadi-mantrana.vercel.app/privacy/" target="_blank" rel="noopener noreferrer" className="text-royal-gold/80 transition-colors underline underline-offset-2 decoration-royal-gold/20">
                 Privacy Policy
               </a>
             </p>

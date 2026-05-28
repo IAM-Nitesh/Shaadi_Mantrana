@@ -19,16 +19,22 @@ const HABIT_OPTIONS = [
   { value: 'Yes', label: 'Yes' }
 ];
 
+const HEIGHT_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const f = Math.floor(i / 12) + 4;
+  const inc = i % 12;
+  return { value: `${f}'${inc}"`, label: `${f} ft ${inc} in` };
+});
+
 export default function PhysicalVitalityStep({ data, updateField }: PhysicalVitalityStepProps) {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 gap-4">
-        <RoyalInput 
+        <RoyalSelect 
           label="Height" 
           fieldName="height"
           value={data.height || ''} 
           onChange={(e) => updateField('height', e.target.value)}
-          placeholder="e.g. 5ft 8in"
+          options={HEIGHT_OPTIONS}
         />
         <RoyalInput 
           label="Weight" 
