@@ -263,10 +263,10 @@ function MatchesContent() {
       
       {/* Main Content */}
   <div className="px-4 relative z-10" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
-        <h1 className="text-4xl font-heading text-royal-gold mb-6 px-2">Matches</h1>
+        <h1 className="text-3xl font-playfair font-bold text-royal-gold mb-6 px-2">Matches</h1>
         {/* Tabs */}
         <div ref={tabsRef} className="mb-6">
-          <div className="flex bg-royal-gold/5 border border-royal-gold/10 rounded-2xl p-1 shadow-sm">
+          <div className="flex bg-royal-gold/5 border border-royal-gold/50 rounded-2xl p-1 shadow-sm">
             <button
               onClick={() => setActiveTab('matches')}
               className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
@@ -302,7 +302,7 @@ function MatchesContent() {
           {loading ? (
             <div className="grid gap-4">
               {[...Array(1)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 p-6 bg-royal-gold/5 border border-royal-gold/10 rounded-2xl shadow-lg">
+                <div key={i} className="flex items-center space-x-4 p-6 bg-royal-gold/5 border border-royal-gold/50 rounded-2xl shadow-lg">
                   <RoyalLoader variant="skeleton" className="w-20 h-20 rounded-full" />
                   <div className="flex-1 space-y-3">
                     <RoyalLoader variant="skeleton" className="w-3/5 h-5 rounded-md" />
@@ -319,10 +319,10 @@ function MatchesContent() {
                 <div className="space-y-4">
                   {mutualMatches.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-royal-gold/20 to-royal-gold/5 border border-royal-gold/20 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+                      <div className="w-24 h-24 mx-auto mb-6 bg-royal-gold/10 border-2 border-royal-gold rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.15)]">
                         <CustomIcon name="ri-heart-line" className="text-4xl text-royal-gold" />
                       </div>
-                      <h3 className="text-xl font-semibold text-royal-gold mb-2">No Matches Yet</h3>
+                      <h3 className="text-2xl font-playfair font-bold text-royal-gold mb-2">No Matches Yet</h3>
                       <p className="text-royal-gold-light/60 mb-8">Start swiping to find your perfect match!</p>
                       <a
                         href="/dashboard"
@@ -339,7 +339,7 @@ function MatchesContent() {
                           href={`/chat?id=${match.connectionId}`}
                           data-testid="profile-card"
                           onClick={() => posthog.capture('match_chat_started', { connection_id: match.connectionId })}
-                          className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold/30"
+                          className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/50 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold"
                           style={{
                             animationDelay: `${index * 100}ms`
                           }}
@@ -393,10 +393,10 @@ function MatchesContent() {
                 <div className="space-y-4">
                   {likedProfiles.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-royal-gold/20 to-royal-gold/5 border border-royal-gold/20 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.15)]">
-                        <CustomIcon name="ri-user-add-line" className="text-4xl text-royal-gold" />
+                      <div className="w-24 h-24 mx-auto mb-6 bg-royal-gold/10 border-2 border-royal-gold rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+                        <CustomIcon name="ri-user-heart-line" className="text-4xl text-royal-gold" />
                       </div>
-                      <h3 className="text-xl font-semibold text-royal-gold mb-2">No Likes Yet</h3>
+                      <h3 className="text-2xl font-playfair font-bold text-royal-gold mb-2">No Likes Yet</h3>
                       <p className="text-royal-gold-light/60 mb-8">Profiles you like will appear here</p>
                       <a
                         href="/dashboard"
@@ -413,7 +413,7 @@ function MatchesContent() {
                           key={likedProfile.likeId}
                           href={`/chat?id=${likedProfile.connectionId}`}
                           data-testid="profile-card"
-                          className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold/30"
+                          className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/50 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold"
                         >
                           <div className="flex items-center space-x-4">
                             <div className="relative">
@@ -450,7 +450,7 @@ function MatchesContent() {
                           </div>
                         </a>
                       ) : (
-                        <div key={likedProfile.likeId} data-testid="profile-card" className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/10 p-6 transition-all duration-300 hover:shadow-xl">
+                        <div key={likedProfile.likeId} data-testid="profile-card" className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/50 p-6 transition-all duration-300 hover:shadow-xl hover:border-royal-gold">
                           <div className="flex items-center space-x-4">
                             <div className="relative">
                               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-royal-gold/20 to-royal-gold/10 flex items-center justify-center overflow-hidden shadow-lg border border-royal-gold/20">

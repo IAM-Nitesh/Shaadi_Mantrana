@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import CustomIcon from './CustomIcon';
 import RoyalIcon from './RoyalIcon';
 import { useAuth } from '../contexts/AuthContext';
@@ -73,7 +74,7 @@ export default function AdminBottomNavigation() {
     <>
       <div role="navigation" aria-label="Admin bottom navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-royal-glass backdrop-blur-sm border-t border-royal-glass-border shadow-lg" style={{ height: 'var(--bottom-nav-height, 5rem)' }}>
         <div className="flex justify-around items-center h-full px-4">
-          <a
+          <Link
             href="/admin/dashboard"
             className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
               pathname === '/admin/dashboard' 
@@ -89,9 +90,9 @@ export default function AdminBottomNavigation() {
               <CustomIcon name="ri-dashboard-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Dashboard</span>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/users"
             className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
               pathname === '/admin/users' 
@@ -107,9 +108,9 @@ export default function AdminBottomNavigation() {
               <CustomIcon name="ri-group-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Users</span>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/phone-invitations"
             className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
               pathname === '/admin/phone-invitations' 
@@ -125,9 +126,9 @@ export default function AdminBottomNavigation() {
               <CustomIcon name="ri-mail-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Invitations</span>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/data-safety"
             className={`flex flex-col items-center space-y-2 text-xs transition-all duration-300 ease-in-out transform hover:scale-105 ${
               pathname === '/admin/data-safety' 
@@ -143,7 +144,7 @@ export default function AdminBottomNavigation() {
               <CustomIcon name="ri-shield-check-line" className="text-xl" />
             </div>
             <span className="text-xs font-medium">Data Safety</span>
-          </a>
+          </Link>
 
           <button
             onClick={handleLogout}

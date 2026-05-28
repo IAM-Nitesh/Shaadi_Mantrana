@@ -1,6 +1,6 @@
 {
   "name": "shaadi-mantra",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "Shaadi Mantrana - Matrimonial Platform",
   "main": "index.js",
   "scripts": {
