@@ -120,14 +120,14 @@ function ChatPageContent() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-6 bg-red-100 border border-red-200 rounded-2xl flex items-center justify-center shadow-lg">
-            <CustomIcon name="ri-error-warning-line" className="text-3xl text-red-500" />
+      <div className="flex items-center justify-center min-h-screen bg-royal-obsidian">
+        <div className="bg-royal-glass/30 rounded-3xl p-8 max-w-sm w-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-royal-glass-border">
+          <div className="w-24 h-24 mx-auto mb-6 bg-royal-obsidian border border-royal-crimson/20 rounded-2xl flex items-center justify-center shadow-lg">
+            <CustomIcon name="ri-error-warning-line" className="text-3xl text-royal-crimson" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Error</h3>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <p className="text-sm text-gray-500">Pull down to refresh and try again.</p>
+          <h3 className="text-xl font-semibold text-royal-gold text-center mb-2">Error</h3>
+          <p className="text-royal-gold/60 text-center mb-6">{error}</p>
+          <p className="text-sm text-royal-gold/40 text-center">Pull down to refresh and try again.</p>
         </div>
       </div>
     );
@@ -135,16 +135,16 @@ function ChatPageContent() {
 
   if (!match) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 border border-gray-200 rounded-2xl flex items-center justify-center shadow-lg">
-            <CustomIcon name="ri-user-search-line" className="text-3xl text-gray-500" />
+      <div className="flex items-center justify-center min-h-screen bg-royal-obsidian">
+        <div className="bg-royal-glass/30 rounded-3xl p-8 max-w-sm w-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-royal-glass-border">
+          <div className="w-24 h-24 mx-auto mb-6 bg-royal-obsidian border border-royal-gold/20 rounded-2xl flex items-center justify-center shadow-lg">
+            <CustomIcon name="ri-user-search-line" className="text-3xl text-royal-gold" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Match Not Found</h3>
-          <p className="text-gray-600 mb-6">The requested match could not be found.</p>
-          <button
+          <h3 className="text-xl font-semibold text-royal-gold text-center mb-2">No conversations yet</h3>
+          <p className="text-royal-gold/60 text-center mb-8">The requested match could not be found.</p>
+          <button 
             onClick={() => router.push('/matches')}
-            className="bg-white border-2 border-rose-500 text-rose-500 px-6 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all duration-300 shadow-lg"
+            className="w-full bg-royal-gold text-royal-obsidian px-6 py-3 rounded-xl font-bold hover:bg-royal-gold-light transition-all duration-300 shadow-[0_0_15px_rgba(212,175,55,0.3)]"
           >
             Back to Matches
           </button>

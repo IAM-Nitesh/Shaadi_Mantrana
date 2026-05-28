@@ -434,7 +434,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
                       </span>
                     ));
                   } else {
-                    return <span className="text-gray-500 text-sm">No interests specified</span>;
+                    return <span className="text-royal-gold/40 text-sm">No interests specified</span>;
                   }
                 })()}
               </div>

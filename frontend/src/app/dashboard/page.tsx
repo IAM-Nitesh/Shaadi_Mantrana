@@ -10,7 +10,6 @@ import { safeGsap } from '../../components/SafeGsap';
 import { DiscoveryProfile, MatchingService } from '../../services/matching-service';
 import logger from '../../utils/logger';
 import posthog from 'posthog-js';
-import MandalaBackground from '../../components/ui/MandalaBackground';
 import RoyalLoader from '../../components/RoyalLoader';
 import ToastService from '../../services/toastService';
 import { Icon } from '../../components/IconSystem';
@@ -24,7 +23,6 @@ function DashboardContent() {
   const [likesRemaining, setLikesRemaining] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isFetchingProfiles, setIsFetchingProfiles] = useState(true);
-  const [dragX, setDragX] = useState(0);
   
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -140,7 +138,8 @@ function DashboardContent() {
       className="min-h-screen bg-royal-obsidian relative overflow-hidden"
       style={{ paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 2rem)' }}
     >
-      <MandalaBackground opacity={0.1} rotationSpeed={180} parallaxShift={dragX} />
+      {/* Subtle gold gradient background - no moving mandala */}
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.04)_0%,transparent_70%)]" />
       {/* Mobile Header */}
       <div ref={headerRef} className="relative z-10 p-4 pt-8">
         <div className="flex items-center justify-between mb-4">
@@ -169,7 +168,6 @@ function DashboardContent() {
           <SwipeCard 
             profile={currentProfile} 
             onSwipe={handleSwipe}
-            onDrag={setDragX}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-center relative z-10">

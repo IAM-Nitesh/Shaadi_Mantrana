@@ -623,14 +623,14 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           </motion.div>
           
           <div className="flex-1">
-            <h1 className="font-semibold text-gray-800 text-lg">{match.name}</h1>
+            <h1 className="font-semibold text-white text-lg">{match.name}</h1>
             <div className="flex items-center space-x-2">
-              <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
+              <span className={`text-sm ${isConnected ? 'text-emerald-400' : 'text-royal-gold/50'}`}>
                 {isConnected ? 'Online' : 'Offline'}
               </span>
               {isTyping && (
                 <motion.span 
-                  className="text-sm text-gray-500"
+                  className="text-sm text-royal-gold/50"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -659,7 +659,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           <div className="relative unmatch-menu">
             <button
               onClick={() => setShowUnmatchMenu(!showUnmatchMenu)}
-              className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+              className="w-10 h-10 flex items-center justify-center text-royal-gold/60 hover:bg-royal-gold/10 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
               title="More options"
             >
               <CustomIcon name="ri-more-2-fill" className="text-xl" />
@@ -671,7 +671,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 top-12 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[160px]"
+                className="absolute right-0 top-12 bg-royal-obsidian rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.7)] border border-royal-gold/20 py-2 z-50 min-w-[160px]"
               >
                 <button
                   onClick={handleUnmatch}
@@ -707,7 +707,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center justify-center h-full text-center"
           >
-            <p className="text-gray-600">Loading messages...</p>
+            <p className="text-royal-gold/60">Loading messages...</p>
           </motion.div>
   ) : renderedMessages.length === 0 ? (
           <motion.div 
