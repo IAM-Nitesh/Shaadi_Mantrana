@@ -230,6 +230,16 @@ class AuthController {
         }
       }
 
+      // 2b. Block login for paused accounts
+      if (user.status === 'paused' || user.isApprovedByAdmin === false) {
+        logger.warn({ event: 'login_blocked_paused', uid, phone: phone_number }, 'Login attempt by paused user blocked');
+        return res.status(403).json({
+          success: false,
+          error: 'Your account has been paused by the administrator. Please contact support to resume access.',
+          code: 'ACCOUNT_PAUSED'
+        });
+      }
+
       // Update FCM token if provided
       if (fcmToken) {
         user.fcmToken = fcmToken;

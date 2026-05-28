@@ -68,9 +68,9 @@ export default function AdminLayout({
     // Clear any previous auth errors on successful authentication
     setAuthError(null);
     
-    // Redirect to dashboard if accessing admin root
+    // Redirect to users page if accessing admin root
     if (cleanPath === '/admin') {
-      router.replace('/admin/dashboard');
+      router.replace('/admin/users');
     }
   }, [pathname, router, isLoading, isAuthenticated, user]);
 
@@ -97,18 +97,25 @@ export default function AdminLayout({
   const cleanPath = pathname.replace(/\/$/, '');
   if ((isAuthenticated && user?.role === 'admin') || cleanPath === '/admin/login') {
     return (
-      <div className="min-h-[100dvh] bg-royal-obsidian flex flex-col">
-        {/* Fixed Header - StandardHeader is fixed and uses a consistent height (h-16) */}
+      // Use bg on html-level wrapper only — NO overflow-y-auto here.
+      // Content scrolls at the body/html level (same as regular user pages)
+      // so that position:fixed on AdminBottomNavigation pins to the real viewport.
+      <div className="min-h-[100dvh] bg-royal-obsidian">
+        {/* Fixed Header */}
         <StandardHeader showProfileLink={false} />
 
-        {/* Scrollable Content Area (padding matches header/footer heights) */}
-        <main className="flex-1 overflow-y-auto" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
-          <div className="admin-content relative">
-            {children}
-          </div>
-        </main>
+        {/* Page content — naturally scrollable, padded so it clears the fixed header and nav */}
+        <div
+          className="admin-content"
+          style={{
+            paddingTop: 'calc(var(--header-height, 4rem) + env(safe-area-inset-top))',
+            paddingBottom: 'calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom) + 0.5rem)',
+          }}
+        >
+          {children}
+        </div>
 
-        {/* Fixed Footer - AdminBottomNavigation is fixed and uses h-20 */}
+        {/* Fixed bottom nav — rendered at body level scroll context */}
         <AdminBottomNavigation />
       </div>
     );

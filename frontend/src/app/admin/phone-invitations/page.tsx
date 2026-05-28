@@ -65,13 +65,15 @@ export default function PhoneInvitations() {
       setSendingInvitation(true);
       // Admin authentication is already handled by AdminLayout
       
-      const phoneNumber = newPhoneNumber.trim();
+      const rawNumber = newPhoneNumber.trim().replace(/\D/g, ''); // strip non-digits
+      // Auto-prefix +91 if user entered just 10 digits
+      const phoneNumber = rawNumber.length === 10 ? `+91${rawNumber}` : rawNumber.startsWith('91') ? `+${rawNumber}` : `+${rawNumber}`;
       logger.debug('Sending invitation to phone:', phoneNumber);
       
-      // Validate E.164 format for phone numbers
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      // Validate: must be +91 followed by 10 digits
+      const phoneRegex = /^\+91\d{10}$/;
       if (!phoneRegex.test(phoneNumber)) {
-        throw new Error('Please enter a valid phone number in +91 format (e.g., +919876543210)');
+        throw new Error('Please enter a valid 10-digit Indian phone number');
       }
       
       const response = await apiClient.post('/api/admin/invitations', { phoneNumber }, {
@@ -214,19 +216,23 @@ export default function PhoneInvitations() {
         
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <input
-              type="tel"
-              value={newPhoneNumber}
-              onChange={(e) => setNewPhoneNumber(e.target.value)}
-              placeholder="Enter phone number"
-              className="w-full px-4 py-3 border border-royal-gold/30 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            />
-            <p className="text-xs text-royal-gold/60 mt-2">Format: +91 followed by 10 digits</p>
+            <div className="flex rounded-xl overflow-hidden border border-royal-gold/30 focus-within:ring-2 focus-within:ring-royal-gold/50">
+              <span className="flex items-center px-4 bg-royal-gold/10 text-royal-gold font-semibold text-sm border-r border-royal-gold/30 whitespace-nowrap">+91</span>
+              <input
+                type="tel"
+                value={newPhoneNumber}
+                onChange={(e) => setNewPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="10-digit mobile number"
+                maxLength={10}
+                className="flex-1 px-4 py-3 bg-royal-obsidian text-white focus:outline-none transition-all duration-200"
+              />
+            </div>
+            <p className="text-xs text-royal-gold/50 mt-2">Enter 10-digit number — +91 is added automatically</p>
           </div>
           <button
             onClick={sendNewInvitation}
-            disabled={!newPhoneNumber.trim() || sendingInvitation}
-            className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${sendingInvitation ? 'shimmer-button' : ''}`}
+            disabled={newPhoneNumber.trim().replace(/\D/g, '').length !== 10 || sendingInvitation}
+            className={`px-6 py-3 bg-royal-gold text-royal-obsidian font-semibold rounded-xl hover:bg-royal-gold-light transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${sendingInvitation ? 'shimmer-button' : ''}`}
           >
             {sendingInvitation ? 'Sending...' : 'Send Invitation'}
           </button>

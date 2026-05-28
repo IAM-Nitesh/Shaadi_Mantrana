@@ -33,21 +33,21 @@ export default function DataSafety() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div className="text-center p-6 bg-royal-gold/5 rounded-xl">
-              <div className="text-4xl text-royal-gold mx-auto mb-4">🔐</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="flex flex-col items-center text-center p-6 bg-royal-gold/5 rounded-xl border border-royal-gold/10 h-full">
+              <div className="text-4xl text-royal-gold mb-4">🔐</div>
               <h3 className="font-semibold text-royal-gold font-playfair mb-3 text-lg">Admin Authentication</h3>
               <p className="text-sm text-white/80 font-inter">Secure admin login with role-based access control</p>
             </div>
             
-            <div className="text-center p-6 bg-royal-gold/5 rounded-xl">
-              <div className="text-4xl text-royal-gold-light mx-auto mb-4">👥</div>
+            <div className="flex flex-col items-center text-center p-6 bg-royal-gold/5 rounded-xl border border-royal-gold/10 h-full">
+              <div className="text-4xl text-royal-gold-light mb-4">👥</div>
               <h3 className="font-semibold text-royal-gold font-playfair mb-3 text-lg">User Management</h3>
               <p className="text-sm text-white/80 font-inter">View, pause, resume, and manage user accounts</p>
             </div>
             
-            <div className="text-center p-6 bg-royal-gold/5 rounded-xl">
-              <div className="text-4xl text-yellow-600 mx-auto mb-4">📱</div>
+            <div className="flex flex-col items-center text-center p-6 bg-royal-gold/5 rounded-xl border border-royal-gold/10 h-full">
+              <div className="text-4xl text-royal-gold mb-4">📱</div>
               <h3 className="font-semibold text-royal-gold font-playfair mb-3 text-lg">Invitation Control</h3>
               <p className="text-sm text-white/80 font-inter">Send and track phone invitations</p>
             </div>
@@ -164,10 +164,10 @@ export default function DataSafety() {
             </div>
           </div>
           
-          <div className="text-center p-8 bg-blue-950 border border-blue-900/50 rounded-2xl max-w-md mx-auto shadow-md">
-            <CustomIcon name="ri-mail-line" className="text-4xl text-royal-gold-light mx-auto mb-4" />
-            <h3 className="font-semibold text-white mb-3 text-lg">Admin Support</h3>
-            <p className="text-sm text-blue-200 mb-4">For admin access and technical support</p>
+          <div className="text-center p-8 bg-royal-obsidian border border-royal-gold/20 rounded-2xl max-w-md mx-auto shadow-md">
+            <CustomIcon name="ri-mail-line" className="text-4xl text-royal-gold mx-auto mb-4" />
+            <h3 className="font-semibold text-royal-gold font-playfair mb-3 text-lg">Admin Support</h3>
+            <p className="text-sm text-white/60 mb-4">For admin access and technical support</p>
             <a href="mailto:shaadimantrana.help@gmail.com" className="text-royal-gold hover:text-royal-gold-light font-medium block transition-colors">
               shaadimantrana.help@gmail.com
             </a>
