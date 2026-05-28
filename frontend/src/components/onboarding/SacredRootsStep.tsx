@@ -13,6 +13,7 @@ export default function SacredRootsStep({ data, updateField }: SacredRootsStepPr
       <div className="grid grid-cols-2 gap-4">
         <RoyalSelect 
           label="Marital Status" 
+          fieldName="maritalStatus"
           value={data.maritalStatus || ''}
           onChange={(e) => updateField('maritalStatus', e.target.value)}
           options={[
@@ -24,6 +25,7 @@ export default function SacredRootsStep({ data, updateField }: SacredRootsStepPr
         />
         <RoyalSelect 
           label="Manglik" 
+          fieldName="manglik"
           value={data.manglik || ''}
           onChange={(e) => updateField('manglik', e.target.value)}
           options={[
@@ -37,12 +39,14 @@ export default function SacredRootsStep({ data, updateField }: SacredRootsStepPr
       <div className="space-y-6">
         <RoyalInput 
           label="Native Place" 
+          fieldName="nativePlace"
           value={data.nativePlace || ''} 
           onChange={(e) => updateField('nativePlace', e.target.value)}
           placeholder="Ancestral Town/City"
         />
         <RoyalInput 
           label="Current Residence" 
+          fieldName="currentResidence"
           value={data.currentResidence || ''} 
           onChange={(e) => updateField('currentResidence', e.target.value)}
           placeholder="City you currently live in"
@@ -52,24 +56,24 @@ export default function SacredRootsStep({ data, updateField }: SacredRootsStepPr
       <div className="space-y-6 pt-4">
         <h3 className="text-royal-gold/60 text-[10px] uppercase tracking-[0.2em] mb-4">Family Pillars</h3>
         <div className="grid grid-cols-2 gap-4">
-          <RoyalInput label="Father's Name" value={data.father || ''} onChange={(e) => updateField('father', e.target.value)} />
-          <RoyalInput label="Mother's Name" value={data.mother || ''} onChange={(e) => updateField('mother', e.target.value)} />
+          <RoyalInput label="Father's Name" fieldName="father" value={data.father || ''} onChange={(e) => updateField('father', e.target.value)} />
+          <RoyalInput label="Mother's Name" fieldName="mother" value={data.mother || ''} onChange={(e) => updateField('mother', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <RoyalInput label="Brothers" type="number" value={data.brothers || ''} onChange={(e) => updateField('brothers', e.target.value)} />
-          <RoyalInput label="Sisters" type="number" value={data.sisters || ''} onChange={(e) => updateField('sisters', e.target.value)} />
+          <RoyalInput label="Brothers" fieldName="brothers" type="number" value={data.brothers || ''} onChange={(e) => updateField('brothers', e.target.value)} />
+          <RoyalInput label="Sisters" fieldName="sisters" type="number" value={data.sisters || ''} onChange={(e) => updateField('sisters', e.target.value)} />
         </div>
       </div>
 
       <div className="space-y-6 pt-4">
         <h3 className="text-royal-gold/60 text-[10px] uppercase tracking-[0.2em] mb-4">Ancestral Gotras</h3>
         <div className="grid grid-cols-2 gap-4">
-          <RoyalInput label="Father's Gotra" value={data.fatherGotra || ''} onChange={(e) => updateField('fatherGotra', e.target.value)} />
-          <RoyalInput label="Mother's Gotra" value={data.motherGotra || ''} onChange={(e) => updateField('motherGotra', e.target.value)} />
+          <RoyalInput label="Father's Gotra" fieldName="fatherGotra" value={data.fatherGotra || ''} onChange={(e) => updateField('fatherGotra', e.target.value)} />
+          <RoyalInput label="Mother's Gotra" fieldName="motherGotra" value={data.motherGotra || ''} onChange={(e) => updateField('motherGotra', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <RoyalInput label="Paternal Grandfather's Gotra" value={data.grandfatherGotra || ''} onChange={(e) => updateField('grandfatherGotra', e.target.value)} />
-          <RoyalInput label="Maternal Grandmother's Gotra" value={data.grandmotherGotra || ''} onChange={(e) => updateField('grandmotherGotra', e.target.value)} />
+          <RoyalInput label="Paternal Grandfather's Gotra" fieldName="grandfatherGotra" value={data.grandfatherGotra || ''} onChange={(e) => updateField('grandfatherGotra', e.target.value)} />
+          <RoyalInput label="Maternal Grandmother's Gotra" fieldName="grandmotherGotra" value={data.grandmotherGotra || ''} onChange={(e) => updateField('grandmotherGotra', e.target.value)} />
         </div>
       </div>
     </div>

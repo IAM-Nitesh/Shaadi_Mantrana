@@ -59,6 +59,24 @@ export const ICON_REGISTRY = {
     description: 'User profile outline',
     aliases: ['profile', 'person', 'account'],
   },
+  'ri-building-line': {
+    path: '/icons/building.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'Building outline',
+    aliases: ['building', 'gotra'],
+  },
+  'ri-heart-3-line': {
+    path: '/icons/heart-outline.svg',
+    category: ICON_CATEGORIES.SOCIAL,
+    description: 'Heart outline variation',
+    aliases: ['heart3', 'lifestyle'],
+  },
+  'ri-file-text-line': {
+    path: '/icons/document.svg',
+    category: ICON_CATEGORIES.SYSTEM,
+    description: 'File text',
+    aliases: ['file-text', 'about'],
+  },
   'ri-user-fill': {
     path: '/icons/user-filled.svg',
     category: ICON_CATEGORIES.SYSTEM,

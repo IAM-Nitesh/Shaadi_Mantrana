@@ -13,6 +13,7 @@ export default function SacredIntentStep({ data, updateField }: SacredIntentStep
       <div className="space-y-6">
         <RoyalTextArea 
           label="About Me" 
+          fieldName="about"
           value={data.about || ''} 
           onChange={(e) => updateField('about', e.target.value)}
           placeholder="Share your story, values, and what you seek in a life partner..."
@@ -20,13 +21,15 @@ export default function SacredIntentStep({ data, updateField }: SacredIntentStep
 
         <RoyalInput 
           label="Interests & Passions" 
+          fieldName="interests"
           value={data.interests?.join(', ') || ''} 
-          onChange={(e) => updateField('interests', e.target.value.split(',').map(s => s.trim()))}
+          onChange={(e) => updateField('interests', e.target.value.split(',').map((s: string) => s.trim()))}
           placeholder="e.g. Classical Music, Ancient History, Yoga (comma separated)"
         />
 
         <RoyalTextArea 
           label="Specific Requirements" 
+          fieldName="specificRequirements"
           value={data.specificRequirements || ''} 
           onChange={(e) => updateField('specificRequirements', e.target.value)}
           placeholder="Any specific preferences or non-negotiables for your destined match..."
