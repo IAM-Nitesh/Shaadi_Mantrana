@@ -22,9 +22,10 @@ export function usePageTransition() {
 
 interface PageTransitionProviderProps {
   children: ReactNode;
+  globalUI?: ReactNode;
 }
 
-export default function PageTransitionProvider({ children }: PageTransitionProviderProps) {
+export default function PageTransitionProvider({ children, globalUI }: PageTransitionProviderProps) {
   const pathname = usePathname();
   const [isTransitioning, setTransitioning] = useState(false);
   const [previousPath, setPreviousPath] = useState('');
@@ -93,6 +94,7 @@ export default function PageTransitionProvider({ children }: PageTransitionProvi
           {children}
         </motion.div>
       </AnimatePresence>
+      {globalUI}
     </PageTransitionContext.Provider>
   );
 } 

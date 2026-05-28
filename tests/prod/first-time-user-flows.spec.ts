@@ -99,17 +99,17 @@ test.describe('First-Time User Flows on Production', () => {
 
     // ── 3. WIZARD STEP 1: Personal Grace ─────────────────────────────────────
     // Labels (exact, from PersonalGraceStep.tsx):
-    //   "Name of the Devout", "Gender", "Date of Appearance",
-    //   "Time of Arrival", "Place of Birth"
+    //   "Name", "Gender", "Date of Birth",
+    //   "Time of Birth", "Place of Birth"
     // Mandatory fields filled here: name, gender, dateOfBirth
     console.log('\nStep 1: Filling Personal Grace...');
     await expect(page.locator('h2').filter({ hasText: 'Personal Grace' })).toBeVisible({ timeout: 10000 });
 
-    await fieldByLabel(page, 'Name of the Devout').locator('input').fill('Test User');
+    await fieldByLabel(page, 'Name').locator('input').fill('Test User');
     await fieldByLabel(page, 'Gender').locator('select').selectOption('Male');
-    await fieldByLabel(page, 'Date of Appearance').locator('input').fill('1990-01-01');
+    await fieldByLabel(page, 'Date of Birth').locator('input').fill('1990-01-01');
     // Optional: fill time + place for richer profile
-    await fieldByLabel(page, 'Time of Arrival').locator('input').fill('06:30');
+    await fieldByLabel(page, 'Time of Birth').locator('input').fill('06:30');
     await fieldByLabel(page, 'Place of Birth').locator('input').fill('Delhi');
 
     await page.getByRole('button', { name: /Continue Journey/i }).click({ force: true });
@@ -172,12 +172,12 @@ test.describe('First-Time User Flows on Production', () => {
 
     // ── 7. WIZARD STEP 5: Sacred Intent ──────────────────────────────────────
     // Labels (exact, from SacredIntentStep.tsx):
-    //   "Sacred Bio (About Me)", "Interests & Passions", "Specific Requirements"
+    //   "About Me", "Interests & Passions", "Specific Requirements"
     // Mandatory fields filled here: about
     console.log('Step 5: Filling Sacred Intent...');
     await expect(page.locator('h2').filter({ hasText: 'Sacred Intent' })).toBeVisible({ timeout: 10000 });
 
-    await fieldByLabel(page, 'Sacred Bio (About Me)').locator('textarea').fill(
+    await fieldByLabel(page, 'About Me').locator('textarea').fill(
       'A devout soul seeking a meaningful connection grounded in values and mutual respect.'
     );
     // Optional

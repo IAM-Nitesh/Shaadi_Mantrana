@@ -216,13 +216,14 @@ export default function OnboardingOverlay({ isVisible, onComplete }: OnboardingO
                 ✦ &nbsp;Welcome to&nbsp; ✦
               </motion.p>
 
-              <h2 className="text-3xl font-playfair font-bold leading-tight mb-1">
-                <AnimatedText
-                  text="Shaadi Mantrana"
-                  className="text-royal-gold"
-                  delay={0.7}
-                />
-              </h2>
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 1 }}
+                className="text-4xl md:text-5xl font-playfair font-bold text-transparent bg-clip-text bg-gradient-to-r from-royal-gold via-white to-royal-gold-light tracking-wider drop-shadow-lg leading-tight mb-1"
+              >
+                Shaadi Mantrana
+              </motion.h1>
             </div>
 
             {/* Decorative divider */}
