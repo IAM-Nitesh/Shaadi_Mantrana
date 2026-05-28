@@ -96,19 +96,7 @@ function SettingsContent() {
   const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
-  const [appVersion, setAppVersion] = useState(packageJson.version);
-
-  useEffect(() => {
-    const getVersion = async () => {
-      try {
-        const info = await App.getInfo();
-        if (info.version) setAppVersion(info.version);
-      } catch (e) {
-        // Ignored for web
-      }
-    };
-    getVersion();
-  }, []);
+  // Version info removed by request
   const [matchesCount, setMatchesCount] = useState(0);
 
   useEffect(() => {
@@ -285,7 +273,7 @@ function SettingsContent() {
 
         {/* ── App Version ── */}
         <p className="text-center text-[10px] text-royal-gold/20 tracking-widest uppercase pb-2">
-          <span className="text-white">Shaadi</span> Mantrana · v{appVersion}
+          <span className="text-white">Shaadi</span> Mantrana
         </p>
       </div>
 
