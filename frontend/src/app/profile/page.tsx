@@ -35,6 +35,25 @@ function formatTime(date: Date) {
   return format(date, 'hh:mm aa');
 }
 
+function parseTimeOfBirth(value: string | Date | null | undefined): Date | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date && !isNaN(value.getTime())) return value;
+  if (typeof value !== 'string') return undefined;
+
+  const isoTime = new Date(`1970-01-01T${value}`);
+  if (!isNaN(isoTime.getTime())) return isoTime;
+
+  const match = value.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!match) return undefined;
+
+  let hours = parseInt(match[1], 10) % 12;
+  if (match[3].toUpperCase() === 'PM') hours += 12;
+
+  const date = new Date();
+  date.setHours(hours, parseInt(match[2], 10), 0, 0);
+  return date;
+}
+
 // Helper to convert date to YYYY-MM-DD
 function toISODateString(date: string | Date | null): string | null {
   if (!date) return null;
@@ -50,6 +69,47 @@ function toISODateString(date: string | Date | null): string | null {
   // Check if date is valid before calling toISOString
   if (isNaN(date.getTime())) return null;
   return date.toISOString().split('T')[0];
+}
+
+const INCOME_OPTIONS = [
+  { value: 'Under 5L', label: 'Under 5 Lakhs' },
+  { value: '5L - 10L', label: '5 Lakhs - 10 Lakhs' },
+  { value: '10L - 20L', label: '10 Lakhs - 20 Lakhs' },
+  { value: '20L - 50L', label: '20 Lakhs - 50 Lakhs' },
+  { value: '50L - 1Cr', label: '50 Lakhs - 1 Crore' },
+  { value: 'Above 1Cr', label: 'Above 1 Crore' }
+];
+
+const SIBLING_OPTIONS = Array.from({ length: 6 }, (_, value) => ({
+  value: String(value),
+  label: String(value)
+}));
+
+const TEXT_ONLY_FIELDS = new Set([
+  'name',
+  'nativePlace',
+  'currentResidence',
+  'placeOfBirth',
+  'father',
+  'mother',
+  'fatherGotra',
+  'motherGotra',
+  'grandfatherGotra',
+  'grandmotherGotra'
+]);
+
+const NUMBER_ONLY_FIELDS = new Set(['weight']);
+
+function sanitizeProfileField(fieldName: string, value: string) {
+  if (TEXT_ONLY_FIELDS.has(fieldName)) {
+    return value.replace(/[^a-zA-Z\s]/g, '');
+  }
+
+  if (NUMBER_ONLY_FIELDS.has(fieldName)) {
+    return value.replace(/\D/g, '');
+  }
+
+  return value;
 }
 
 function ProfileContent() {
@@ -282,18 +342,7 @@ function ProfileContent() {
       const dateString = profile.dateOfBirth ? toISODateString(profile.dateOfBirth) : null;
       setDateValue(dateString ? { startDate: dateString, endDate: dateString } : { startDate: null, endDate: null });
       if (profile.timeOfBirth) {
-        // If already a Date, use as is; if string, parse to Date
-        const t = profile.timeOfBirth;
-        let d: Date;
-        if (typeof t === 'string') {
-          d = new Date(`1970-01-01T${t}`);
-          if (isNaN(d.getTime())) d = new Date();
-        } else if (t instanceof Date) {
-          d = t;
-        } else {
-          d = new Date();
-        }
-        setClockTime(d);
+        setClockTime(parseTimeOfBirth(profile.timeOfBirth) || new Date());
       } else {
         setClockTime(new Date());
       }
@@ -1374,10 +1423,10 @@ function ProfileContent() {
       message: 'Occupation should only contain letters, numbers, spaces, and basic punctuation (max 20 characters)'
     },
     annualIncome: {
-      pattern: /^[0-9]+$/,
-      maxLength: 8,
+      pattern: /^(Under 5L|5L - 10L|10L - 20L|20L - 50L|50L - 1Cr|Above 1Cr)$/,
+      maxLength: 20,
       minLength: 1,
-      message: 'Annual income should be numbers only (no symbols)'
+      message: 'Please select an annual income range'
     },
     father: {
       pattern: /^[a-zA-Z\s]+$/,
@@ -1392,23 +1441,23 @@ function ProfileContent() {
       message: 'Mother\'s name should only contain letters and spaces (max 20 characters)'
     },
     brothers: {
-      pattern: /^[0-9]+$/,
-      maxLength: 2,
+      pattern: /^[0-5]$/,
+      maxLength: 1,
       minLength: 1,
-      message: 'Number of brothers should be numbers only (0-10)',
+      message: 'Number of brothers should be between 0 and 5',
       customValidation: (value: string) => {
         const num = parseInt(value);
-        return num >= 0 && num <= 10;
+        return num >= 0 && num <= 5;
       }
     },
     sisters: {
-      pattern: /^[0-9]+$/,
-      maxLength: 2,
+      pattern: /^[0-5]$/,
+      maxLength: 1,
       minLength: 1,
-      message: 'Number of sisters should be numbers only (0-10)',
+      message: 'Number of sisters should be between 0 and 5',
       customValidation: (value: string) => {
         const num = parseInt(value);
-        return num >= 0 && num <= 10;
+        return num >= 0 && num <= 5;
       }
     },
     specificRequirements: {
@@ -1555,6 +1604,7 @@ function ProfileContent() {
     const value = profile[fieldName];
     const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
     const isValid = fieldConfig ? fieldConfig.validation(value) : true;
+    const hasValue = value !== undefined && value !== null && value !== '';
     
     const hasUserInteracted = interactedFields[fieldName];
     
@@ -1562,7 +1612,7 @@ function ProfileContent() {
       return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
     } else if (hasUserInteracted && !isValid) {
       return `${baseClasses} border-royal-crimson bg-royal-crimson/10 text-royal-crimson shadow-[0_0_10px_rgba(239,68,68,0.2)]`;
-    } else if (hasUserInteracted && isValid) {
+    } else if ((hasUserInteracted || hasValue) && isValid) {
       return `${baseClasses} border-emerald-500 bg-emerald-900/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]`;
     } else if (activeField === fieldName) {
       return `${baseClasses} border-royal-gold bg-white/5 text-white`;
@@ -1578,6 +1628,7 @@ function ProfileContent() {
     const value = profile[fieldName];
     const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
     const isValid = fieldConfig ? fieldConfig.validation(value) : true;
+    const hasValue = value !== undefined && value !== null && value !== '';
     
     const hasUserInteracted = interactedFields[fieldName];
     
@@ -1585,7 +1636,7 @@ function ProfileContent() {
       return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
     } else if (hasUserInteracted && !isValid) {
       return `${baseClasses} border-royal-crimson bg-royal-crimson/10 text-royal-crimson shadow-[0_0_10px_rgba(239,68,68,0.2)]`;
-    } else if (hasUserInteracted && isValid) {
+    } else if ((hasUserInteracted || hasValue) && isValid) {
       return `${baseClasses} border-emerald-500 bg-emerald-900/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]`;
     } else if (activeField === fieldName) {
       return `${baseClasses} border-royal-gold bg-white/5 text-white`;
@@ -1601,6 +1652,7 @@ function ProfileContent() {
     const value = profile[fieldName];
     const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
     const isValid = fieldConfig ? fieldConfig.validation(value) : true;
+    const hasValue = value !== undefined && value !== null && value !== '';
     
     const hasUserInteracted = interactedFields[fieldName];
     
@@ -1608,8 +1660,8 @@ function ProfileContent() {
       return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
     } else if (hasUserInteracted && !isValid) {
       return `${baseClasses} border-royal-crimson bg-royal-crimson/10`;
-    } else if (hasUserInteracted && isValid) {
-      return `${baseClasses} border-emerald-500 bg-emerald-900/10`;
+    } else if ((hasUserInteracted || hasValue) && isValid) {
+      return `${baseClasses} border-emerald-500 bg-emerald-900/10 text-emerald-400`;
     } else {
       return `${baseClasses} border-royal-gold/20 bg-royal-obsidian hover:border-royal-gold/40`;
     }
@@ -1632,6 +1684,7 @@ function ProfileContent() {
 
   // Handle field change with debounced validation and tilt animation
   const handleFieldChange = (fieldName: string, value: string) => {
+    const nextValue = sanitizeProfileField(fieldName, value);
     // Clear existing timeout for this field
     if (validationTimeouts[fieldName]) {
       clearTimeout(validationTimeouts[fieldName]);
@@ -1640,7 +1693,7 @@ function ProfileContent() {
     // Update profile immediately
     setProfile(prev => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: nextValue
     }));
 
     // Clear field error when user starts typing
@@ -1671,7 +1724,7 @@ function ProfileContent() {
 
     // Debug logging for field-specific interactions
     logger.debug(`🎯 Field interaction for ${fieldName}:`, {
-      value,
+      value: nextValue,
       fieldErrors: fieldErrors[fieldName],
       interactedFields: interactedFields[fieldName],
       fieldHints: fieldHints[fieldName]
@@ -1679,9 +1732,9 @@ function ProfileContent() {
 
     // Set a timeout for validation (1.5 seconds after user stops typing)
     const timeout = setTimeout(() => {
-      const validation = validateFieldInput(fieldName, value);
+      const validation = validateFieldInput(fieldName, nextValue);
       const fieldConfig = FIELD_HINTS[fieldName as keyof typeof FIELD_HINTS];
-      const isValid = fieldConfig ? fieldConfig.validation(value) : true;
+      const isValid = fieldConfig ? fieldConfig.validation(nextValue) : true;
       
       // Update field errors
       setFieldErrors(prev => ({
@@ -2079,8 +2132,12 @@ function ProfileContent() {
                   {isEditing && (
                     <button
                       type="button"
-                      onClick={handleCameraClick}
-                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-royal-gold text-royal-obsidian flex items-center justify-center shadow-lg hover:bg-royal-gold-light transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-royal-gold border border-royal-gold/20"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleCameraClick();
+                      }}
+                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-royal-obsidian/90 text-royal-gold flex items-center justify-center shadow-lg hover:bg-royal-obsidian hover:text-royal-gold-light transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-royal-gold border border-royal-gold/40"
+                      aria-label="Upload profile photo"
                     >
                       <CustomIcon name="ri-camera-line" className="text-sm" />
                     </button>
@@ -2094,15 +2151,24 @@ function ProfileContent() {
                 <>
                   {/* Camera icon for upload */}
                   <button
-                    onClick={handleCameraClick}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleCameraClick();
+                    }}
                     className="absolute -bottom-2 -right-2 text-royal-gold hover:text-royal-gold-light transition-colors duration-200 cursor-pointer"
+                    aria-label="Change profile photo"
                   >
                     <CustomIcon name="ri-camera-line" size={22} />
                   </button>
                   
                   {/* Delete icon */}
                   <button
-                    onClick={handleDeleteProfilePicture}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDeleteProfilePicture();
+                    }}
                     className="absolute -top-2 -right-2 text-royal-crimson hover:text-royal-crimson transition-colors duration-200 cursor-pointer"
                     title={tempImageUrl ? "Remove temporary image" : "Delete profile picture"}
                   >
@@ -2130,6 +2196,9 @@ function ProfileContent() {
           <input
             type="file"
             ref={fileInputRef}
+            onClick={(event) => {
+              event.currentTarget.value = '';
+            }}
             onChange={handleImageUpload}
             accept="image/*"
             className="hidden"
@@ -2197,10 +2266,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.gender || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Gender dropdown changed:', e.target.value);
-                        setProfile({...profile, gender: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('gender', e.target.value)}
                       onFocus={() => handleFieldFocus('gender')}
                       onBlur={() => handleFieldBlur('gender')}
                       data-field="gender"
@@ -2261,10 +2327,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.maritalStatus || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Marital Status dropdown changed:', e.target.value);
-                        setProfile({...profile, maritalStatus: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('maritalStatus', e.target.value)}
                       onFocus={() => handleFieldFocus('maritalStatus')}
                       onBlur={() => handleFieldBlur('maritalStatus')}
                       data-field="maritalStatus"
@@ -2286,10 +2349,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.manglik || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Manglik dropdown changed:', e.target.value);
-                        setProfile({...profile, manglik: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('manglik', e.target.value)}
                       onFocus={() => handleFieldFocus('manglik')}
                       onBlur={() => handleFieldBlur('manglik')}
                       data-field="manglik"
@@ -2298,7 +2358,7 @@ function ProfileContent() {
                       <option value="">Select Manglik Status</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
-                      <option value="Dont Know">Dont Know</option>
+                      <option value="Don't Know">Don't Know</option>
                     </select>
                   ) : (
                     <p className="text-white/90 text-sm">{profile.manglik || 'Not specified'}</p>
@@ -2337,11 +2397,10 @@ function ProfileContent() {
                             startDate: date ? date.toISOString().split('T')[0] : null, 
                             endDate: date ? date.toISOString().split('T')[0] : null 
                           });
-                          // Store the date as an ISO string for consistency
                           const dateString = date ? date.toISOString().split('T')[0] : '';
-                          setProfile({ ...profile, dateOfBirth: dateString });
+                          handleFieldChange('dateOfBirth', dateString);
                         }}
-                        className="w-full"
+                        className={getDatePickerClassName('dateOfBirth')}
                       />
                     </div>
                   ) : (
@@ -2372,9 +2431,9 @@ function ProfileContent() {
                         time={clockTime}
                         onChange={date => {
                           if (date) setClockTime(date);
-                          setProfile({ ...profile, timeOfBirth: date });
+                          handleFieldChange('timeOfBirth', date ? formatTime(date) : '');
                         }}
-                        className="w-full"
+                        className={getDatePickerClassName('timeOfBirth')}
                       />
                     </div>
                   ) : (
@@ -2383,8 +2442,8 @@ function ProfileContent() {
                         if (profile.timeOfBirth instanceof Date) {
                           return format(profile.timeOfBirth, 'hh:mm aa');
                         } else if (profile.timeOfBirth) {
-                          const time = new Date(profile.timeOfBirth);
-                          return isNaN(time.getTime()) ? 'Not specified' : format(time, 'hh:mm aa');
+                          const time = parseTimeOfBirth(profile.timeOfBirth);
+                          return time ? format(time, 'hh:mm aa') : 'Not specified';
                         }
                         return 'Not specified';
                       })()}
@@ -2452,13 +2511,13 @@ function ProfileContent() {
                   {renderFieldLabel('weight', 'Weight')}
                   {isEditing ? (
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={profile.weight || ""}
                       onChange={(e) => handleFieldChange('weight', e.target.value)}
                       placeholder="e.g. 65"
                       data-field="weight"
-                      min="30"
-                      max="200"
                       className={getInputClassName('weight')}
                     />
                   ) : (
@@ -2471,10 +2530,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.complexion || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Complexion dropdown changed:', e.target.value);
-                        setProfile({...profile, complexion: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('complexion', e.target.value)}
                       onFocus={() => handleFieldFocus('complexion')}
                       onBlur={() => handleFieldBlur('complexion')}
                       data-field="complexion"
@@ -2622,17 +2678,19 @@ function ProfileContent() {
               <div>
                 {renderFieldLabel('annualIncome', 'Annual Income')}
                 {isEditing ? (
-                  <input
-                    type="number"
-                    value={profile.annualIncome || ""}
+                  <select
+                    value={profile.annualIncome ?? ""}
                     onChange={(e) => handleFieldChange('annualIncome', e.target.value)}
                     onFocus={() => handleFieldFocus('annualIncome')}
                     onBlur={() => handleFieldBlur('annualIncome')}
-                    placeholder={getFieldPlaceholder('annualIncome')}
                     data-field="annualIncome"
-                    min="1"
-                    className={getInputClassName('annualIncome')}
-                  />
+                    className={getSelectClassName('annualIncome')}
+                  >
+                    <option value="">Select Annual Income</option>
+                    {INCOME_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 ) : (
                   <p className="text-white/90 text-sm">{profile.annualIncome || 'Not specified'}</p>
                 )}
@@ -2654,10 +2712,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.eatingHabit || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Eating Habit dropdown changed:', e.target.value);
-                        setProfile({...profile, eatingHabit: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('eatingHabit', e.target.value)}
                       onFocus={() => handleFieldFocus('eatingHabit')}
                       onBlur={() => handleFieldBlur('eatingHabit')}
                       data-field="eatingHabit"
@@ -2677,10 +2732,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.smokingHabit || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Smoking Habit dropdown changed:', e.target.value);
-                        setProfile({...profile, smokingHabit: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('smokingHabit', e.target.value)}
                       onFocus={() => handleFieldFocus('smokingHabit')}
                       onBlur={() => handleFieldBlur('smokingHabit')}
                       data-field="smokingHabit"
@@ -2700,10 +2752,7 @@ function ProfileContent() {
                   {isEditing ? (
                     <select
                       value={profile.drinkingHabit || ""}
-                      onChange={(e) => {
-                        logger.debug('🎯 Drinking Habit dropdown changed:', e.target.value);
-                        setProfile({...profile, drinkingHabit: e.target.value});
-                      }}
+                      onChange={(e) => handleFieldChange('drinkingHabit', e.target.value)}
                       onFocus={() => handleFieldFocus('drinkingHabit')}
                       onBlur={() => handleFieldBlur('drinkingHabit')}
                       data-field="drinkingHabit"
@@ -2765,35 +2814,41 @@ function ProfileContent() {
                 <div>
                   {renderFieldLabel('brothers', 'Brothers')}
                   {isEditing ? (
-                    <input
-                      type="number"
-                      value={profile.brothers || ""}
+                    <select
+                      value={profile.brothers ?? ""}
                       onChange={(e) => handleFieldChange('brothers', e.target.value)}
-                      placeholder="e.g. 2"
+                      onFocus={() => handleFieldFocus('brothers')}
+                      onBlur={() => handleFieldBlur('brothers')}
                       data-field="brothers"
-                      min="0"
-                      max="10"
-                      className={getInputClassName('brothers')}
-                    />
+                      className={getSelectClassName('brothers')}
+                    >
+                      <option value="">Select</option>
+                      {SIBLING_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
                                   ) : (
-                  <p className="text-white/90 text-sm">{profile.brothers || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.brothers ?? 'Not specified'}</p>
                 )}
                 </div>
                 <div>
                   {renderFieldLabel('sisters', 'Sisters')}
                   {isEditing ? (
-                    <input
-                      type="number"
-                      value={profile.sisters || ""}
+                    <select
+                      value={profile.sisters ?? ""}
                       onChange={(e) => handleFieldChange('sisters', e.target.value)}
-                      placeholder="e.g. 1"
+                      onFocus={() => handleFieldFocus('sisters')}
+                      onBlur={() => handleFieldBlur('sisters')}
                       data-field="sisters"
-                      min="0"
-                      max="10"
-                      className={getInputClassName('sisters')}
-                    />
+                      className={getSelectClassName('sisters')}
+                    >
+                      <option value="">Select</option>
+                      {SIBLING_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
                                   ) : (
-                  <p className="text-white/90 text-sm">{profile.sisters || 'Not specified'}</p>
+                  <p className="text-white/90 text-sm">{profile.sisters ?? 'Not specified'}</p>
                 )}
                 </div>
               </div>
@@ -2828,10 +2883,7 @@ function ProfileContent() {
                 {isEditing ? (
                   <select
                     value={profile.settleAbroad || ""}
-                    onChange={(e) => {
-                      logger.debug('🎯 Settle Abroad dropdown changed:', e.target.value);
-                      setProfile({...profile, settleAbroad: e.target.value});
-                    }}
+                    onChange={(e) => handleFieldChange('settleAbroad', e.target.value)}
                     onFocus={() => handleFieldFocus('settleAbroad')}
                     onBlur={() => handleFieldBlur('settleAbroad')}
                     data-field="settleAbroad"

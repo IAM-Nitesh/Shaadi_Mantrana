@@ -7,6 +7,15 @@ interface IntellectualPathStepProps {
   updateField: (field: string, value: any) => void;
 }
 
+const INCOME_OPTIONS = [
+  { value: 'Under 5L', label: 'Under 5 Lakhs' },
+  { value: '5L - 10L', label: '5 Lakhs - 10 Lakhs' },
+  { value: '10L - 20L', label: '10 Lakhs - 20 Lakhs' },
+  { value: '20L - 50L', label: '20 Lakhs - 50 Lakhs' },
+  { value: '50L - 1Cr', label: '50 Lakhs - 1 Crore' },
+  { value: 'Above 1Cr', label: 'Above 1 Crore' }
+];
+
 export default function IntellectualPathStep({ data, updateField }: IntellectualPathStepProps) {
   return (
     <div className="space-y-8">
@@ -32,14 +41,7 @@ export default function IntellectualPathStep({ data, updateField }: Intellectual
           fieldName="annualIncome"
           value={data.annualIncome || ''}
           onChange={(e) => updateField('annualIncome', e.target.value)}
-          options={[
-            { value: 'Under 5L', label: 'Under 5 Lakhs' },
-            { value: '5L - 10L', label: '5 Lakhs - 10 Lakhs' },
-            { value: '10L - 20L', label: '10 Lakhs - 20 Lakhs' },
-            { value: '20L - 50L', label: '20 Lakhs - 50 Lakhs' },
-            { value: '50L - 1Cr', label: '50 Lakhs - 1 Crore' },
-            { value: 'Above 1Cr', label: 'Above 1 Crore' }
-          ]}
+          options={INCOME_OPTIONS}
         />
 
         <RoyalSelect 
