@@ -110,7 +110,11 @@ const SecurityUtils = {
       clientInfo,
       createdAt: Date.now()
     });
-    if (AUTH_DEBUG) logger.debug({ event: 'store_otp', email, expiresInMinutes: expirationMinutes, otp }, 'Storing OTP');
+    if (AUTH_DEBUG) logger.debug(
+      { event: 'store_otp', email, expiresInMinutes: expirationMinutes },
+      'Storing OTP'
+      // NOTE: OTP value intentionally excluded from log
+    );
     if (AUTH_DEBUG) logger.debug({ storeSize: otpStore.size() }, 'Current OTP store size');
   },
 

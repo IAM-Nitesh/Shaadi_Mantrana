@@ -12,6 +12,33 @@ dotenv.config();
 // Import configuration (centralized env handling)
 const config = require('./config');
 
+// ── STARTUP SECRET ASSERTION (Fix 5) ────────────────────────────────────────
+// Fail fast on startup if required secrets are missing or weak in production.
+const REQUIRED_SECRETS = [
+  'JWT_SECRET',
+  'MONGODB_URI',
+  'FIREBASE_PRIVATE_KEY',
+  'B2_KEY_ID',
+  'B2_APP_KEY',
+  'SESSION_SECRET',
+];
+
+const missingSecrets = REQUIRED_SECRETS.filter(key => !process.env[key]);
+if (missingSecrets.length > 0) {
+  console.error('FATAL: Missing required environment variables:', missingSecrets.join(', '));
+  process.exit(1);
+}
+
+// Enforce strong JWT secret in production
+if (process.env.NODE_ENV === 'production') {
+  const jwtSecret = process.env.JWT_SECRET || '';
+  if (jwtSecret.length < 32 || jwtSecret.includes('dev') || jwtSecret.includes('2024')) {
+    console.error('FATAL: JWT_SECRET appears to be a dev/weak secret. Rotate it before deploying.');
+    process.exit(1);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Import database service and enhanced connection
 const databaseService = require('./services/databaseService');
 const enhancedDatabaseService = require('./services/enhanced-database-service');
