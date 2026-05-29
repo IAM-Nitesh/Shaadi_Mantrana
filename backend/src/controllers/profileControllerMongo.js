@@ -35,22 +35,24 @@ class ProfileController {
   const isFirstLogin = user.isFirstLogin ?? true;
       
       // Debug: Check what profileCompleteness value is being returned
-      console.log(`🔍 Profile completeness debug for ${user.email}:`, {
-        userProfileCompleteness: user.profile.profileCompleteness,
-        userProfileKeys: Object.keys(user.profile || {}),
-        hasProfileCompleteness: 'profileCompleteness' in (user.profile || {}),
-        finalValue: user.profile.profileCompleteness || 0
-      });
-      
-      // Debug: Check the actual database document
-      console.log(`🔍 Database document debug for ${user.email}:`, {
-        userId: user._id,
-        profileCompleteness: user.profile?.profileCompleteness,
-        profileKeys: Object.keys(user.profile || {}),
-        fullProfile: user.profile
-      });
-      
-      console.log(`✅ Profile retrieved for user: ${userUuid} (${user.email})`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🔍 Profile completeness debug for user:`, {
+          userProfileCompleteness: user.profile.profileCompleteness,
+          userProfileKeys: Object.keys(user.profile || {}),
+          hasProfileCompleteness: 'profileCompleteness' in (user.profile || {}),
+          finalValue: user.profile.profileCompleteness || 0
+        });
+        
+        // Debug: Check the actual database document
+        console.log(`🔍 Database document debug for user:`, {
+          userId: user._id,
+          profileCompleteness: user.profile?.profileCompleteness,
+          profileKeys: Object.keys(user.profile || {}),
+          fullProfile: user.profile
+        });
+        
+        console.log(`✅ Profile retrieved for user: ${userUuid}`);
+      }
       res.status(200).json({
         success: true,
         user: {
@@ -626,22 +628,62 @@ class ProfileController {
     }
   }
 
-  // Soft delete user profile (set status to 'inactive')
-  async deleteProfile(req, res) {
+  // Hard-delete user account and all associated data (Google Play Store requirement)
+  // Replaces the former soft-delete deleteProfile().
+  async deleteAccount(req, res) {
+    const userId = req.user.userId;
+    const userUuid = req.user.userUuid;
+
     try {
-      const userId = req.user.userId;
-      const user = await User.findByIdAndUpdate(
-        userId,
-        { $set: { status: 'inactive', lastActive: new Date() } },
-        { new: true }
-      );
-      if (!user) {
+      // 1. Delete profile photos from B2 storage
+      try {
+        const { b2Storage } = require('../services/b2StorageService');
+        await b2Storage.deleteProfilePicture(userId);
+      } catch (storageErr) {
+        // Non-fatal — log and continue with DB purge
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('B2 photo deletion error during account deletion:', storageErr.message);
+        }
+      }
+
+      // 2. Purge all active sessions for this user
+      const { Session } = require('../models');
+      if (Session) {
+        await Session.deleteMany({ userId });
+      }
+
+      // 3. Remove user from any pending matches
+      const { Match } = require('../models');
+      if (Match) {
+        await Match.deleteMany({ $or: [{ userId1: userId }, { userId2: userId }] });
+      }
+
+      // 4. Remove messages (or anonymise — regulatory preference)
+      const { Message } = require('../models');
+      if (Message) {
+        await Message.deleteMany({ $or: [{ senderId: userId }, { receiverId: userId }] });
+      }
+
+      // 5. Hard-delete the user document
+      const { User } = require('../models');
+      const deleted = await User.findByIdAndDelete(userId);
+
+      if (!deleted) {
         return res.status(404).json({ success: false, error: 'User not found' });
       }
-      res.status(200).json({ success: true, message: 'Account deactivated', profile: user.toPublicJSON() });
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Account deleted: ${userUuid}`);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Your account and all associated data have been permanently deleted.',
+      });
+
     } catch (error) {
-      console.error('❌ Delete profile error:', error);
-      res.status(500).json({ success: false, error: 'Failed to delete profile' });
+      console.error('Account deletion error:', error.message);
+      return res.status(500).json({ success: false, error: 'Failed to delete account' });
     }
   }
 
