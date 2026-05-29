@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31+) data extraction rules.
+  Excludes all sensitive app data from cloud backup and device-to-device transfer.
+  Place this file at: android/app/src/main/res/xml/data_extraction_rules.xml
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Exclude all shared preferences (contains session tokens) -->
+        <exclude domain="sharedpref" path="." />
+        <!-- Exclude all databases (contains user data) -->
+        <exclude domain="database" path="." />
+        <!-- Exclude all files (may contain cached tokens) -->
+        <exclude domain="file" path="." />
+        <!-- Exclude external files -->
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="file" path="." />
+    </device-transfer>
+</data-extraction-rules>
