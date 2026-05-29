@@ -39,14 +39,21 @@ android {
         }
     }
     buildTypes {
-        release {
+        debug {
+            // WebView debugging allowed only in debug builds
+            // (controlled via capacitor.config.json webContentsDebuggingEnabled: false for release)
             minifyEnabled false
+        }
+        release {
+            // Enable R8 minification + obfuscation for release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (hasReleaseSigning) {
                 signingConfig signingConfigs.release
             } else {
                 logger.warn("Release signing is not configured. Set ANDROID_KEYSTORE_FILE, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD, or create ignored android/keystore.properties.")
             }
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     buildFeatures {
