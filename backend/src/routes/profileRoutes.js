@@ -15,8 +15,8 @@ router.put('/me', authenticateToken, profileController.updateProfile);
 // Get user profile by UUID (public)
 router.get('/uuid/:uuid', profileController.getProfileByUuid);
 
-// Soft delete user profile (authenticated)
-router.delete('/me', authenticateToken, profileController.deleteProfile);
+// Hard-delete user account — purges all user data (Play Store compliance)
+router.delete('/me', authenticateToken, profileController.deleteAccount);
 
 // Update onboarding message flag (authenticated)
 router.patch('/me/onboarding', authenticateToken, profileController.updateOnboardingMessage);
