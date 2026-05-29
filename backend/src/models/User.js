@@ -464,12 +464,19 @@ userSchema.methods.toPublicJSON = function() {
   
   return {
     userId: user._id,
-    email: user.email,
+    // NOTE: email and phoneNumber intentionally excluded — PII must not be
+    // returned on the public-facing profile endpoint (/api/profiles/uuid/:uuid).
+    // Authenticated endpoints (/api/auth/profile, /api/profiles/me) return
+    // full user data including contact details to the owner only.
     userUuid: user.userUuid,
     role: user.role,
     profile: user.profile,
     preferences: user.preferences,
-    verification: user.verification,
+    // Only expose basic verification status, not internal approval metadata
+    verification: {
+      isVerified: user.verification?.isVerified ?? false,
+      verifiedAt: user.verification?.verifiedAt ?? null,
+    },
     status: user.status,
     premium: user.premium,
     lastActive: user.lastActive,
