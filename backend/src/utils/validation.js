@@ -249,6 +249,7 @@ class ValidationUtils {
     return input
       .trim()
       .replace(/[<>\"'&]/g, '') // Remove XSS characters
+      // eslint-disable-next-line no-control-regex
       .replace(/[\u0000-\u001F\u007F]/g, '') // Strip control characters
       .substring(0, 1000); // Limit length
   }
