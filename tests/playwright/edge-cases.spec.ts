@@ -44,7 +44,10 @@ test.describe('API edge cases', () => {
     for (let i = 0; i < 12; i++) {
       const res = await request.post(`${apiBase}/api/auth/firebase-login`, {
         data: { idToken: 'invalid-token-for-rate-test' },
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-force-rate-limit': 'true'
+        },
       });
       lastStatus = res.status();
       if (lastStatus === 429) break;

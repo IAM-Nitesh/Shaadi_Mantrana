@@ -227,7 +227,10 @@ const authLimiter = rateLimit({
     const phone = req.body?.phone || req.body?.phoneNumber || '';
     return `${req.ip}_${phone.slice(-4) || 'anon'}`;
   },
-  skip: (req) => process.env.NODE_ENV === 'test',
+  skip: (req) => {
+    if (req.headers['x-force-rate-limit'] === 'true') return false;
+    return process.env.NODE_ENV === 'test';
+  },
 });
 
 // Body parsing middleware — keep limit tight to prevent memory-exhaustion DoS.
