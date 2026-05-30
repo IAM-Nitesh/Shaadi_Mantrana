@@ -215,17 +215,7 @@ function ProfileContent() {
       const value = profile[fieldName];
       let isValid = isFieldValid(fieldName, value);
 
-      if (fieldName === 'height') {
-        const feetEl = document.querySelector(`[data-field="height-feet"]`) as HTMLSelectElement | null;
-        const inchesEl = document.querySelector(`[data-field="height-inches"]`) as HTMLSelectElement | null;
-        if (feetEl && inchesEl && feetEl.value && inchesEl.value && feetEl.value.trim() !== '' && inchesEl.value.trim() !== '') {
-          isValid = true;
-        } else {
-          isValid = false;
-        }
-      }
-
-      const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
+      const dropdownFields = ['height', 'gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
       if (dropdownFields.includes(fieldName) && !isValid) {
         const el = document.querySelector(`[data-field="${fieldName}"]`) as HTMLSelectElement | null;
         if (el && el.value && el.value.trim() !== '') {
@@ -628,32 +618,16 @@ function ProfileContent() {
     const validationDetails: {[key: string]: any} = {};
     
     requiredFields.forEach(field => {
-              const fieldValue = profile[field];
+        const fieldValue = profile[field];
         let isEmpty = false;
         let reason = '';
       
-      // Special handling for height field (two dropdowns)
-      if (field === 'height') {
-        // Check if both height dropdowns have values
-        const feetEl = document.querySelector(`[data-field="height-feet"]`) as HTMLSelectElement;
-        const inchesEl = document.querySelector(`[data-field="height-inches"]`) as HTMLSelectElement;
-        
-        if (feetEl && inchesEl && feetEl.value && inchesEl.value && typeof feetEl.value === 'string' && feetEl.value.trim() !== '' && typeof inchesEl.value === 'string' && inchesEl.value.trim() !== '') {
-          isEmpty = false;
-          reason = 'valid height selection (both feet and inches)';
-          logger.debug(`  📏 Height: feet="${feetEl.value}", inches="${inchesEl.value}", isEmpty: false`);
-        } else {
-          isEmpty = true;
-          reason = 'missing height selection (feet or inches)';
-          logger.debug(`  ❌ Height: feet="${feetEl?.value || 'undefined'}", inches="${inchesEl?.value || 'undefined'}", isEmpty: true`);
-        }
-      } else {
         logger.debug(` Checking field "${field}":`, fieldValue, `(type: ${typeof fieldValue})`);
         
         // Handle different data types
         if (fieldValue === null || fieldValue === undefined) {
           // For dropdown fields, check if the actual element has a value
-          const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
+          const dropdownFields = ['height', 'gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
           if (dropdownFields.includes(field)) {
             const el = document.querySelector(`[data-field="${field}"]`) as HTMLSelectElement;
             if (el && el.value && typeof el.value === 'string' && el.value.trim() !== '') {
@@ -673,7 +647,7 @@ function ProfileContent() {
           }
         } else if (typeof fieldValue === 'string') {
           // For dropdown fields, check if it's a valid selection (not empty string)
-          const dropdownFields = ['gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
+          const dropdownFields = ['height', 'gender', 'maritalStatus', 'manglik', 'complexion', 'eatingHabit', 'smokingHabit', 'drinkingHabit', 'settleAbroad', 'grandfatherGotra', 'grandmotherGotra'];
           if (dropdownFields.includes(field)) {
             // For dropdowns, any non-empty string is valid
             isEmpty = !fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '');
@@ -705,7 +679,6 @@ function ProfileContent() {
           reason = isEmpty ? 'falsy value' : 'truthy value';
           logger.debug(`  ❓ Field "${field}" is other type:`, fieldValue, `, isEmpty: ${isEmpty}`);
         }
-      }
       
       validationDetails[field] = {
         value: fieldValue,
@@ -728,12 +701,6 @@ function ProfileContent() {
     
     // Log which fields are missing data-field attributes
     const missingDataFields = requiredFields.filter(field => {
-      // Special handling for height field
-      if (field === 'height') {
-        const feetEl = document.querySelector(`[data-field="height-feet"]`);
-        const inchesEl = document.querySelector(`[data-field="height-inches"]`);
-        return !feetEl || !inchesEl;
-      }
       const el = document.querySelector(`[data-field="${field}"]`);
       return !el;
     });
@@ -761,18 +728,8 @@ function ProfileContent() {
       Object.keys(errors).forEach(fieldName => {
         let el: HTMLElement | null = null;
         
-        // Special handling for height field
-        if (fieldName === 'height') {
-          el = document.querySelector(`[data-field="height-feet"]`) as HTMLElement;
-          logger.debug(`🎯 Height field - feet element:`, el);
-          if (el) {
-            el.classList.add('border-royal-crimson', 'bg-royal-crimson/10', 'animate-shake');
-            logger.debug(`✅ Applied red border to height-feet element`);
-          }
-        } else {
-          el = document.querySelector(`[data-field="${fieldName}"]`) as HTMLElement;
-          logger.debug(`🎯 Field "${fieldName}" - element:`, el);
-        }
+        el = document.querySelector(`[data-field="${fieldName}"]`) as HTMLElement;
+        logger.debug(`🎯 Field "${fieldName}" - element:`, el);
         
         if (el) {
           // Add red border and background to highlight missing fields
@@ -798,11 +755,7 @@ function ProfileContent() {
       logger.debug('🎯 First error field:', firstError);
       let el: Element | null = null;
       
-      if (firstError === 'height') {
-        el = document.querySelector(`[data-field="height-feet"]`);
-      } else {
-        el = document.querySelector(`[data-field="${firstError}"]`);
-      }
+      el = document.querySelector(`[data-field="${firstError}"]`);
       
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -865,7 +818,7 @@ function ProfileContent() {
 
       logger.debug('📤 Sending profile data to backend:', profileData);
       logger.debug('📸 Image status:', {
-        existingImage: profile.profile?.images || signedImageUrl,
+        existingImage: profile?.images || signedImageUrl,
         tempImageFile: tempImageFile ? 'exists' : 'none',
         tempImageUrl: tempImageUrl ? 'exists' : 'none',
         finalImages: profileData.images
@@ -882,7 +835,7 @@ function ProfileContent() {
       });
 
       // Check if user has a profile picture (either existing or temporary)
-      const hasExistingImage = profile.profile?.images || signedImageUrl;
+      const hasExistingImage = profile?.images || signedImageUrl;
       const hasTemporaryImage = tempImageFile || tempImageUrl;
       
       if (!hasExistingImage && !hasTemporaryImage) {
@@ -1183,7 +1136,7 @@ function ProfileContent() {
     }
 
     // If there's an existing profile image, delete from B2
-    if (!profile.profile?.images && !signedImageUrl) return;
+    if (!profile?.images && !signedImageUrl) return;
 
     setIsUploading(true);
     setUploadMessage('🗑️ Deleting profile picture...');
@@ -2147,7 +2100,7 @@ function ProfileContent() {
 
               
               {/* Camera and Delete icons for editing - show when there's an image (temporary or existing) */}
-              {isEditing && (tempImageUrl || signedImageUrl || profile.profile?.images) && (
+              {isEditing && (tempImageUrl || signedImageUrl || profile?.images) && (
                 <>
                   {/* Camera icon for upload */}
                   <button
