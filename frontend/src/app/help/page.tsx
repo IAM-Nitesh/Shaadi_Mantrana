@@ -1,12 +1,56 @@
 'use client';
 
-;
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CustomIcon from '../../components/CustomIcon';
-import RoyalIcon from '../../components/RoyalIcon';
 import { ContactService } from '../../services/contact-service';
 import StandardHeader from '../../components/StandardHeader';
+import { useAuth } from '../../contexts/AuthContext';
+import { ProfileService } from '../../services/profile-service';
+import ToastService from '../../services/toastService';
+import posthog from 'posthog-js';
+import logger from '../../utils/logger';
 
 export default function Help() {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  const handleDeleteClick = () => {
+    setDeleteConfirmText('');
+    setShowDeleteConfirm(true);
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmText('');
+    setShowDeleteConfirm(false);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      const success = await ProfileService.deleteProfile();
+      if (success) {
+        setShowDeleteConfirm(false);
+        ToastService.success('Your account has been deleted permanently.');
+        posthog.capture('user_deleted_account');
+        posthog.reset();
+        await logout();
+        router.push('/');
+      } else {
+        throw new Error('Failed to delete account');
+      }
+    } catch (error) {
+      logger.error('Error during account deletion:', error);
+      ToastService.error('Failed to delete account. Please contact support.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const faqs = [
     {
       question: 'How do I create a profile?',
@@ -92,31 +136,25 @@ export default function Help() {
           </div>
         </div>
 
-        {/* Data Deletion Request */}
+        {/* Delete Account */}
         <div className="bg-royal-glass border border-royal-glass-border rounded-xl p-4 shadow-sm mt-4">
           <div className="text-center">
-            <h3 className="font-semibold text-royal-gold font-playfair mb-2">Data Deletion Request</h3>
+            <h3 className="font-semibold text-royal-gold font-playfair mb-2">Delete Account</h3>
             <p className="text-sm text-white/80 font-inter mb-4">
-              You have the right to request deletion of all your personal data from our systems. This includes your profile, messages, photos, and all associated data.
+              Permanently erase all your data from our systems, including your profile, messages, and matches.
             </p>
-            <div className="bg-royal-gold/5 border border-royal-gold/20 rounded-lg p-3 mb-4">
-              <p className="text-xs text-royal-gold">
-                ⚠️ This action is permanent and cannot be undone. You will lose access to all matches, conversations, and profile data.
+            <div className="bg-royal-crimson/10 border border-royal-crimson/30 rounded-lg p-3 mb-4">
+              <p className="text-xs text-royal-crimson">
+                ⚠️ This action is permanent and cannot be undone.
               </p>
             </div>
             <div className="space-y-2">
               <button
-                onClick={() => ContactService.handleEmailContact(
-                  'Data Deletion Request',
-                  'I would like to request deletion of all my personal data from Shaadi Mantrana app.\n\nPlease confirm that you will:\n1. Delete my profile and all personal information\n2. Remove all my photos and documents\n3. Delete all my messages and conversations\n4. Remove my account from the matching system\n5. Delete all activity logs and preferences\n\nContact Email: [Please specify]\nPhone number: [Please specify]\nReason for deletion: [Optional]'
-                )}
-                className="inline-block bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200"
+                onClick={handleDeleteClick}
+                className="inline-block bg-royal-crimson text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-all duration-200 shadow-[0_0_15px_rgba(220,38,38,0.2)]"
               >
-                Request Complete Data Deletion
+                Delete My Account
               </button>
-              <p className="text-xs text-royal-gold/60 mt-2">
-                We will process your request within 30 days as per GDPR/CCPA requirements
-              </p>
             </div>
           </div>
         </div>
@@ -180,6 +218,56 @@ export default function Help() {
           </div>
         </div>
       </div>
+
+      {/* ── Delete Account Confirmation Modal ──────────────────── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+          <div
+            className="bg-royal-obsidian/95 border border-royal-crimson/50 rounded-3xl p-8 w-full max-w-sm shadow-[0_0_60px_rgba(220,38,38,0.15)] flex flex-col items-center justify-center relative overflow-hidden"
+            style={{ animation: 'fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-royal-crimson/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="w-16 h-16 rounded-full bg-royal-crimson/20 flex items-center justify-center mb-4 relative z-10">
+              <CustomIcon name="ri-alert-fill" size={32} className="text-royal-crimson" />
+            </div>
+
+            <h3 className="text-xl font-playfair font-bold text-white text-center mb-2 relative z-10">
+              Delete Account?
+            </h3>
+            <p className="text-sm text-royal-gold/60 text-center mb-4 relative z-10">
+              This action is permanent and cannot be undone. All your profile data, matches, and messages will be permanently erased.
+            </p>
+            <p className="text-xs text-royal-gold/50 text-center mb-3 relative z-10">
+              Type <span className="font-mono text-royal-crimson">DELETE</span> to confirm
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+              className="w-full mb-4 px-4 py-3 rounded-xl bg-black/40 border border-royal-crimson/30 text-white text-sm text-center font-mono tracking-widest placeholder:text-royal-gold/30 focus:outline-none focus:border-royal-crimson/60 relative z-10"
+            />
+            <div className="flex flex-col gap-3 w-full relative z-10">
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                className="w-full py-3.5 rounded-xl border border-royal-crimson/50 bg-royal-crimson text-white text-sm font-semibold hover:bg-red-700 shadow-[0_0_15px_rgba(220,38,38,0.2)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isDeleting ? 'Deleting...' : 'Yes, Delete My Account'}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="w-full py-3.5 rounded-xl border border-royal-gold/30 bg-transparent text-royal-gold/90 text-sm font-semibold hover:bg-royal-gold/10 transition-all duration-300 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

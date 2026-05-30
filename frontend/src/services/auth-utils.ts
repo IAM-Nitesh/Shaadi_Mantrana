@@ -98,6 +98,19 @@ export async function getBearerToken(): Promise<string | null> {
     }
 
     logger.warn('❌ AuthUtils: No valid authentication found');
+    
+    // Fallback: token stored client-side after firebase-login (Capacitor / cross-origin)
+    const storedInfo = authStorage.get('tokenInfo');
+    if (storedInfo?.token && typeof storedInfo.token === 'string' && storedInfo.token.length > 20) {
+      return storedInfo.token;
+    }
+    if (typeof localStorage !== 'undefined') {
+      const legacyToken = localStorage.getItem('accessToken');
+      if (legacyToken && legacyToken.length > 20) {
+        return legacyToken;
+      }
+    }
+    
     return null;
   } catch (error) {
     logger.error('❌ AuthUtils: Error getting Bearer token:', error);

@@ -1,0 +1,103 @@
+name: Go-Live Quality Gates
+
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: go-live-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-tests:
+    name: Backend tests & coverage
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run backend tests with coverage
+        run: npm test --workspace=backend -- --coverage --coverageReporters=text-summary
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-jwt-secret-for-ci-only-min-32-chars-long
+          SESSION_SECRET: test-session-secret-for-ci-only-32chars
+          MONGODB_URI: mongodb://127.0.0.1:27017/shaadi_test_ci
+          FIREBASE_PRIVATE_KEY: dummy
+          B2_KEY_ID: dummy
+          B2_APP_KEY: dummy
+
+  playwright-edge:
+    name: Playwright edge-case API tests
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - name: Start backend for API edge tests
+        run: node backend/start.js &
+        env:
+          NODE_ENV: test
+          PORT: 4000
+          JWT_SECRET: test-jwt-secret-for-ci-only-min-32-chars-long
+          SESSION_SECRET: test-session-secret-for-ci-only-32chars
+          MONGODB_URI: mongodb://127.0.0.1:27017/shaadi_test_ci
+          FIREBASE_PRIVATE_KEY: dummy
+          B2_KEY_ID: dummy
+          B2_APP_KEY: dummy
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:4000/health/ping > /dev/null; then
+              echo "Backend ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
+      - name: Run edge-case specs
+        run: npx playwright test tests/playwright/edge-cases.spec.ts --project=chromium --config=playwright.edge.config.js
+        env:
+          PLAYWRIGHT_API_URL: http://localhost:4000
+          PLAYWRIGHT_EDGE_API_ONLY: '1'
+
+  lighthouse:
+    name: Lighthouse baseline (static export)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build frontend static export
+        run: npm run build --workspace=frontend
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://shaadi-mantrana.onrender.com
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.14.x
+          lhci autorun --config=.lighthouserc.json || true
+        continue-on-error: true

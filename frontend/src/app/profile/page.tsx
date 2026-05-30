@@ -26,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
+import { getAuthHeaders } from '../../services/auth-utils';
 import posthog from 'posthog-js';
 import { calculateProfileCompletion as calcCompleteness } from '../../constants/profileCompleteness';
 
@@ -880,14 +881,17 @@ function ProfileContent() {
       }
 
       // Upload image to B2 if there's a temporary image
-      let uploadedImageUrl: string | null = null;
+      let uploadedFileName: string | null = null;
       if (tempImageFile) {
         const loadingToast = ToastService.loading('☁️ Saving your profile picture...');
         try {
           const uploadResult = await ImageUploadService.uploadProfileImage(tempImageFile);
           if (uploadResult.success && uploadResult.imageUrl) {
-            uploadedImageUrl = uploadResult.imageUrl;
-            logger.debug('✅ Image uploaded to B2:', uploadedImageUrl);
+            uploadedFileName = uploadResult.fileName || null;
+            setSignedImageUrl(uploadResult.imageUrl);
+            setTempImageFile(null);
+            setTempImageUrl(null);
+            logger.debug('✅ Image uploaded to B2:', uploadResult.imageUrl);
             posthog.capture('profile_photo_uploaded', { file_type: tempImageFile.type });
             ToastService.dismiss(loadingToast);
             ToastService.profilePictureVerificationPending();
@@ -898,30 +902,32 @@ function ProfileContent() {
           logger.error('❌ Image upload failed:', uploadError);
           const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error';
           
-          // Dismiss loading toast
           ToastService.dismiss(loadingToast);
           
-          // Show specific error message for "No file provided"
           if (errorMessage.includes('No file provided')) {
             ToastService.error('❌ Please select a profile picture before saving. Click the camera icon to upload an image.');
             setIsUploading(false);
-            return; // Stop the save process
+            return;
           }
           
-          ToastService.imageUploadError();
-          throw new Error(`Failed to upload image: ${errorMessage}`);
+          ToastService.error(errorMessage.includes('Authentication') ? errorMessage : 'Failed to upload image. Please try again.');
+          setIsUploading(false);
+          return;
         }
       }
+
+      const authHeaders = await getAuthHeaders();
 
       // Call backend API to update profile
       const response = await apiClient.put('/api/profiles/me', {
         ...profileData,
-        images: uploadedImageUrl || profileData.images
+        ...(uploadedFileName ? { images: uploadedFileName } : {}),
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await localStorage.getItem('accessToken') || ''}`
+          ...authHeaders,
         },
+        credentials: 'include',
         timeout: 20000
       });
 
@@ -945,12 +951,14 @@ function ProfileContent() {
         let refreshedProfile: Record<string, any> | null = null;
         try {
           // Add cache-busting parameter to ensure fresh data
+          const refreshHeaders = await getAuthHeaders();
           const response = await apiClient.get(`/api/profiles/me?t=${Date.now()}`, {
             headers: {
-              'Authorization': `Bearer ${await localStorage.getItem('accessToken') || ''}`,
+              ...refreshHeaders,
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache'
             },
+            credentials: 'include',
             timeout: 15000
           });
 
@@ -1005,15 +1013,13 @@ function ProfileContent() {
         setValidationTimeouts({});
         
         // Show success message with profile picture verification info
-        if (uploadedImageUrl) {
-          // Add a delay to simulate verification process
+        if (uploadedFileName) {
           setTimeout(() => {
             setUploadMessage('');
           }, 500);
         }
         
-        // Show appropriate success message based on backend completeness
-        posthog.capture('profile_saved', { completeness: backendCompleteness, photo_uploaded: !!uploadedImageUrl });
+        posthog.capture('profile_saved', { completeness: backendCompleteness, photo_uploaded: !!uploadedFileName });
         if (backendCompleteness >= 100) {
           ToastService.profileSaved();
         } else {

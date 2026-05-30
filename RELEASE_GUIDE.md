@@ -188,3 +188,44 @@ In the exact same GitHub Secrets page, add the following as well:
 | `GOOGLE_SERVICES_JSON` | Paste the full contents of `android/app/google-services.json` |
 | `NEXT_PUBLIC_API_URL` | Your Render backend URL |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Your Firebase env vars |
+
+---
+
+## 5. Play Console go-live checklist (manual)
+
+Complete these in [Google Play Console](https://play.google.com/console) before promoting **Internal Testing → Production**:
+
+### Data safety form
+See **[docs/play-console-data-safety.md](../docs/play-console-data-safety.md)** for a draft answers template.
+
+Declare collection and use of:
+- Phone number (Firebase OTP login)
+- Photos (profile pictures, B2 storage)
+- Name, date of birth, location, religion/caste, match history, messages
+- Account deletion: **in-app** (Settings → Delete Account, hard delete on backend)
+
+### Content rating
+Complete IARC questionnaire (dating/matrimonial → typically **Mature 17+**).
+
+### Store listing
+- Feature graphic: **1024×500**
+- Phone screenshots (min 2)
+- Short + full description
+- Privacy policy URL: must match in-app link (`/privacy/`)
+
+### App content
+- Target audience and ads declaration
+- News app / COVID declarations if applicable (usually No)
+
+### Pre-launch verification
+- [ ] Signed AAB uploaded to Internal Testing
+- [ ] Test on physical device: login → profile photo → match → chat → delete account
+- [ ] `RUN_PROD_E2E=1` admin tests only if intentionally testing production
+- [ ] Rotate B2 keys if any key ever appeared in git/docs
+- [ ] `HEALTH_CHECK_TOKEN` set on Render for ops health checks
+
+### CI quality gates (automated)
+Workflow **Go-Live Quality Gates** runs on `main` / `release/**`:
+- Backend tests + coverage thresholds
+- Playwright API edge cases (401 upload, 429 rate limit)
+- Lighthouse baseline (warn-only on static export)

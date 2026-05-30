@@ -1,6 +1,9 @@
 // MongoDB-integrated Profile Controller
 const { User } = require('../models');
 const { SecurityUtils } = require('../utils/security');
+const { logger } = require('../utils/pino-logger');
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 class ProfileController {
   // Get user profile
@@ -11,7 +14,7 @@ class ProfileController {
       
       const user = await User.findById(userId);
       if (!user) {
-        console.warn(`❌ Profile not found for user: ${userUuid} (${req.user.email})`);
+        logger.warn({ userUuid }, 'Profile not found');
         return res.status(404).json({
           success: false,
           error: 'User not found'
@@ -78,20 +81,9 @@ class ProfileController {
       const userId = req.user.userId;
       const updates = req.body;
 
-      // Debug: Log the incoming request data
-      console.log('🔍 Received profile update request:');
-      console.log('👤 User ID:', userId);
-      console.log('📋 Raw updates:', updates);
-      console.log('🎯 Enum fields in request:', {
-        gender: updates.gender,
-        maritalStatus: updates.maritalStatus,
-        manglik: updates.manglik,
-        complexion: updates.complexion,
-        eatingHabit: updates.eatingHabit,
-        smokingHabit: updates.smokingHabit,
-        drinkingHabit: updates.drinkingHabit,
-        settleAbroad: updates.settleAbroad
-      });
+      if (isDev) {
+        logger.debug({ userId, fieldCount: Object.keys(updates || {}).length }, 'Profile update request received');
+      }
 
       // Validate and sanitize inputs - expanded to handle all profile fields
       const allowedFields = [
@@ -146,7 +138,7 @@ class ProfileController {
               if (isValidAge) {
                 sanitizedUpdates[`profile.${field}`] = updates[field];
               } else {
-                console.log(`❌ Age validation failed: ${age} years old, gender: ${gender}`);
+                if (isDev) logger.debug({ age, gender }, 'Age validation failed');
               }
             }
           } else if (field === 'height') {
@@ -165,12 +157,12 @@ class ProfileController {
                 // Normalize the height format to ensure consistent storage
                 const normalizedHeight = `${feet}'${inches}"`;
                 sanitizedUpdates[`profile.${field}`] = normalizedHeight;
-                console.log(`✅ Height validated and normalized: ${heightValue} -> ${normalizedHeight}`);
-              } else {
-                console.log(`❌ Height validation failed: ${heightValue} (${totalInches} inches)`);
+                if (isDev) logger.debug({ height: normalizedHeight }, 'Height validated');
+              } else if (isDev) {
+                logger.debug({ totalInches }, 'Height validation failed');
               }
-            } else {
-              console.log(`❌ Height format validation failed: ${heightValue}`);
+            } else if (isDev) {
+              logger.debug('Height format validation failed');
             }
           } else if (field === 'interests') {
             if (Array.isArray(updates[field])) {
@@ -189,17 +181,11 @@ class ProfileController {
           } else if (enumFields.includes(field)) {
             // For enum fields, only set if value is not empty and is a valid string
             const value = updates[field];
-            console.log(`🔍 Processing enum field "${field}":`, {
-              value: value,
-              type: typeof value,
-              trimmed: value ? value.trim() : 'N/A',
-              willSave: value && typeof value === 'string' && value.trim() !== ''
-            });
             if (value && typeof value === 'string' && value.trim() !== '') {
               sanitizedUpdates[`profile.${field}`] = value.trim();
-              console.log(`✅ Will save "${field}" as "${value.trim()}"`);
-            } else {
-              console.log(`❌ Skipping "${field}" - value is empty, undefined, or invalid`);
+              if (isDev) logger.debug({ field }, 'Enum field saved');
+            } else if (isDev) {
+              logger.debug({ field }, 'Enum field skipped');
             }
             // If value is empty, undefined, or null, don't set it (leave it undefined)
           } else {
@@ -228,10 +214,8 @@ class ProfileController {
         delete updates.hasCompletedWizard;
       }
 
-      console.log('🧹 Final sanitized updates:', sanitizedUpdates);
-      
       if (Object.keys(sanitizedUpdates).length === 0 && !updatedUserFlags) {
-        console.log('❌ No valid fields to update');
+        if (isDev) logger.debug('No valid fields to update');
         return res.status(400).json({
           success: false,
           error: 'No valid fields to update'
@@ -265,7 +249,7 @@ class ProfileController {
       );
 
       if (!user) {
-        console.warn(`❌ User not found for profile update: ${req.user.userUuid} (${req.user.email})`);
+        logger.warn({ userUuid: req.user.userUuid }, 'User not found for profile update');
         return res.status(404).json({
           success: false,
           error: 'User not found'
@@ -281,9 +265,6 @@ class ProfileController {
         'specificRequirements', 'settleAbroad', 'about', 'interests'
       ];
       const profile = user.profile || {};
-      
-      console.log('🔍 Checking profile completion for user:', req.user.email);
-      console.log('📋 Current profile data:', profile);
       
       // Calculate profile completion percentage using CANONICAL 12 mandatory fields + 1 photo.
       // This matches frontend/src/constants/profileCompleteness.ts exactly.
@@ -324,20 +305,17 @@ class ProfileController {
           missingFields.push('images');
         }
 
-        console.log('🔍 Missing required fields:', missingFields);
+        if (isDev) logger.debug({ missingFields, completedFields, total }, 'Profile completion check');
 
         const percentage = Math.min(100, Math.round((completedFields / total) * 100));
-        console.log(`📊 Profile completion: ${completedFields}/${total} = ${percentage}%`);
 
         return percentage;
       };
 
       // Calculate completion using UPDATED profile data
       const completion = calculateProfileCompletion(profile);
-      console.log(`📊 Calculated profile completion: ${completion}%`);
       
       // Update the profileCompleteness in the database with the correct value
-      console.log(`🔄 Attempting to update profileCompleteness to ${completion}% for user ${userId}`);
       
       try {
         // Use findByIdAndUpdate with the correct nested field path
@@ -355,28 +333,14 @@ class ProfileController {
           throw new Error('Failed to update profile completeness');
         }
         
-        console.log(`✅ Database update result:`, {
-          userId: updateResult._id,
-          profileCompleteness: updateResult.profile?.profileCompleteness,
-          expectedValue: completion,
-          success: updateResult.profile?.profileCompleteness === completion
-        });
-        
-        // Verify the update worked by fetching the user again
         const updatedUser = await User.findById(userId);
-        console.log(`🔍 Verification - Updated user profileCompleteness:`, {
-          userId: updatedUser._id,
-          profileCompleteness: updatedUser.profile?.profileCompleteness,
-          expectedValue: completion,
-          match: updatedUser.profile?.profileCompleteness === completion
-        });
         
         if (updatedUser.profile?.profileCompleteness !== completion) {
-          console.error(`❌ Database update verification failed: expected ${completion}, got ${updatedUser.profile?.profileCompleteness}`);
+          logger.error({ expected: completion, got: updatedUser.profile?.profileCompleteness }, 'Profile completeness update verification failed');
           throw new Error('Database update verification failed');
         }
         
-        console.log(`💾 Profile completeness (${completion}%) updated in database`);
+        if (isDev) logger.debug({ completion }, 'Profile completeness updated');
         
       } catch (error) {
         console.error(`❌ Error updating profileCompleteness:`, error);
@@ -385,8 +349,6 @@ class ProfileController {
       
       // Check if user should be marked as not first login (100% threshold)
       if (completion >= 100) {
-        console.log('🎉 Profile is 100% complete! Updating user flags and status if needed...');
-
         try {
           // Build update object: always clear isFirstLogin and mark profileCompleted=true
           const updateFields = {
@@ -406,23 +368,16 @@ class ProfileController {
             { new: true }
           );
 
-          console.log('✅ User update result:', updatedUser ? {
-            userId: updatedUser._id,
-            status: updatedUser.status,
-            profileCompleted: updatedUser.profileCompleted
-          } : 'not found');
+          if (isDev) logger.debug({ status: updatedUser?.status }, 'Profile completion flags updated');
         } catch (err) {
-          console.error('❌ Error updating user flags for completed profile:', err);
+          logger.error({ err: err.message }, 'Error updating user flags for completed profile');
           throw err;
         }
-      } else {
-        console.log('⚠️ Profile is less than 100% complete, keeping user status as is');
       }
 
-      console.log(`✅ Profile updated for user: ${req.user.userUuid} (${user.email})`, {
-        updatedFields: Object.keys(sanitizedUpdates),
-        profileCompleteness: completion
-      });
+      if (isDev) {
+        logger.debug({ userUuid: req.user.userUuid, fieldCount: Object.keys(sanitizedUpdates).length, completion }, 'Profile updated');
+      }
 
       // Reload the user AFTER all DB writes so the response reflects the final state
       // (profileCompleteness, isFirstLogin, profileCompleted flags all up-to-date)
@@ -461,7 +416,7 @@ class ProfileController {
       const userId = req.user.userId;
       const { isFirstLogin } = req.body;
 
-      console.log(`🔄 Update first login flag - User: ${userId}, isFirstLogin: ${isFirstLogin}`);
+      if (isDev) logger.debug({ userId, isFirstLogin }, 'Update first login flag');
 
       // Validate input
       if (typeof isFirstLogin !== 'boolean') {
@@ -482,14 +437,14 @@ class ProfileController {
       );
 
       if (!user) {
-        console.warn(`❌ User not found for first login flag update: ${req.user.userUuid} (${req.user.email})`);
+        logger.warn({ userUuid: req.user.userUuid }, 'User not found for first login flag update');
         return res.status(404).json({
           success: false,
           error: 'User not found'
         });
       }
 
-      console.log(`✅ First login flag updated for user: ${user.email} (${user.userUuid}) - isFirstLogin: ${isFirstLogin}`);
+      if (isDev) logger.debug({ userUuid: user.userUuid, isFirstLogin }, 'First login flag updated');
 
       res.status(200).json({
         success: true,
@@ -594,14 +549,13 @@ class ProfileController {
       // Transform profiles for public viewing
       const publicProfiles = profiles.map(profile => ({
         id: profile._id,
+        userUuid: profile.userUuid,
         profile: profile.profile,
         verification: {
-          isVerified: profile.verification.isVerified
+          isVerified: profile.verification?.isVerified ?? false,
         },
-        status: profile.status,
-        premium: profile.premium,
         lastActive: profile.lastActive,
-        createdAt: profile.createdAt,
+        profileCompleteness: profile.profile?.profileCompleteness || 0,
       }));
 
       res.status(200).json({
@@ -634,7 +588,7 @@ class ProfileController {
       if (!user) {
         return res.status(404).json({ success: false, error: 'User not found' });
       }
-      res.status(200).json({ success: true, profile: user.toPublicJSON() });
+      res.status(200).json({ success: true, profile: user.toDiscoveryJSON() });
     } catch (error) {
       console.error('❌ Get profile by UUID error:', error);
       res.status(500).json({ success: false, error: 'Failed to get profile' });
@@ -665,16 +619,16 @@ class ProfileController {
         await Session.deleteMany({ userId });
       }
 
-      // 3. Remove user from any pending matches
-      const { Match } = require('../models');
-      if (Match) {
-        await Match.deleteMany({ $or: [{ userId1: userId }, { userId2: userId }] });
+      // 3. Remove user from any pending connections
+      const { Connection } = require('../models');
+      if (Connection) {
+        await Connection.deleteMany({ $or: [{ sender: userId }, { receiver: userId }] });
       }
 
       // 4. Remove messages (or anonymise — regulatory preference)
       const { Message } = require('../models');
       if (Message) {
-        await Message.deleteMany({ $or: [{ senderId: userId }, { receiverId: userId }] });
+        await Message.deleteMany({ sender: userId });
       }
 
       // 5. Hard-delete the user document
@@ -731,7 +685,7 @@ class ProfileController {
         });
       }
 
-      console.log(`✅ Onboarding message flag updated for user: ${user.email} (${user.userUuid}) - hasSeenOnboardingMessage: ${hasSeenOnboardingMessage}`);
+      if (isDev) logger.debug({ userUuid: user.userUuid, hasSeenOnboardingMessage }, 'Onboarding message flag updated');
 
       res.status(200).json({
         success: true,

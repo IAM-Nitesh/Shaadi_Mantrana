@@ -15,10 +15,20 @@ const config = {
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/**/*.test.js',
+    '!src/index.js',
+    '!src/start.js',
   ],
+  coverageThreshold: {
+    global: {
+      branches: 1,
+      functions: 0,
+      lines: 3,
+      statements: 3,
+    },
+  },
+  forceExit: true,
 };
 
+
+
 module.exports = config;
-
-
-
