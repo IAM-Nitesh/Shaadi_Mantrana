@@ -26,9 +26,7 @@ env:
   VERSION_CODE: 0
   VERSION_NAME: unknown
 
-permissions:
-  contents: write   # Needed to push git tags
-  actions: write    # Needed to upload build artifacts
+permissions: read-all
 
 on:
   push:
@@ -46,6 +44,8 @@ concurrency:
 jobs:
   build-and-deploy:
     name: Build & Deploy Android AAB
+    permissions:
+      contents: write # Needed to push git tags
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
