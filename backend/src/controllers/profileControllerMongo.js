@@ -184,7 +184,7 @@ class ProfileController {
               const imagesArray = Array.isArray(updates[field]) ? updates[field] : [updates[field]];
               sanitizedUpdates[`profile.${field}`] = imagesArray;
               // Auto-approve photos for testing phase so they appear in Discover
-              sanitizedUpdates['photoStatus'] = 'approved';
+              sanitizedUpdates['profile.photoStatus'] = 'approved';
             }
           } else if (enumFields.includes(field)) {
             // For enum fields, only set if value is not empty and is a valid string
