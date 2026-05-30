@@ -39,6 +39,7 @@ describe('Account deletion (hard delete)', () => {
       userUuid,
       email: 'delete-test@example.com',
       phoneNumber: '+919999999001',
+      firebaseUid: 'test-firebase-uid-001',
       status: 'active',
       role: 'user',
       verification: { isVerified: true },
@@ -49,6 +50,8 @@ describe('Account deletion (hard delete)', () => {
     const other = await User.create({
       userUuid: 'other-user-uuid-001',
       email: 'other@example.com',
+      phoneNumber: '+919999999002',
+      firebaseUid: 'other-firebase-uid-001',
       status: 'active',
       role: 'user',
       verification: { isVerified: true },
