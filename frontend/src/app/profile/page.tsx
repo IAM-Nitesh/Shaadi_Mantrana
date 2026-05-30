@@ -849,7 +849,7 @@ function ProfileContent() {
       if (tempImageFile) {
         const loadingToast = ToastService.loading('☁️ Saving your profile picture...');
         try {
-          const uploadResult = await ImageUploadService.uploadProfilePictureToB2(tempImageFile);
+          const uploadResult = await ImageUploadService.uploadProfileImage(tempImageFile);
           if (uploadResult.success && uploadResult.imageUrl) {
             uploadedImageUrl = uploadResult.imageUrl;
             logger.debug('✅ Image uploaded to B2:', uploadedImageUrl);

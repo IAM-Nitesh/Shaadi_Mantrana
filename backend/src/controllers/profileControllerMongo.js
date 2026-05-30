@@ -93,13 +93,13 @@ class ProfileController {
         settleAbroad: updates.settleAbroad
       });
 
-      // Validate and sanitize inputs - expanded to handle all profile fields (excluding images)
+      // Validate and sanitize inputs - expanded to handle all profile fields
       const allowedFields = [
         'name', 'gender', 'nativePlace', 'currentResidence', 'maritalStatus', 'manglik',
         'dateOfBirth', 'timeOfBirth', 'placeOfBirth', 'height', 'weight', 'complexion',
         'education', 'occupation', 'annualIncome', 'eatingHabit', 'smokingHabit', 'drinkingHabit',
         'father', 'mother', 'brothers', 'sisters', 'fatherGotra', 'motherGotra', 'grandfatherGotra', 'grandmotherGotra',
-        'specificRequirements', 'settleAbroad', 'about', 'interests'
+        'specificRequirements', 'settleAbroad', 'about', 'interests', 'images'
       ];
       
       const sanitizedUpdates = {};
@@ -178,6 +178,13 @@ class ProfileController {
                 .slice(0, 10) // Max 10 interests
                 .map(interest => SecurityUtils.sanitizeInput(interest))
                 .filter(interest => interest.length > 0);
+            }
+          } else if (field === 'images') {
+            if (Array.isArray(updates[field]) || typeof updates[field] === 'string') {
+              const imagesArray = Array.isArray(updates[field]) ? updates[field] : [updates[field]];
+              sanitizedUpdates[`profile.${field}`] = imagesArray;
+              // Auto-approve photos for testing phase so they appear in Discover
+              sanitizedUpdates['photoStatus'] = 'approved';
             }
           } else if (enumFields.includes(field)) {
             // For enum fields, only set if value is not empty and is a valid string
