@@ -619,16 +619,16 @@ class ProfileController {
         await Session.deleteMany({ userId });
       }
 
-      // 3. Remove user from any pending matches
-      const { Match } = require('../models');
-      if (Match) {
-        await Match.deleteMany({ $or: [{ userId1: userId }, { userId2: userId }] });
+      // 3. Remove user from any pending connections
+      const { Connection } = require('../models');
+      if (Connection) {
+        await Connection.deleteMany({ $or: [{ sender: userId }, { receiver: userId }] });
       }
 
       // 4. Remove messages (or anonymise — regulatory preference)
       const { Message } = require('../models');
       if (Message) {
-        await Message.deleteMany({ $or: [{ senderId: userId }, { receiverId: userId }] });
+        await Message.deleteMany({ sender: userId });
       }
 
       // 5. Hard-delete the user document

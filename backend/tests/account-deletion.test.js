@@ -70,10 +70,9 @@ describe('Account deletion (hard delete)', () => {
     });
 
     await Message.create({
-      senderId: userId,
-      receiverId: otherUserId,
-      content: 'Hello',
-      connectionId: new mongoose.Types.ObjectId(),
+      sender: userId,
+      text: 'Hello',
+      connectionId: new mongoose.Types.ObjectId().toString(),
     });
   });
 
@@ -116,9 +115,7 @@ describe('Account deletion (hard delete)', () => {
     const sessions = await Session.find({ userId: userId.toString() });
     expect(sessions).toHaveLength(0);
 
-    const messages = await Message.find({
-      $or: [{ senderId: userId }, { receiverId: userId }],
-    });
+    const messages = await Message.find({ sender: userId });
     expect(messages).toHaveLength(0);
 
     const { b2Storage } = require('../src/services/b2StorageService');
