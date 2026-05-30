@@ -5,6 +5,7 @@ import { RoyalInput, RoyalSelect } from './RoyalFields';
 import { ImageUploadService } from '../../services/image-upload-service';
 import Image from 'next/image';
 import logger from '../../utils/logger';
+import ToastService from '../../services/toastService';
 
 interface PersonalGraceStepProps {
   data: any;
@@ -13,6 +14,7 @@ interface PersonalGraceStepProps {
 
 export default function PersonalGraceStep({ data, updateField }: PersonalGraceStepProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageClick = () => {
@@ -27,18 +29,28 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
       setIsUploading(true);
       const result = await ImageUploadService.uploadProfileImage(file);
       if (result.success && result.imageUrl) {
-        updateField('images', result.imageUrl);
+        setPreviewUrl(result.imageUrl);
+        // Store file reference for profile completeness; backend already saved B2 fileName
+        updateField('images', result.fileName || result.imageUrl);
+        ToastService.success('Profile photo uploaded');
       } else {
-        logger.error('❌ Upload failed:', result.error);
+        const msg = result.error || 'Upload failed';
+        logger.error('Upload failed:', msg);
+        ToastService.error(msg);
       }
     } catch (err) {
-      logger.error('❌ Error in image upload:', err);
+      logger.error('Error in image upload:', err);
+      ToastService.error(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const imageUrl = Array.isArray(data.images) ? (data.images.length > 0 ? data.images[0] : null) : data.images;
+  const storedImage = Array.isArray(data.images) ? data.images[0] : data.images;
+  const imageUrl =
+    previewUrl ||
+    (typeof storedImage === 'string' && storedImage.startsWith('http') ? storedImage : null);
 
   return (
     <div className="space-y-8">
@@ -48,11 +60,12 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
           onClick={handleImageClick}
           className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-royal-gold/30 bg-royal-gold/5 flex items-center justify-center cursor-pointer group"
         >
-          {imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '' ? (
+          {imageUrl ? (
             <Image 
               src={imageUrl} 
               alt="Profile" 
               fill 
+              unoptimized
               className="object-cover group-hover:scale-110 transition-transform duration-500"
             />
           ) : (
@@ -80,7 +93,7 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
           className="hidden" 
         />
         <p className="text-royal-gold/40 text-[10px] uppercase tracking-widest text-center">
-          {data.images ? 'Change Sacred Portrait' : 'Upload Sacred Portrait'}
+          {imageUrl ? 'Change Sacred Portrait' : 'Upload Sacred Portrait'}
         </p>
       </div>
 

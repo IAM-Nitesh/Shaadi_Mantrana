@@ -13,6 +13,8 @@ import logger from '../utils/logger';
 import posthog from 'posthog-js';
 import { Capacitor } from '@capacitor/core';
 import { NativeAuthService } from '../services/NativeAuthService';
+import authStorage from '../services/auth-storage-service';
+import { clearAuthStatusCache } from '../services/auth-utils';
 
 // IMPORTANT: On Capacitor (Android/iOS), window.location.hostname is 'localhost'
 // because the webview is served from capacitor://localhost or http://localhost.
@@ -313,7 +315,25 @@ export const AuthProvider = ({
       if (!response.ok) {
         throw new Error(data.message || 'Backend authentication failed');
       }
-      
+
+      // Persist JWT for Capacitor/cross-origin API calls where HttpOnly cookies are unreliable
+      const accessToken = data.accessToken || data.session?.accessToken;
+      if (accessToken && typeof accessToken === 'string') {
+        try {
+          localStorage.setItem('accessToken', accessToken);
+          authStorage.set('tokenInfo', {
+            token: accessToken,
+            expiresAt: data.session?.expiresIn
+              ? Date.now() + data.session.expiresIn * 1000
+              : Date.now() + 60 * 60 * 1000,
+            lastRefreshed: Date.now(),
+          });
+        } catch (storageErr) {
+          logger.warn('AuthContext: Could not persist access token locally', storageErr);
+        }
+      }
+
+      clearAuthStatusCache();
       await checkAuth();
       return true;
     } catch (err: any) {
@@ -333,6 +353,14 @@ export const AuthProvider = ({
         method: 'POST',
         credentials: 'include',
       });
+      
+      try {
+        localStorage.removeItem('accessToken');
+        authStorage.remove('tokenInfo');
+        clearAuthStatusCache();
+      } catch {
+        // ignore storage errors
+      }
       
       setUser(null);
       setRedirectTo('/login');

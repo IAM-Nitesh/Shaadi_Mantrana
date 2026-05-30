@@ -26,6 +26,7 @@ export interface ImageValidationResult {
 export interface UploadResult {
   success: boolean;
   imageUrl?: string;
+  fileName?: string;
   error?: string;
   validation?: ImageValidationResult;
 }
@@ -168,106 +169,9 @@ export class ImageUploadService {
     });
   }
 
-  // Upload profile image with face validation
+  // Upload profile image to B2 via authenticated backend endpoint
   static async uploadProfileImage(file: File): Promise<UploadResult> {
-    const apiBaseUrl = configService.apiBaseUrl;
-    
-    // Development mode fallback
-    if (process.env.NODE_ENV === 'development' && !apiBaseUrl) {
-  // logger.debug('Development mode: Image upload not configured');
-      return {
-        success: false,
-        error: 'Image upload not configured in development mode',
-        validation: {
-          isValid: false,
-          confidence: 0,
-          faceCount: 0,
-          quality: 'poor'
-        }
-      };
-    }
-
-    if (!apiBaseUrl) {
-  // logger.debug('Production mode: Image upload not configured');
-      return {
-        success: false,
-        error: 'Image upload not configured',
-        validation: {
-          isValid: false,
-          confidence: 0,
-          faceCount: 0,
-          quality: 'poor'
-        }
-      };
-    }
-
-    try {
-      // First validate the image
-      const validation = await this.validateFaceInImage(file);
-      
-      if (!validation.isValid) {
-        return {
-          success: false,
-          error: validation.error || 'Image validation failed',
-          validation
-        };
-      }
-
-      // Upload the image
-      const formData = new FormData();
-      formData.append('image', file);
-
-      // Check if user is authenticated using server-side auth
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        throw new Error('Authentication required. Please log in first.');
-      }
-
-  // logger.debug('API Base URL:', apiBaseUrl);
-  // logger.debug('Uploading to:', `${apiBaseUrl}/api/upload/single`);
-  // logger.debug('File details:', { name: file.name, size: file.size, type: file.type });
-
-      const authHeaders = await getAuthHeaders();
-      // Build upload options
-      const uploadOptions: any = {
-        headers: authHeaders,
-        timeout: 30000
-      };
-
-      const response = await apiClient.upload(`/api/upload/single`, formData, uploadOptions);
-
-  // logger.debug('Upload response status:', response.status);
-  // logger.debug('Upload response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        const errorData = response.data || {};
-        const errorMessage = errorData.error || errorData.message || `Upload failed with status ${response.status}`;
-        
-        // Special handling for authentication errors
-        if (response.status === 401 || response.status === 403) {
-          clearAuthStatusCache();
-          throw new Error('Authentication required. Please log in again.');
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const result = response.data;
-      return {
-        success: true,
-        imageUrl: result.imageUrl || result.file?.url,
-        validation
-      };
-
-    } catch (error: unknown) {
-  // logger.error('Error uploading image:', error);
-  // logger.error('API Base URL:', apiBaseUrl);
-  // logger.error('File details:', { name: file.name, size: file.size, type: file.type });
-      return {
-        success: false,
-        error: (error as Error).message || 'Failed to upload image'
-      };
-    }
+    return this.uploadProfilePictureToB2(file);
   }
 
   // Upload multiple images with batch processing
@@ -426,13 +330,12 @@ export class ImageUploadService {
       const formData = new FormData();
       formData.append('image', compressionResult.file);
 
-      // Build upload options
-      const uploadOptions: any = {
+      const uploadOptions: Record<string, unknown> = {
         headers: authHeaders,
-        timeout: 30000
+        credentials: 'include',
+        timeout: 30000,
       };
 
-      // Upload to B2 via backend
       const response = await apiClient.upload('/api/upload/profile-picture', formData, uploadOptions);
 
       if (!response.ok) {
@@ -440,6 +343,7 @@ export class ImageUploadService {
         const errorMessage = errorData.error || errorData.message || `Upload failed with status ${response.status}`;
         
         if (response.status === 401 || response.status === 403) {
+          clearAuthStatusCache();
           throw new Error('Authentication required. Please log in again.');
         }
         
@@ -447,9 +351,22 @@ export class ImageUploadService {
       }
 
       const result = response.data;
+      const fileName = result.data?.fileName;
+      const publicUrl = result.data?.url;
+
+      // Prefer a fresh signed URL for immediate display (private B2 bucket)
+      let displayUrl = publicUrl;
+      try {
+        const signedUrl = await this.getMyProfilePictureSignedUrl();
+        if (signedUrl) displayUrl = signedUrl;
+      } catch {
+        // fall back to public URL / fileName
+      }
+
       return {
         success: true,
-        imageUrl: result.data.url,
+        imageUrl: displayUrl || publicUrl,
+        fileName,
         validation: {
           isValid: true,
           confidence: 90,
