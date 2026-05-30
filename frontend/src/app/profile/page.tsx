@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InterestModal from './InterestModal';
 import { ImageUploadService, UploadResult } from '../../services/image-upload-service';
+import { config as configService } from '../../services/configService';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import CustomIcon from '../../components/CustomIcon';
 import ImageCompression from '../../utils/imageCompression';
@@ -255,11 +256,45 @@ function ProfileContent() {
     const fetchMySignedUrl = async () => {
       if (profile?.images && !tempImageUrl) {
         setImageLoadFailed(false);
+        
+        // If profile.images is already a full URL or absolute path (from local upload), just use it
+        const rawImageUrl = Array.isArray(profile.images) ? profile.images[0] : profile.images;
+        if (rawImageUrl && (rawImageUrl.startsWith('http') || rawImageUrl.startsWith('/uploads'))) {
+          let finalUrl = rawImageUrl;
+          
+          // Fix localhost URLs for mobile devices by using apiBaseUrl
+          if (finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1')) {
+            try {
+              const urlObj = new URL(finalUrl);
+              // Only override if apiBaseUrl is configured
+              if (configService.apiBaseUrl) {
+                finalUrl = `${configService.apiBaseUrl}${urlObj.pathname}`;
+              }
+            } catch {
+              // Ignore parse errors
+            }
+          } else if (finalUrl.startsWith('/uploads')) {
+            if (configService.apiBaseUrl) {
+              finalUrl = `${configService.apiBaseUrl}${finalUrl}`;
+            }
+          }
+          
+          setSignedImageUrl(finalUrl);
+          logger.debug('✅ Profile: Using direct image URL:', finalUrl);
+          return;
+        }
+
         try {
           const url = await ImageUploadService.getMyProfilePictureSignedUrl();
           if (url) {
-            setSignedImageUrl(url);
-            logger.debug('✅ Profile: Fetched signed URL for own profile picture');
+            // Check if default avatar returned
+            if (url.includes('default-avatar.png')) {
+               setSignedImageUrl(null);
+               setImageLoadFailed(true);
+            } else {
+               setSignedImageUrl(url);
+               logger.debug('✅ Profile: Fetched signed URL for own profile picture');
+            }
           } else {
             logger.debug('ℹ️ Profile: No signed URL available (image may be pending review)');
             setImageLoadFailed(true);
@@ -2112,7 +2147,7 @@ function ProfileContent() {
 
               
               {/* Camera and Delete icons for editing - show when there's an image (temporary or existing) */}
-              {isEditing && (tempImageUrl || signedImageUrl || profile?.images) && (
+              {isEditing && (tempImageUrl || signedImageUrl || (profile?.images && !imageLoadFailed)) && (
                 <>
                   {/* Camera icon for upload */}
                   <button
@@ -2121,7 +2156,7 @@ function ProfileContent() {
                       event.stopPropagation();
                       handleCameraClick();
                     }}
-                    className="absolute -bottom-2 -right-2 text-royal-gold hover:text-royal-gold-light transition-colors duration-200 cursor-pointer"
+                    className="absolute -bottom-2 -right-2 text-royal-gold hover:text-royal-gold-light transition-colors duration-200 cursor-pointer bg-royal-obsidian rounded-full p-1"
                     aria-label="Change profile photo"
                   >
                     <CustomIcon name="ri-camera-line" size={22} />
@@ -2134,7 +2169,7 @@ function ProfileContent() {
                       event.stopPropagation();
                       handleDeleteProfilePicture();
                     }}
-                    className="absolute -top-2 -right-2 text-royal-crimson hover:text-royal-crimson transition-colors duration-200 cursor-pointer"
+                    className="absolute -top-2 -right-2 text-royal-crimson hover:text-royal-crimson transition-colors duration-200 cursor-pointer bg-royal-obsidian rounded-full p-1"
                     title={tempImageUrl ? "Remove temporary image" : "Delete profile picture"}
                   >
                     <CustomIcon name="ri-delete-bin-line" size={18} />
