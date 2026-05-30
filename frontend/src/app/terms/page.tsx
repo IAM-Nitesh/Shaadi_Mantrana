@@ -95,14 +95,27 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">7. Privacy and Data Protection</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">7. Child Safety and Zero Tolerance for CSAE</h2>
+              <p className="text-white/80 font-inter leading-relaxed mb-3">
+                ShaadiMantrana has a strict, zero-tolerance policy against Child Sexual Abuse and Exploitation (CSAE). We are committed to protecting minors and strictly enforce the following standards:
+              </p>
+              <ul className="list-disc list-inside text-white/80 font-inter space-y-1">
+                <li><strong>No Minors Allowed:</strong> Our platform is strictly for adults (21+ for males, 18+ for females). Any account suspected of belonging to a minor will be immediately terminated.</li>
+                <li><strong>Zero Tolerance for CSAE Content:</strong> Uploading, sharing, promoting, or distributing any content that depicts, encourages, or promotes child sexual abuse or exploitation is strictly prohibited.</li>
+                <li><strong>Mandatory Reporting:</strong> Any user found violating this policy will be permanently banned. We will report the individual and preserve all relevant data to cooperate fully with the National Center for Missing & Exploited Children (NCMEC), local law enforcement, and cybercrime authorities under the POCSO Act and IT Act, 2000.</li>
+                <li><strong>Proactive Moderation:</strong> We use both automated and manual moderation tools to actively scan for and prevent the dissemination of CSAE material.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">8. Privacy and Data Protection</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 We prioritize your privacy and comply with the Digital Personal Data Protection Act, 2023. Your personal information is processed as per our Privacy Policy, which is integral to these Terms. We implement robust security measures to protect your data and do not sell or share it with third parties except as required by Indian law.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">8. Content Moderation and Safety</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">9. Content Moderation and Safety</h2>
               <p className="text-white/80 font-inter leading-relaxed mb-3">
                 To ensure a safe and compliant platform, in accordance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021:
               </p>
@@ -116,49 +129,49 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">9. Intellectual Property</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">10. Intellectual Property</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 All content, features, and functionality of ShaadiMantrana are protected under the Copyright Act, 1957 and other applicable Indian intellectual property laws. Users retain rights to their uploaded content but grant us a non-exclusive license to use it for platform operations and improvement, subject to privacy laws.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">10. Limitation of Liability</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">11. Limitation of Liability</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 ShaadiMantrana provides the platform "as is" without warranties, subject to the Consumer Protection Act, 2019. We are not liable for user actions, meeting outcomes, or indirect damages. Our maximum liability is limited to the amount paid (zero for our free platform), as permitted under Indian law.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">11. Termination</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">12. Termination</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 Either party may terminate this agreement at any time. We may suspend or terminate accounts for violations of these Terms or Indian law. Upon termination, your right to use the Service ceases, and we may delete your data in accordance with the Digital Personal Data Protection Act, 2023.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">12. Dispute Resolution</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">13. Dispute Resolution</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 Any disputes shall be resolved through binding arbitration under the Arbitration and Conciliation Act, 1996, with the seat of arbitration in New Delhi, India. Users waive the right to class action lawsuits and agree to resolve disputes individually, subject to applicable Indian laws.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">13. Changes to Terms</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">14. Changes to Terms</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 We may modify these Terms at any time, with notice provided via the platform or email, as required under the Information Technology Rules, 2021. Continued use after changes constitutes acceptance of the updated Terms.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">14. Governing Law and Jurisdiction</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">15. Governing Law and Jurisdiction</h2>
               <p className="text-white/80 font-inter leading-relaxed">
                 These Terms are governed by the laws of India. Subject to the arbitration clause, any legal proceedings shall be subject to the exclusive jurisdiction of courts in New Delhi, India.
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">15. Contact Information</h2>
+              <h2 className="text-lg font-semibold text-royal-gold font-playfair mb-3">16. Contact Information</h2>
               <p className="text-white/80 font-inter leading-relaxed mb-3">
                 For queries or grievances, contact our Grievance Officer as per the Information Technology Rules, 2021, through:
               </p>
