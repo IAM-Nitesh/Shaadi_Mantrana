@@ -213,9 +213,10 @@ const authLimiter = rateLimit({
   }
 });
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware — keep limit tight to prevent memory-exhaustion DoS.
+// Upload routes use multer which has its own per-file size control.
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser());
 app.use(ensureCsrfCookie);
 app.use(validateCsrf);
@@ -223,10 +224,10 @@ app.use(validateCsrf);
 // Request logging middleware (before routes)
 app.use(requestLogger);
 
-// Metrics - expose Prometheus metrics if prom-client is installed
+// Metrics - expose Prometheus metrics (non-production only to avoid internal data leakage)
   try {
     const { promClient } = require('./utils/metrics');
-    if (promClient) {
+    if (promClient && process.env.NODE_ENV !== 'production') {
     app.get('/metrics', async (req, res) => {
       try {
         res.set('Content-Type', promClient.register.contentType);
@@ -403,26 +404,19 @@ app.post('/api/logs', clientLogLimiter, (req, res) => {
 
 
 
-// Database status endpoint
-app.get('/api/database/status', async (req, res) => {
-  try {
-    const status = databaseService.getConnectionStatus();
-    const health = await databaseService.healthCheck();
-    const stats = await databaseService.getStats();
-    
-    res.status(200).json({
-      success: true,
-      connection: status,
-      health: health,
-      statistics: stats
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+// Database status endpoint — restricted to non-production to avoid leaking internal state
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/database/status', async (req, res) => {
+    try {
+      const status = databaseService.getConnectionStatus();
+      const health = await databaseService.healthCheck();
+      const stats = await databaseService.getStats();
+      res.status(200).json({ success: true, connection: status, health, statistics: stats });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+}
 
 // Error handling middleware
 app.use(errorLogger); // Log errors with UUID tracking

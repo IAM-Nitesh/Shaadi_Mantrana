@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import logger from '../../utils/logger';
 import posthog from 'posthog-js';
 import { App } from '@capacitor/app';
+import { ProfileService } from '../../services/profile-service';
 
 // ─────────────────────────────────────────────────────────
 // Sub-components
@@ -96,7 +97,8 @@ function SettingsContent() {
   const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
-  // Version info removed by request
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
 
   useEffect(() => {
@@ -138,6 +140,31 @@ function SettingsContent() {
 
   const cancelLogout = () => setShowLogoutConfirm(false);
 
+  const handleDeleteClick = () => setShowDeleteConfirm(true);
+  const cancelDelete = () => setShowDeleteConfirm(false);
+
+  const confirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      const success = await ProfileService.deleteProfile();
+      if (success) {
+        setShowDeleteConfirm(false);
+        ToastService.success('Your account has been deleted permanently.');
+        posthog.capture('user_deleted_account');
+        posthog.reset();
+        await logout();
+        router.push('/');
+      } else {
+        throw new Error('Failed to delete account');
+      }
+    } catch (error) {
+      logger.error('Error during account deletion:', error);
+      ToastService.error('Failed to delete account. Please contact support.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!isAuthenticated) return null;
 
   return (
@@ -171,6 +198,45 @@ function SettingsContent() {
                 className="flex-1 py-3.5 rounded-xl border border-royal-crimson/30 bg-royal-crimson/10 text-royal-crimson text-sm font-semibold hover:bg-royal-crimson hover:text-white shadow-[0_0_15px_rgba(220,38,38,0.1)] hover:shadow-[0_0_30px_rgba(220,38,38,0.35)] transition-all duration-300"
               >
                 Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Account Confirmation Modal ──────────────────── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+          <div
+            className="bg-royal-obsidian/95 border border-royal-crimson/50 rounded-3xl p-8 w-full max-w-sm shadow-[0_0_60px_rgba(220,38,38,0.15)] flex flex-col items-center justify-center relative overflow-hidden"
+            style={{ animation: 'fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-royal-crimson/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="w-16 h-16 rounded-full bg-royal-crimson/20 flex items-center justify-center mb-4 relative z-10">
+              <CustomIcon name="ri-alert-fill" size={32} className="text-royal-crimson" />
+            </div>
+
+            <h3 className="text-xl font-playfair font-bold text-white text-center mb-2 relative z-10">
+              Delete Account?
+            </h3>
+            <p className="text-sm text-royal-gold/60 text-center mb-6 relative z-10">
+              This action is permanent and cannot be undone. All your profile data, matches, and messages will be permanently erased.
+            </p>
+            <div className="flex flex-col gap-3 w-full relative z-10">
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="w-full py-3.5 rounded-xl border border-royal-crimson/50 bg-royal-crimson text-white text-sm font-semibold hover:bg-red-700 shadow-[0_0_15px_rgba(220,38,38,0.2)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isDeleting ? 'Deleting...' : 'Yes, Delete My Account'}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="w-full py-3.5 rounded-xl border border-royal-gold/30 bg-transparent text-royal-gold/90 text-sm font-semibold hover:bg-royal-gold/10 transition-all duration-300 disabled:opacity-50"
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -262,12 +328,19 @@ function SettingsContent() {
         </SettingsSection>
 
         {/* ── Danger Zone ── */}
-        <SettingsSection title="Session" icon="ri-door-open-line">
+        <SettingsSection title="Danger Zone" icon="ri-error-warning-line">
           <SettingsRow
             onClick={handleLogout}
             icon="ri-logout-box-r-line"
             label="Log Out"
             sublabel="End your current session"
+          />
+          <SettingsRow
+            onClick={handleDeleteClick}
+            icon="ri-delete-bin-line"
+            label="Delete Account"
+            sublabel="Permanently erase your data"
+            danger
           />
         </SettingsSection>
 

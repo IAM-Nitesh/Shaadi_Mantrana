@@ -37,6 +37,7 @@ const SecurityUtils = {
     return input
       .trim()
       .replace(/[<>\"'&]/g, '') // Remove XSS characters
+      // eslint-disable-next-line no-control-regex
       .replace(/[\u0000-\u001F\u007F]/g, '') // Strip control characters
       .substring(0, 255); // Limit length
   },
@@ -57,20 +58,22 @@ const SecurityUtils = {
       return '';
     }
   },
-  encrypt: (text) => {
+  // Base64 encode/decode helpers — NOT encryption.
+  // Do NOT use these for secrets, tokens, or any security-sensitive data.
+  // Use crypto.createCipheriv with AES-256-GCM for real encryption.
+  encodeBase64: (text) => {
     try {
       return Buffer.from(text).toString('base64');
     } catch (error) {
-      throw new Error('Encryption failed');
+      throw new Error('Base64 encode failed');
     }
   },
   
-  // Basic decryption (for demo purposes - use proper encryption in production)
-  decrypt: (encrypted) => {
+  decodeBase64: (encoded) => {
     try {
-      return Buffer.from(encrypted, 'base64').toString('ascii');
+      return Buffer.from(encoded, 'base64').toString('utf8');
     } catch (error) {
-      throw new Error('Decryption failed');
+      throw new Error('Base64 decode failed');
     }
   },
 

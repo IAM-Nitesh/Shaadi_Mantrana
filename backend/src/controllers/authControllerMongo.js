@@ -294,7 +294,9 @@ class AuthController {
       };
 
       // 4. Set Cookies
-      const cookieMaxAge = isAdminUser ? 90 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      // Admin sessions are intentionally shorter (8h) than user sessions (30d).
+      // A compromised admin token should have a smaller blast radius.
+      const cookieMaxAge = isAdminUser ? 8 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
       const isProdEnv = process.env.NODE_ENV === 'production';
       
       const sessionCookieOptions = {
@@ -308,7 +310,7 @@ class AuthController {
       res.cookie('accessToken', session.accessToken, sessionCookieOptions);
       res.cookie('refreshToken', session.refreshToken, { 
         ...sessionCookieOptions,
-        maxAge: isAdminUser ? 180 * 24 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 
+        maxAge: isAdminUser ? 8 * 60 * 60 * 1000 : 90 * 24 * 60 * 60 * 1000 
       });
       res.cookie('sessionId', session.sessionId, sessionCookieOptions);
 
@@ -433,7 +435,8 @@ class AuthController {
       };
 
       const newAccessToken = jwt.sign(payload, config.JWT.SECRET, { 
-        expiresIn: '24h',
+        // Use the same expiry as initial login to keep access token lifetime consistent
+        expiresIn: process.env.JWT_EXPIRES_IN || config.JWT.EXPIRES_IN || '1h',
         issuer: 'shaadi-mantra-api',
         audience: 'shaadi-mantra-app'
       });

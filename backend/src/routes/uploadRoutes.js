@@ -33,16 +33,16 @@ router.post('/test-upload', authenticateToken, uploadController.uploadMemory.sin
 });
 
 // Single file upload endpoint (requires authentication)
-router.post('/single', uploadController.uploadSingle);
+router.post('/single', authenticateToken, uploadController.uploadSingle);
 
 // Multiple files upload endpoint (requires authentication)
-router.post('/multiple', uploadController.uploadMultiple);
+router.post('/multiple', authenticateToken, uploadController.uploadMultiple);
 
 // Get upload history (requires authentication)
 router.get('/history', authenticateToken, uploadController.getUploads);
 
 // Profile image upload endpoint (alias for single upload)
-router.post('/profile-image', uploadController.uploadSingle);
+router.post('/profile-image', authenticateToken, uploadController.uploadSingle);
 
 // B2 Cloud Storage profile picture endpoints
 router.post('/profile-picture', authenticateToken, (req, res, next) => {
