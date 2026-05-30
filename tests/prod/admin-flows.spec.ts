@@ -13,7 +13,11 @@ function askQuestion(query: string): Promise<string> {
   }));
 }
 
-test.describe('Admin Flows on Production (Pure UI Validations)', () => {
+const runProdE2E = process.env.RUN_PROD_E2E === '1' || process.env.RUN_PROD_E2E === 'true';
+const describeProd = runProdE2E ? test.describe : test.describe.skip;
+
+describeProd('Admin Flows on Production (Pure UI Validations)', () => {
+  // Requires RUN_PROD_E2E=1 — never runs in default CI (avoids mutating production)
   // Let the test run longer for manual OTP entry
   test.setTimeout(5 * 60 * 1000);
 

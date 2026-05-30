@@ -214,7 +214,7 @@ app.use('/api/', limiter);
 // Auth-specific rate limiting — persisted in MongoDB so restarts don't reset counters
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 10 : 100,
+  max: process.env.NODE_ENV === 'development' ? 100 : 10,
   store: createPersistentStore('auth_'),
   standardHeaders: true,
   legacyHeaders: false,

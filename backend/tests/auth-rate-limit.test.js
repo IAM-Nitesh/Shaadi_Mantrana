@@ -11,14 +11,15 @@ const RateLimit = require('../src/models/RateLimit');
 describe('Auth rate limiting', () => {
   beforeAll(async () => {
     const uri = process.env.MONGODB_URI || process.env.MONGODB_TEST_URI;
-    if (!uri) {
-      console.warn('Skipping rate limit tests: MONGODB_URI not set');
-      return;
-    }
+    if (!uri) return;
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(uri);
+      try {
+        await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
+      } catch {
+        console.warn('Skipping rate limit tests: MongoDB unavailable');
+      }
     }
-  });
+  }, 10000);
 
   afterAll(async () => {
     if (mongoose.connection.readyState === 1) {

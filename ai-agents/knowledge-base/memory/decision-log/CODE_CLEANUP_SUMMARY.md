@@ -24,7 +24,7 @@
 MONGODB_URI=mongodb+srv://<REDACTED_USER>:<REDACTED_PASS>@cluster0-m0freetier.hdkszsj.mongodb.net/test
 JWT_SECRET=dev-jwt-secret-key-2024-shaadi-mantra
 SMTP_PASS=<REDACTED_SMTP_PASS>
-B2_APP_KEY=003795017f9064034fe33409ee2aa9cbdaf48c725d
+B2_APP_KEY=<redacted — rotate in Backblaze if this was ever committed>
 GRAFANA_LOKI_PASSWORD=<REDACTED_GRAFANA_PASSWORD>
 ```
 
@@ -34,7 +34,7 @@ GRAFANA_LOKI_PASSWORD=<REDACTED_GRAFANA_PASSWORD>
 MONGODB_URI=mongodb+srv://<REDACTED_USER>:<REDACTED_PASS>@cluster-m0freetier.5xmurlk.mongodb.net/test
 JWT_SECRET=dev-jwt-secret-key-2024-shaadi-mantra
 SMTP_PASS=<REDACTED_SMTP_PASS>
-B2_APP_KEY=003795017f9064034fe33409ee2aa9cbdaf48c725d
+B2_APP_KEY=<redacted — rotate in Backblaze if this was ever committed>
 GRAFANA_LOKI_PASSWORD=<REDACTED_GRAFANA_PASSWORD>
 ```
 

@@ -2,9 +2,17 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import ChatComponent from './ChatComponent';
-import CustomIcon from '../../components/CustomIcon';
+import dynamic from 'next/dynamic';
 import RoyalLoader from '../../components/RoyalLoader';
+
+const ChatComponent = dynamic(() => import('./ChatComponent'), {
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-royal-obsidian">
+      <RoyalLoader />
+    </div>
+  ),
+});
+import CustomIcon from '../../components/CustomIcon';
 import logger from '../../utils/logger';
 import { apiClient } from '../../utils/api-client';
 import { useAuth } from '../../contexts/AuthContext';
