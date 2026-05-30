@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InterestModal from './InterestModal';
 import { ImageUploadService, UploadResult } from '../../services/image-upload-service';
+import { config as configService } from '../../services/configService';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import CustomIcon from '../../components/CustomIcon';
 import ImageCompression from '../../utils/imageCompression';
