@@ -255,7 +255,7 @@ export class ImageUploadService {
       const result = response.data;
       return {
         success: true,
-        imageUrl: result.imageUrl,
+        imageUrl: result.imageUrl || result.file?.url,
         validation
       };
 

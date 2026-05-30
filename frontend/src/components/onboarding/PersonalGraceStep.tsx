@@ -25,7 +25,7 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
 
     try {
       setIsUploading(true);
-      const result = await ImageUploadService.uploadProfilePictureToB2(file);
+      const result = await ImageUploadService.uploadProfileImage(file);
       if (result.success && result.imageUrl) {
         updateField('images', result.imageUrl);
       } else {
