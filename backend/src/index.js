@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const path = require('path');
@@ -11,6 +12,12 @@ dotenv.config();
 
 // Import configuration (centralized env handling)
 const config = require('./config');
+const MongoRateLimitStore = require('./utils/mongoRateLimitStore');
+
+function createPersistentStore(prefix) {
+  if (process.env.NODE_ENV === 'test') return undefined;
+  return new MongoRateLimitStore({ prefix });
+}
 
 // ── STARTUP SECRET ASSERTION (Fix 5) ────────────────────────────────────────
 // Fail fast on startup if required secrets are missing or weak in production.
@@ -194,8 +201,9 @@ app.use((req, res, next) => {
 
 // Rate limiting - more lenient for development
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in development
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+  store: createPersistentStore('api_'),
   message: {
     error: 'Too many requests',
     message: 'Please try again later'
@@ -203,20 +211,30 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Auth-specific rate limiting (moderate)
+// Auth-specific rate limiting — persisted in MongoDB so restarts don't reset counters
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 30 : 100, // More lenient in development
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 10 : 100,
+  store: createPersistentStore('auth_'),
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
+    success: false,
     error: 'Too many authentication attempts',
     message: 'Please try again in 15 minutes'
-  }
+  },
+  keyGenerator: (req) => {
+    const phone = req.body?.phone || req.body?.phoneNumber || '';
+    return `${req.ip}_${phone.slice(-4) || 'anon'}`;
+  },
+  skip: (req) => process.env.NODE_ENV === 'test',
 });
 
 // Body parsing middleware — keep limit tight to prevent memory-exhaustion DoS.
 // Upload routes use multer which has its own per-file size control.
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(mongoSanitize({ replaceWith: '_' }));
 app.use(cookieParser());
 app.use(ensureCsrfCookie);
 app.use(validateCsrf);
@@ -266,7 +284,6 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
   });
 });
 app.use('/api/auth', authLimiter, authRoutes);

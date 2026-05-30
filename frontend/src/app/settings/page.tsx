@@ -97,6 +97,7 @@ function SettingsContent() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutAnimation, setShowLogoutAnimation] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
   const [appVersion, setAppVersion] = useState<string>(
@@ -154,8 +155,14 @@ function SettingsContent() {
 
   const cancelLogout = () => setShowLogoutConfirm(false);
 
-  const handleDeleteClick = () => setShowDeleteConfirm(true);
-  const cancelDelete = () => setShowDeleteConfirm(false);
+  const handleDeleteClick = () => {
+    setDeleteConfirmText('');
+    setShowDeleteConfirm(true);
+  };
+  const cancelDelete = () => {
+    setDeleteConfirmText('');
+    setShowDeleteConfirm(false);
+  };
 
   const confirmDelete = async () => {
     try {
@@ -234,13 +241,24 @@ function SettingsContent() {
             <h3 className="text-xl font-playfair font-bold text-white text-center mb-2 relative z-10">
               Delete Account?
             </h3>
-            <p className="text-sm text-royal-gold/60 text-center mb-6 relative z-10">
+            <p className="text-sm text-royal-gold/60 text-center mb-4 relative z-10">
               This action is permanent and cannot be undone. All your profile data, matches, and messages will be permanently erased.
             </p>
+            <p className="text-xs text-royal-gold/50 text-center mb-3 relative z-10">
+              Type <span className="font-mono text-royal-crimson">DELETE</span> to confirm
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+              className="w-full mb-4 px-4 py-3 rounded-xl bg-black/40 border border-royal-crimson/30 text-white text-sm text-center font-mono tracking-widest placeholder:text-royal-gold/30 focus:outline-none focus:border-royal-crimson/60 relative z-10"
+            />
             <div className="flex flex-col gap-3 w-full relative z-10">
               <button
                 onClick={confirmDelete}
-                disabled={isDeleting}
+                disabled={isDeleting || deleteConfirmText !== 'DELETE'}
                 className="w-full py-3.5 rounded-xl border border-royal-crimson/50 bg-royal-crimson text-white text-sm font-semibold hover:bg-red-700 shadow-[0_0_15px_rgba(220,38,38,0.2)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isDeleting ? 'Deleting...' : 'Yes, Delete My Account'}

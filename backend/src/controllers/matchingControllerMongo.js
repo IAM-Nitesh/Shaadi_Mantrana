@@ -2,6 +2,9 @@
 const mongoose = require('mongoose');
 const { User, Connection, DailyLike } = require('../models');
 const { SecurityUtils } = require('../utils/security');
+const { logger } = require('../utils/pino-logger');
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 class MatchingController {
   // Get profiles for discovery (with daily limit)
@@ -10,16 +13,16 @@ class MatchingController {
       const userId = req.user.userId;
       const { page = 1, limit = 10 } = req.query;
       
-      console.log(`🔍 Discovery request - User: ${userId}, Page: ${page}, Limit: ${limit}`);
+      if (isDev) { console.log(`🔍 Discovery request - User: ${userId}, Page: ${page}, Limit: ${limit}`); }
       
       // Check daily like limit
       const dailyLikeCount = await DailyLike.getDailyLikeCount(userId);
       const canLikeToday = dailyLikeCount < 5;
       
-      console.log(`📊 Daily like count: ${dailyLikeCount}, Can like today: ${canLikeToday}`);
+      if (isDev) { console.log(`📊 Daily like count: ${dailyLikeCount}, Can like today: ${canLikeToday}`); }
       
       if (!canLikeToday) {
-        console.log('🚫 Daily limit reached, returning empty profiles');
+        if (isDev) { console.log('🚫 Daily limit reached, returning empty profiles'); }
         return res.status(200).json({
           success: true,
           profiles: [],
@@ -32,19 +35,19 @@ class MatchingController {
       // Get current user to access their profile and preferences
       const currentUser = await User.findById(userId);
       if (!currentUser) {
-        console.log('❌ Current user not found');
+        if (isDev) { console.log('❌ Current user not found'); }
         return res.status(404).json({
           success: false,
           error: 'User not found'
         });
       }
       
-      console.log(`👤 Current user: ${currentUser.email}, Gender: ${currentUser.profile?.gender}`);
+      if (isDev) { console.log(`👤 Current user: ${currentUser.email}, Gender: ${currentUser.profile?.gender}`); }
       
       // Get IDs of profiles the user has already liked
       const likedProfiles = await DailyLike.find({ userId }).select('likedProfileId');
       const likedProfileIds = likedProfiles.map(like => like.likedProfileId);
-      console.log(`💕 User has liked ${likedProfileIds.length} profiles`);
+      if (isDev) { console.log(`💕 User has liked ${likedProfileIds.length} profiles`); }
       
       // Build query filters
       const queryFilters = {
@@ -60,7 +63,7 @@ class MatchingController {
         const userGender = currentUser.profile.gender.toLowerCase();
         const oppositeGender = userGender === 'male' ? 'Female' : 'Male';
         queryFilters['profile.gender'] = { $regex: new RegExp(`^${oppositeGender}$`, 'i') };
-        console.log(`🎯 Filtering by opposite gender: ${oppositeGender}`);
+        if (isDev) { console.log(`🎯 Filtering by opposite gender: ${oppositeGender}`); }
       }
       
       // Filter by age range if user has preferences
@@ -75,7 +78,7 @@ class MatchingController {
           $gte: minBirthDate.toISOString().split('T')[0], 
           $lte: maxBirthDate.toISOString().split('T')[0] 
         };
-        console.log(`📅 Filtering by age range: ${min}-${max} (birth dates: ${minBirthDate.toISOString().split('T')[0]} to ${maxBirthDate.toISOString().split('T')[0]})`);
+        if (isDev) { console.log(`📅 Filtering by age range: ${min}-${max} (birth dates: ${minBirthDate.toISOString().split('T')[0]} to ${maxBirthDate.toISOString().split('T')[0]})`); }
       }
       
       // Filter by location if user has preferences
@@ -88,13 +91,13 @@ class MatchingController {
             { 'profile.nativePlace': { $in: locationRegex } },
             { 'profile.currentResidence': { $in: locationRegex } }
           ];
-          console.log(`📍 Filtering by locations: ${currentUser.preferences.location.join(', ')}`);
+          if (isDev) { console.log(`📍 Filtering by locations: ${currentUser.preferences.location.join(', ')}`); }
         } else {
-          console.log(`📍 User has broad location preferences (${currentUser.preferences.location.length} locations), skipping location filter`);
+          if (isDev) { console.log(`📍 User has broad location preferences (${currentUser.preferences.location.length} locations), skipping location filter`); }
         }
       }
       
-      console.log('🔍 Final query filters:', JSON.stringify(queryFilters, null, 2));
+      if (isDev) { console.log('🔍 Final query filters:', JSON.stringify(queryFilters, null, 2)); }
       
       // Debug: Check all available profiles first
       const allProfiles = await User.find({
@@ -103,9 +106,9 @@ class MatchingController {
         'verification.isVerified': true
       }).select('profile.name profile.gender profile.dateOfBirth verification.isVerified').lean();
       
-      console.log(`🔍 Total available profiles (before filters): ${allProfiles.length}`);
+      if (isDev) { console.log(`🔍 Total available profiles (before filters): ${allProfiles.length}`); }
       allProfiles.forEach((profile, index) => {
-        console.log(`👤 Available profile ${index + 1}: ${profile.profile?.name} (${profile.profile?.gender}, ${profile.profile?.dateOfBirth})`);
+        if (isDev) { console.log(`👤 Available profile ${index + 1}: ${profile.profile?.name} (${profile.profile?.gender}, ${profile.profile?.dateOfBirth})`); }
       });
       
       // Get profiles that match the criteria
@@ -115,7 +118,7 @@ class MatchingController {
         .skip((page - 1) * limit)
         .lean();
       
-      console.log(`📋 Found ${profiles.length} profiles for discovery`);
+      if (isDev) { console.log(`📋 Found ${profiles.length} profiles for discovery`); }
       
       // Calculate age for each profile and add to response
       const profilesWithAge = profiles.map(profile => {
@@ -326,14 +329,14 @@ class MatchingController {
     try {
       const userId = req.user.userId;
       
-      console.log(`🔍 Fetching liked profiles for user: ${userId}`);
+      if (isDev) { console.log(`🔍 Fetching liked profiles for user: ${userId}`); }
       
       const likes = await DailyLike.getLikedProfiles(userId);
-      console.log(`📋 Found ${likes.length} likes for user`);
+      if (isDev) { console.log(`📋 Found ${likes.length} likes for user`); }
       
       const likedProfiles = await Promise.all(likes.map(async (like) => {
         const likedUser = like.likedProfileId;
-        console.log(`💕 Like: ${like._id}, Target: ${likedUser?._id}, Name: ${likedUser?.profile?.name}`);
+        if (isDev) { console.log(`💕 Like: ${like._id}, Target: ${likedUser?._id}, Name: ${likedUser?.profile?.name}`); }
         
         // If it's a mutual match, find the connection
         let connectionId = null;
@@ -376,7 +379,7 @@ class MatchingController {
         };
       }));
       
-      console.log(`✅ Returning ${likedProfiles.length} liked profiles`);
+      if (isDev) { console.log(`✅ Returning ${likedProfiles.length} liked profiles`); }
       
       res.status(200).json({
         success: true,
@@ -397,7 +400,7 @@ class MatchingController {
       const userId = req.user.userId;
       const connectionId = req.body.connectionId ? String(req.body.connectionId) : null;
       
-      console.log(`🎯 Marking toast as seen on chat entry - User: ${userId}, Connection: ${connectionId}`);
+      if (isDev) { console.log(`🎯 Marking toast as seen on chat entry - User: ${userId}, Connection: ${connectionId}`); }
       
       if (!connectionId) {
         return res.status(400).json({ success: false, error: 'Connection ID is required' });
@@ -406,22 +409,22 @@ class MatchingController {
       // First, verify the connection exists and user is part of it
       const connection = await Connection.findById(connectionId);
       if (!connection) {
-        console.log(`❌ Connection not found: ${connectionId}`);
+        if (isDev) { console.log(`❌ Connection not found: ${connectionId}`); }
         return res.status(404).json({ success: false, error: 'Connection not found' });
       }
       
-      console.log(`✅ Connection found: ${connection._id}`);
-      console.log(`🔍 Connection users:`, connection.users.map(u => u.toString()));
-      console.log(`🔍 Current user: ${userId}`);
+      if (isDev) { console.log(`✅ Connection found: ${connection._id}`); }
+      if (isDev) { console.log(`🔍 Connection users:`, connection.users.map(u => u.toString())); }
+      if (isDev) { console.log(`🔍 Current user: ${userId}`); }
       
       // Check if user is part of this connection
       const userInConnection = connection.users.some(user => user.toString() === userId);
       if (!userInConnection) {
-        console.log(`❌ User ${userId} is not part of connection ${connectionId}`);
+        if (isDev) { console.log(`❌ User ${userId} is not part of connection ${connectionId}`); }
         return res.status(403).json({ success: false, error: 'User not part of this connection' });
       }
       
-      console.log(`✅ User is part of connection`);
+      if (isDev) { console.log(`✅ User is part of connection`); }
       
       // Find the mutual match for this connection
       let mutualMatch = await DailyLike.findOne({
@@ -429,35 +432,35 @@ class MatchingController {
         isMutualMatch: true
       });
       
-      console.log(`🔍 Initial search result:`, mutualMatch ? 'Found' : 'Not found');
+      if (isDev) { console.log(`🔍 Initial search result:`, mutualMatch ? 'Found' : 'Not found'); }
       
       // Debug: Check all DailyLike records for this connection
       const allDailyLikes = await DailyLike.find({ connectionId: connectionId });
-      console.log('🔍 All DailyLike records for connection', connectionId, ':', allDailyLikes.length);
+      if (isDev) { console.log('🔍 All DailyLike records for connection', connectionId, ':', allDailyLikes.length); }
       allDailyLikes.forEach((like, index) => {
-        console.log(`  ${index + 1}. User: ${like.userId}, Liked: ${like.likedProfileId}, Mutual: ${like.isMutualMatch}`);
+        if (isDev) { console.log(`  ${index + 1}. User: ${like.userId}, Liked: ${like.likedProfileId}, Mutual: ${like.isMutualMatch}`); }
       });
       
       // If not found, try with ObjectId conversion
       if (!mutualMatch) {
-        console.log(`🔍 Trying with ObjectId conversion...`);
+        if (isDev) { console.log(`🔍 Trying with ObjectId conversion...`); }
         try {
           const objectIdConnectionId = new mongoose.Types.ObjectId(connectionId);
           mutualMatch = await DailyLike.findOne({
             connectionId: objectIdConnectionId,
             isMutualMatch: true
           });
-          console.log(`🔍 ObjectId search result:`, mutualMatch ? 'Found' : 'Not found');
+          if (isDev) { console.log(`🔍 ObjectId search result:`, mutualMatch ? 'Found' : 'Not found'); }
         } catch (error) {
-          console.log(`🔍 ObjectId conversion failed:`, error.message);
+          if (isDev) { console.log(`🔍 ObjectId conversion failed:`, error.message); }
         }
       }
       
       // If not found by connectionId, try to find by user IDs
       if (!mutualMatch) {
-        console.log(`🔍 No DailyLike found with connectionId ${connectionId}, searching by user IDs...`);
+        if (isDev) { console.log(`🔍 No DailyLike found with connectionId ${connectionId}, searching by user IDs...`); }
         const otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
-        console.log(`🔍 Other user ID: ${otherUserId}`);
+        if (isDev) { console.log(`🔍 Other user ID: ${otherUserId}`); }
         
         // Search for mutual match using user IDs
         mutualMatch = await DailyLike.findOne({
@@ -467,11 +470,11 @@ class MatchingController {
           ]
         });
         
-        console.log(`🔍 User ID search result:`, mutualMatch ? 'Found' : 'Not found');
+        if (isDev) { console.log(`🔍 User ID search result:`, mutualMatch ? 'Found' : 'Not found'); }
         
         // If found, update it with the correct connectionId
         if (mutualMatch) {
-          console.log(`🔧 Updating DailyLike ${mutualMatch._id} with connectionId ${connectionId}`);
+          if (isDev) { console.log(`🔧 Updating DailyLike ${mutualMatch._id} with connectionId ${connectionId}`); }
           await DailyLike.updateOne(
             { _id: mutualMatch._id },
             { $set: { connectionId: connectionId } }
@@ -481,7 +484,7 @@ class MatchingController {
       
       // If still not found, try a broader search
       if (!mutualMatch) {
-        console.log(`🔍 Trying broader search for mutual match...`);
+        if (isDev) { console.log(`🔍 Trying broader search for mutual match...`); }
         const otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
         
         // Search for any mutual match between these users
@@ -497,11 +500,11 @@ class MatchingController {
           ]
         });
         
-        console.log(`🔍 Broader search result:`, mutualMatch ? 'Found' : 'Not found');
+        if (isDev) { console.log(`🔍 Broader search result:`, mutualMatch ? 'Found' : 'Not found'); }
         
         // If found, update it with the correct connectionId
         if (mutualMatch) {
-          console.log(`🔧 Updating DailyLike ${mutualMatch._id} with connectionId ${connectionId}`);
+          if (isDev) { console.log(`🔧 Updating DailyLike ${mutualMatch._id} with connectionId ${connectionId}`); }
           await DailyLike.updateOne(
             { _id: mutualMatch._id },
             { $set: { connectionId: connectionId } }
@@ -510,10 +513,10 @@ class MatchingController {
       }
       
       if (!mutualMatch) {
-        console.log(`❌ No mutual match found for connection ${connectionId}`);
+        if (isDev) { console.log(`❌ No mutual match found for connection ${connectionId}`); }
         
         // Final fallback: Try to create the missing DailyLike record
-        console.log(`🔧 Attempting to create missing DailyLike record...`);
+        if (isDev) { console.log(`🔧 Attempting to create missing DailyLike record...`); }
         const otherUserId = connection.users.find(id => id.toString() !== userId)?.toString();
         
         if (otherUserId) {
@@ -525,11 +528,11 @@ class MatchingController {
             ]
           });
           
-          console.log(`🔍 Found ${existingLikes.length} existing likes between users`);
+          if (isDev) { console.log(`🔍 Found ${existingLikes.length} existing likes between users`); }
           
           if (existingLikes.length >= 2) {
             // Both users have liked each other, create the mutual match record
-            console.log(`🔧 Creating mutual match record...`);
+            if (isDev) { console.log(`🔧 Creating mutual match record...`); }
             
             // Update both existing likes to mark as mutual match
             await Promise.all(existingLikes.map(like => 
@@ -551,7 +554,7 @@ class MatchingController {
               isMutualMatch: true
             });
             
-            console.log(`🔧 Mutual match created:`, mutualMatch ? 'Success' : 'Failed');
+            if (isDev) { console.log(`🔧 Mutual match created:`, mutualMatch ? 'Success' : 'Failed'); }
           }
         }
         
@@ -570,7 +573,7 @@ class MatchingController {
         { $set: { [updateField]: true } }
       );
       
-      console.log(`✅ Match toast marked as seen for user: ${userId} on connection: ${connectionId}`);
+      if (isDev) { console.log(`✅ Match toast marked as seen for user: ${userId} on connection: ${connectionId}`); }
       
       res.status(200).json({
         success: true,
@@ -589,7 +592,7 @@ class MatchingController {
       const userId = req.user.userId;
       const targetUserId = req.body.targetUserId ? String(req.body.targetUserId) : null;
       
-      console.log(`🎯 Marking match toast as seen - User: ${userId}, Target: ${targetUserId}`);
+      if (isDev) { console.log(`🎯 Marking match toast as seen - User: ${userId}, Target: ${targetUserId}`); }
       
       if (!targetUserId) {
         return res.status(400).json({ success: false, error: 'Target user ID is required' });
@@ -616,7 +619,7 @@ class MatchingController {
         { $set: { [updateField]: true } }
       );
       
-      console.log(`✅ Match toast marked as seen for user: ${userId}`);
+      if (isDev) { console.log(`✅ Match toast marked as seen for user: ${userId}`); }
       
       res.status(200).json({
         success: true,
@@ -772,7 +775,7 @@ class MatchingController {
         return res.status(400).json({ success: false, error: 'Invalid connection ID' });
       }
       
-      console.log('🚫 Unmatch request - User:', userId, 'Target:', targetUserId || 'N/A', 'ConnectionId:', bodyConnectionId || 'N/A');
+      if (isDev) { console.log('🚫 Unmatch request - User:', userId, 'Target:', targetUserId || 'N/A', 'ConnectionId:', bodyConnectionId || 'N/A'); }
 
       // Prevent self-unmatch when targetUserId provided
       if (targetUserId && userId === targetUserId) {
@@ -788,7 +791,7 @@ class MatchingController {
           DailyLike.findOne({ userId: targetUserId, likedProfileId: userId })
         ]);
 
-        console.log(`� Loaded likes for unmatch - User like: ${userLike?._id}, Target like: ${targetLike?._id}`);
+        if (isDev) { console.log(`� Loaded likes for unmatch - User like: ${userLike?._id}, Target like: ${targetLike?._id}`); }
       }
 
       // Resolve and delete the accepted connection (be defensive if connection missing)
@@ -799,7 +802,7 @@ class MatchingController {
         const existing = await Connection.findById(bodyConnectionId);
         if (!existing) {
           // Connection record already gone; continue with defensive cleanup using connectionId
-          console.warn(`⚠️ Connection ${bodyConnectionId} not found; proceeding with cleanup using connectionId`);
+          logger.warn('Connection ${bodyConnectionId} not found; proceeding with cleanup using connectionId');
           connectionMissing = true;
         } else {
           if (!existing.users.map(u => u.toString()).includes(userId.toString())) {
@@ -815,7 +818,7 @@ class MatchingController {
         });
       }
 
-      console.log(`🔗 Deleted connection: ${connection?._id}`);
+      if (isDev) { console.log(`🔗 Deleted connection: ${connection?._id}`); }
 
       // Determine otherUserId (prefer explicit targetUserId if provided)
       let otherUserId = null;
@@ -830,11 +833,11 @@ class MatchingController {
           const broader = await Connection.findOneAndDelete({ users: { $all: [userId, otherUserId] } });
           if (broader) {
             connection = broader;
-            console.log('🔎 Found and deleted broader connection:', connection._id);
+            if (isDev) { console.log('🔎 Found and deleted broader connection:', connection._id); }
           }
         }
       } catch (e) {
-        console.warn('Failed broader connection deletion attempt:', e.message);
+        logger.warn({ err: 'broader connection deletion attempt:' }, 'Failed broader connection deletion attempt:', e.message);
       }
 
       // Always clear DailyLike mutual flags and connectionId for these users (defensive)
@@ -872,9 +875,9 @@ class MatchingController {
             { _id: { $in: dlIds } },
             { $set: { isMutualMatch: false, connectionId: null, 'toastSeen.userA': false, 'toastSeen.userB': false } }
           );
-          console.log('🔧 Cleared mutual match flags on DailyLike records for unmatch', dlIds);
+          if (isDev) { console.log('🔧 Cleared mutual match flags on DailyLike records for unmatch', dlIds); }
         } else {
-          console.log('🔍 No DailyLike records found to clear for unmatch between', userId, otherUserId, 'connectionId:', bodyConnectionId);
+          if (isDev) { console.log('🔍 No DailyLike records found to clear for unmatch between', userId, otherUserId, 'connectionId:', bodyConnectionId); }
         }
 
         // Cascade-delete chat storage for any connectionIds found on DailyLike
@@ -892,7 +895,7 @@ class MatchingController {
             deletedChat = !!(ctRes && (ctRes.deletedCount >= 1 || ctRes.n >= 1));
             deletedMessagesCount = (msgRes && (msgRes.deletedCount || msgRes.n)) || 0;
 
-            console.log(`🗑️ Deleted chat storage for connections ${connIds.join(', ')} - chatDeleted: ${deletedChat}, messagesDeleted: ${deletedMessagesCount}`);
+            if (isDev) { console.log(`🗑️ Deleted chat storage for connections ${connIds.join(', ')} - chatDeleted: ${deletedChat}, messagesDeleted: ${deletedMessagesCount}`); }
 
             // Notify chat service to evict rooms
             try {
@@ -915,16 +918,16 @@ class MatchingController {
                 }
               }
             } catch (e) {
-              console.warn('Failed to notify chatService after unmatch cascade delete:', e.message);
+              logger.warn({ err: 'to notify chatService after unmatch cascade delete:' }, 'Failed to notify chatService after unmatch cascade delete:', e.message);
             }
           } else {
-            console.log('🔍 No connectionIds found on DailyLike records for chat cascade delete');
+            if (isDev) { console.log('🔍 No connectionIds found on DailyLike records for chat cascade delete'); }
           }
         } catch (e) {
-          console.warn('Failed to cascade-delete chat storage during unmatch defensive cleanup:', e.message);
+          logger.warn({ err: 'to cascade-delete chat storage during unmatch defensive cleanup:' }, 'Failed to cascade-delete chat storage during unmatch defensive cleanup:', e.message);
         }
       } catch (e) {
-        console.warn('Failed to clear DailyLike mutual match flags after unmatch:', e.message);
+        logger.warn({ err: 'to clear DailyLike mutual match flags after unmatch:' }, 'Failed to clear DailyLike mutual match flags after unmatch:', e.message);
       }
       // Cascade-delete chat storage (ChatThread + legacy Message docs) if connection was removed
       let deletedChat = false;
@@ -943,7 +946,7 @@ class MatchingController {
           deletedChat = !!(ctRes && (ctRes.deletedCount === 1 || ctRes.n === 1));
           deletedMessagesCount = (msgRes && (msgRes.deletedCount || msgRes.n)) || 0;
 
-          console.log(`🗑️ Deleted chat storage for connection ${connIdStr} - chatDeleted: ${deletedChat}, messagesDeleted: ${deletedMessagesCount}`);
+          if (isDev) { console.log(`🗑️ Deleted chat storage for connection ${connIdStr} - chatDeleted: ${deletedChat}, messagesDeleted: ${deletedMessagesCount}`); }
 
           // Notify chat service (if running) to evict room / notify clients
           try {
@@ -968,11 +971,11 @@ class MatchingController {
               }
             }
           } catch (e) {
-            console.warn('Failed to notify chatService after unmatch:', e.message);
+            logger.warn({ err: 'to notify chatService after unmatch:' }, 'Failed to notify chatService after unmatch:', e.message);
           }
         }
       } catch (e) {
-        console.warn('Failed to cascade-delete chat storage:', e.message);
+        logger.warn({ err: 'to cascade-delete chat storage:' }, 'Failed to cascade-delete chat storage:', e.message);
       }
 
       // Legacy matches collection cleanup
@@ -1004,10 +1007,10 @@ class MatchingController {
         if (collQuery.$or.length > 0) {
           const colRes = await coll.deleteMany(collQuery);
           deletedLegacyMatchesCount = (colRes && (colRes.deletedCount || colRes.n)) || 0;
-          console.log(`🗑️ Deleted ${deletedLegacyMatchesCount} legacy match document(s) from 'matches' collection for unmatch between ${userId} and ${otherUserId}`);
+          if (isDev) { console.log(`🗑️ Deleted ${deletedLegacyMatchesCount} legacy match document(s) from 'matches' collection for unmatch between ${userId} and ${otherUserId}`); }
         }
       } catch (e) {
-        console.warn('Failed to delete legacy matches during unmatch cleanup:', e.message);
+        logger.warn({ err: 'to delete legacy matches during unmatch cleanup:' }, 'Failed to delete legacy matches during unmatch cleanup:', e.message);
       }
 
       // Defensive native collection deletes to ensure no orphaned documents remain
@@ -1098,9 +1101,9 @@ class MatchingController {
           }
         }
 
-        console.log('🔧 Native cleanup counts:', nativeDeleted);
+        if (isDev) { console.log('🔧 Native cleanup counts:', nativeDeleted); }
       } catch (e) {
-        console.warn('Failed native collection cleanup during unmatch:', e.message || e);
+        logger.warn({ err: 'native collection cleanup during unmatch:' }, 'Failed native collection cleanup during unmatch:', e.message || e);
       }
 
       res.status(200).json({
@@ -1118,10 +1121,10 @@ class MatchingController {
         const dlDeleteIds = [userLike?._id, targetLike?._id].filter(Boolean);
         if (dlDeleteIds.length > 0) {
           const dlDelRes = await DailyLike.deleteMany({ _id: { $in: dlDeleteIds } });
-          console.log(`🗑️ Removed DailyLike records after unmatch: ${dlDeleteIds.join(', ')} (deletedCount: ${dlDelRes.deletedCount || dlDelRes.n || 0})`);
+          if (isDev) { console.log(`🗑️ Removed DailyLike records after unmatch: ${dlDeleteIds.join(', ')} (deletedCount: ${dlDelRes.deletedCount || dlDelRes.n || 0})`); }
         }
       } catch (e) {
-        console.warn('Failed to delete DailyLike records after unmatch:', e.message);
+        logger.warn({ err: 'to delete DailyLike records after unmatch:' }, 'Failed to delete DailyLike records after unmatch:', e.message);
       }
 
     } catch (error) {

@@ -490,6 +490,21 @@ userSchema.methods.toPublicJSON = function() {
   };
 };
 
+// Partner-facing profile view for discovery/match — no email, role, premium, or preferences
+userSchema.methods.toDiscoveryJSON = function() {
+  const user = this.toObject();
+  return {
+    userId: user._id,
+    userUuid: user.userUuid,
+    profile: user.profile,
+    verification: {
+      isVerified: user.verification?.isVerified ?? false,
+    },
+    lastActive: user.lastActive,
+    profileCompleteness: user.profile?.profileCompleteness || 0,
+  };
+};
+
 // Static method to find users with filters
 userSchema.statics.findWithFilters = function(filters = {}) {
   const query = { status: 'active' };

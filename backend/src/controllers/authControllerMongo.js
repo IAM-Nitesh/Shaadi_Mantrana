@@ -38,17 +38,13 @@ function getCookieOptions(req, options = {}) {
 // Session management - use JWTSessionManager's activeSessions
 // const sessions = new Map(); // Removed - using JWTSessionManager.activeSessions instead
 
-// OTP store with expiration (use Redis in production)
+// OTP store with expiration
 const otpStore = require('../utils/otpStorage');
 
-// Ensure otpStore is properly initialized
 if (!otpStore || typeof otpStore.size !== 'function') {
-  logger.error('❌ OTP Storage not properly initialized!');
+  logger.error('OTP Storage not properly initialized');
   throw new Error('OTP Storage initialization failed');
 }
-
-// Simple rate limiting (use Redis in production)
-const rateLimitStore = new Map();
 
 // Security Utils
 const SecurityUtils = {
@@ -72,29 +68,6 @@ const SecurityUtils = {
            req.connection?.remoteAddress ||
            req.socket?.remoteAddress ||
            '127.0.0.1';
-  },
-
-  checkRateLimit: (key, limit, windowMs, action = 'request') => {
-    const now = Date.now();
-    const windowStart = now - windowMs;
-    
-    if (!rateLimitStore.has(key)) {
-      rateLimitStore.set(key, []);
-    }
-    
-    const attempts = rateLimitStore.get(key);
-    // Remove old attempts outside the window
-    const recentAttempts = attempts.filter(timestamp => timestamp > windowStart);
-    
-    if (recentAttempts.length >= limit) {
-      const oldestAttempt = Math.min(...recentAttempts);
-      const retryAfter = Math.ceil((oldestAttempt + windowMs - now) / 1000);
-      return { allowed: false, retryAfter };
-    }
-    
-    recentAttempts.push(now);
-    rateLimitStore.set(key, recentAttempts);
-    return { allowed: true, remaining: limit - recentAttempts.length };
   },
 
   // Store OTP with expiration
