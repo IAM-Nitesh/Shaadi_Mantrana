@@ -417,11 +417,17 @@ class ProfileController {
         profileCompleteness: completion
       });
 
+      // Reload the user AFTER all DB writes so the response reflects the final state
+      // (profileCompleteness, isFirstLogin, profileCompleted flags all up-to-date)
+      const freshUser = await User.findById(userId);
+
       res.status(200).json({
         success: true,
         message: 'Profile updated successfully',
-        profile: user.toPublicJSON(),
-        profileCompleteness: completion
+        profile: freshUser ? freshUser.toPublicJSON() : user.toPublicJSON(),
+        profileCompleteness: completion,
+        isFirstLogin: freshUser ? freshUser.isFirstLogin : user.isFirstLogin,
+        profileCompleted: freshUser ? freshUser.profileCompleted : (completion >= 100)
       });
 
     } catch (error) {

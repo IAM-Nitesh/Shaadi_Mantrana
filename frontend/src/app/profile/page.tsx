@@ -933,11 +933,13 @@ function ProfileContent() {
                 role: data.user.role || 'user',
                 verified: data.user.verification?.isVerified || false,
                 lastActive: data.user.lastActive || new Date().toISOString(),
-                hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false
+                hasSeenOnboardingMessage: data.user.hasSeenOnboardingMessage || false,
+                // ✅ FIX: preserve profileCompleteness so profile page never shows empty
+                profileCompleteness: data.user.profile?.profileCompleteness ?? data.user.profileCompleteness ?? backendCompleteness
               };
               setProfile(refreshedProfile);
               logger.debug('🔄 Profile refreshed from backend with cache-busting:', refreshedProfile);
-              logger.debug('📊 Refreshed profile completeness:', refreshedProfile && typeof refreshedProfile === 'object' ? refreshedProfile.profileCompleteness : null);
+              logger.debug('📊 Refreshed profile completeness:', refreshedProfile?.profileCompleteness);
             } else {
               logger.error('❌ Invalid profile data structure in response:', data);
             }
@@ -1026,9 +1028,19 @@ function ProfileContent() {
             // Continue with redirect even if flag update fails
           }
           
+          // ✅ FIX: Refresh AuthContext so user.profileCompleteness = 100 BEFORE
+          // navigating to /dashboard. Without this, AuthGuardV2 reads the stale
+          // value and immediately bounces the user back to /profile.
+          try {
+            await forceRefresh();
+            logger.debug('✅ AuthContext refreshed — user.profileCompleteness is now up-to-date');
+          } catch (err) {
+            logger.warn('⚠️ forceRefresh failed, proceeding with navigation anyway', err);
+          }
+
           setTimeout(() => {
             router.push('/dashboard');
-          }, 1500);
+          }, 500);
         }
       } else {
         throw new Error(result.error || 'Failed to save profile');
