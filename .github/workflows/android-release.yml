@@ -1,5 +1,13 @@
 name: Android Build & Deploy to Play Store
 
+# ─── VERSION SCHEME ────────────────────────────────────────────────────────────
+#  Every push to main gets:
+#    versionName = "1.0.{github.run_number}"   e.g. 1.0.24
+#    versionCode = 200 + github.run_number     e.g. 224  (always > 222, unique per run)
+#    git tag     = "v1.0.{github.run_number}"  e.g. v1.0.24
+#    in-app      = NEXT_PUBLIC_APP_VERSION baked at build time
+# ───────────────────────────────────────────────────────────────────────────────
+
 env:
   NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
   NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -12,21 +20,22 @@ env:
   ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
   ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+  # BASE_VERSION_CODE: Adding 200 ensures code is always > 222 (last used) and
+  # always increments with run_number (unique per run — re-runs get a new number).
+  BASE_VERSION_CODE: 200
   VERSION_CODE: 0
   VERSION_NAME: unknown
 
-# Explicit least-privilege permissions (security best practice)
-# See: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
 permissions:
-  contents: read     # Needed to checkout the repository
-  actions: write     # Needed to upload build artifacts
+  contents: write   # Needed to push git tags
+  actions: write    # Needed to upload build artifacts
 
 on:
   push:
     branches:
       - main          # Auto-deploy to Internal Testing on every main push
     tags:
-      - 'v*'          # Deploy to Production when you push a version tag e.g. v1.1.0
+      - 'v*'          # Deploy to Production when you push a version tag e.g. v1.2.0
   workflow_dispatch:  # Allow manual trigger from GitHub UI
 
 # Cancel any in-progress run on the same branch to avoid duplicate builds
@@ -45,7 +54,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for version calculation
+          fetch-depth: 0        # Full history needed for tag push
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # ─── 2. Set up Node.js ─────────────────────────────────────────────────
       - name: Set up Node.js
@@ -54,7 +64,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # ─── 3. Set up Java (required for Android build) ───────────────────────
+      # ─── 3. Set up Java ────────────────────────────────────────────────────
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -62,7 +72,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      # ─── 4. Cache Gradle for faster builds ─────────────────────────────────
+      # ─── 4. Cache Gradle ───────────────────────────────────────────────────
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
@@ -72,52 +82,50 @@ jobs:
           key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      # ─── 5. Install all dependencies (root + all workspaces) ────────────────
-      # Running npm ci once at the root is correct for npm workspaces.
-      # A second npm ci inside frontend/ would create an isolated node_modules
-      # that breaks workspace module hoisting (causes "firebase/auth not found").
+      # ─── 5. Compute unified version ────────────────────────────────────────
+      #  Single source of truth: github.run_number
+      #    versionName = "1.0.{run_number}"       → human-readable, in-app, git tag
+      #    versionCode = BASE_VERSION_CODE + run_number → always > 222, unique per run
+      - name: Compute version
+        run: |
+          RUN_NUM=${{ github.run_number }}
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # If triggered by a tag push, use the tag name as versionName
+            VERSION_NAME="${{ github.ref_name }}"
+            VERSION_NAME="${VERSION_NAME#v}"   # strip leading "v"
+          else
+            VERSION_NAME="1.0.${RUN_NUM}"
+          fi
+          VERSION_CODE=$(( ${{ env.BASE_VERSION_CODE }} + RUN_NUM ))
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
+          echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_ENV
+          echo "📦 versionName = ${VERSION_NAME}"
+          echo "📦 versionCode = ${VERSION_CODE} (base ${{ env.BASE_VERSION_CODE }} + run ${RUN_NUM})"
+
+      # ─── 6. Install all dependencies ───────────────────────────────────────
       - name: Install all dependencies
         run: npm ci
 
-      # ─── 6. Build Next.js frontend (static export) ─────────────────────────
+      # ─── 7. Build Next.js frontend (version baked in via env var) ──────────
       - name: Build frontend
         run: npm run build
         working-directory: frontend
+        env:
+          NEXT_PUBLIC_APP_VERSION: ${{ env.VERSION_NAME }}
 
-      # ─── 8. Restore google-services.json (excluded from git) ───────────────
+      # ─── 8. Restore google-services.json ───────────────────────────────────
       - name: Restore google-services.json
         run: |
           echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           echo "✅ google-services.json restored"
 
-      # ─── 9. Restore keystore from GitHub Secret ─────────────────────────────
+      # ─── 9. Restore keystore ───────────────────────────────────────────────
       - name: Restore release keystore
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/shaadi-mantrana-release.jks
           echo "✅ Keystore restored"
 
-      # ─── 10. Auto-increment versionCode ────────────────────────────────────
-      #  Uses the total number of git commits as the versionCode.
-      #  This guarantees it always increases and is reproducible.
-      - name: Set versionCode from git commit count
-        run: |
-          VERSION_CODE=$(git rev-list --count HEAD)
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-          echo "📦 versionCode set to: $VERSION_CODE"
-
-      # Determine versionName: use git tag if available, else "1.x.{run_number}"
-      - name: Set versionName
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION_NAME="${{ github.ref_name }}"          # e.g. "v1.1.0" → strip the v
-            VERSION_NAME="${VERSION_NAME#v}"
-          else
-            VERSION_NAME="1.0.${{ github.run_number }}"   # e.g. "1.0.42"
-          fi
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "📦 versionName set to: $VERSION_NAME"
-
-      # ─── 11. Patch build.gradle with computed version ──────────────────────
+      # ─── 10. Patch build.gradle with computed version ──────────────────────
       - name: Update build.gradle versions
         run: |
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
@@ -125,22 +133,22 @@ jobs:
           echo "✅ build.gradle patched:"
           grep -E "versionCode|versionName" android/app/build.gradle
 
-      # ─── 12. Sync Capacitor web assets into Android ────────────────────────
+      # ─── 11. Sync Capacitor web assets ─────────────────────────────────────
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # ─── 13. Make gradlew executable ───────────────────────────────────────
+      # ─── 12. Make gradlew executable ───────────────────────────────────────
       - name: Grant Gradle execute permission
         run: chmod +x android/gradlew
 
-      # ─── 14. Build signed release AAB ──────────────────────────────────────
+      # ─── 13. Build signed release AAB ──────────────────────────────────────
       - name: Build release AAB
         run: ./gradlew bundleRelease --no-daemon
         working-directory: android
         env:
           ANDROID_KEYSTORE_FILE: ../shaadi-mantrana-release.jks
 
-      # ─── 15. Upload AAB as GitHub artifact (always saved for download) ──────
+      # ─── 14. Upload AAB as GitHub artifact ─────────────────────────────────
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
@@ -148,9 +156,7 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
 
-      # ─── 16. Deploy to Play Store ──────────────────────────────────────────
-      #  Pushes to Internal Testing on every main push.
-      #  Pushes to Production when a version tag (v*) is pushed.
+      # ─── 15. Deploy to Play Store (Internal Testing — every main push) ──────
       - name: Deploy to Play Store (Internal Testing)
         if: github.ref == 'refs/heads/main'
         uses: r0adkll/upload-google-play@v1
@@ -158,10 +164,11 @@ jobs:
           serviceAccountJsonPlainText: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.shaadimantrana.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal
           status: completed
-          whatsNewDirectory: distribution/whatsnew   # optional release notes folder
+          whatsNewDirectory: distribution/whatsnew
 
+      # ─── 16. Deploy to Play Store (Production — on version tag) ─────────────
       - name: Deploy to Play Store (Production)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: r0adkll/upload-google-play@v1
@@ -169,11 +176,29 @@ jobs:
           serviceAccountJsonPlainText: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.shaadimantrana.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          track: production
+          tracks: production
           status: completed
           whatsNewDirectory: distribution/whatsnew
 
-      # ─── 17. Summary ────────────────────────────────────────────────────────
+      # ─── 17. Auto-tag release on main ──────────────────────────────────────
+      #  Creates git tag v1.0.24 (etc.) so the tag, Play Store, and in-app
+      #  version are always in sync.
+      - name: Create and push git tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="v${VERSION_NAME}"
+          # Skip if tag already exists (e.g. manual re-run on same commit)
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "⚠️  Tag $TAG already exists — skipping tag creation"
+          else
+            git tag "$TAG" -m "Release $TAG (versionCode $VERSION_CODE)"
+            git push origin "$TAG"
+            echo "✅ Tagged $TAG and pushed"
+          fi
+
+      # ─── 18. Build summary ──────────────────────────────────────────────────
       - name: Build summary
         if: always()
         run: |
@@ -182,6 +207,7 @@ jobs:
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| Version Name | $VERSION_NAME |" >> $GITHUB_STEP_SUMMARY
           echo "| Version Code | $VERSION_CODE |" >> $GITHUB_STEP_SUMMARY
+          echo "| Git Tag | v$VERSION_NAME |" >> $GITHUB_STEP_SUMMARY
           echo "| Branch/Tag | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Track | ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'internal' }} |" >> $GITHUB_STEP_SUMMARY

@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import packageJson from '../../../../package.json';
 import CustomIcon from '../../components/CustomIcon';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import ToastService from '../../services/toastService';
@@ -100,6 +99,10 @@ function SettingsContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [matchesCount, setMatchesCount] = useState(0);
+  const [appVersion, setAppVersion] = useState<string>(
+    // NEXT_PUBLIC_APP_VERSION is baked in at CI build time (e.g. "1.0.24")
+    process.env.NEXT_PUBLIC_APP_VERSION || ''
+  );
 
   useEffect(() => {
     const unsubscribe = matchesCountService.subscribe((count) => {
@@ -109,6 +112,17 @@ function SettingsContent() {
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
+  }, []);
+
+  // Resolve the displayed version:
+  // 1. NEXT_PUBLIC_APP_VERSION (baked by CI — most accurate)
+  // 2. Capacitor App.getInfo() on real device (reads native versionName)
+  // 3. fallback empty string
+  useEffect(() => {
+    if (appVersion) return; // already resolved from env var
+    App.getInfo()
+      .then(info => setAppVersion(info.version))
+      .catch(() => {}); // silently ignore in browser/web
   }, []);
 
   const handleLogout = () => setShowLogoutConfirm(true);
@@ -347,6 +361,9 @@ function SettingsContent() {
         {/* ── App Version ── */}
         <p className="text-center text-[10px] text-royal-gold/20 tracking-widest uppercase pb-2">
           <span className="text-white">Shaadi</span> Mantrana
+          {appVersion && (
+            <span className="ml-2 text-royal-gold/40">v{appVersion}</span>
+          )}
         </p>
       </div>
 
