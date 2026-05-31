@@ -98,15 +98,25 @@ export class ImageCompression {
       };
 
       img.onerror = () => {
+        URL.revokeObjectURL(img.src);
         reject(new Error('Failed to load image'));
       };
 
-      // Load image from file
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      // Load image from file using object URL (more reliable on mobile than FileReader)
+      try {
+        const objectUrl = URL.createObjectURL(file);
+        
+        // Intercept onload to revoke the URL
+        const originalOnLoad = img.onload as ((e: Event) => void) | null;
+        img.onload = (e) => {
+          URL.revokeObjectURL(objectUrl);
+          if (originalOnLoad) originalOnLoad(e);
+        };
+        
+        img.src = objectUrl;
+      } catch (error) {
+        reject(new Error('Failed to create image URL. The file might be corrupted or unsupported.'));
+      }
     });
   }
 
@@ -190,14 +200,12 @@ export class ImageCompression {
    */
   static createPreviewUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        resolve(e.target?.result as string);
-      };
-      reader.onerror = () => {
+      try {
+        const url = URL.createObjectURL(file);
+        resolve(url);
+      } catch (error) {
         reject(new Error('Failed to create preview'));
-      };
-      reader.readAsDataURL(file);
+      }
     });
   }
 
@@ -210,17 +218,19 @@ export class ImageCompression {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
+        URL.revokeObjectURL(img.src);
         resolve({ width: img.width, height: img.height });
       };
       img.onerror = () => {
+        URL.revokeObjectURL(img.src);
         reject(new Error('Failed to get image dimensions'));
       };
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      try {
+        img.src = URL.createObjectURL(file);
+      } catch (error) {
+        reject(new Error('Failed to load image for dimensions'));
+      }
     });
   }
 
