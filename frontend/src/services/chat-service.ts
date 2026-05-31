@@ -1,12 +1,11 @@
-// Chat Service - Supabase Realtime Integration
-import { supabase, getChatChannel } from '../utils/supabase';
+// Chat Service - Socket.IO Integration
+import { io, Socket } from 'socket.io-client';
 import logger from '../utils/logger';
 import { loggerForUser } from '../utils/pino-logger';
 import { getAuthHeaders, getCurrentUser, isAuthenticated } from './auth-utils';
 import { apiClient } from '../utils/api-client';
 import { config as configService } from './configService';
 import { MatchingService } from './matching-service';
-import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface ChatMessage {
   id: string;
@@ -27,7 +26,7 @@ export interface ChatConnection {
 
 export class ChatService {
   private static baseUrl = configService.apiBaseUrl;
-  private static channel: RealtimeChannel | null = null;
+  private static socket: Socket | null = null;
   private static messageListeners: Array<(msg: ChatMessage) => void> = [];
 
   /**
@@ -38,14 +37,13 @@ export class ChatService {
   }
 
   /**
-   * Send a message and broadcast to Supabase channel
+   * Send a message and broadcast via Socket.IO
    */
   static async sendMessage(connectionId: string, message: string): Promise<any> {
     try {
       const authHeaders = await getAuthHeaders();
-      const currentUser = await getCurrentUser();
 
-      // 1. Send to backend for persistence
+      // 1. Send to backend for persistence via REST
       const response = await apiClient.post(`/api/chat/${connectionId}`, { message }, {
         headers: {
           ...authHeaders,
@@ -57,22 +55,6 @@ export class ChatService {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = response.data;
-      
-      // 2. Broadcast via Supabase for Realtime delivery
-      if (this.channel) {
-        this.channel.send({
-          type: 'broadcast',
-          event: 'new_message',
-          payload: {
-            id: data.messageId || Date.now().toString(),
-            senderId: currentUser?.userId || currentUser?._id,
-            message,
-            timestamp: new Date().toISOString(),
-            connectionId
-          }
-        });
-      }
-      
       MatchingService.clearChatCache(connectionId);
       return data;
     } catch (error) {
@@ -87,34 +69,48 @@ export class ChatService {
     }
   }
 
-  // Initialize Supabase Channel connection
+  // Initialize Socket.IO connection
   static async initSocket(connectionId: string) {
     try {
-      if (this.channel) {
-        return;
-      }
-
       const authenticated = await isAuthenticated();
       if (!authenticated) throw new Error('User not authenticated');
 
-      // Initialize Supabase Channel
-      this.channel = getChatChannel(connectionId);
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('join_room', { connectionId });
+        return;
+      }
 
-      // Listen for broadcasts
-      this.channel
-        .on('broadcast', { event: 'new_message' }, ({ payload }) => {
-          this.messageListeners.forEach(fn => {
-            try { fn(payload as ChatMessage); } catch (e) { /* swallow */ }
-          });
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            logger.info(`✅ Subscribed to Supabase channel: chat:${connectionId}`);
-          }
+      const authHeaders = await getAuthHeaders();
+      const token = authHeaders.Authorization?.replace('Bearer ', '');
+
+      // Initialize Socket.IO
+      this.socket = io(this.baseUrl, {
+        auth: { token },
+        transports: ['websocket', 'polling']
+      });
+
+      this.socket.on('connect', () => {
+        logger.info('🔌 Connected to Chat Socket.IO server');
+        this.socket?.emit('authenticate', { token });
+      });
+
+      this.socket.on('authenticated', () => {
+        logger.info(`✅ Authenticated on Socket.IO, joining room: ${connectionId}`);
+        this.socket?.emit('join_room', { connectionId });
+      });
+
+      this.socket.on('new_message', (payload: ChatMessage) => {
+        this.messageListeners.forEach(fn => {
+          try { fn(payload); } catch (e) { /* swallow */ }
         });
+      });
+
+      this.socket.on('connect_error', (error) => {
+        logger.error('Socket.IO connection error', error);
+      });
 
     } catch (error) {
-      logger.error('Failed to initialize Supabase channel', error);
+      logger.error('Failed to initialize Socket.IO', error);
       throw error;
     }
   }
@@ -130,13 +126,13 @@ export class ChatService {
 
   static disconnectSocket() {
     try {
-      if (this.channel) {
-        this.channel.unsubscribe();
-        this.channel = null;
+      if (this.socket) {
+        this.socket.disconnect();
+        this.socket = null;
         this.messageListeners = [];
       }
     } catch (e) {
-      logger.error('Error unsubscribing from Supabase channel', e);
+      logger.error('Error disconnecting Socket.IO', e);
     }
   }
 
