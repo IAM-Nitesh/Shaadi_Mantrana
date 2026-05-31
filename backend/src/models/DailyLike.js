@@ -36,6 +36,13 @@ const dailyLikeSchema = new mongoose.Schema({
     default: false
   },
   
+  // Status to track if the like is active or unmatched
+  status: {
+    type: String,
+    enum: ['active', 'unmatched'],
+    default: 'active'
+  },
+  
   // Timestamp
   createdAt: {
     type: Date,
@@ -72,7 +79,7 @@ dailyLikeSchema.statics.canLikeToday = function(userId, date = new Date()) {
 
 // Static method to get liked profiles for a user
 dailyLikeSchema.statics.getLikedProfiles = function(userId) {
-  return this.find({ userId })
+  return this.find({ userId, status: { $ne: 'unmatched' } })
     .populate('likedProfileId', 'profile.name profile.age profile.profession profile.images profile.about profile.education profile.interests profile.location verification.isVerified')
     .sort({ createdAt: -1 });
 };

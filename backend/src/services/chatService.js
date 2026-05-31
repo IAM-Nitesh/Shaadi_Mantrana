@@ -80,11 +80,15 @@ class ChatService {
           }
 
           const userId = decoded.userId;
+          // Store the authenticated user mapping
           this.userSockets.set(userId, socket.id);
           this.socketUsers.set(socket.id, userId);
 
-          console.log(`✅ User authenticated: ${userId} -> ${socket.id}`);
+          console.log(`👤 User authenticated on socket: ${userId}`);
           socket.emit('authenticated', { success: true, userId });
+          
+          // Broadcast online status globally
+          this.io.emit('user_status', { userId, isOnline: true });
         } catch (e) {
           console.warn('Socket authentication failed:', e.message);
           socket.emit('unauthorized', { message: 'Authentication failed' });
@@ -243,6 +247,13 @@ class ChatService {
         }
       });
 
+      // Handle checking user status
+      socket.on('check_user_status', (data) => {
+        const { targetUserId } = data;
+        const isOnline = this.userSockets.has(targetUserId);
+        socket.emit('user_status', { userId: targetUserId, isOnline });
+      });
+
       // Handle disconnection
       socket.on('disconnect', () => {
         const userId = this.socketUsers.get(socket.id);
@@ -251,6 +262,9 @@ class ChatService {
           this.userSockets.delete(userId);
           this.socketUsers.delete(socket.id);
           console.log(`🔌 User disconnected: ${userId}`);
+          
+          // Broadcast offline status globally (or to rooms they were in, but global is simpler for status)
+          this.io.emit('user_status', { userId, isOnline: false });
         }
       });
     });

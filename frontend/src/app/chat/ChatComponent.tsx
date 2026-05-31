@@ -228,7 +228,23 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       try {
         await ChatService.initSocket(connectionId);
 
-        unsubscribe = ChatService.subscribeToMessages(async (msg) => {
+        if (match.otherUserId) {
+          ChatService.checkUserStatus(match.otherUserId);
+        }
+
+        const unsubStatus = ChatService.subscribeToStatus((payload) => {
+          if (payload.userId === match.otherUserId) {
+            setIsConnected(payload.isOnline);
+          }
+        });
+
+        const unsubTyping = ChatService.subscribeToTyping((payload) => {
+          if (payload.userId === match.otherUserId) {
+            setIsTyping(payload.isTyping);
+          }
+        });
+
+        const unsubMessages = ChatService.subscribeToMessages(async (msg) => {
           try {
             const incoming: ChatMessageUI = {
               id: msg.id || Date.now().toString(),
@@ -251,6 +267,12 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             logger.error('Error handling incoming socket message', e);
           }
         });
+
+        unsubscribe = () => {
+          unsubStatus();
+          unsubTyping();
+          unsubMessages();
+        };
       } catch (socketErr) {
         logger.error('Socket init failed', socketErr);
       }
@@ -261,7 +283,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       if (unsubscribe) unsubscribe();
       ChatService.disconnectSocket();
     };
-  }, [connectionId]);
+  }, [connectionId, match.otherUserId]);
 
   // Send message function
   const sendMessage = async () => {
@@ -464,6 +486,10 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     
+    if (connectionId) {
+      ChatService.emitTypingStart(connectionId);
+    }
+    
     // Clear existing timeout
     if (typingTimeout) {
       clearTimeout(typingTimeout);
@@ -471,7 +497,9 @@ export default function ChatComponent({ match }: ChatComponentProps) {
     
     // Set new timeout to stop typing indicator
     const timeout = setTimeout(() => {
-      // Typing stopped
+      if (connectionId) {
+        ChatService.emitTypingStop(connectionId);
+      }
     }, 2000);
     
     setTypingTimeout(timeout);
@@ -781,7 +809,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             />
             
             {/* Typing indicator */}
-            {isTyping && isConnected && (
+            {isTyping && (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
