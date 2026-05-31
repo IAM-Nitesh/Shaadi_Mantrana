@@ -181,34 +181,24 @@ function DashboardContent() {
       {currentProfile && (
         <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-20">
           <div className="flex items-center space-x-4">
-            {/* Heart Button (moved to left) */}
-            <RippleButton
-              onClick={() => handleSwipe('right')}
-              disabled={isAnimating || likesRemaining <= 0}
-              hapticFeedback="medium"
-              className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
-            >
-              <Icon name="ri-heart-line" size="xl" className="text-royal-gold" />
-            </RippleButton>
-            
-            {/* Star Button (middle, removed weird background) */}
-            <RippleButton
-              onClick={() => handleSwipe('up')}
-              disabled={isAnimating || likesRemaining <= 0}
-              hapticFeedback="heavy"
-              className="w-16 h-16 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
-            >
-              <Icon name="ri-star-line" size="xl" className="text-royal-gold" />
-            </RippleButton>
-            
-            {/* Close Button (moved to right) */}
+            {/* Close Button (Pass - Left Swipe) */}
             <RippleButton
               onClick={() => handleSwipe('left')}
               disabled={isAnimating}
               hapticFeedback="medium"
-              className="w-14 h-14 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
+              className="w-16 h-16 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
             >
               <Icon name="ri-close-line" size="xl" className="text-royal-gold" />
+            </RippleButton>
+            
+            {/* Heart Button (Like - Right Swipe) */}
+            <RippleButton
+              onClick={() => handleSwipe('right')}
+              disabled={isAnimating || likesRemaining <= 0}
+              hapticFeedback="medium"
+              className="w-16 h-16 bg-royal-glass border border-royal-glass-border rounded-full shadow-lg flex items-center justify-center hover:bg-royal-glass/20 transition-all duration-300 disabled:opacity-50"
+            >
+              <Icon name="ri-heart-line" size="xl" className="text-royal-gold" />
             </RippleButton>
           </div>
         </div>
