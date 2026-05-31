@@ -873,9 +873,9 @@ class MatchingController {
         if (dlIds.length > 0) {
           await DailyLike.updateMany(
             { _id: { $in: dlIds } },
-            { $set: { isMutualMatch: false, connectionId: null, 'toastSeen.userA': false, 'toastSeen.userB': false } }
+            { $set: { isMutualMatch: false, connectionId: null, status: 'unmatched', 'toastSeen.userA': false, 'toastSeen.userB': false } }
           );
-          if (isDev) { console.log('🔧 Cleared mutual match flags on DailyLike records for unmatch', dlIds); }
+          if (isDev) { console.log('🔧 Cleared mutual match flags and set unmatched status on DailyLike records for unmatch', dlIds); }
         } else {
           if (isDev) { console.log('🔍 No DailyLike records found to clear for unmatch between', userId, otherUserId, 'connectionId:', bodyConnectionId); }
         }
@@ -1116,16 +1116,8 @@ class MatchingController {
         deletedLegacyMatchesCount
       });
 
-      // Finally, remove the DailyLike records (do this after cascade cleanup so we could read connectionId)
-      try {
-        const dlDeleteIds = [userLike?._id, targetLike?._id].filter(Boolean);
-        if (dlDeleteIds.length > 0) {
-          const dlDelRes = await DailyLike.deleteMany({ _id: { $in: dlDeleteIds } });
-          if (isDev) { console.log(`🗑️ Removed DailyLike records after unmatch: ${dlDeleteIds.join(', ')} (deletedCount: ${dlDelRes.deletedCount || dlDelRes.n || 0})`); }
-        }
-      } catch (e) {
-        logger.warn({ err: 'to delete DailyLike records after unmatch:' }, 'Failed to delete DailyLike records after unmatch:', e.message);
-      }
+      // Do not delete the DailyLike records so unmatched profiles remain excluded from dashboard
+      // They are now marked with status: 'unmatched' which hides them from liked profiles (Requests tab)
 
     } catch (error) {
       console.error('❌ Unmatch profile error:', error);

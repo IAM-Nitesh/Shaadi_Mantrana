@@ -69,6 +69,9 @@ export class ChatService {
     }
   }
 
+  private static typingListeners: Array<(data: { userId: string, isTyping: boolean }) => void> = [];
+  private static statusListeners: Array<(data: { userId: string, isOnline: boolean }) => void> = [];
+
   // Initialize Socket.IO connection
   static async initSocket(connectionId: string) {
     try {
@@ -105,6 +108,22 @@ export class ChatService {
         });
       });
 
+      this.socket.on('user_typing', (payload: { userId: string, connectionId: string }) => {
+        if (payload.connectionId === connectionId) {
+          this.typingListeners.forEach(fn => fn({ userId: payload.userId, isTyping: true }));
+        }
+      });
+
+      this.socket.on('user_stopped_typing', (payload: { userId: string, connectionId: string }) => {
+        if (payload.connectionId === connectionId) {
+          this.typingListeners.forEach(fn => fn({ userId: payload.userId, isTyping: false }));
+        }
+      });
+      
+      this.socket.on('user_status', (payload: { userId: string, isOnline: boolean }) => {
+        this.statusListeners.forEach(fn => fn(payload));
+      });
+
       this.socket.on('connect_error', (error) => {
         logger.error('Socket.IO connection error', error);
       });
@@ -124,12 +143,46 @@ export class ChatService {
     this.messageListeners = this.messageListeners.filter(f => f !== fn);
   }
 
+  static subscribeToTyping(fn: (data: { userId: string, isTyping: boolean }) => void) {
+    this.typingListeners.push(fn);
+    return () => {
+      this.typingListeners = this.typingListeners.filter(f => f !== fn);
+    };
+  }
+
+  static subscribeToStatus(fn: (data: { userId: string, isOnline: boolean }) => void) {
+    this.statusListeners.push(fn);
+    return () => {
+      this.statusListeners = this.statusListeners.filter(f => f !== fn);
+    };
+  }
+
+  static emitTypingStart(connectionId: string) {
+    if (this.socket?.connected) {
+      this.socket.emit('typing_start', { connectionId });
+    }
+  }
+
+  static emitTypingStop(connectionId: string) {
+    if (this.socket?.connected) {
+      this.socket.emit('typing_stop', { connectionId });
+    }
+  }
+  
+  static checkUserStatus(targetUserId: string) {
+    if (this.socket?.connected) {
+      this.socket.emit('check_user_status', { targetUserId });
+    }
+  }
+
   static disconnectSocket() {
     try {
       if (this.socket) {
         this.socket.disconnect();
         this.socket = null;
         this.messageListeners = [];
+        this.typingListeners = [];
+        this.statusListeners = [];
       }
     } catch (e) {
       logger.error('Error disconnecting Socket.IO', e);
