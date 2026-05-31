@@ -276,12 +276,15 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       const response = await ChatService.sendMessage(connectionId, messageText);
       
       if (response.success) {
+        // The backend returns the saved message object in response.message
+        const savedMsg = response.message || {};
+        
         const sentMessage: ChatMessageUI = {
-          id: response.messageId || response.id || `local-${Date.now()}`,
-          text: response.message || messageText,
-          timestamp: new Date(),
+          id: savedMsg.id || response.messageId || response.id || `local-${Date.now()}`,
+          text: savedMsg.message || messageText, // Fallback to messageText to avoid rendering object
+          timestamp: savedMsg.timestamp ? new Date(savedMsg.timestamp) : new Date(),
           isOwn: true,
-          status: 'sent'
+          status: savedMsg.status || 'sent'
         };
 
         setMessages(prev => {
@@ -629,70 +632,35 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             />
           </motion.div>
           
-          <div className="flex-1">
-            <h1 className="font-semibold text-white text-lg">{match.name}</h1>
-            <div className="flex items-center space-x-2">
-              <span className={`text-sm ${isConnected ? 'text-emerald-400' : 'text-royal-gold/50'}`}>
-                {isConnected ? 'Online' : 'Offline'}
-              </span>
-              {isTyping && (
-                <motion.span 
-                  className="text-sm text-royal-gold/50"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  typing...
-                </motion.span>
-              )}
-            </div>
-          </div>
-          
-          {/* Direct Unmatch button (top-right) */}
-          <div className="mr-2">
-            <button
-              onClick={showUnmatchToastConfirmation}
-              disabled={isUnmatching}
-              title="Unmatch"
-              aria-label="Unmatch"
-              className={`px-4 py-1.5 bg-rose-900/40 border border-rose-500/30 text-rose-300 hover:bg-rose-900/60 hover:text-rose-200 rounded-full text-sm font-medium transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isUnmatching ? 'shimmer-button' : ''}`}
-              aria-busy={isUnmatching}
-            >
-              {isUnmatching ? 'Unmatching...' : 'Unmatch'}
-            </button>
-          </div>
-
-          {/* Unmatch Menu */}
-          <div className="relative unmatch-menu">
-            <button
-              onClick={() => setShowUnmatchMenu(!showUnmatchMenu)}
-              className="w-10 h-10 flex items-center justify-center text-royal-gold/60 hover:bg-royal-gold/10 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
-              title="More options"
-            >
-              <CustomIcon name="ri-more-2-fill" className="text-xl" />
-            </button>
-            
-            {showUnmatchMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="absolute right-0 top-12 bg-royal-obsidian rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.7)] border border-royal-gold/20 py-2 z-50 min-w-[160px]"
-              >
+          <div className="flex-1 flex items-center justify-between">
+            <div>
+              <h1 className="font-semibold text-white text-lg flex items-center">
+                {match.name}
                 <button
-                  onClick={handleUnmatch}
+                  onClick={showUnmatchToastConfirmation}
                   disabled={isUnmatching}
-                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors duration-200"
+                  title="Unmatch"
+                  className="ml-3 text-rose-500/80 hover:text-rose-400 transition-colors bg-rose-500/10 p-1.5 rounded-lg"
                 >
-                  <CustomIcon 
-                    name="ri-user-unfollow-line" 
-                    className="text-lg"
-                  />
-                  <span>Unmatch</span>
+                  <CustomIcon name="ri-user-unfollow-line" className="text-lg" />
                 </button>
-              </motion.div>
-            )}
+              </h1>
+              <div className="flex items-center space-x-2">
+                <span className={`text-sm ${isConnected ? 'text-emerald-400' : 'text-royal-gold/50'}`}>
+                  {isConnected ? 'Online' : 'Offline'}
+                </span>
+                {isTyping && (
+                  <motion.span 
+                    className="text-sm text-royal-gold/50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    typing...
+                  </motion.span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -703,8 +671,8 @@ export default function ChatComponent({ match }: ChatComponentProps) {
       <div
         className="absolute left-0 right-0 z-10 overflow-y-auto px-4"
         style={{
-          top: headerOffset > 0 ? `${headerOffset + headerHeight}px` : '96px',
-          bottom: '112px'
+          top: headerOffset > 0 ? `${headerOffset + headerHeight + 110}px` : '206px',
+          bottom: '16px'
         }}
       >
         {loading ? (
@@ -792,13 +760,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
       {/* Message Input */}
       <motion.div 
-        initial={{ y: 100, opacity: 0 }}
+        initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35, duration: 0.15 }}
-        className="fixed bottom-0 w-full bg-royal-obsidian/60 backdrop-blur-3xl border-t border-royal-gold/10 p-4 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.6)]"
-        style={{ paddingBottom: 'calc(16px + var(--safe-area-inset-bottom))' }}
+        className="fixed w-full bg-royal-obsidian/60 backdrop-blur-3xl border-b border-royal-gold/10 p-4 z-20 shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
+        style={{ top: headerOffset > 0 ? `${headerOffset + headerHeight}px` : 'var(--header-height)' }}
       >
-        <div className="flex items-end space-x-3">
+        <div className="flex items-center space-x-3">
           <div className="flex-1 relative">
             <input
               ref={inputRef}
@@ -808,7 +776,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               onChange={handleTyping}
               onKeyPress={handleKeyPress}
               disabled={isSending}
-              className="w-full px-5 py-3.5 pr-12 bg-white/5 text-royal-gold placeholder:text-royal-gold/30 border border-royal-glass-border rounded-full focus:outline-none focus:ring-1 focus:ring-royal-gold/30 focus:border-royal-gold/40 transition-all duration-300 disabled:opacity-50 shadow-inner"
+              className="w-full px-4 py-3 bg-white/5 text-royal-gold placeholder:text-royal-gold/30 border border-royal-glass-border rounded-xl focus:outline-none focus:ring-1 focus:ring-royal-gold/30 focus:border-royal-gold/40 transition-all duration-300 disabled:opacity-50 shadow-inner"
             />
             
             {/* Typing indicator */}
@@ -817,7 +785,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute -top-8 left-0 text-xs text-royal-gold/60"
+                className="absolute -bottom-6 left-0 text-xs text-royal-gold/60"
               >
                 {match.name} is typing...
               </motion.div>
@@ -828,11 +796,12 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             onClick={sendMessage}
             disabled={!message.trim() || isSending}
             aria-label="Send"
-            className="w-14 h-14 bg-gradient-to-br from-royal-gold to-royal-gold-dark border border-royal-gold-light/40 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.6)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed android-touch-target"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="w-24 h-12 bg-gradient-to-br from-royal-gold to-royal-gold-dark border border-royal-gold-light/40 rounded-xl flex items-center justify-center space-x-2 shadow-[0_4px_15px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.6)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed android-touch-target"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-royal-obsidian transform translate-x-0.5" />
+            <span className="font-semibold text-royal-obsidian text-sm">Send</span>
+            <CustomIcon name="ri-arrow-right-up-line" className="text-xl text-royal-obsidian" />
           </motion.button>
         </div>
         

@@ -103,6 +103,7 @@ export default function Help() {
               >
                 <CustomIcon name="ri-mail-line" />
                 <span>Email Support</span>
+                <CustomIcon name="ri-arrow-right-s-line" className="text-royal-gold" />
               </button>
               <button
                 onClick={() => ContactService.handlePhoneContact()}
@@ -110,6 +111,7 @@ export default function Help() {
               >
                 <CustomIcon name="ri-phone-line" />
                 <span>Call Admin</span>
+                <CustomIcon name="ri-arrow-right-s-line" className="text-royal-gold" />
               </button>
             </div>
           </div>

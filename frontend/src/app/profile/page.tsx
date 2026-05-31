@@ -2990,7 +2990,7 @@ function ProfileContent() {
                 data-save-button
                 className={`w-full py-4 text-lg font-semibold hover-lift transition-all duration-300 rounded-xl ${
                   calculatedCompleteness >= 100 
-                    ? 'button-royal shadow-[0_0_20px_rgba(212,175,55,0.4)]' 
+                    ? 'bg-gradient-to-r from-royal-gold to-royal-gold-light text-royal-obsidian hover:from-royal-gold-light hover:to-royal-gold shadow-[0_0_20px_rgba(212,175,55,0.4)]' 
                     : 'bg-gradient-to-r from-royal-gold/20 to-royal-gold/10 border border-royal-gold/50 text-royal-gold shadow-[0_4px_14px_0_rgba(212,175,55,0.2)] hover:from-royal-gold/30 hover:to-royal-gold/20 hover:border-royal-gold hover:shadow-[0_6px_20px_rgba(212,175,55,0.3)] backdrop-blur-sm transform hover:-translate-y-0.5'
                 }`}
                 style={{ position: 'relative', zIndex: 100002 }}
