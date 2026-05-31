@@ -1139,8 +1139,8 @@ function ProfileContent() {
       
       // Update profile state to include temporary image for completion calculation
       setProfile(prev => ({
-        ...prev,
-        images: prev.images || 'temp_image_uploaded'
+        ...(prev || {}),
+        images: prev?.images || 'temp_image_uploaded'
       }));
       
       setUploadMessage('Image selected! Click "Save Changes" to upload');
