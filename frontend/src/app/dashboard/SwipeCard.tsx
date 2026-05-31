@@ -183,6 +183,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
     e.preventDefault();
     try {
       setIsDragging(true);
@@ -255,6 +256,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
     e.preventDefault();
     try {
       setIsDragging(true);
@@ -321,165 +323,185 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
-        {/* Swipe Direction Indicators (Only visible on front and when dragging) */}
-        {!showDetails && isDragging && (
-          <>
-            {/* Like Indicator (Right Swipe) */}
-            {dragX > 50 && (
-              <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-20 transform rotate-12">
-                LIKE
+        <div 
+          className="w-full h-full absolute inset-0 transition-transform duration-500"
+          style={{ 
+            transformStyle: 'preserve-3d', 
+            transform: showDetails ? 'rotateY(180deg)' : 'rotateY(0deg)' 
+          }}
+        >
+          {/* Swipe Direction Indicators (Only visible on front and when dragging) */}
+          {!showDetails && isDragging && (
+            <>
+              {/* Like Indicator (Right Swipe) */}
+              {dragX > 50 && (
+                <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-20 transform rotate-12">
+                  LIKE
+                </div>
+              )}
+              
+              {/* Pass Indicator (Left Swipe) */}
+              {dragX < -50 && (
+                <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-20 transform -rotate-12">
+                  PASS
+                </div>
+              )}
+            </>
+          )}
+          
+          {/* FRONT SIDE */}
+          <div className="absolute inset-0 rounded-2xl overflow-hidden bg-royal-obsidian" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+            {isLoadingImage && !signedImageUrl ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-royal-gold">
+                  <div className="text-6xl mb-4 animate-pulse">👤</div>
+                  <p className="text-lg font-medium font-playfair tracking-widest uppercase">Revealing Majesty...</p>
+                  <div className="mt-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-gold mx-auto"></div>
+                  </div>
+                </div>
+              </div>
+            ) : imageError && !signedImageUrl && !profileImage ? (
+              <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+                <div className="text-center text-rose-600">
+                  <div className="text-6xl mb-4">👤</div>
+                  <p className="text-lg font-medium">Photo unavailable</p>
+                  <p className="text-sm opacity-75">Could not load profile picture.</p>
+                </div>
+              </div>
+            ) : signedImageUrl || profileImage ? (
+              <GoldLeafFrame className="w-full h-full">
+                <SwipeCardImage
+                  src={signedImageUrl || profileImage}
+                  alt={`${profile.profile.name || 'Profile'}`}
+                  className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
+                  priority={true}
+                />
+              </GoldLeafFrame>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-royal-gold">
+                  <div className="text-6xl mb-4">👤</div>
+                  <p className="text-lg font-medium font-playfair">No profile photo</p>
+                  <p className="text-sm opacity-75 font-inter">User hasn't uploaded a photo yet.</p>
+                </div>
               </div>
             )}
             
-            {/* Pass Indicator (Left Swipe) */}
-            {dragX < -50 && (
-              <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg z-20 transform -rotate-12">
-                PASS
-              </div>
-            )}
-          </>
-        )}
-        
-        {/* FRONT SIDE */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden bg-royal-obsidian" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-          {isLoadingImage && !signedImageUrl ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center text-royal-gold">
-                <div className="text-6xl mb-4 animate-pulse">👤</div>
-                <p className="text-lg font-medium font-playfair tracking-widest uppercase">Revealing Majesty...</p>
-                <div className="mt-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-royal-gold mx-auto"></div>
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" style={{backdropFilter:'blur(1px)'}}></div>
+            
+            {/* Basic Info */}
+            <div className="absolute bottom-4 left-4 right-4 text-royal-gold-light drop-shadow-lg z-10 pointer-events-none">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-3xl font-playfair font-bold text-royal-gold">{profile.profile.name || 'Unknown'}</h3>
+                  <p className="text-lg opacity-90 font-inter">{profile.profile.age || 'Unknown'} years old</p>
                 </div>
+                <RippleButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetails(true);
+                  }}
+                  hapticFeedback="light"
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-royal-obsidian/60 hover:bg-royal-obsidian/80 backdrop-blur-md border border-royal-gold/30 rounded-full shadow-lg transition-all duration-200 pointer-events-auto relative z-20"
+                >
+                  <i className="ri-information-line text-lg text-royal-gold"></i>
+                  <span className="text-xs font-medium text-royal-gold uppercase tracking-wider">Info</span>
+                </RippleButton>
+              </div>
+              <div className="flex items-center space-x-2 text-sm opacity-90">
+                <i className="ri-briefcase-line"></i>
+                <span>{profile.profile.profession || profile.profile.occupation || 'Not specified'}</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm opacity-90 mt-1">
+                <i className="ri-map-pin-line"></i>
+                <span>{profile.profile.currentResidence || profile.profile.nativePlace || 'Location not specified'}</span>
               </div>
             </div>
-          ) : imageError && !signedImageUrl && !profileImage ? (
-            <div className="w-full h-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
-              <div className="text-center text-rose-600">
-                <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium">Photo unavailable</p>
-                <p className="text-sm opacity-75">Could not load profile picture.</p>
-              </div>
-            </div>
-          ) : signedImageUrl || profileImage ? (
-            <GoldLeafFrame className="w-full h-full">
-              <SwipeCardImage
-                src={signedImageUrl || profileImage}
-                alt={`${profile.profile.name || 'Profile'}`}
-                className="swipe-card-image profile-image-optimized profile-image-maximum-quality"
-                priority={true}
-              />
-            </GoldLeafFrame>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center text-royal-gold">
-                <div className="text-6xl mb-4">👤</div>
-                <p className="text-lg font-medium font-playfair">No profile photo</p>
-                <p className="text-sm opacity-75 font-inter">User hasn't uploaded a photo yet.</p>
-              </div>
-            </div>
-          )}
-          
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" style={{backdropFilter:'blur(1px)'}}></div>
-          
-          {/* Basic Info */}
-          <div className="absolute bottom-4 left-4 right-4 text-royal-gold-light drop-shadow-lg z-10 pointer-events-none">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h3 className="text-3xl font-playfair font-bold text-royal-gold">{profile.profile.name || 'Unknown'}</h3>
-                <p className="text-lg opacity-90 font-inter">{profile.profile.age || 'Unknown'} years old</p>
-              </div>
+          </div>
+
+          {/* BACK SIDE */}
+          <div 
+            className="absolute inset-0 rounded-2xl overflow-y-auto bg-royal-obsidian border border-royal-gold/30 p-6 flex flex-col hide-scrollbar" 
+            style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+          >
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-royal-obsidian/90 backdrop-blur pb-2 z-10 border-b border-royal-gold/20">
+              <h3 className="text-xl font-playfair font-bold text-royal-gold">Sacred Details</h3>
               <RippleButton
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowDetails(true);
+                  setShowDetails(false);
                 }}
                 hapticFeedback="light"
-                className="flex items-center space-x-2 px-3 py-1.5 bg-royal-obsidian/60 hover:bg-royal-obsidian/80 backdrop-blur-md border border-royal-gold/30 rounded-full shadow-lg transition-all duration-200 pointer-events-auto"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-royal-gold/10 hover:bg-royal-gold/20 transition-colors pointer-events-auto"
               >
-                <i className="ri-information-line text-lg text-royal-gold"></i>
-                <span className="text-xs font-medium text-royal-gold uppercase tracking-wider">Info</span>
+                <i className="ri-close-line text-royal-gold text-xl"></i>
               </RippleButton>
             </div>
-            <div className="flex items-center space-x-2 text-sm opacity-90">
-              <i className="ri-briefcase-line"></i>
-              <span>{profile.profile.profession || profile.profile.occupation || 'Not specified'}</span>
-            </div>
-            <div className="flex items-center space-x-2 text-sm opacity-90 mt-1">
-              <i className="ri-map-pin-line"></i>
-              <span>{profile.profile.currentResidence || profile.profile.nativePlace || 'Location not specified'}</span>
-            </div>
-          </div>
-        </div>
 
-        {/* BACK SIDE */}
-        <div 
-          className="absolute inset-0 rounded-2xl overflow-y-auto bg-royal-obsidian border border-royal-gold/30 p-6 flex flex-col hide-scrollbar" 
-          style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-        >
-          <div className="flex justify-between items-center mb-6 sticky top-0 bg-royal-obsidian/90 backdrop-blur pb-2 z-10 border-b border-royal-gold/20">
-            <h3 className="text-xl font-playfair font-bold text-royal-gold">Sacred Details</h3>
-            <RippleButton
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDetails(false);
-              }}
-              hapticFeedback="light"
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-royal-gold/10 hover:bg-royal-gold/20 transition-colors pointer-events-auto"
-            >
-              <i className="ri-close-line text-royal-gold text-xl"></i>
-            </RippleButton>
-          </div>
-
-          <div className="space-y-6 flex-1 text-royal-gold-light pointer-events-auto" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
-            {/* Physical Details */}
-            <div className="grid grid-cols-2 gap-4">
-              {profile.profile.height && (
-                <div className="bg-royal-gold/5 p-3 rounded-lg border border-royal-gold/10">
-                  <span className="text-xs text-royal-gold/60 uppercase tracking-wider block mb-1">Height</span>
-                  <span className="font-medium font-inter">{profile.profile.height}</span>
-                </div>
-              )}
-              {profile.profile.weight && (
-                <div className="bg-royal-gold/5 p-3 rounded-lg border border-royal-gold/10">
-                  <span className="text-xs text-royal-gold/60 uppercase tracking-wider block mb-1">Weight</span>
-                  <span className="font-medium font-inter">{profile.profile.weight} kg</span>
-                </div>
-              )}
-            </div>
-
-            {/* About */}
-            {profile.profile.about && (
-              <div>
-                <h4 className="font-semibold text-royal-gold mb-2 font-playfair">About</h4>
-                <p className="text-royal-gold-light/80 font-inter leading-relaxed text-sm">{profile.profile.about}</p>
-              </div>
-            )}
-            
-            {/* Education */}
-            {profile.profile.education && (
-              <div>
-                <h4 className="font-semibold text-royal-gold mb-2 font-playfair">Education</h4>
-                <p className="text-royal-gold-light/80 font-inter text-sm">{profile.profile.education}</p>
-              </div>
-            )}
-
-            {/* Interests */}
-            <div>
-              <h4 className="font-semibold text-royal-gold mb-2 font-playfair">Interests</h4>
-              <div className="flex flex-wrap gap-2">
-                {profile.profile.interests && profile.profile.interests.length > 0 ? (
-                  profile.profile.interests.map((interest, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-royal-gold/10 text-royal-gold border border-royal-gold/30 rounded-full text-xs font-medium font-inter shadow-sm"
-                    >
-                      {interest}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-royal-gold/40 text-xs">No interests specified</span>
+            <div className="space-y-6 flex-1 text-royal-gold-light pointer-events-auto" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+              {/* Physical Details */}
+              <div className="grid grid-cols-2 gap-4">
+                {profile.profile.height && (
+                  <div className="bg-royal-gold/5 p-3 rounded-lg border border-royal-gold/10">
+                    <span className="text-xs text-royal-gold/60 uppercase tracking-wider block mb-1">Height</span>
+                    <span className="font-medium font-inter">{profile.profile.height}</span>
+                  </div>
                 )}
+                {profile.profile.weight && (
+                  <div className="bg-royal-gold/5 p-3 rounded-lg border border-royal-gold/10">
+                    <span className="text-xs text-royal-gold/60 uppercase tracking-wider block mb-1">Weight</span>
+                    <span className="font-medium font-inter">{profile.profile.weight} kg</span>
+                  </div>
+                )}
+              </div>
+
+              {/* About */}
+              {profile.profile.about && (
+                <div>
+                  <h4 className="font-semibold text-royal-gold mb-2 font-playfair">About</h4>
+                  <p className="text-royal-gold-light/80 font-inter leading-relaxed text-sm">{profile.profile.about}</p>
+                </div>
+              )}
+              
+              {/* Education */}
+              {profile.profile.education && (
+                <div>
+                  <h4 className="font-semibold text-royal-gold mb-2 font-playfair">Education</h4>
+                  <p className="text-royal-gold-light/80 font-inter text-sm">{profile.profile.education}</p>
+                </div>
+              )}
+
+              {/* Interests */}
+              <div>
+                <h4 className="font-semibold text-royal-gold mb-2 font-playfair">Interests</h4>
+                <div className="flex flex-wrap gap-2">
+                  {profile.profile.interests && profile.profile.interests.length > 0 ? (
+                    profile.profile.interests.map((interest, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-royal-gold/10 text-royal-gold border border-royal-gold/30 rounded-full text-xs font-medium font-inter shadow-sm"
+                      >
+                        {interest}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-royal-gold/40 text-xs">No interests specified</span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="pt-8 pb-4 flex justify-center mt-auto">
+                <RippleButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetails(false);
+                  }}
+                  className="px-8 py-2 bg-royal-gold text-royal-obsidian font-bold rounded-full shadow-lg hover:bg-royal-gold-light transition-all duration-300"
+                >
+                  Return to Profile
+                </RippleButton>
               </div>
             </div>
             

@@ -15,6 +15,7 @@ import { MatchingService } from '../../services/matching-service';
 import ToastService from '../../services/toastService';
 import logger from '../../utils/logger';
 import posthog from 'posthog-js';
+import MandalaBackground from '../../components/ui/MandalaBackground';
 
 interface Match {
   name: string;
@@ -568,12 +569,18 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
   return (
     <div className="min-h-screen bg-royal-obsidian flex flex-col relative overflow-hidden">
+      {/* Background Mandala */}
+      <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen blur-[2px] z-0">
+        <MandalaBackground rotationSpeed={240} />
+      </div>
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.03)_0%,transparent_70%)] z-0" />
+
       {/* Header */}
       <motion.div 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed w-full bg-royal-obsidian/90 backdrop-blur-xl border-b border-royal-gold/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-40 px-4 py-3"
+        className="fixed w-full bg-royal-obsidian/60 backdrop-blur-2xl border-b border-royal-gold/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-40 px-4 py-3 before:absolute before:inset-0 before:bg-gradient-to-b before:from-royal-gold/5 before:to-transparent before:pointer-events-none"
           style={{ top: headerOffset > 0 ? `${headerOffset}px` : 'var(--header-height)' }}
       >
         <div className="flex items-center space-x-3">
@@ -757,10 +764,10 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 >
                   <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? 'order-2' : 'order-1'}`}>
                     <motion.div
-                      className={`relative px-4 py-3 rounded-2xl shadow-sm ${
+                      className={`relative px-4 py-3 rounded-2xl ${
                         msg.isOwn 
-                          ? 'bg-royal-gold text-royal-obsidian rounded-br-md font-medium' 
-                          : 'bg-white/5 text-royal-gold rounded-bl-md border border-royal-gold/20'
+                          ? 'bg-gradient-to-br from-royal-gold to-royal-gold-dark text-royal-obsidian rounded-br-md font-medium shadow-[0_4px_15px_rgba(212,175,55,0.3)] border-t border-white/20' 
+                          : 'bg-royal-glass text-royal-gold rounded-bl-md border border-royal-glass-border shadow-[0_4px_15px_rgba(0,0,0,0.2)] backdrop-blur-md'
                       }`}
                       whileHover={{ scale: 1.01 }}
                       transition={{ type: 'spring', stiffness: 500, duration: 0.1 }}
@@ -788,7 +795,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35, duration: 0.15 }}
-        className="fixed bottom-0 w-full bg-royal-obsidian/95 backdrop-blur-xl border-t border-royal-gold/20 p-4 z-20 shadow-[0_-4px_30px_rgba(0,0,0,0.5)]"
+        className="fixed bottom-0 w-full bg-royal-obsidian/60 backdrop-blur-3xl border-t border-royal-gold/10 p-4 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.6)]"
         style={{ paddingBottom: 'calc(16px + var(--safe-area-inset-bottom))' }}
       >
         <div className="flex items-end space-x-3">
@@ -801,7 +808,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               onChange={handleTyping}
               onKeyPress={handleKeyPress}
               disabled={isSending}
-              className="w-full px-4 py-3 pr-12 bg-royal-gold/5 text-royal-gold placeholder:text-royal-gold/30 border border-royal-gold/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-royal-gold/50 focus:border-royal-gold/50 transition-all duration-200 disabled:opacity-50"
+              className="w-full px-5 py-3.5 pr-12 bg-white/5 text-royal-gold placeholder:text-royal-gold/30 border border-royal-glass-border rounded-full focus:outline-none focus:ring-1 focus:ring-royal-gold/30 focus:border-royal-gold/40 transition-all duration-300 disabled:opacity-50 shadow-inner"
             />
             
             {/* Typing indicator */}
@@ -821,11 +828,11 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             onClick={sendMessage}
             disabled={!message.trim() || isSending}
             aria-label="Send"
-            className="w-14 h-14 bg-gradient-to-br from-royal-gold to-royal-gold-light border-2 border-royal-gold-light/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed android-touch-target"
+            className="w-14 h-14 bg-gradient-to-br from-royal-gold to-royal-gold-dark border border-royal-gold-light/40 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.6)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed android-touch-target"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-royal-obsidian" />
+            <CustomIcon name="ri-send-plane-fill" className="text-2xl text-royal-obsidian transform translate-x-0.5" />
           </motion.button>
         </div>
         

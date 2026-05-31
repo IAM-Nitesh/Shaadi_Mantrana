@@ -14,6 +14,7 @@ import RoyalLoader from '../../components/RoyalLoader';
 import ToastService from '../../services/toastService';
 import { Icon } from '../../components/IconSystem';
 import { RippleButton } from '../../components/RippleButton';
+import NewMatchOverlay from '../../components/dashboard/NewMatchOverlay';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -23,6 +24,8 @@ function DashboardContent() {
   const [likesRemaining, setLikesRemaining] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isFetchingProfiles, setIsFetchingProfiles] = useState(true);
+  const [showMatchOverlay, setShowMatchOverlay] = useState(false);
+  const [matchedProfileName, setMatchedProfileName] = useState('');
   
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,8 +72,15 @@ function DashboardContent() {
         const result = await MatchingService.likeProfile(currentProfile._id, 'like');
         setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
         posthog.capture('profile_swiped', { action: 'like', likes_remaining: result.remainingLikes });
-        // Fact: Royal feedback (Action 254)
-        ToastService.success('Sacred interest preserved');
+        
+        if (result.isMutualMatch) {
+          setMatchedProfileName(currentProfile.profile?.name || '');
+          setShowMatchOverlay(true);
+          return;
+        } else {
+          // Fact: Royal feedback (Action 254)
+          ToastService.success('Sacred interest preserved');
+        }
       } else if (direction === 'left') {
         await MatchingService.passProfile(currentProfile._id);
         posthog.capture('profile_swiped', { action: 'pass' });
@@ -78,8 +88,15 @@ function DashboardContent() {
         const result = await MatchingService.likeProfile(currentProfile._id, 'super_like');
         setLikesRemaining(result.remainingLikes ?? Math.max(likesRemaining - 1, 0));
         posthog.capture('profile_swiped', { action: 'super_like', likes_remaining: result.remainingLikes });
-        // Fact: Royal feedback (Action 254)
-        ToastService.success('Sacred interest preserved');
+        
+        if (result.isMutualMatch) {
+          setMatchedProfileName(currentProfile.profile?.name || '');
+          setShowMatchOverlay(true);
+          return;
+        } else {
+          // Fact: Royal feedback (Action 254)
+          ToastService.success('Sacred interest preserved');
+        }
       }
     } catch (error) {
       logger.warn('Dashboard: swipe action failed', error);
@@ -205,6 +222,15 @@ function DashboardContent() {
       )}
 
       {/* Bottom Navigation is handled globally in layout.tsx */}
+      
+      <NewMatchOverlay
+        isVisible={showMatchOverlay}
+        matchName={matchedProfileName}
+        onComplete={() => {
+          setShowMatchOverlay(false);
+          router.push('/matches');
+        }}
+      />
     </div>
   );
 }

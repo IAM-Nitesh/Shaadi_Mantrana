@@ -334,11 +334,13 @@ function MatchesContent() {
                   ) : (
                     <div className="grid gap-4">
                       {mutualMatches.map((match, index) => (
-                        <a
+                        <div
                           key={match.connectionId}
-                          href={`/chat?id=${match.connectionId}`}
                           data-testid="profile-card"
-                          onClick={() => posthog.capture('match_chat_started', { connection_id: match.connectionId })}
+                          onClick={() => {
+                            posthog.capture('match_chat_started', { connection_id: match.connectionId });
+                            router.push(`/chat?id=${match.connectionId}`);
+                          }}
                           className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/50 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold"
                           style={{
                             animationDelay: `${index * 100}ms`
@@ -382,7 +384,7 @@ function MatchesContent() {
                               <CustomIcon name="ri-chat-3-line" className="text-2xl" />
                             </div>
                           </div>
-                        </a>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -409,10 +411,13 @@ function MatchesContent() {
                     <div className="grid gap-4">
                     {likedProfiles.map((likedProfile) => (
                       likedProfile.isMutualMatch ? (
-                        <a
+                        <div
                           key={likedProfile.likeId}
-                          href={`/chat?id=${likedProfile.connectionId}`}
                           data-testid="profile-card"
+                          onClick={() => {
+                            posthog.capture('match_chat_started', { connection_id: likedProfile.connectionId });
+                            router.push(`/chat?id=${likedProfile.connectionId}`);
+                          }}
                           className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/50 p-6 transition-all duration-300 hover:shadow-xl transform hover:scale-[1.02] cursor-pointer hover:border-royal-gold"
                         >
                           <div className="flex items-center space-x-4">
@@ -448,7 +453,7 @@ function MatchesContent() {
                               <CustomIcon name="ri-chat-3-line" className="text-2xl" />
                             </div>
                           </div>
-                        </a>
+                        </div>
                       ) : (
                         <div key={likedProfile.likeId} data-testid="profile-card" className="profile-card bg-royal-gold/5 rounded-2xl shadow-lg border border-royal-gold/50 p-6 transition-all duration-300 hover:shadow-xl hover:border-royal-gold">
                           <div className="flex items-center space-x-4">
