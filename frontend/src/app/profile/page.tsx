@@ -2713,27 +2713,7 @@ function ProfileContent() {
               Lifestyle
             </h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  {renderFieldLabel('eatingHabit', 'Eating Habit')}
-                  {isEditing ? (
-                    <select
-                      value={profile.eatingHabit || ""}
-                      onChange={(e) => handleFieldChange('eatingHabit', e.target.value)}
-                      onFocus={() => handleFieldFocus('eatingHabit')}
-                      onBlur={() => handleFieldBlur('eatingHabit')}
-                      data-field="eatingHabit"
-                      className={getSelectClassName('eatingHabit')}
-                    >
-                      <option value="">Select Eating Habit</option>
-                      <option value="Vegetarian">Vegetarian</option>
-                      <option value="Eggetarian">Eggetarian</option>
-                      <option value="Non-Vegetarian">Non-Vegetarian</option>
-                    </select>
-                  ) : (
-                    <p className="text-white/90 text-sm">{profile.eatingHabit || 'Not specified'}</p>
-                  )}
-                </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   {renderFieldLabel('smokingHabit', 'Smoking')}
                   {isEditing ? (
@@ -2774,6 +2754,26 @@ function ProfileContent() {
                     <p className="text-white/90 text-sm">{profile.drinkingHabit || 'Not specified'}</p>
                   )}
                 </div>
+              </div>
+              <div>
+                {renderFieldLabel('eatingHabit', 'Eating Habit')}
+                {isEditing ? (
+                  <select
+                    value={profile.eatingHabit || ""}
+                    onChange={(e) => handleFieldChange('eatingHabit', e.target.value)}
+                    onFocus={() => handleFieldFocus('eatingHabit')}
+                    onBlur={() => handleFieldBlur('eatingHabit')}
+                    data-field="eatingHabit"
+                    className={getSelectClassName('eatingHabit')}
+                  >
+                    <option value="">Select Eating Habit</option>
+                    <option value="Vegetarian">Vegetarian</option>
+                    <option value="Eggetarian">Eggetarian</option>
+                    <option value="Non-Vegetarian">Non-Vegetarian</option>
+                  </select>
+                ) : (
+                  <p className="text-white/90 text-sm">{profile.eatingHabit || 'Not specified'}</p>
+                )}
               </div>
             </div>
           </div>

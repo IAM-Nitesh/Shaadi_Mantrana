@@ -113,7 +113,7 @@ class MatchingController {
       
       // Get profiles that match the criteria
       const profiles = await User.find(queryFilters)
-        .select('profile.name profile.dateOfBirth profile.profession profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation profile.interests verification.isVerified profileCompleted')
+        .select('profile.name profile.dateOfBirth profile.profession profile.height profile.weight profile.images profile.about profile.gender profile.nativePlace profile.currentResidence profile.education profile.occupation profile.interests verification.isVerified profileCompleted')
         .limit(limit)
         .skip((page - 1) * limit)
         .lean();

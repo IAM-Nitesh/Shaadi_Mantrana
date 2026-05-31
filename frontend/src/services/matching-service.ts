@@ -165,6 +165,8 @@ export interface DiscoveryProfile {
     nativePlace?: string;
     currentResidence?: string;
     location?: string; // Add location field
+    height?: string;
+    weight?: string;
     interests?: string[];
   };
   verification?: {

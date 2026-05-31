@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import MandalaBackground from '../ui/MandalaBackground';
 
@@ -10,6 +11,12 @@ interface ProfileCompletionOverlayProps {
 }
 
 export default function ProfileCompletionOverlay({ isVisible, onComplete }: ProfileCompletionOverlayProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (isVisible) {
       // Auto-dismiss after 3.5 seconds
@@ -20,7 +27,9 @@ export default function ProfileCompletionOverlay({ isVisible, onComplete }: Prof
     }
   }, [isVisible, onComplete]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isVisible && (
         <motion.div
@@ -28,7 +37,8 @@ export default function ProfileCompletionOverlay({ isVisible, onComplete }: Prof
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-[300] bg-royal-obsidian/95 backdrop-blur-md flex flex-col items-center justify-center p-6 overflow-hidden"
+          className="fixed inset-0 z-[200000] bg-royal-obsidian/95 backdrop-blur-md flex flex-col items-center justify-center p-6 overflow-hidden"
+          style={{ position: 'fixed' }}
         >
           {/* Background Mandala */}
           <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen blur-sm">
@@ -91,6 +101,7 @@ export default function ProfileCompletionOverlay({ isVisible, onComplete }: Prof
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
