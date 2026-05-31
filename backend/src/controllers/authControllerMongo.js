@@ -187,9 +187,9 @@ class AuthController {
           profile: {
             name: name || '',
             images: picture ? [picture] : [],
-            profileCompleteness: 0
-          },
-          photoStatus: 'pending' // Play Store compliance: Force moderation
+            profileCompleteness: 0,
+            photoStatus: 'pending' // Play Store compliance: Force moderation
+          }
         });
         await user.save();
         logger.info({ event: 'firebase_user_created', uid, phone: phone_number, email }, 'New Firebase user created');

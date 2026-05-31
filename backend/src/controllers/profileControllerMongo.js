@@ -487,7 +487,7 @@ class ProfileController {
         _id: { $ne: userId }, // Exclude current user
         status: 'active',
         'verification.isVerified': true,
-        photoStatus: 'approved' // Play Store Compliance: Only show moderated photos
+        'profile.photoStatus': 'approved' // Play Store Compliance: Only show moderated photos
       };
 
       // Filter by opposite gender

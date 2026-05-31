@@ -55,7 +55,7 @@ class MatchingController {
         status: 'active',
         'verification.isVerified': true,
         'profile.name': { $exists: true, $ne: '' },
-        photoStatus: 'approved' // Play Store compliance: only show moderated content
+        'profile.photoStatus': 'approved' // Play Store compliance: only show moderated content
       };
       
       // Filter by opposite gender

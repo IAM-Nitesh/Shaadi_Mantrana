@@ -912,7 +912,7 @@ const uploadController = {
       await User.findByIdAndUpdate(req.user.userId, {
         $set: {
           'profile.images': uploadResult.fileName, // Store the file path, frontend will use signed URLs
-          photoStatus: 'pending' // Reset to pending on every new upload for moderation
+          'profile.photoStatus': 'pending' // Reset to pending on every new upload for moderation
         }
       });
 
