@@ -310,7 +310,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
           isMounted && isDragging ? 'cursor-grabbing scale-105' : 'hover:scale-[1.01]'
         }`}
         style={{
-          transform: `translateX(${dragX}px) rotate(${dragX * 0.1}deg) ${showDetails ? 'rotateY(180deg)' : ''}`,
+          transform: `translateX(${dragX}px) rotate(${dragX * 0.1}deg)`,
           boxShadow: isDragging
             ? dragX > 0 
               ? '0 8px 32px 0 rgba(16,185,129,0.25), 0 1.5px 8px 0 rgba(0,0,0,0.10)' // Green for like
@@ -503,18 +503,6 @@ export default function SwipeCard({ profile, onSwipe, onDrag }: SwipeCardProps) 
                   Return to Profile
                 </RippleButton>
               </div>
-            </div>
-            
-            <div className="pt-8 pb-4 flex justify-center mt-auto">
-              <RippleButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDetails(false);
-                }}
-                className="px-8 py-2 bg-royal-gold text-royal-obsidian font-bold rounded-full shadow-lg hover:bg-royal-gold-light transition-all duration-300"
-              >
-                Return to Profile
-              </RippleButton>
             </div>
           </div>
         </div>
