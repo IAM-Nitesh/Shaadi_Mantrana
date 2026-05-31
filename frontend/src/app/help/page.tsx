@@ -185,13 +185,10 @@ export default function Help() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3">
               <div>
-                <h3 className="text-lg font-black tracking-tight">
-                  <span className="bg-gradient-to-r from-royal-gold via-royal-gold-light to-royal-gold bg-clip-text text-transparent">
-                    Shaadi
-                  </span>
-                  <span className="bg-gradient-to-r from-royal-gold-light via-royal-gold to-royal-gold-light bg-clip-text text-transparent ml-1">
-                    Mantrana
-                  </span>
+                <h3 className="text-2xl font-playfair font-bold tracking-tight">
+                  <span className="text-white">Shaadi</span>
+                  {' '}
+                  <span className="text-royal-gold">Mantrana</span>
                 </h3>
                 <div className="flex items-center justify-center space-x-1 mt-0.5">
                   <div className="w-5 h-0.5 bg-gradient-to-r from-royal-gold to-royal-gold-light"></div>

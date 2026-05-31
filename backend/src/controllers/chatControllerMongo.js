@@ -177,7 +177,23 @@ class ChatController {
         status: msgDoc.status
       } : null;
 
-      console.log(` Message persisted successfully: ${savedMessage.id}`);
+      console.log(`  Message persisted successfully: ${savedMessage.id}`);
+
+      // Broadcast via our own Socket.io server
+      const chatService = require('../services/chatService');
+      if (chatService && chatService.io) {
+        // Format to match socket expected shape
+        const normalized = {
+          id: savedMessage.id.toString(),
+          senderId: savedMessage.senderId.toString(),
+          message: savedMessage.message,
+          timestamp: new Date(savedMessage.timestamp).toISOString(),
+          status: savedMessage.status,
+          connectionId: connectionId
+        };
+        chatService.io.to(connectionId).emit('new_message', normalized);
+        console.log(`  Message broadcasted via Socket.IO: ${normalized.id}`);
+      }
 
       res.status(201).json({ success: true, message: savedMessage });
 
