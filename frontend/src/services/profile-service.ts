@@ -182,6 +182,9 @@ export class ProfileService {
       });
 
       if (!response.ok && response.status !== 304) {
+        if (response.status === 429) {
+          throw new Error('RATE_LIMIT_EXCEEDED');
+        }
         if (response.status === 401) {
           // console.warn('Authentication failed, user may need to login again');
           return null;

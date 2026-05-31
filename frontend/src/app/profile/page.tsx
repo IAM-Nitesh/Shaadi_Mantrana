@@ -22,6 +22,7 @@ import { matchesCountService } from '../../services/matches-count-service';
 import ToastService from '../../services/toastService';
 import OnboardingOverlay from '../../components/OnboardingOverlay';
 import RoyalOnboardingWizard from '../../components/onboarding/RoyalOnboardingWizard';
+import ProfileCompletionOverlay from '../../components/profile/ProfileCompletionOverlay';
 import { useAuth } from '../../contexts/AuthContext';
 import { OnboardingService } from '../../services/onboarding-service';
 import logger from '../../utils/logger';
@@ -116,7 +117,7 @@ function sanitizeProfileField(fieldName: string, value: string) {
 
 function ProfileContent() {
   const router = useRouter();
-  const { user, isAuthenticated, forceRefresh } = useAuth();
+  const { user, isAuthenticated, forceRefresh, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -125,6 +126,7 @@ function ProfileContent() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
@@ -1069,19 +1071,9 @@ function ProfileContent() {
             // Continue with redirect even if flag update fails
           }
           
-          // ✅ FIX: Refresh AuthContext so user.profileCompleteness = 100 BEFORE
-          // navigating to /dashboard. Without this, AuthGuardV2 reads the stale
-          // value and immediately bounces the user back to /profile.
-          try {
-            await forceRefresh();
-            logger.debug('✅ AuthContext refreshed — user.profileCompleteness is now up-to-date');
-          } catch (err) {
-            logger.warn('⚠️ forceRefresh failed, proceeding with navigation anyway', err);
-          }
-
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 500);
+          // ✅ FIX: Update local context directly to avoid Rate Limit errors
+          updateUser({ profileCompleteness: backendCompleteness });
+          setShowCompletionOverlay(true);
         }
       } else {
         throw new Error(result.error || 'Failed to save profile');
@@ -1875,13 +1867,19 @@ function ProfileContent() {
           setHasSeenOnboarding(true);
           setIsEditing(true);
         }
-      } catch (error) {
+      } catch (error: any) {
         logger.error('❌ Error loading profile:', error);
-        // Set a default empty profile to prevent errors
-        setProfile({});
-        setShowOnboarding(false);
-        setHasSeenOnboarding(true);
-        setIsEditing(true);
+        
+        if (error.message === 'RATE_LIMIT_EXCEEDED') {
+          ToastService.info('Please wait a moment before refreshing your profile.');
+          // Don't wipe existing profile state on rate limit
+        } else {
+          // Set a default empty profile to prevent errors
+          setProfile({});
+          setShowOnboarding(false);
+          setHasSeenOnboarding(true);
+          setIsEditing(true);
+        }
       } finally {
         setLoadingProfile(false);
       }
@@ -1965,9 +1963,9 @@ function ProfileContent() {
             await ProfileService.updateProfile({ hasCompletedWizard: true });
             logger.info('✅ Wizard marked as completed');
             
-            // CRITICAL: Refresh auth state so AuthGuard knows wizard is done
-            await forceRefresh();
-            logger.info('🔄 Auth state refreshed after wizard completion');
+            // CRITICAL: Update local auth state instead of forceRefresh
+            updateUser({ hasCompletedWizard: true });
+            logger.info('🔄 Local Auth state updated after wizard completion');
           } catch (error) {
             logger.error('Error marking wizard as completed:', error);
           }
@@ -1980,13 +1978,11 @@ function ProfileContent() {
           if (updatedProfile && (updatedProfile.profileCompleteness || 0) >= 100) {
             try {
               await OnboardingService.markProfileCompleted();
-              ToastService.success('Your Sacred Profile is complete!');
-              setTimeout(() => {
-                router.push('/dashboard');
-              }, 2000);
+              updateUser({ profileCompleteness: 100 });
+              setShowCompletionOverlay(true);
             } catch (error) {
               logger.error('Error marking profile as completed:', error);
-              router.push('/dashboard'); // Redirect anyway
+              setShowCompletionOverlay(true);
             }
           } else {
             setIsEditing(true); // Automatically put them in edit mode
@@ -2004,9 +2000,14 @@ function ProfileContent() {
       <div className="absolute inset-0 bg-royal-obsidian backdrop-blur-[2.5px]"></div>
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,rgba(212,175,55,0.05),transparent_50%)]"></div>
       
-  {/* Onboarding Overlay (rendered above once earlier) - duplicate removed */}
+      <ProfileCompletionOverlay 
+        isVisible={showCompletionOverlay} 
+        onComplete={() => {
+          setShowCompletionOverlay(false);
+          router.push('/dashboard');
+        }} 
+      />
       
-
   {/* Content */}
   <div className="relative z-10 page-transition" style={{ paddingTop: 'var(--header-height)', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))' }}>
 
@@ -2406,7 +2407,7 @@ function ProfileContent() {
                           const dateString = date ? date.toISOString().split('T')[0] : '';
                           handleFieldChange('dateOfBirth', dateString);
                         }}
-                        className={getDatePickerClassName('dateOfBirth')}
+                        className="!border-none !bg-transparent hover:!bg-transparent focus:!ring-0 shadow-none"
                       />
                     </div>
                   ) : (
@@ -2439,7 +2440,7 @@ function ProfileContent() {
                           if (date) setClockTime(date);
                           handleFieldChange('timeOfBirth', date ? formatTime(date) : '');
                         }}
-                        className={getDatePickerClassName('timeOfBirth')}
+                        className="!border-none !bg-transparent hover:!bg-transparent focus:!ring-0 shadow-none"
                       />
                     </div>
                   ) : (
@@ -2990,7 +2991,7 @@ function ProfileContent() {
                 className={`w-full py-4 text-lg font-semibold hover-lift transition-all duration-300 rounded-xl ${
                   calculatedCompleteness >= 100 
                     ? 'button-royal shadow-[0_0_20px_rgba(212,175,55,0.4)]' 
-                    : 'bg-royal-obsidian border border-royal-gold/30 text-royal-gold/70 hover:border-royal-gold hover:text-royal-gold shadow-[0_0_15px_rgba(212,175,55,0.1)]'
+                    : 'bg-gradient-to-r from-royal-gold/20 to-royal-gold/10 border border-royal-gold/50 text-royal-gold shadow-[0_4px_14px_0_rgba(212,175,55,0.2)] hover:from-royal-gold/30 hover:to-royal-gold/20 hover:border-royal-gold hover:shadow-[0_6px_20px_rgba(212,175,55,0.3)] backdrop-blur-sm transform hover:-translate-y-0.5'
                 }`}
                 style={{ position: 'relative', zIndex: 100002 }}
               >

@@ -55,6 +55,7 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   forceRefresh: () => Promise<void>;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,6 +108,12 @@ export const AuthProvider = ({
       // });
       
       if (!response.ok) {
+        if (response.status === 429) {
+          console.warn('⚠️ AuthContext: Auth status check rate limited (429). Keeping current session.');
+          // Do not log out the user on rate limit, just return
+          setAuthState(user ? 'authenticated' : 'unauthenticated');
+          return;
+        }
         console.warn('❌ AuthContext: Auth status check failed:', response.status);
         setUser(null);
         setRedirectTo('/login');
@@ -171,6 +178,10 @@ export const AuthProvider = ({
   const forceRefresh = useCallback(async () => {
     await checkAuth();
   }, [checkAuth]);
+
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  }, []);
 
   useEffect(() => {
     if (!initialUser) {
@@ -387,7 +398,8 @@ export const AuthProvider = ({
     confirmPhoneCode,
     logout,
     checkAuth,
-    forceRefresh
+    forceRefresh,
+    updateUser
   };
 
   return (

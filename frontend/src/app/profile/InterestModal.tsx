@@ -120,29 +120,6 @@ export default function InterestModal({ onClose, onAdd, existingInterests }: Int
           </div>
         </div>
 
-        {/* Selected Interests */}
-        {selectedInterests.length > 0 && (
-          <div className="mb-6">
-            <h3 className="font-semibold text-royal-gold-light mb-3">Selected ({selectedInterests.length})</h3>
-            <div className="flex flex-wrap gap-2">
-              {selectedInterests.map((interest) => (
-                <span
-                  key={interest}
-                  className="px-3 py-1 bg-royal-gold/20 text-royal-gold border border-royal-gold/30 rounded-full text-sm flex items-center shadow-sm hover:bg-royal-gold/30 transition-colors duration-150"
-                >
-                  {interest}
-                  <button
-                    onClick={() => toggleInterest(interest)}
-                    className="ml-2 text-royal-gold hover:text-white"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
         </div>
         {/* Actions */}
         <div className="absolute inset-x-0 bottom-0 flex space-x-3 border-t border-royal-gold/10 bg-royal-obsidian/95 p-4 shadow-[0_-12px_24px_rgba(0,0,0,0.35)]">
