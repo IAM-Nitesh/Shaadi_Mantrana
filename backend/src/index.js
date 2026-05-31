@@ -289,7 +289,13 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', (req, res, next) => {
+  const skipLimiterPaths = ['/status', '/profile', '/health', '/email/health', '/session-health'];
+  if (skipLimiterPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
+    return next();
+  }
+  return authLimiter(req, res, next);
+}, authRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/upload', uploadRoutes);

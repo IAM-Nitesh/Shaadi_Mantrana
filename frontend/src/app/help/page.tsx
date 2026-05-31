@@ -121,12 +121,12 @@ export default function Help() {
             <h2 className="font-semibold text-royal-gold font-playfair">Frequently Asked Questions</h2>
           </div>
           
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-royal-gold/10">
             {faqs.map((faq, index) => (
               <details key={index} className="group">
                 <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-royal-gold/5 transition-colors duration-200">
                   <span className="font-medium text-royal-gold font-playfair">{faq.question}</span>
-                  <CustomIcon name="ri-arrow-right-s-line" className="text-royal-gold/40 group-open:rotate-90 transition-transform duration-200" />
+                  <CustomIcon name="ri-arrow-right-s-line" className="text-royal-gold group-open:rotate-90 transition-transform duration-200" />
                 </summary>
                 <div className="px-4 pb-4">
                   <p className="text-white/80 font-inter text-sm leading-relaxed">{faq.answer}</p>
@@ -210,7 +210,7 @@ export default function Help() {
                   <span>HTTPS secured</span>
                 </span>
                 <span className="flex items-center space-x-1.5">
-                  <CustomIcon name="ri-phone-line" className="text-royal-gold text-base" />
+                  <CustomIcon name="ri-google-play-fill" className="text-royal-gold text-base" />
                   <span>Play Store compliant</span>
                 </span>
               </p>

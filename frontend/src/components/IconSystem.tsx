@@ -173,6 +173,12 @@ export const ICON_REGISTRY = {
     description: 'Warning/error status',
     aliases: ['warning', 'error', 'alert'],
   },
+  'ri-alert-fill': {
+    path: '/icons/warning-crimson.svg',
+    category: ICON_CATEGORIES.STATUS,
+    description: 'Warning/alert status fill',
+    aliases: ['warning', 'alert', 'error', 'crimson'],
+  },
   'ri-shield-check-line': {
     path: '/icons/shield-check.svg',
     category: ICON_CATEGORIES.STATUS,
@@ -192,6 +198,12 @@ export const ICON_REGISTRY = {
     category: ICON_CATEGORIES.COMMUNICATION,
     description: 'Phone communication',
     aliases: ['phone', 'call', 'telephone'],
+  },
+  'ri-google-play-fill': {
+    path: '/icons/google-play.svg',
+    category: ICON_CATEGORIES.COMMUNICATION,
+    description: 'Google Play Store compliant',
+    aliases: ['playstore', 'googleplay', 'android'],
   },
 
   // System Icons
