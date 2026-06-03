@@ -9,6 +9,7 @@ import { ImageUploadService } from '../../../services/image-upload-service';
 import { getAuthHeaders } from '../../../services/auth-utils';
 import { config as configService } from '../../../services/configService';
 import MandalaBackground from '../../../components/ui/MandalaBackground';
+import CustomIcon from '../../../components/CustomIcon';
 import RoyalLoader from '../../../components/RoyalLoader';
 import logger from '../../../utils/logger';
 
@@ -61,7 +62,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value?: 
   return (
     <div className="flex items-start space-x-3 py-3 border-b border-royal-gold/10 last:border-0">
       <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <i className={`${icon} text-royal-gold text-lg`} />
+        <CustomIcon name={icon} className="text-royal-gold text-lg" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-royal-gold/50 text-xs uppercase tracking-widest mb-0.5">{label}</p>
@@ -142,7 +143,7 @@ function ProfileViewContent() {
           className="w-10 h-10 flex items-center justify-center text-royal-gold hover:opacity-70 transition-opacity duration-200"
           aria-label="Go back"
         >
-          <i className="ri-arrow-left-line text-2xl" />
+          <CustomIcon name="ri-arrow-left-line" className="text-2xl" />
         </button>
       </div>
 
