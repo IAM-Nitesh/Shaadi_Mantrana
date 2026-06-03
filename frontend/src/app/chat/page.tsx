@@ -8,7 +8,7 @@ import RoyalLoader from '../../components/RoyalLoader';
 const ChatComponent = dynamic(() => import('./ChatComponent'), {
   loading: () => (
     <div className="min-h-screen flex items-center justify-center bg-royal-obsidian">
-      <RoyalLoader />
+      <RoyalLoader size="xl" text="Aligning the stars for your conversation..." />
     </div>
   ),
 });
