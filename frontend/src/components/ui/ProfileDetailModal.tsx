@@ -26,10 +26,23 @@ export interface ProfileForModal {
     caste?: string;
     manglik?: string;
     gotra?: string;
+    fatherGotra?: string;
+    motherGotra?: string;
+    grandfatherGotra?: string;
+    grandmotherGotra?: string;
     maritalStatus?: string;
-    diet?: string;
-    smoking?: string;
-    drinking?: string;
+    complexion?: string;
+    eatingHabit?: string;
+    smokingHabit?: string;
+    drinkingHabit?: string;
+    settleAbroad?: string;
+    dateOfBirth?: string;
+    timeOfBirth?: string;
+    placeOfBirth?: string;
+    father?: string;
+    mother?: string;
+    brothers?: string;
+    sisters?: string;
     languages?: string[];
     hobbies?: string[];
   };
@@ -153,13 +166,13 @@ export default function ProfileDetailModal({ profile, onClose }: ProfileDetailMo
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-royal-obsidian via-black/20 to-transparent" />
 
-                {/* Close button */}
+                {/* Back button */}
                 <button
                   onClick={onClose}
-                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-black/70 transition-colors z-10"
-                  aria-label="Close profile"
+                  className="absolute top-4 left-4 w-10 h-10 rounded-full bg-royal-obsidian/60 backdrop-blur-md border border-royal-gold/40 flex items-center justify-center text-royal-gold hover:bg-royal-gold/20 transition-all duration-200 z-10 shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+                  aria-label="Back to dashboard"
                 >
-                  <i className="ri-close-line text-lg" />
+                  <i className="ri-arrow-left-line text-xl" />
                 </button>
 
                 {/* Name & age hero */}
@@ -218,20 +231,40 @@ export default function ProfileDetailModal({ profile, onClose }: ProfileDetailMo
                 <div>
                   <h3 className="text-royal-gold font-playfair font-semibold text-base mb-3">Details</h3>
                   <div className="bg-royal-gold/5 border border-royal-gold/10 rounded-2xl px-4 divide-y divide-royal-gold/10">
+                    <InfoRow icon="ri-calendar-line" label="Date of Birth" value={p?.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString() : undefined} />
+                    <InfoRow icon="ri-time-line" label="Time of Birth" value={p?.timeOfBirth} />
+                    <InfoRow icon="ri-map-pin-time-line" label="Place of Birth" value={p?.placeOfBirth} />
                     <InfoRow icon="ri-book-open-line" label="Education" value={p?.education} />
                     <InfoRow icon="ri-ruler-line" label="Height" value={p?.height} />
                     <InfoRow icon="ri-scales-3-line" label="Weight" value={p?.weight ? `${p.weight} kg` : undefined} />
+                    <InfoRow icon="ri-user-smile-line" label="Complexion" value={p?.complexion} />
                     <InfoRow icon="ri-map-pin-2-line" label="Native Place" value={p?.nativePlace} />
                     <InfoRow icon="ri-home-4-line" label="Current Residence" value={p?.currentResidence} />
-                    <InfoRow icon="ri-pray-line" label="Religion" value={p?.religion} />
-                    <InfoRow icon="ri-group-line" label="Caste" value={p?.caste} />
-                    <InfoRow icon="ri-star-line" label="Gotra" value={p?.gotra} />
                     <InfoRow icon="ri-heart-pulse-line" label="Manglik" value={p?.manglik} />
                     <InfoRow icon="ri-user-heart-line" label="Marital Status" value={p?.maritalStatus} />
-                    <InfoRow icon="ri-restaurant-line" label="Diet" value={p?.diet} />
-                    <InfoRow icon="ri-gender-line" label="Gender" value={p?.gender} />
+                    <InfoRow icon="ri-restaurant-line" label="Eating Habit" value={p?.eatingHabit} />
+                    <InfoRow icon="ri-cigarette-line" label="Smoking" value={p?.smokingHabit} />
+                    <InfoRow icon="ri-goblet-line" label="Drinking" value={p?.drinkingHabit} />
+                    <InfoRow icon="ri-flight-takeoff-line" label="Settle Abroad" value={p?.settleAbroad} />
                   </div>
                 </div>
+
+                {/* Family Details */}
+                {(p?.father || p?.mother || p?.fatherGotra || p?.motherGotra || p?.grandfatherGotra || p?.grandmotherGotra || p?.brothers || p?.sisters) && (
+                  <div>
+                    <h3 className="text-royal-gold font-playfair font-semibold text-base mb-3">Family Details</h3>
+                    <div className="bg-royal-gold/5 border border-royal-gold/10 rounded-2xl px-4 divide-y divide-royal-gold/10">
+                      <InfoRow icon="ri-parent-line" label="Father" value={p?.father} />
+                      <InfoRow icon="ri-parent-line" label="Mother" value={p?.mother} />
+                      <InfoRow icon="ri-team-line" label="Brothers" value={p?.brothers} />
+                      <InfoRow icon="ri-team-line" label="Sisters" value={p?.sisters} />
+                      <InfoRow icon="ri-star-line" label="Father Gotra" value={p?.fatherGotra || p?.gotra} />
+                      <InfoRow icon="ri-star-line" label="Mother Gotra" value={p?.motherGotra} />
+                      <InfoRow icon="ri-star-line" label="Grandfather Gotra" value={p?.grandfatherGotra} />
+                      <InfoRow icon="ri-star-line" label="Grandmother Gotra" value={p?.grandmotherGotra} />
+                    </div>
+                  </div>
+                )}
 
                 {/* Interests */}
                 {interests.length > 0 && (
@@ -264,6 +297,8 @@ export default function ProfileDetailModal({ profile, onClose }: ProfileDetailMo
                   </div>
                 )}
 
+                {/* Bottom padding spacer to clear nav bar */}
+                <div className="h-24"></div>
               </div>
             </div>
           </motion.div>
