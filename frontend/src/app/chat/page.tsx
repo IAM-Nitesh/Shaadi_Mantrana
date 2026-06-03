@@ -168,7 +168,7 @@ export default function ChatPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-royal-obsidian flex items-center justify-center">
-        <RoyalLoader size="xl" text="Summoning the chat chamber..." />
+        <RoyalLoader size="xl" text="Aligning the stars for your conversation..." />
       </div>
     }>
       <ChatPageContent />

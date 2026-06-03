@@ -647,7 +647,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed w-full bg-royal-obsidian/60 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-40 px-4 py-3 before:absolute before:inset-0 before:bg-gradient-to-b before:from-royal-gold/5 before:to-transparent before:pointer-events-none"
+        className="fixed w-full bg-royal-obsidian/60 backdrop-blur-2xl z-40 px-4 py-3 before:absolute before:inset-0 before:bg-gradient-to-b before:from-royal-gold/5 before:to-transparent before:pointer-events-none"
         style={{ top: 0, paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
       >
         <div className="flex items-center space-x-3">
@@ -836,7 +836,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35, duration: 0.15 }}
-        className="fixed bottom-0 w-full bg-royal-obsidian/60 backdrop-blur-3xl p-4 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+        className="fixed bottom-0 w-full bg-royal-obsidian/60 backdrop-blur-3xl p-4 z-20 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
         style={{ }}
       >
         <div className="flex items-center space-x-3">

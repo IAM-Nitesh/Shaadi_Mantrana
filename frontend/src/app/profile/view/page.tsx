@@ -33,8 +33,23 @@ interface PublicProfile {
     caste?: string;
     manglik?: string;
     gotra?: string;
+    fatherGotra?: string;
+    motherGotra?: string;
+    grandfatherGotra?: string;
+    grandmotherGotra?: string;
     maritalStatus?: string;
-    diet?: string;
+    complexion?: string;
+    eatingHabit?: string;
+    smokingHabit?: string;
+    drinkingHabit?: string;
+    settleAbroad?: string;
+    dateOfBirth?: string;
+    timeOfBirth?: string;
+    placeOfBirth?: string;
+    father?: string;
+    mother?: string;
+    brothers?: string;
+    sisters?: string;
     languages?: string[];
   };
   verification?: { isVerified: boolean };
@@ -124,25 +139,16 @@ function ProfileViewContent() {
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 flex items-center justify-center text-royal-gold/80 hover:text-royal-gold hover:bg-royal-gold/10 rounded-full transition-all duration-200 mr-3"
+          className="w-10 h-10 flex items-center justify-center text-royal-gold/80 hover:text-royal-gold hover:bg-royal-gold/10 rounded-full transition-all duration-200"
           aria-label="Go back"
         >
           <i className="ri-arrow-left-line text-xl" />
         </button>
-        <h1 className="text-royal-gold font-playfair font-bold text-lg">
-          {p?.name || 'Profile'}
-        </h1>
-        {profile?.verification?.isVerified && (
-          <div className="ml-2 flex items-center space-x-1 bg-royal-gold/15 border border-royal-gold/30 rounded-full px-2 py-0.5">
-            <i className="ri-shield-check-fill text-royal-gold text-xs" />
-            <span className="text-royal-gold text-xs font-medium">Verified</span>
-          </div>
-        )}
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-[80vh]">
-          <RoyalLoader variant="grand" />
+          <RoyalLoader variant="grand" text="Gathering profile details..." />
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center h-[70vh] px-8 text-center">
@@ -183,12 +189,22 @@ function ProfileViewContent() {
 
             {/* Hero name */}
             <div className="absolute bottom-5 left-5 right-5">
-              <h2 className="text-4xl font-playfair font-bold text-royal-gold drop-shadow-lg">
-                {p?.name || 'Unknown'}
-              </h2>
-              {p?.age && (
-                <p className="text-royal-gold-light/90 font-inter text-lg mt-1">{p.age} years old</p>
-              )}
+              <div className="flex items-end justify-between">
+                <div>
+                  <h2 className="text-4xl font-playfair font-bold text-royal-gold drop-shadow-lg">
+                    {p?.name || 'Unknown'}
+                  </h2>
+                  {p?.age && (
+                    <p className="text-royal-gold-light/90 font-inter text-lg mt-1">{p.age} years old</p>
+                  )}
+                </div>
+                {profile.verification?.isVerified && (
+                  <div className="flex items-center space-x-1 bg-royal-gold/20 border border-royal-gold/40 rounded-full px-2.5 py-1 backdrop-blur-sm mb-2">
+                    <i className="ri-shield-check-fill text-royal-gold text-sm" />
+                    <span className="text-royal-gold text-xs font-medium">Verified</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -225,20 +241,40 @@ function ProfileViewContent() {
             <div>
               <h3 className="text-royal-gold font-playfair font-semibold text-lg mb-3">Details</h3>
               <div className="bg-royal-gold/5 border border-royal-gold/10 rounded-2xl px-4 divide-y divide-royal-gold/10">
+                <InfoRow icon="ri-calendar-line" label="Date of Birth" value={p?.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString() : undefined} />
+                <InfoRow icon="ri-time-line" label="Time of Birth" value={p?.timeOfBirth} />
+                <InfoRow icon="ri-map-pin-time-line" label="Place of Birth" value={p?.placeOfBirth} />
                 <InfoRow icon="ri-book-open-line" label="Education" value={p?.education} />
                 <InfoRow icon="ri-ruler-line" label="Height" value={p?.height} />
                 <InfoRow icon="ri-scales-3-line" label="Weight" value={p?.weight ? `${p.weight} kg` : undefined} />
+                <InfoRow icon="ri-user-smile-line" label="Complexion" value={p?.complexion} />
                 <InfoRow icon="ri-map-pin-2-line" label="Native Place" value={p?.nativePlace} />
                 <InfoRow icon="ri-home-4-line" label="Current Residence" value={p?.currentResidence} />
-                <InfoRow icon="ri-pray-line" label="Religion" value={p?.religion} />
-                <InfoRow icon="ri-group-line" label="Caste" value={p?.caste} />
-                <InfoRow icon="ri-star-line" label="Gotra" value={p?.gotra} />
                 <InfoRow icon="ri-heart-pulse-line" label="Manglik" value={p?.manglik} />
                 <InfoRow icon="ri-user-heart-line" label="Marital Status" value={p?.maritalStatus} />
-                <InfoRow icon="ri-restaurant-line" label="Diet" value={p?.diet} />
-                <InfoRow icon="ri-gender-line" label="Gender" value={p?.gender} />
+                <InfoRow icon="ri-restaurant-line" label="Eating Habit" value={p?.eatingHabit} />
+                <InfoRow icon="ri-cigarette-line" label="Smoking" value={p?.smokingHabit} />
+                <InfoRow icon="ri-goblet-line" label="Drinking" value={p?.drinkingHabit} />
+                <InfoRow icon="ri-flight-takeoff-line" label="Settle Abroad" value={p?.settleAbroad} />
               </div>
             </div>
+
+            {/* Family Details */}
+            {(p?.father || p?.mother || p?.fatherGotra || p?.motherGotra || p?.grandfatherGotra || p?.grandmotherGotra || p?.brothers || p?.sisters) && (
+              <div>
+                <h3 className="text-royal-gold font-playfair font-semibold text-lg mb-3">Family Details</h3>
+                <div className="bg-royal-gold/5 border border-royal-gold/10 rounded-2xl px-4 divide-y divide-royal-gold/10">
+                  <InfoRow icon="ri-parent-line" label="Father" value={p?.father} />
+                  <InfoRow icon="ri-parent-line" label="Mother" value={p?.mother} />
+                  <InfoRow icon="ri-team-line" label="Brothers" value={p?.brothers} />
+                  <InfoRow icon="ri-team-line" label="Sisters" value={p?.sisters} />
+                  <InfoRow icon="ri-star-line" label="Father Gotra" value={p?.fatherGotra || p?.gotra} />
+                  <InfoRow icon="ri-star-line" label="Mother Gotra" value={p?.motherGotra} />
+                  <InfoRow icon="ri-star-line" label="Grandfather Gotra" value={p?.grandfatherGotra} />
+                  <InfoRow icon="ri-star-line" label="Grandmother Gotra" value={p?.grandmotherGotra} />
+                </div>
+              </div>
+            )}
 
             {/* Interests */}
             {interests.length > 0 && (
@@ -271,15 +307,7 @@ function ProfileViewContent() {
               </div>
             )}
 
-            {/* Back button */}
-            <div className="pt-4 pb-8">
-              <button
-                onClick={() => router.back()}
-                className="w-full py-4 bg-gradient-to-r from-royal-gold to-royal-gold-dark text-royal-obsidian font-bold rounded-2xl text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.3)] active:scale-95 transition-all duration-200"
-              >
-                ← Back to Chat
-              </button>
-            </div>
+            {/* Remove bottom back button per user request */}
 
           </div>
         </motion.div>
@@ -293,7 +321,7 @@ export default function ProfileViewPage() {
     <AuthGuardV2 requiresCompleteProfile={false}>
       <Suspense fallback={
         <div className="flex items-center justify-center h-screen bg-royal-obsidian">
-            <RoyalLoader variant="grand" />
+            <RoyalLoader variant="grand" text="Gathering profile details..." />
         </div>
       }>
         <ProfileViewContent />

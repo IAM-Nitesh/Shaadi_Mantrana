@@ -153,8 +153,15 @@ function DashboardContent() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-royal-obsidian relative overflow-hidden"
+      className="min-h-screen bg-royal-obsidian relative overflow-hidden cursor-pointer"
       style={{ paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 2rem)' }}
+      onClick={(e) => {
+        // Only trigger if we aren't clicking a button
+        if ((e.target as HTMLElement).closest('button')) return;
+        if (currentProfile && !expandedProfile) {
+          setExpandedProfile(currentProfile as unknown as ProfileForModal);
+        }
+      }}
     >
       {/* Subtle gold gradient background - no moving mandala */}
       <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.04)_0%,transparent_70%)]" />
