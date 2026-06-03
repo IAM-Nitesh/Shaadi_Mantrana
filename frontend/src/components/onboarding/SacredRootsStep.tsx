@@ -61,8 +61,8 @@ export default function SacredRootsStep({ data, updateField }: SacredRootsStepPr
       <div className="space-y-6 pt-4">
         <h3 className="text-royal-gold/60 text-[10px] uppercase tracking-[0.2em] mb-4">Family Pillars</h3>
         <div className="grid grid-cols-2 gap-4">
-          <RoyalInput label="Father's Name" fieldName="father" value={data.father || ''} onChange={(e) => updateField('father', e.target.value)} />
-          <RoyalInput label="Mother's Name" fieldName="mother" value={data.mother || ''} onChange={(e) => updateField('mother', e.target.value)} />
+          <RoyalInput label="Father" fieldName="father" value={data.father || ''} onChange={(e) => updateField('father', e.target.value)} />
+          <RoyalInput label="Mother" fieldName="mother" value={data.mother || ''} onChange={(e) => updateField('mother', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <RoyalSelect label="Brothers" fieldName="brothers" value={data.brothers ?? ''} onChange={(e) => updateField('brothers', e.target.value)} options={SIBLING_OPTIONS} />

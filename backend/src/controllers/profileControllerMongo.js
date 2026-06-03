@@ -595,6 +595,36 @@ class ProfileController {
     }
   }
 
+  // Get public profile by MongoDB _id (used by chat/matches to view match's profile)
+  async getPublicProfileById(req, res) {
+    try {
+      const { userId } = req.params;
+      if (!userId || userId.length !== 24) {
+        return res.status(400).json({ success: false, error: 'Invalid user ID' });
+      }
+      const user = await User.findById(userId).select(
+        'profile verification lastActive userUuid'
+      );
+      if (!user || user.status === 'deleted') {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+      // Return safe discovery-level fields only (no phone, OTP, sessions etc.)
+      res.status(200).json({
+        success: true,
+        profile: {
+          _id: user._id,
+          userUuid: user.userUuid,
+          profile: user.profile,
+          verification: { isVerified: user.verification?.isVerified ?? false },
+          lastActive: user.lastActive,
+        }
+      });
+    } catch (error) {
+      console.error('❌ Get public profile by ID error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get profile' });
+    }
+  }
+
   // Hard-delete user account and all associated data (Google Play Store requirement)
   // Replaces the former soft-delete deleteProfile().
   async deleteAccount(req, res) {

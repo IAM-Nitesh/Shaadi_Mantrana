@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuardV2 } from '../../components/AuthGuardV2';
 import { useAuth } from '../../contexts/AuthContext';
-// Navigation is now handled globally in layout.tsx
 import SwipeCard from './SwipeCard';
 import { safeGsap } from '../../components/SafeGsap';
 import { DiscoveryProfile, MatchingService } from '../../services/matching-service';
@@ -15,6 +14,7 @@ import ToastService from '../../services/toastService';
 import { Icon } from '../../components/IconSystem';
 import { RippleButton } from '../../components/RippleButton';
 import NewMatchOverlay from '../../components/dashboard/NewMatchOverlay';
+import ProfileDetailModal, { ProfileForModal } from '../../components/ui/ProfileDetailModal';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -26,6 +26,7 @@ function DashboardContent() {
   const [isFetchingProfiles, setIsFetchingProfiles] = useState(true);
   const [showMatchOverlay, setShowMatchOverlay] = useState(false);
   const [matchedProfileName, setMatchedProfileName] = useState('');
+  const [expandedProfile, setExpandedProfile] = useState<ProfileForModal | null>(null);
   
   // GSAP refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,6 +177,7 @@ function DashboardContent() {
           <SwipeCard 
             profile={currentProfile} 
             onSwipe={handleSwipe}
+            onTap={() => setExpandedProfile(currentProfile as unknown as ProfileForModal)}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-center relative z-10">
@@ -230,6 +232,12 @@ function DashboardContent() {
           setShowMatchOverlay(false);
           router.push('/matches');
         }}
+      />
+
+      {/* Tinder-style profile expand modal */}
+      <ProfileDetailModal
+        profile={expandedProfile}
+        onClose={() => setExpandedProfile(null)}
       />
     </div>
   );
