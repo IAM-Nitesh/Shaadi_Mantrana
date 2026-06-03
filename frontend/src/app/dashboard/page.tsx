@@ -15,6 +15,7 @@ import { Icon } from '../../components/IconSystem';
 import { RippleButton } from '../../components/RippleButton';
 import NewMatchOverlay from '../../components/dashboard/NewMatchOverlay';
 import ProfileDetailModal, { ProfileForModal } from '../../components/ui/ProfileDetailModal';
+import SwipeTutorialOverlay from '../../components/ui/SwipeTutorialOverlay';
 
 function DashboardContent() {
   const { user, logout, isLoading } = useAuth();
@@ -246,6 +247,8 @@ function DashboardContent() {
         profile={expandedProfile}
         onClose={() => setExpandedProfile(null)}
       />
+
+      <SwipeTutorialOverlay />
     </div>
   );
 }

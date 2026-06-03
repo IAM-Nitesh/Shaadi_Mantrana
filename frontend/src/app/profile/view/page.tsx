@@ -60,8 +60,8 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value?: 
   if (!value) return null;
   return (
     <div className="flex items-start space-x-3 py-3 border-b border-royal-gold/10 last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-royal-gold/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <i className={`${icon} text-royal-gold text-sm`} />
+      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <i className={`${icon} text-royal-gold text-lg`} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-royal-gold/50 text-xs uppercase tracking-widest mb-0.5">{label}</p>
@@ -139,10 +139,10 @@ function ProfileViewContent() {
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 flex items-center justify-center text-royal-gold/80 hover:text-royal-gold hover:bg-royal-gold/10 rounded-full transition-all duration-200"
+          className="w-10 h-10 flex items-center justify-center text-royal-gold hover:opacity-70 transition-opacity duration-200"
           aria-label="Go back"
         >
-          <i className="ri-arrow-left-line text-xl" />
+          <i className="ri-arrow-left-line text-2xl" />
         </button>
       </div>
 

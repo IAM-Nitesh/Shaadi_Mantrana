@@ -341,7 +341,7 @@ export default function SwipeCard({ profile, onSwipe, onDrag, onTap }: SwipeCard
           {!isDragging && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center space-x-1.5 bg-black/40 backdrop-blur-sm border border-royal-gold/25 rounded-full px-3 py-1 pointer-events-none">
               <i className="ri-touch-line text-royal-gold text-xs" />
-              <span className="text-royal-gold text-xs font-inter font-medium tracking-wide">Tap to view Profile info</span>
+              <span className="text-royal-gold text-xs font-inter font-medium tracking-wide whitespace-nowrap">Tap to view Profile info</span>
             </div>
           )}
 
