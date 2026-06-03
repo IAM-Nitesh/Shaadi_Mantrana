@@ -15,6 +15,9 @@ router.put('/me', authenticateToken, profileController.updateProfile);
 // Get user profile by UUID (public)
 router.get('/uuid/:uuid', profileController.getProfileByUuid);
 
+// Get public profile by MongoDB _id (for viewing match/chat partner profile — auth required)
+router.get('/public/:userId', authenticateToken, profileController.getPublicProfileById.bind(profileController));
+
 // Hard-delete user account — purges all user data (Play Store compliance)
 router.delete('/me', authenticateToken, profileController.deleteAccount);
 

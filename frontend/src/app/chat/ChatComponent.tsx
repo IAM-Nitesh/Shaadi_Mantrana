@@ -74,8 +74,19 @@ export default function ChatComponent({ match }: ChatComponentProps) {
   }, [match.otherUserId]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const connectionId = match.connectionId;
+
+  // Auto-scroll to bottom whenever messages change or typing indicator appears
+  useEffect(() => {
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+    // Small delay to let layout settle after message render
+    const timer = setTimeout(scrollToBottom, 80);
+    return () => clearTimeout(timer);
+  }, [messages, isTyping]);
 
   // Get current user ID from JWT token
   const getCurrentUserId = async (): Promise<string | null> => {
@@ -285,12 +296,37 @@ export default function ChatComponent({ match }: ChatComponentProps) {
     };
   }, [connectionId, match.otherUserId]);
 
+  // Sanitize chat input to block SQL injection / script injection attempts
+  const sanitizeChatInput = (text: string): { safe: boolean; cleaned: string } => {
+    // Block SQL injection patterns
+    const sqlPatterns = /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|TRUNCATE|DECLARE|CAST|CONVERT|CHAR|VARCHAR|NCHAR|NVARCHAR|XP_|SP_)\b)|(-{2})|(\b(OR|AND)\s+['"]?\d+['"]?\s*=\s*['"]?\d+['"]?)/gi;
+    // Block script/HTML injection
+    const scriptPatterns = /<\s*(script|iframe|object|embed|link|style|img|svg|form)[^>]*>/gi;
+    // Block null bytes and other control chars
+    const controlChars = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
+    
+    if (sqlPatterns.test(text) || scriptPatterns.test(text)) {
+      return { safe: false, cleaned: text };
+    }
+    
+    // Strip control characters but keep normal whitespace
+    const cleaned = text.replace(controlChars, '');
+    // Limit message length to 2000 chars
+    return { safe: true, cleaned: cleaned.slice(0, 2000) };
+  };
+
   // Send message function
   const sendMessage = async () => {
     if (!message.trim() || !connectionId || isSending) return;
 
+    const { safe, cleaned } = sanitizeChatInput(message.trim());
+    if (!safe) {
+      ToastService.error('Message contains invalid content.');
+      return;
+    }
+
     setIsSending(true);
-    const messageText = message.trim();
+    const messageText = cleaned;
     setMessage('');
 
     try {
@@ -611,7 +647,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed w-full bg-royal-obsidian/60 backdrop-blur-2xl border-b border-royal-gold/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-40 px-4 py-3 before:absolute before:inset-0 before:bg-gradient-to-b before:from-royal-gold/5 before:to-transparent before:pointer-events-none"
+        className="fixed w-full bg-royal-obsidian/60 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-40 px-4 py-3 before:absolute before:inset-0 before:bg-gradient-to-b before:from-royal-gold/5 before:to-transparent before:pointer-events-none"
         style={{ top: 0, paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
       >
         <div className="flex items-center space-x-3">
@@ -630,12 +666,19 @@ export default function ChatComponent({ match }: ChatComponentProps) {
           </button>
           
           <motion.div 
-            className="relative"
-            whileHover={{ scale: 1.05 }}
+            className="relative cursor-pointer"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400 }}
+            onClick={() => {
+              if (match.otherUserId) {
+                router.push(`/profile/view?userId=${match.otherUserId}`);
+              }
+            }}
+            title={`View ${match.name}'s profile`}
           >
             {profileImageUrl && !imageError ? (
-              <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg">
+              <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg ring-2 ring-royal-gold/40 hover:ring-royal-gold/80 transition-all duration-200">
                 <Image
                   src={profileImageUrl}
                   alt={match.name}
@@ -646,7 +689,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
                 />
               </div>
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-royal-gold/30 to-royal-gold/10 border border-royal-gold/20 flex items-center justify-center text-royal-gold font-semibold text-lg shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-royal-gold/30 to-royal-gold/10 border border-royal-gold/20 flex items-center justify-center text-royal-gold font-semibold text-lg shadow-lg hover:border-royal-gold/50 transition-all duration-200">
                 {match.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -698,10 +741,11 @@ export default function ChatComponent({ match }: ChatComponentProps) {
 
       {/* Messages - scrollable area between fixed header (top) and input (bottom) */}
       <div
-        className="absolute left-0 right-0 z-10 overflow-y-auto px-4"
+        ref={scrollContainerRef}
+        className="absolute left-0 right-0 z-10 overflow-y-auto px-4 pb-4"
         style={{
           top: '90px',
-          bottom: '100px'
+          bottom: '130px'
         }}
       >
         {loading ? (
@@ -792,7 +836,7 @@ export default function ChatComponent({ match }: ChatComponentProps) {
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35, duration: 0.15 }}
-        className="fixed bottom-0 w-full bg-royal-obsidian/60 backdrop-blur-3xl border-t border-royal-gold/10 p-4 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+        className="fixed bottom-0 w-full bg-royal-obsidian/60 backdrop-blur-3xl p-4 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
         style={{ }}
       >
         <div className="flex items-center space-x-3">
@@ -805,7 +849,13 @@ export default function ChatComponent({ match }: ChatComponentProps) {
               onChange={handleTyping}
               onKeyPress={handleKeyPress}
               disabled={isSending}
-              className="w-full px-4 py-3 bg-white/5 text-royal-gold placeholder:text-royal-gold/30 border border-royal-glass-border rounded-xl focus:outline-none focus:ring-1 focus:ring-royal-gold/30 focus:border-royal-gold/40 transition-all duration-300 disabled:opacity-50 shadow-inner"
+              className="w-full px-4 py-3 bg-white/5 text-royal-gold placeholder:text-royal-gold/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-royal-gold/30 focus:border-royal-gold/40 transition-all duration-300 disabled:opacity-50 shadow-inner"
+              autoComplete="on"
+              autoCorrect="on"
+              spellCheck={true}
+              autoCapitalize="sentences"
+              enterKeyHint="send"
+              inputMode="text"
             />
             
             {/* Typing indicator */}
@@ -832,13 +882,6 @@ export default function ChatComponent({ match }: ChatComponentProps) {
             <span className="font-semibold text-royal-obsidian text-sm">Send</span>
             <CustomIcon name="ri-arrow-right-up-line" className="text-xl text-royal-obsidian" />
           </motion.button>
-        </div>
-        
-        <div className="text-center mt-3">
-          <span className="text-xs text-royal-gold/40 flex items-center justify-center">
-            <CustomIcon name="ri-shield-check-line" className="mr-1" />
-            Messages are end-to-end encrypted
-          </span>
         </div>
       </motion.div>
     </div>

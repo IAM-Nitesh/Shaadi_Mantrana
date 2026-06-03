@@ -147,7 +147,7 @@ export default function RoyalOnboardingWizard({ initialProfile, onComplete }: Ro
                 </div>
 
                 {/* Integrated Action Buttons at bottom of card */}
-                <div className="flex items-center space-x-4 mt-auto pt-6 border-t border-royal-gold/10">
+                <div className="flex items-center space-x-4 mt-auto pt-6">
                   {currentStepIndex > 0 && (
                     <button
                       onClick={handleBack}

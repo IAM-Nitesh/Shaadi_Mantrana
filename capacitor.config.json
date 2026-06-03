@@ -32,6 +32,10 @@
   "android": {
     "allowMixedContent": false,
     "captureInput": true,
-    "webContentsDebuggingEnabled": false
+    "webContentsDebuggingEnabled": false,
+    "overrideUserAgent": "",
+    "backgroundColor": "#0a0a0a",
+    "allowNavigation": [],
+    "handleExitOnBack": true
   }
 }
