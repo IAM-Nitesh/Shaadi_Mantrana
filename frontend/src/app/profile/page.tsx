@@ -1060,6 +1060,10 @@ function ProfileContent() {
         });
         setValidationTimeouts({});
         
+        // ✅ Always sync completeness to AuthContext so access guards update immediately
+        // This ensures dashboard/matches access is recalculated even if completeness drops
+        updateUser({ profileCompleteness: backendCompleteness });
+
         // Redirect to dashboard after a short delay if profile is 100% complete
         if (backendCompleteness >= 100) {
           // Mark user as not first login since profile is complete
@@ -1071,8 +1075,6 @@ function ProfileContent() {
             // Continue with redirect even if flag update fails
           }
           
-          // ✅ FIX: Update local context directly to avoid Rate Limit errors
-          updateUser({ profileCompleteness: backendCompleteness });
           setShowCompletionOverlay(true);
         }
       } else {
@@ -1190,18 +1192,16 @@ function ProfileContent() {
       const success = await ImageUploadService.deleteProfilePictureFromB2();
       
       if (success) {
-        // Remove image from profile
-        setProfile(prev => ({
-          ...prev,
-          images: null
-        }));
+        // Remove image from profile state
+        setProfile(prev => ({ ...prev, images: null }));
+        // ✅ FIX: Clear signed URL state and cache so a fresh upload works cleanly
+        setSignedImageUrl(null);
+        ImageUploadService.clearSignedUrlCache();
+        // Reset file input so user can immediately re-select
+        if (fileInputRef.current) fileInputRef.current.value = '';
         
         setUploadMessage('✅ Profile picture deleted successfully!');
-        
-        // Clear the success message after a short delay
-        setTimeout(() => {
-          setUploadMessage('');
-        }, 3000);
+        setTimeout(() => { setUploadMessage(''); }, 3000);
       } else {
         setUploadMessage('❌ Failed to delete profile picture');
       }

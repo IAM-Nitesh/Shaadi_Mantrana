@@ -30,60 +30,88 @@ export default function SwipeTutorialOverlay() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-royal-obsidian/80 backdrop-blur-sm touch-none cursor-pointer"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-royal-obsidian/90 backdrop-blur-md touch-none cursor-pointer"
           onClick={handleDismiss}
         >
           <div className="flex flex-col items-center justify-center space-y-12 w-full max-w-sm px-6">
             
-            <div className="text-center">
-              <h2 className="text-2xl font-playfair font-bold text-royal-gold mb-2">Majestic Journey</h2>
-              <p className="text-royal-gold-light/80 font-inter">Let destiny guide your path.</p>
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-playfair font-bold text-transparent bg-clip-text bg-gradient-to-r from-royal-gold-light via-royal-gold to-royal-gold-light tracking-wide">
+                Majestic Connections
+              </h2>
+              <p className="text-royal-gold-light/60 font-inter text-sm uppercase tracking-[0.2em]">
+                Master Your Destiny
+              </p>
             </div>
 
-            <div className="relative w-full h-64 border border-royal-gold/20 rounded-2xl bg-royal-glass/30 flex items-center justify-center overflow-hidden">
-              {/* Animated hand demonstrating swipe */}
+            <div className="relative w-full h-80 flex items-center justify-center overflow-hidden">
+              {/* Background Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15)_0%,transparent_70%)]" />
+
+              {/* Animated Card */}
               <motion.div
-                className="absolute text-5xl"
+                className="relative w-48 h-64 rounded-2xl bg-royal-obsidian border border-royal-gold/30 shadow-[0_0_30px_rgba(212,175,55,0.15)] flex flex-col items-center justify-center overflow-hidden"
                 animate={{
-                  x: [0, 80, 0, -80, 0],
-                  scale: [1, 0.9, 1, 0.9, 1],
-                  rotate: [0, 15, 0, -15, 0]
+                  x: [0, 100, 0, -100, 0],
+                  rotate: [0, 15, 0, -15, 0],
+                  scale: [1, 0.95, 1, 0.95, 1]
                 }}
                 transition={{
-                  duration: 4,
+                  duration: 5,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
               >
-                👆
+                {/* Inner Card Details Mockup */}
+                <div className="w-full h-3/4 bg-royal-gold/5 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full border border-royal-gold/20 flex items-center justify-center">
+                    <i className="ri-user-star-line text-3xl text-royal-gold/50" />
+                  </div>
+                </div>
+                <div className="w-full h-1/4 bg-royal-obsidian border-t border-royal-gold/20 flex items-center justify-center">
+                  <div className="w-24 h-2 rounded-full bg-royal-gold/20" />
+                </div>
+                
+                {/* Dynamic Glow Overlay based on direction */}
+                <motion.div 
+                  className="absolute inset-0 bg-emerald-500 mix-blend-overlay"
+                  animate={{ opacity: [0, 0.4, 0, 0, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div 
+                  className="absolute inset-0 bg-rose-500 mix-blend-overlay"
+                  animate={{ opacity: [0, 0, 0, 0.4, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                />
               </motion.div>
               
-              {/* Labels */}
+              {/* Labels & Arrows */}
               <motion.div 
-                className="absolute right-4 text-emerald-400 font-bold tracking-widest text-sm uppercase opacity-50"
-                animate={{ opacity: [0.3, 1, 0.3, 0.3, 0.3] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", times: [0, 0.25, 0.5, 0.75, 1] }}
+                className="absolute right-0 flex flex-col items-center space-y-2"
+                animate={{ opacity: [0, 1, 0, 0, 0], x: [0, 10, 0, 0, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
               >
-                Like
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center backdrop-blur-md">
+                  <i className="ri-heart-3-fill text-xl text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                </div>
+                <span className="text-emerald-400 font-bold tracking-widest text-[10px] uppercase">Like</span>
               </motion.div>
 
               <motion.div 
-                className="absolute left-4 text-rose-400 font-bold tracking-widest text-sm uppercase opacity-50"
-                animate={{ opacity: [0.3, 0.3, 0.3, 1, 0.3] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", times: [0, 0.25, 0.5, 0.75, 1] }}
+                className="absolute left-0 flex flex-col items-center space-y-2"
+                animate={{ opacity: [0, 0, 0, 1, 0], x: [0, 0, 0, -10, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
               >
-                Pass
+                <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/50 flex items-center justify-center backdrop-blur-md">
+                  <i className="ri-close-line text-2xl text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.8)]" />
+                </div>
+                <span className="text-rose-400 font-bold tracking-widest text-[10px] uppercase">Pass</span>
               </motion.div>
-            </div>
-
-            <div className="text-center space-y-2">
-              <p className="text-white font-medium">Swipe <span className="text-emerald-400">Right</span> to Like</p>
-              <p className="text-white font-medium">Swipe <span className="text-rose-400">Left</span> to Pass</p>
             </div>
 
             <button
               onClick={handleDismiss}
-              className="mt-8 px-8 py-3 bg-royal-gold/20 border border-royal-gold/50 rounded-full text-royal-gold font-bold hover:bg-royal-gold hover:text-royal-obsidian transition-colors shadow-lg"
+              className="mt-8 px-10 py-4 bg-royal-gold text-royal-obsidian rounded-full font-bold uppercase tracking-widest text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(212,175,55,0.4)]"
             >
               Start Exploring
             </button>

@@ -303,6 +303,18 @@ export const ICON_REGISTRY = {
     description: 'View/visibility',
     aliases: ['view', 'see', 'visibility'],
   },
+  'ri-cigarette-line': {
+    path: '/icons/cigarette.svg',
+    category: ICON_CATEGORIES.ACTIONS,
+    description: 'Smoking Habit',
+    aliases: ['smoke', 'smoking', 'cigarette'],
+  },
+  'ri-goblet-line': {
+    path: '/icons/goblet.svg',
+    category: ICON_CATEGORIES.ACTIONS,
+    description: 'Drinking Habit',
+    aliases: ['drink', 'drinking', 'goblet', 'wine'],
+  },
 } as const;
 
 export type IconName = keyof typeof ICON_REGISTRY;
@@ -349,19 +361,14 @@ export const Icon: React.FC<IconProps> = ({
   // If we have a custom SVG path, use Next.js Image
   if (iconData?.path) {
     return (
-      <Image
-        src={iconData.path}
-        alt={altText}
-        width={iconSize}
-        height={iconSize}
+      <span
         className={`inline-block ${className}`}
         style={{
-          color: color || 'inherit',
-          filter: className.includes('text-white') 
-            ? 'brightness(0) invert(1)' 
-            : color 
-            ? `brightness(0) saturate(100%) ${color}` 
-            : 'none',
+          width: iconSize,
+          height: iconSize,
+          backgroundColor: color || 'currentColor',
+          WebkitMask: `url(${iconData.path}) no-repeat center / contain`,
+          mask: `url(${iconData.path}) no-repeat center / contain`,
           verticalAlign: 'middle',
         }}
         aria-label={ariaLabelText}
