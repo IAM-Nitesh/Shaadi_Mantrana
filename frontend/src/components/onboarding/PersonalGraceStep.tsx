@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { RoyalInput, RoyalSelect } from './RoyalFields';
 import { ImageUploadService } from '../../services/image-upload-service';
 import Image from 'next/image';
@@ -16,6 +16,24 @@ export default function PersonalGraceStep({ data, updateField }: PersonalGraceSt
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ FIX: On mount, if data.images is a B2 filename (not a URL), fetch the signed URL
+  // This handles the case when user navigates away and returns to step 1
+  useEffect(() => {
+    const storedImage = Array.isArray(data.images) ? data.images[0] : data.images;
+    if (!storedImage || typeof storedImage !== 'string') return;
+    
+    if (storedImage.startsWith('http')) {
+      // Already a full URL (signed or public) — use directly
+      setPreviewUrl(storedImage);
+    } else {
+      // B2 filename — fetch a fresh signed URL
+      ImageUploadService.getMyProfilePictureSignedUrl()
+        .then(url => { if (url) setPreviewUrl(url); })
+        .catch(err => logger.warn('PersonalGraceStep: could not fetch signed URL', err));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleImageClick = () => {
     fileInputRef.current?.click();

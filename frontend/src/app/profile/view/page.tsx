@@ -267,8 +267,8 @@ function ProfileViewContent() {
                 <div className="bg-royal-gold/5 border border-royal-gold/10 rounded-2xl px-4 divide-y divide-royal-gold/10">
                   <InfoRow icon="ri-parent-line" label="Father" value={p?.father} />
                   <InfoRow icon="ri-parent-line" label="Mother" value={p?.mother} />
-                  <InfoRow icon="ri-team-line" label="Brothers" value={p?.brothers} />
-                  <InfoRow icon="ri-team-line" label="Sisters" value={p?.sisters} />
+                  <InfoRow icon="ri-user-line" label="Brothers" value={p?.brothers} />
+                  <InfoRow icon="ri-user-line" label="Sisters" value={p?.sisters} />
                   <InfoRow icon="ri-star-line" label="Father Gotra" value={p?.fatherGotra || p?.gotra} />
                   <InfoRow icon="ri-star-line" label="Mother Gotra" value={p?.motherGotra} />
                   <InfoRow icon="ri-star-line" label="Grandfather Gotra" value={p?.grandfatherGotra} />
