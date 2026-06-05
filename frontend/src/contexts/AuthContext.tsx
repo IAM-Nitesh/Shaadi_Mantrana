@@ -30,6 +30,7 @@ export interface User {
   userId: string;
   userUuid?: string;
   email: string;
+  name?: string;
   role: string;
   verified: boolean;
   profileCompleteness?: number;
@@ -130,6 +131,7 @@ export const AuthProvider = ({
           userId: data.user.userId || data.user._id || '',
           userUuid: data.user.userUuid || data.user.uuid || data.user.userId || data.user._id || '',
           email: data.user.email || '',
+          name: data.user.name || data.user.profile?.name || '',
           role: data.user.role || 'user',
           verified: true,
           profileCompleteness: data.user.profileCompleteness || 0,

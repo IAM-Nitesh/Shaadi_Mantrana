@@ -539,7 +539,8 @@ class AuthController {
                 isApprovedByAdmin: dbUser.isApprovedByAdmin,
                 profileCompleteness: profileCompleteness,
                 hasSeenOnboardingMessage: dbUser.hasSeenOnboardingMessage || false,
-                hasCompletedWizard: dbUser.hasCompletedWizard || false
+                hasCompletedWizard: dbUser.hasCompletedWizard || false,
+                name: dbUser.profile?.name || ''
               };
               console.log('✅ getAuthStatus: User authenticated successfully:', {
                 email: user.email,

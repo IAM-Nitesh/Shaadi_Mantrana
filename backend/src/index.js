@@ -204,6 +204,8 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   store: createPersistentStore('api_'),
+  standardHeaders: true,  // Send RateLimit-* headers (RFC 6585)
+  legacyHeaders: false,    // Disable X-RateLimit-* legacy headers
   message: {
     error: 'Too many requests',
     message: 'Please try again later'
