@@ -1062,7 +1062,10 @@ function ProfileContent() {
         
         // ✅ Always sync completeness to AuthContext so access guards update immediately
         // This ensures dashboard/matches access is recalculated even if completeness drops
-        updateUser({ profileCompleteness: backendCompleteness });
+        updateUser({ 
+          profileCompleteness: backendCompleteness,
+          name: refreshedProfile?.name || profileData.name || (user as any).name
+        });
 
         // Redirect to dashboard after a short delay if profile is 100% complete
         if (backendCompleteness >= 100) {

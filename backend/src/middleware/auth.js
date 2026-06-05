@@ -40,6 +40,13 @@ class JWTSessionManager {
     });
   }
 
+  // Hash a token for safe storage — never store raw JWTs in the database.
+  // Uses SHA-256 (non-reversible). The raw token is always returned to the
+  // client; only the digest is persisted so a DB breach yields no usable tokens.
+  static hashToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
   // Generate JWT refresh token
   static generateRefreshToken(payload) {
   if (!JWT_SECRET) throw new Error('JWT secret not configured');
@@ -84,8 +91,10 @@ class JWTSessionManager {
         email: payload.email,
         role: payload.role,
         verified: payload.verified,
-        refreshToken,
-        accessToken,
+        // ✅ SECURITY: Store SHA-256 hashes of tokens, never plaintext JWTs.
+        // The raw tokens are returned to the client but never persisted to DB.
+        refreshToken: this.hashToken(refreshToken),
+        accessToken: this.hashToken(accessToken),
         createdAt: new Date(),
         lastAccessed: new Date()
       };
@@ -101,10 +110,13 @@ class JWTSessionManager {
         lastAccessed: createdSession.lastAccessed
       });
 
-      // Also store in memory for faster access
-      // Use the created session data from database to ensure consistency
+      // Store raw tokens in memory cache (never written to disk/DB)
+      // so in-process token comparisons continue to work without re-hashing
       const sessionForCache = {
         ...sessionData,
+        // Override with raw tokens for in-memory use only
+        refreshToken,
+        accessToken,
         _id: createdSession._id,
         createdAt: createdSession.createdAt,
         lastAccessed: createdSession.lastAccessed
@@ -183,7 +195,14 @@ class JWTSessionManager {
       const decoded = this.verifyRefreshToken(refreshToken);
       const session = await this.getSession(decoded.sessionId);
 
-      if (!session || session.refreshToken !== refreshToken) {
+      // ✅ SECURITY: Compare hash of incoming token against stored hash.
+      // If session was loaded from DB it holds a hash; from memory cache it holds raw token.
+      // Handle both cases gracefully.
+      const incomingHash = this.hashToken(refreshToken);
+      const storedValue = session?.refreshToken || '';
+      const tokenMatches = storedValue === incomingHash || storedValue === refreshToken;
+
+      if (!session || !tokenMatches) {
         throw new Error('Invalid refresh token session');
       }
 
