@@ -231,25 +231,18 @@ export const AuthProvider = ({
         return null;
       }
       
-      // Clear any existing recaptcha widgets properly to prevent MALFORMED errors
       if (typeof window !== 'undefined') {
         const win = window as any;
-        if (win.recaptchaVerifier) {
-          try {
-            win.recaptchaVerifier.clear();
-          } catch (e) {
-            logger.warn('AuthContext: Error clearing previous recaptcha verifier', e);
-          }
-          win.recaptchaVerifier = null;
+        
+        // Only create the verifier if one doesn't already exist.
+        // Re-creating it on every call (especially for Resend) invalidates the
+        // previous Firebase session token, causing real OTPs to appear expired.
+        // Test numbers bypass reCAPTCHA entirely which is why they always work.
+        if (!win.recaptchaVerifier) {
+          win.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible'
+          });
         }
-        
-        // Also clean up the DOM container just in case
-        const container = document.getElementById('recaptcha-container');
-        if (container) container.innerHTML = '';
-        
-        win.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible'
-        });
         
         const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, win.recaptchaVerifier);
         return confirmationResult;
@@ -268,7 +261,8 @@ export const AuthProvider = ({
 
       logger.error('Phone Sign-In Error:', err);
       
-      // Reset container on failure to allow retry
+      // On failure, tear down the verifier so the next attempt gets a fresh one.
+      // This is the ONLY time we should clear it — not on every call.
       if (!Capacitor.isNativePlatform() && typeof window !== 'undefined') {
         const win = window as any;
         if (win.recaptchaVerifier) {
