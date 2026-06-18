@@ -41,6 +41,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - name: Fix sharp cross-platform binaries
+        run: npm install --os=linux --cpu=x64 sharp
       - name: Run backend tests with coverage
         run: npm test --workspace=backend -- --coverage --coverageReporters=text-summary
         env:
@@ -68,6 +70,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - name: Fix sharp cross-platform binaries
+        run: npm install --os=linux --cpu=x64 sharp
       - run: npx playwright install chromium --with-deps
       - name: Start backend for API edge tests
         run: node backend/start.js > backend.log 2>&1 &
