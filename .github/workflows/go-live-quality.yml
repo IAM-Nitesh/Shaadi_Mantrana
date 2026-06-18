@@ -57,7 +57,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium --with-deps
       - name: Start backend for API edge tests
-        run: node backend/start.js &
+        run: node backend/start.js > backend.log 2>&1 &
         env:
           NODE_ENV: test
           PORT: 4000
@@ -70,13 +70,14 @@ jobs:
       - name: Wait for backend health
         run: |
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:4000/health/ping > /dev/null; then
+            if curl -sf http://127.0.0.1:4000/health/ping > /dev/null; then
               echo "Backend ready"
               exit 0
             fi
             sleep 2
           done
-          echo "Backend failed to start"
+          echo "Backend failed to start. Logs:"
+          cat backend.log
           exit 1
       - name: Run edge-case specs
         run: npx playwright test tests/playwright/edge-cases.spec.ts --project=chromium --config=playwright.edge.config.js
