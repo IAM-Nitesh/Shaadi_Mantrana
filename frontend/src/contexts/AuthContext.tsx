@@ -344,9 +344,12 @@ export const AuthProvider = ({
       await checkAuth();
       return true;
     } catch (err: any) {
-      setError(err.message);
+      // Set context-level error (generic message) but re-throw the original
+      // Firebase error so callers (LoginForm) can inspect err.code for specific
+      // handling (e.g. auth/code-expired, auth/invalid-verification-code).
+      setError(err.message || 'Verification failed. Please try again.');
       logger.error('Phone Confirmation Error:', err);
-      return false;
+      throw err; // preserve err.code for caller
     } finally {
       setIsLoading(false);
     }

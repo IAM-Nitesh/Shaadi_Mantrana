@@ -47,10 +47,11 @@ const verifyIdToken = async (idToken) => {
   // Allow a mock token in development to facilitate stable E2E testing
   if (process.env.NODE_ENV !== 'production' && idToken === 'mock-token') {
     logger.info('FirebaseService: Bypassing token verification for E2E test token');
+    const testPhone = process.env.E2E_TEST_PHONE_NUMBER || '0000000000';
     return {
       uid: 'playwright-test-user',
-      phone_number: '+919354799303',
-      email: 'test-9354799303@shaadimantrana.com',
+      phone_number: `+91${testPhone}`,
+      email: `test-${testPhone}@shaadimantrana.com`,
       name: 'Playwright Test User'
     };
   }
