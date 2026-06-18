@@ -13,6 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security-audit:
+    name: Security Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run security audit
+        run: npm run security:audit
+
   backend-tests:
     name: Backend tests & coverage
     runs-on: ubuntu-latest
@@ -28,6 +41,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - name: Fix sharp cross-platform binaries
+        run: npm install --os=linux --cpu=x64 sharp
       - name: Run backend tests with coverage
         run: npm test --workspace=backend -- --coverage --coverageReporters=text-summary
         env:
@@ -55,9 +70,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - name: Fix sharp cross-platform binaries
+        run: npm install --os=linux --cpu=x64 sharp
       - run: npx playwright install chromium --with-deps
       - name: Start backend for API edge tests
-        run: node backend/start.js &
+        run: node backend/start.js > backend.log 2>&1 &
         env:
           NODE_ENV: test
           PORT: 4000
@@ -70,13 +87,14 @@ jobs:
       - name: Wait for backend health
         run: |
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:4000/health/ping > /dev/null; then
+            if curl -sf http://127.0.0.1:4000/health/ping > /dev/null; then
               echo "Backend ready"
               exit 0
             fi
             sleep 2
           done
-          echo "Backend failed to start"
+          echo "Backend failed to start. Logs:"
+          cat backend.log
           exit 1
       - name: Run edge-case specs
         run: npx playwright test tests/playwright/edge-cases.spec.ts --project=chromium --config=playwright.edge.config.js
