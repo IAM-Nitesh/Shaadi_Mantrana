@@ -359,6 +359,16 @@ export const AuthProvider = ({
     try {
       await firebaseSignOut(auth);
       
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+          await FirebaseAuthentication.signOut();
+          logger.info('AuthContext: Native Firebase signed out');
+        } catch (e) {
+          logger.error('AuthContext: Error signing out native Firebase', e);
+        }
+      }
+      
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',

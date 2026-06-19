@@ -55,9 +55,6 @@ export const NativeAuthService = {
     });
   },
 
-  /**
-   * Confirms the OTP code using native SDK.
-   */
   async confirmCode(verificationId: string, verificationCode: string): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
 
@@ -68,7 +65,22 @@ export const NativeAuthService = {
         verificationCode,
       });
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      // Handle Android auto-retrieval race condition:
+      // If Firebase automatically verified the SMS in the background, the verificationId
+      // is consumed. If the user then manually types the SMS and clicks verify, Firebase
+      // throws "The sms code has expired" because the ID is already used.
+      // We check if the user is ALREADY signed in to bypass this safely.
+      try {
+        const currentUserResult = await FirebaseAuthentication.getCurrentUser();
+        if (currentUserResult && currentUserResult.user) {
+          console.log('NativeAuthService: confirmVerificationCode threw, but user is already signed in via auto-retrieval. Ignoring error.');
+          return true;
+        }
+      } catch (checkErr) {
+        // Ignore errors checking user state
+      }
+
       console.error('NativeAuthService: Error confirming code', error);
       throw error;
     }
