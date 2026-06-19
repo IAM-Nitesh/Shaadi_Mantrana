@@ -1,6 +1,6 @@
 {
   "name": "shaadi-mantrana-frontend",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -89,6 +89,5 @@
     "nodemailer": "^9.0.1",
     "next": "^15.5.18"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

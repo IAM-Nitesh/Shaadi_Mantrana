@@ -24,7 +24,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | { verificationId: string } | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [otpExpiry, setOtpExpiry] = useState<number>(0); // seconds remaining before OTP expires
   const [isMounted, setIsMounted] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -53,23 +52,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       return () => clearTimeout(timer);
     }
   }, [resendCooldown]);
-
-  // Handle OTP session expiry countdown (Firebase OTPs expire after 5 minutes)
-  useEffect(() => {
-    if (otpExpiry <= 0) return;
-    if (otpExpiry === 1) {
-      // Session about to expire — clear confirmation so resend is forced
-      setConfirmationResult(null);
-      setLocalError('OTP expired. Please request a new code.');
-      setOtpExpiry(0);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setOtpExpiry((prev) => prev - 1);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [otpExpiry]);
-
   const handleSendOTP = async () => {
     setLocalError(null);
     if (!phoneNumber.trim()) {
@@ -125,7 +107,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         setConfirmationResult(result);
         setStep('otp');
         setResendCooldown(60);   // 60 second resend cooldown
-        setOtpExpiry(300);       // Firebase OTPs are valid for 5 minutes
         setLocalError(null);     // Clear any previous error on fresh send
         logger.info('LoginForm: Phone OTP sent successfully');
         posthog.capture('otp_requested');
@@ -158,7 +139,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       
       if (success) {
         logger.info('LoginForm: login successful');
-        setOtpExpiry(0); // stop countdown on success
         posthog.capture('user_logged_in', { method: 'phone_otp' });
         onLoginSuccess?.();
       } else {
@@ -173,7 +153,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       if (code === 'auth/code-expired') {
         setLocalError('OTP has expired. Please tap "Resend OTP" to get a new code.');
         setConfirmationResult(null); // force resend
-        setOtpExpiry(0);
       } else if (code === 'auth/invalid-verification-code') {
         setLocalError('Incorrect OTP. Please check and try again.');
       } else if (code === 'auth/too-many-requests') {
@@ -190,7 +169,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setStep('phone');
     setOtp('');
     setConfirmationResult(null);
-    setOtpExpiry(0);
     setLocalError(null);
   };
   if (step === 'phone') {
@@ -268,23 +246,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                 <OTPInput
                   value={otp}
                   onChange={setOtp}
-                  disabled={isVerifyingOTP || otpExpiry === 0}
+                  disabled={isVerifyingOTP}
                 />
               </div>
               <p className="text-sm text-royal-gold-light/60 mt-4 text-center font-inter">
                 OTP sent to <span className="font-bold text-royal-gold">+91 {phoneNumber}</span>
               </p>
-              {/* OTP expiry countdown */}
-              {otpExpiry > 0 && otpExpiry <= 60 && (
-                <p className="text-xs text-amber-400 text-center mt-2 font-inter animate-pulse">
-                  ⚠️ OTP expires in {otpExpiry}s — enter it quickly or resend
-                </p>
-              )}
-              {otpExpiry > 60 && (
-                <p className="text-xs text-royal-gold-light/40 text-center mt-2 font-inter">
-                  Valid for {Math.floor(otpExpiry / 60)}:{String(otpExpiry % 60).padStart(2, '0')} min
-                </p>
-              )}
             </div>
 
             <button
